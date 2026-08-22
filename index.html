@@ -4076,12 +4076,16 @@ body{
 </script>
 
 <script>
-// ===================== LIVE GOOGLE SHEETS LOADER =====================
+// ===================== LIVE GOOGLE SHEETS LOADER (v2 - new sheet structure Aug 2026) =====================
 const SHEET_ID = '1eyi3c6M4QIzADfLvVDHlzHLQJKMQhoWvkY73MbEtooA';
+const TAB_FOB = 'Giá FOB';
+const TAB_NHAPXUAT = 'Nhập & xuất hàng NP';
+const TAB_THEOTHANG = 'Chi tiết nhập hàng KV';
+const TAB_KHUVUC = 'Tổng quan KV';
+
 function gvizUrl(sheetName){
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
 }
-
 function fetchCsv(url){
   return fetch(url).then(res => {
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -4089,20 +4093,14 @@ function fetchCsv(url){
   }).then(text => Papa.parse(text, { skipEmptyLines: false }).data);
 }
 
-// ---- number parsers ----
-// Google Sheets (via gviz CSV) can return formatted display text like "30.588 đ"
-// (dot = thousands separator) or "7,395238095" (comma = decimal, VN locale).
-// This parser detects the pattern instead of blindly using JS parseFloat (which
-// would misread "30.588" as 30.588 instead of 30588).
+// ---- number parser: handles VN thousands-dot format from gviz display text ----
 function smartNum(v){
   if(v == null) return 0;
   let s = String(v).trim().replace(/đ/gi,'').replace(/\s/g,'');
   if(s === '') return 0;
   const neg = s.charAt(0) === '-';
   if(neg) s = s.slice(1);
-
   if(s.indexOf(',') !== -1){
-    // VN convention: dot = thousands, comma = decimal
     s = s.replace(/\./g,'').replace(',', '.');
     const n = parseFloat(s);
     return neg ? -(isNaN(n)?0:n) : (isNaN(n)?0:n);
@@ -4113,11 +4111,9 @@ function smartNum(v){
     return neg ? -(n||0) : (n||0);
   }
   if(dotCount > 1){
-    // multiple dots -> definitely thousands separators (e.g. 4.910.687.000)
     const n = parseInt(s.replace(/\./g,''),10);
     return neg ? -(n||0) : (n||0);
   }
-  // exactly one dot: 3 digits after it -> thousands separator; otherwise real decimal
   const parts = s.split('.');
   if(parts[1] && parts[1].length === 3){
     const n = parseInt(s.replace(/\./g,''),10);
@@ -4128,16 +4124,26 @@ function smartNum(v){
 }
 function numFloat(v){ return smartNum(v); }
 function numClean(v){ return Math.round(smartNum(v)); }
+// For columns known to be plain decimals (S.I/Day, DOS) — never thousands-grouped,
+// so don't apply the 3-digit heuristic (it would misread "18.025" as 18025).
+function numDecimal(v){
+  if(v == null) return 0;
+  let s = String(v).trim();
+  if(s === '') return 0;
+  if(s.indexOf(',') !== -1){ s = s.replace(/\./g,'').replace(',', '.'); }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
 
 function canonGroup(raw){
   if(!raw) return null;
   const s = String(raw).trim();
   if(s.indexOf('Cable') !== -1) return 'Cable';
   if(s.indexOf('Adapter') !== -1) return 'Adapter';
-  if(s.indexOf('sạc') !== -1) return 'Bộ sạc';
+  if(s.indexOf('sạc') !== -1) return 'Adapter';
   if(s.indexOf('Tai nghe') !== -1) return 'Tai nghe';
   if(s.indexOf('Powerbank') !== -1) return 'Powerbank (SDP)';
-  if(s.indexOf('Dán') !== -1) return 'Cường lực (Dán MH)';
+  if(s.indexOf('Dán') !== -1 || s.indexOf('Cường') !== -1 || s.indexOf('MDMH') !== -1) return 'Cường lực (Dán MH)';
   return s;
 }
 
@@ -4151,38 +4157,118 @@ const MIEN_MAP = {
   'AN GIANG':'Miền Nam','KIEN GIANG':'Miền Nam','DONG THAP':'Miền Nam','HO CHI MINH':'Miền Nam',
 };
 
-// ---- Sheet 1: "Nhập & bán hàng" ----
-function parseNhapBanSheet(rows){
+function parseFobSheet(rows){
+  const fobMap = {};
+  for(let i = 2; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || r[2] === undefined || String(r[2]).trim() === '') continue;
+    const sku = String(r[2]).trim();
+    const mau = r[3] ? String(r[3]).trim() : '';
+    const key = sku + '|' + mau;
+    const months = [4,5,6,7,8,9,10,11,12,13].map(idx => numFloat(r[idx]));
+    fobMap[key] = { months, latest: months[months.length-1] };
+  }
+  return fobMap;
+}
+
+function parseNhapXuatSheet(rows, fobMap){
   const skus = [];
   let currentGroup = null;
   for(let i = 3; i < rows.length; i++){
     const r = rows[i];
-    if(!r || r[2] === undefined || String(r[2]).trim() === '') continue;
+    if(!r || r[3] === undefined || String(r[3]).trim() === '') continue;
     if(r[1] && String(r[1]).trim() !== '') currentGroup = canonGroup(r[1]);
-    const months = [29,30,31,32,33,34,35].map(idx => numFloat(r[idx]));
+    const sku = String(r[3]).trim();
+    const mau = r[4] ? String(r[4]).trim() : '';
+    const key = sku + '|' + mau;
+    let fobEntry = fobMap[key];
+    if(!fobEntry){
+      // fallback: match by sku only if màu tag differs between sheets
+      const altKey = Object.keys(fobMap).find(k => k.split('|')[0] === sku);
+      if(altKey) fobEntry = fobMap[altKey];
+    }
+    const banMonths12 = [28,29,30,31,32,33,34,35,36,37,38,39].map(idx => numFloat(r[idx]));
+    const hubSI = numFloat(r[5]);
+    const fobMonths7 = fobEntry ? fobEntry.months.slice(3,10) : [0,0,0,0,0,0,0];
+    const fobLatest = fobEntry ? fobEntry.latest : 0;
+
+    let profitCum = 0;
+    const profitMonths7 = [];
+    for(let m=0;m<7;m++){
+      const qty = banMonths12[m] || 0;
+      const fob = fobMonths7[m] || 0;
+      const p = qty * (hubSI - fob);
+      profitMonths7.push(p);
+      profitCum += p;
+    }
+
     skus.push({
       group: currentGroup,
-      sku: String(r[2]).trim(),
-      fob: numFloat(r[3]),
-      profitUnit: numFloat(r[4]),
-      invValue2026: numFloat(r[5]),
-      profitCum: numFloat(r[6]),
-      nhap2026: numFloat(r[14]),
-      tonKho: numFloat(r[20]),
-      siPerDay: numFloat(r[21]),
-      dos: numFloat(r[22]),
-      banTong: numFloat(r[24]),
-      ban2026: numFloat(r[28]),
-      months, // T1..T7 2026 volume
+      sku: sku,
+      mau: mau,
+      hubSI: hubSI,
+      fobLatest: fobLatest,
+      nhap2026: numFloat(r[13]),
+      tonKho: numFloat(r[19]),
+      siPerDay: numDecimal(r[20]),
+      dos: numDecimal(r[21]),
+      banTong: numFloat(r[23]),
+      months8: banMonths12.slice(0,8),
+      months12: banMonths12,
+      profitCum: profitCum,
+      profitMonths7: profitMonths7,
     });
   }
   return skus;
 }
 
-// ---- Sheet 2: "Chi tiết bán hàng khu vực" ----
+function parseTheoThangSheet(rows){
+  let pkAreaRow = -1;
+  for(let i = 0; i < rows.length && i < 6; i++){
+    if(rows[i][1] === 'AREA'){ pkAreaRow = i; break; }
+  }
+  const pkDataStart = pkAreaRow + 2;
+  const pkMonths = ['T11.25','T12.25','T01.26','T02.26','T03.26','T04.26','T05.26','T06.26','T07.26','T08.26'];
+  const pk = {};
+  for(let i = pkDataStart; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || !r[1] || String(r[1]).trim() === '') continue;
+    if(r[1] === 'GLASS') break;
+    const name = String(r[1]).trim();
+    if(name === 'VN') continue;
+    const vals = {};
+    pkMonths.forEach((m, idx) => {
+      const slIdx = 2 + idx*2, tongIdx = slIdx + 1;
+      vals[m] = { sl: numFloat(r[slIdx]), tong: numFloat(r[tongIdx]) };
+    });
+    pk[name] = vals;
+  }
+
+  let glassRow = -1;
+  for(let i = 0; i < rows.length; i++){
+    if(rows[i][1] === 'GLASS'){ glassRow = i; break; }
+  }
+  const glassDataStart = glassRow + 3;
+  const glassMonths = ['T12.25','T01.26','T02.26','T03.26','T04.26','T05.26','T06.26','T07.26','T08.26'];
+  const glass = {};
+  for(let i = glassDataStart; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || !r[1] || String(r[1]).trim() === '') continue;
+    const name = String(r[1]).trim();
+    if(name === 'VN') continue;
+    const vals = {};
+    glassMonths.forEach((m, idx) => {
+      const slIdx = 2 + idx*2, tongIdx = slIdx + 1;
+      vals[m] = { sl: numFloat(r[slIdx]), tong: numFloat(r[tongIdx]) };
+    });
+    glass[name] = vals;
+  }
+  return { pk, glass };
+}
+
 function parseKhuVucSheet(rows){
   const regions = [];
-  for(let i = 4; i <= 32 && i < rows.length; i++){
+  for(let i = 3; i < rows.length; i++){
     const r = rows[i];
     if(!r || !r[1] || String(r[1]).trim() === '') continue;
     const name = String(r[1]).trim();
@@ -4207,55 +4293,6 @@ function parseKhuVucSheet(rows){
   return regions;
 }
 
-// ---- Sheet 3: "Chi tiết bán hàng theo tháng" (region x month, PK + GLASS) ----
-function parseTheoThangSheet(rows){
-  // find PHỤ KIỆN block
-  let pkAreaRow = -1;
-  for(let i = 0; i < rows.length && i < 6; i++){
-    if(rows[i][1] === 'AREA'){ pkAreaRow = i; break; }
-  }
-  const pkDataStart = pkAreaRow + 2;
-  const pkMonths = ['T11.25','T12.25','T01.26','T02.26','T03.26','T04.26','T05.26','T06.26'];
-  const pk = {}; // name -> {month: {sl, tong}}
-  for(let i = pkDataStart; i < rows.length; i++){
-    const r = rows[i];
-    if(!r || !r[1] || String(r[1]).trim() === '') continue;
-    if(r[1] === 'GLASS') break;
-    const name = String(r[1]).trim();
-    if(name === 'VN') continue;
-    const vals = {};
-    pkMonths.forEach((m, idx) => {
-      const slIdx = 2 + idx*2, tongIdx = slIdx + 1;
-      vals[m] = { sl: numFloat(r[slIdx]), tong: numFloat(r[tongIdx]) };
-    });
-    pk[name] = vals;
-  }
-
-  // find GLASS block
-  let glassRow = -1;
-  for(let i = 0; i < rows.length; i++){
-    if(rows[i][1] === 'GLASS'){ glassRow = i; break; }
-  }
-  const glassDataStart = glassRow + 3;
-  const glassMonths = ['T12.25','T01.26','T02.26','T03.26','T04.26','T05.26','T06.26'];
-  const glass = {};
-  for(let i = glassDataStart; i < rows.length; i++){
-    const r = rows[i];
-    if(!r || !r[1] || String(r[1]).trim() === '') continue;
-    const name = String(r[1]).trim();
-    if(name === 'VN') continue;
-    const vals = {};
-    glassMonths.forEach((m, idx) => {
-      const slIdx = 2 + idx*2, tongIdx = slIdx + 1;
-      vals[m] = { sl: numFloat(r[slIdx]), tong: numFloat(r[tongIdx]) };
-    });
-    glass[name] = vals;
-  }
-
-  return { pk, glass };
-}
-
-// ---- region merge helper (Long An -> Tien Giang, Hai Duong -> Thanh Hoa, Binh Duong -> Ho Chi Minh) ----
 function mergeRegionInto(regionsMap, targetName, sourceName){
   const t = regionsMap[targetName], s = regionsMap[sourceName];
   if(!t || !s) return;
@@ -4268,77 +4305,75 @@ function mergeRegionInto(regionsMap, targetName, sourceName){
   delete regionsMap[sourceName];
 }
 
-// ---- build full DATA object from the 3 parsed sheets ----
 function buildDashboardData(skus, regionsRaw, theoThang){
-  const GROUP_ORDER = ["Cable","Adapter","Bộ sạc","Tai nghe","Powerbank (SDP)","Cường lực (Dán MH)"];
+  const GROUP_ORDER = ["Cable","Adapter","Tai nghe","Powerbank (SDP)","Cường lực (Dán MH)"];
   const CL_NAME = "Cường lực (Dán MH)";
+  const MONTHS8_LABELS = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26*'];
 
-  // ---- groups aggregation ----
   const groupsAgg = {};
-  GROUP_ORDER.forEach(g => groupsAgg[g] = { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0, banTong:0 });
+  GROUP_ORDER.forEach(g => groupsAgg[g] = { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0 });
   skus.forEach(d => {
-    const g = groupsAgg[d.group] ? d.group : d.group; // group already canonicalized
-    if(!groupsAgg[g]) groupsAgg[g] = { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0, banTong:0 };
+    const g = d.group;
+    if(!groupsAgg[g]) groupsAgg[g] = { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0 };
     const gg = groupsAgg[g];
+    const ban8Sum = d.months8.reduce((s,x)=>s+x,0);
     gg.nhap2026 += d.nhap2026;
-    gg.ban2026 += d.ban2026;
+    gg.ban2026 += ban8Sum;
     gg.tonKho += d.tonKho;
     gg.siPerDaySum += d.siPerDay;
     gg.profitCum += d.profitCum;
-    gg.invValue += d.invValue2026;
-    gg.banTong += d.banTong;
+    gg.invValue += d.tonKho * d.fobLatest;
     gg.skus += 1;
   });
   const totBan = GROUP_ORDER.reduce((s,g)=>s+(groupsAgg[g]?groupsAgg[g].ban2026:0),0);
   const totProfit = GROUP_ORDER.reduce((s,g)=>s+(groupsAgg[g]?groupsAgg[g].profitCum:0),0);
   const groups = GROUP_ORDER.map(g => {
-    const v = groupsAgg[g] || { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0, banTong:0 };
+    const v = groupsAgg[g] || { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0 };
     const dos = v.siPerDaySum ? v.tonKho / v.siPerDaySum : 0;
+    const banTongSum = skus.filter(s=>s.group===g).reduce((s,x)=>s+x.banTong,0);
     return {
       name: g, skus: v.skus,
       nhap2026: v.nhap2026, ban2026: v.ban2026,
       pctVol: totBan ? Math.round((v.ban2026/totBan)*1000)/10 : 0,
       profitCum: v.profitCum,
       pctProfit: totProfit ? Math.round((v.profitCum/totProfit)*1000)/10 : 0,
-      tonKho: v.tonKho, invValue: v.invValue,
+      tonKho: v.tonKho, invValue: Math.round(v.invValue),
       dos: Math.round(dos*10)/10,
-      profitPerUnit: v.banTong ? Math.round(v.profitCum/v.banTong) : 0,
+      profitPerUnit: banTongSum ? Math.round(v.profitCum/banTongSum) : 0,
     };
   });
 
-  // ---- monthly PK vs CL (from SKU sheet, 7 months) ----
-  const monthlyPk = [0,0,0,0,0,0,0], monthlyCl = [0,0,0,0,0,0,0];
-  const groupMonthlyVol = {}; GROUP_ORDER.forEach(g => groupMonthlyVol[g] = [0,0,0,0,0,0,0]);
-  const monthlyRevPk = [0,0,0,0,0,0,0], monthlyRevCl = [0,0,0,0,0,0,0];
+  const monthlyPk = new Array(8).fill(0), monthlyCl = new Array(8).fill(0);
+  const groupMonthlyVol = {}; GROUP_ORDER.forEach(g => groupMonthlyVol[g] = new Array(8).fill(0));
+  const monthlyRevPk = new Array(8).fill(0), monthlyRevCl = new Array(8).fill(0);
   const skuMonthlyPk = [], skuMonthlyAll = [];
   const skuMonthlyRevPk = [], skuMonthlyRevCl = [];
 
   skus.forEach(d => {
     const isCl = d.group === CL_NAME;
-    const price = d.fob + d.profitUnit;
-    for(let i=0;i<7;i++){
-      const v = d.months[i] || 0;
-      if(isCl){ monthlyCl[i] += v; monthlyRevCl[i] += v*price; }
-      else { monthlyPk[i] += v; monthlyRevPk[i] += v*price; }
+    for(let i=0;i<8;i++){
+      const v = d.months8[i] || 0;
+      const rev = v * d.hubSI;
+      if(isCl){ monthlyCl[i] += v; monthlyRevCl[i] += rev; }
+      else { monthlyPk[i] += v; monthlyRevPk[i] += rev; }
       if(groupMonthlyVol[d.group]) groupMonthlyVol[d.group][i] += v;
     }
-    const total7 = d.months.reduce((s,x)=>s+x,0);
-    const revMonths = d.months.map(v => Math.round(v*price));
+    const total8 = d.months8.reduce((s,x)=>s+x,0);
+    const revMonths8 = d.months8.map(v => Math.round(v * d.hubSI));
     if(!isCl){
-      skuMonthlyPk.push({ group: d.group, sku: d.sku, months: d.months.slice(), total: total7 });
-      skuMonthlyRevPk.push({ group: d.group, sku: d.sku, months: revMonths, total: revMonths.reduce((s,x)=>s+x,0) });
+      skuMonthlyPk.push({ group: d.group, sku: d.sku, months: d.months8.slice(), total: total8 });
+      skuMonthlyRevPk.push({ group: d.group, sku: d.sku, months: revMonths8, total: revMonths8.reduce((s,x)=>s+x,0) });
     } else {
-      skuMonthlyRevCl.push({ group: d.group, sku: d.sku, months: revMonths, total: revMonths.reduce((s,x)=>s+x,0) });
+      skuMonthlyRevCl.push({ group: d.group, sku: d.sku, months: revMonths8, total: revMonths8.reduce((s,x)=>s+x,0) });
     }
     const dos = Math.round(d.dos*10)/10;
     skuMonthlyAll.push({
-      group: d.group, sku: d.sku, months: d.months.slice(), total: total7,
-      avgMonth: Math.round((total7/7)*10)/10, tonKho: d.tonKho,
+      group: d.group, sku: d.sku + (d.mau ? ' ('+d.mau+')' : ''), months: d.months8.slice(), total: total8,
+      avgMonth: Math.round((total8/8)*10)/10, tonKho: d.tonKho,
       dos, needReorder: dos < 60 && dos > 0,
     });
   });
 
-  // ---- region parsing + merge ----
   const regionsMap = {};
   regionsRaw.forEach(r => regionsMap[r.name] = r);
   mergeRegionInto(regionsMap, 'TIEN GIANG', 'LONG AN');
@@ -4357,19 +4392,14 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     name, si_hub_total: mienAgg[name].si_hub_total, target_nam: mienAgg[name].target_nam,
   }));
 
-  // ---- region monthly (T1-T6.26) + region2025 (T11.25+T12.25) from sheet3 ----
   const regionMonthly = {}, region2025 = {};
-  const monthsT1T6 = ['T01.26','T02.26','T03.26','T04.26','T05.26','T06.26'];
-  regions.forEach(r => {
-    // original (pre-merge) source names might differ post-merge; use current key name plus merged-in sources
-    regionMonthly[r.name] = [0,0,0,0,0,0];
-    region2025[r.name] = 0;
-  });
+  const monthsT1T8 = ['T01.26','T02.26','T03.26','T04.26','T05.26','T06.26','T07.26','T08.26'];
+  regions.forEach(r => { regionMonthly[r.name] = new Array(8).fill(0); region2025[r.name] = 0; });
   const mergeMap = { 'LONG AN':'TIEN GIANG', 'HAI DUONG':'THANH HOA', 'BINH DUONG':'HO CHI MINH' };
   function addSheet3ToRegion(rawName, pkVals, glassVals){
     const target = mergeMap[rawName] || rawName;
     if(!regionMonthly[target]) return;
-    monthsT1T6.forEach((m, i) => {
+    monthsT1T8.forEach((m, i) => {
       const pkT = (pkVals && pkVals[m]) ? pkVals[m].tong : 0;
       const glT = (glassVals && glassVals[m]) ? glassVals[m].tong : 0;
       regionMonthly[target][i] += pkT + glT;
@@ -4382,7 +4412,6 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   const allAreaNames = new Set([...Object.keys(theoThang.pk), ...Object.keys(theoThang.glass)]);
   allAreaNames.forEach(name => addSheet3ToRegion(name, theoThang.pk[name], theoThang.glass[name]));
 
-  // ---- national 2025 & rev14 (sum across all sheet3 rows, PK+GLASS, T11.25/T12.25) ----
   let nat1125Pk = 0, nat1225Pk = 0, nat1225Cl = 0;
   let nat1125PkVol = 0, nat1225PkVol = 0, nat1225ClVol = 0;
   Object.values(theoThang.pk).forEach(v => {
@@ -4393,15 +4422,14 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     if(v['T12.25']){ nat1225Cl += v['T12.25'].tong; nat1225ClVol += v['T12.25'].sl; }
   });
 
-  const monthlyLabels9 = ['T11.25','T12.25','T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*'];
+  const monthlyLabels9 = ['T11.25','T12.25','T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26*'];
   const monthlyPk9 = [nat1125PkVol, nat1225PkVol].concat(monthlyPk);
   const monthlyCl9 = [null, nat1225ClVol].concat(monthlyCl);
 
-  const revMonthLabels14 = ['T11.25','T12.25','T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*','T8.26','T9.26','T10.26','T11.26','T12.26'];
-  const monthlyRevPk14 = [nat1125Pk, nat1225Pk].concat(monthlyRevPk).concat([null,null,null,null,null]);
-  const monthlyRevCl14 = [null, nat1225Cl].concat(monthlyRevCl).concat([null,null,null,null,null]);
+  const revMonthLabels14 = ['T11.25','T12.25','T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26*','T9.26','T10.26','T11.26','T12.26'];
+  const monthlyRevPk14 = [nat1125Pk, nat1225Pk].concat(monthlyRevPk).concat([null,null,null,null]);
+  const monthlyRevCl14 = [null, nat1225Cl].concat(monthlyRevCl).concat([null,null,null,null]);
 
-  // ---- bonus matrix ----
   function getRate(rev){
     if(rev > 150000000) return 0.04;
     if(rev > 100000000) return 0.03;
@@ -4410,11 +4438,11 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   }
   const bonusMatrix = [];
   regions.forEach(r => {
-    const monthly = regionMonthly[r.name] || [0,0,0,0,0,0];
+    const monthly = regionMonthly[r.name] || new Array(8).fill(0);
     const monthBonuses = [];
     let total = 0;
     for(let i=0;i<12;i++){
-      if(i < 6){
+      if(i < 8){
         const rate = getRate(monthly[i]);
         if(rate){ const b = Math.round(monthly[i]*rate); monthBonuses.push(b); total += b; }
         else monthBonuses.push(0);
@@ -4424,9 +4452,6 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   });
   bonusMatrix.sort((a,b) => b.total - a.total);
 
-  // ---- totals ----
-  const monthlyRevPkSum = monthlyRevPk.reduce((s,x)=>s+x,0);
-  const monthlyRevClSum = monthlyRevCl.reduce((s,x)=>s+x,0);
   const nhap2026 = groups.reduce((s,g)=>s+g.nhap2026,0);
   const ban2026 = groups.reduce((s,g)=>s+g.ban2026,0);
   const tonKho = groups.reduce((s,g)=>s+g.tonKho,0);
@@ -4442,20 +4467,20 @@ function buildDashboardData(skus, regionsRaw, theoThang){
       pctTarget: targetNam ? Math.round((doanhThuSI/targetNam)*1000)/10 : 0,
     },
     groups,
-    monthlyLabels: ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*'],
+    monthlyLabels: MONTHS8_LABELS,
     monthlySales: monthlyPk.map((v,i)=>v+monthlyCl[i]),
     skus: skus.map(d => ({
-      group: d.group, sku: d.sku, fob: d.fob, profitUnit: d.profitUnit,
-      nhap2026: d.nhap2026, ban2026: d.ban2026, tonKho: d.tonKho,
-      dos: Math.round(d.dos*10)/10, profitCum: d.profitCum,
+      group: d.group, sku: d.sku + (d.mau ? ' ('+d.mau+')' : ''), fob: d.fobLatest, profitUnit: d.hubSI - d.fobLatest,
+      nhap2026: d.nhap2026, ban2026: d.months8.reduce((s,x)=>s+x,0), tonKho: d.tonKho,
+      dos: Math.round(d.dos*10)/10, profitCum: Math.round(d.profitCum),
     })),
     regions: regions.sort((a,b)=>b.tien_do-a.tien_do),
     mien,
     monthlyPk, monthlyCl,
-    monthLabels7: ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26'],
+    monthLabels7: MONTHS8_LABELS,
     monthlyRevPk, monthlyRevCl,
     monthlyRevTotal: monthlyRevPk.map((v,i)=>v+monthlyRevCl[i]),
-    groupMonthlyRev: {}, // not used by current renderers directly
+    groupMonthlyRev: {},
     skuMonthlyPk,
     invTable: skuMonthlyAll.map(s => ({
       group: s.group, sku: s.sku, tonKho: s.tonKho,
@@ -4473,13 +4498,15 @@ function buildDashboardData(skus, regionsRaw, theoThang){
 
 function loadLiveDashboardData(){
   return Promise.all([
-    fetchCsv(gvizUrl('Nhập & bán hàng')),
-    fetchCsv(gvizUrl('Chi tiết bán hàng khu vực')),
-    fetchCsv(gvizUrl('Chi tiết bán hàng theo tháng')),
-  ]).then(([r1, r2, r3]) => {
-    const skus = parseNhapBanSheet(r1);
-    const regionsRaw = parseKhuVucSheet(r2);
-    const theoThang = parseTheoThangSheet(r3);
+    fetchCsv(gvizUrl(TAB_FOB)),
+    fetchCsv(gvizUrl(TAB_NHAPXUAT)),
+    fetchCsv(gvizUrl(TAB_THEOTHANG)),
+    fetchCsv(gvizUrl(TAB_KHUVUC)),
+  ]).then(([fobRows, nhapXuatRows, theoThangRows, khuVucRows]) => {
+    const fobMap = parseFobSheet(fobRows);
+    const skus = parseNhapXuatSheet(nhapXuatRows, fobMap);
+    const theoThang = parseTheoThangSheet(theoThangRows);
+    const regionsRaw = parseKhuVucSheet(khuVucRows);
     if(skus.length < 10) throw new Error('Dữ liệu SKU quá ít, có thể sheet đổi cấu trúc');
     return buildDashboardData(skus, regionsRaw, theoThang);
   });
