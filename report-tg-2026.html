@@ -1,0 +1,2360 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÁO CÁO SELLOUT OPPO ĐA KÊNH — CENTER 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root {
+    --bg-primary: #f4f6f5;
+    --bg-card: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6c757d;
+    --text-on-dark: #ffffff;
+    --oppo-green: #1BB350;
+    --oppo-green-dark: #0d3320;
+    --positive: #1BB350;
+    --negative: #dc3545;
+    --gap: 16px;
+    --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+.dashboard-container { max-width: 1440px; margin:0 auto; padding: var(--gap); }
+.dashboard-header {
+    background: linear-gradient(135deg, var(--oppo-green-dark) 0%, #145c33 100%);
+    color: var(--text-on-dark);
+    padding: 24px 28px;
+    border-radius: var(--radius);
+    margin-bottom: var(--gap);
+}
+.dashboard-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.dashboard-header p { font-size: 13px; color: rgba(255,255,255,0.75); }
+.dashboard-header .badge {
+    display:inline-block; background: var(--oppo-green); color:#fff; font-size:11px;
+    padding: 3px 10px; border-radius:20px; font-weight:600; margin-top:8px;
+}
+
+.kpi-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--gap); margin-bottom: var(--gap); }
+.kpi-card {
+    background: var(--bg-card); border-radius: var(--radius); padding: 18px 22px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid var(--oppo-green);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.kpi-card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.12); transform: translateY(-2px); }
+.kpi-label { font-size:12px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; font-weight:600; }
+.kpi-value { font-size:26px; font-weight:800; color:var(--text-primary); margin-bottom:4px; }
+.kpi-sub { font-size:12.5px; color: var(--text-secondary); }
+.kpi-sub.positive { color: var(--positive); font-weight:600; }
+
+.chart-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: var(--gap); margin-bottom: var(--gap); }
+.chart-row-3 { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--gap); margin-bottom: 12px; }
+.mini-filter-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom: var(--gap); }
+.mini-filter-bar .filter-label { font-size:12px; font-weight:700; color:var(--text-secondary); }
+.chart-container { background: var(--bg-card); border-radius: var(--radius); padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: box-shadow 0.2s ease; }
+.chart-container:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
+.chart-container h3 { font-size:14.5px; font-weight:700; color: var(--text-primary); margin-bottom:4px; padding-left:11px; position:relative; }
+.chart-container h3::before { content:''; position:absolute; left:0; top:2px; bottom:2px; width:4px; border-radius:3px; background: var(--oppo-green); }
+.chart-container .chart-sub { font-size:12px; color:var(--text-secondary); margin-bottom:14px; }
+.chart-container canvas { max-height: 320px; }
+.chart-tall canvas { max-height: 380px; }
+
+.filter-bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+.filter-bar label { font-size:11.5px; color:var(--text-secondary); font-weight:600; margin-right:2px; }
+.filter-bar select, .filter-bar input { padding:7px 10px; border:1px solid #dde1e0; border-radius:6px; font-size:12.5px; background:#fafafa; }
+.filter-bar .reset-btn { padding:7px 12px; border:1px solid #dde1e0; border-radius:6px; font-size:12px; background:#fff; color:var(--text-secondary); cursor:pointer; font-weight:600; }
+.filter-bar .reset-btn:hover { background:#f0f2f1; }
+
+.multiselect { position:relative; display:inline-block; }
+.multiselect-btn { padding:7px 12px; border:1px solid #dde1e0; border-radius:6px; font-size:12.5px; background:#fafafa; cursor:pointer; min-width:110px; text-align:left; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.multiselect-btn:after { content:'▾'; color:var(--text-secondary); font-size:10px; }
+.multiselect-btn.active { border-color: var(--oppo-green); }
+.multiselect-panel { position:absolute; top:calc(100% + 4px); left:0; background:#fff; border:1px solid #dde1e0; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.12); padding:8px; z-index:20; min-width:170px; max-height:260px; overflow-y:auto; }
+.multiselect-panel.hidden { display:none; }
+.multiselect-option { display:flex; align-items:center; gap:8px; padding:5px 6px; font-size:12.5px; border-radius:4px; cursor:pointer; }
+.multiselect-option:hover { background:#f4f6f5; }
+.multiselect-option.all-option { border-bottom:1px solid #eee; margin-bottom:4px; padding-bottom:8px; font-weight:600; }
+.multiselect-option input { cursor:pointer; }
+
+.table-section { background: var(--bg-card); border-radius: var(--radius); padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: var(--gap); transition: box-shadow 0.2s ease; }
+.table-section:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
+.table-section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
+.table-section h3 { font-size:14.5px; font-weight:700; padding-left:11px; position:relative; }
+.table-section h3::before { content:''; position:absolute; left:0; top:2px; bottom:2px; width:4px; border-radius:3px; background: var(--oppo-green); }
+.table-section .chart-sub { font-size:12px; color:var(--text-secondary); }
+.table-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.table-controls input, .table-controls select { padding:7px 10px; border:1px solid #dde1e0; border-radius:6px; font-size:12.5px; background:#fafafa; }
+.table-scroll { overflow-x:auto; max-height: 640px; overflow-y:auto; border:1px solid #eee; border-radius:8px; }
+.data-table { width:100%; border-collapse:collapse; font-size:12.5px; border-radius:8px; overflow:hidden; }
+.data-table thead th {
+    position: sticky; top:0; background: #eef2ef; text-align:left; padding:11px 12px;
+    border-bottom:2px solid var(--oppo-green); color:var(--oppo-green-dark); font-weight:700; font-size:11px;
+    text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; cursor:pointer; user-select:none; z-index:1;
+}
+.data-table thead th:hover { color:#fff; background:var(--oppo-green); }
+.data-table tbody td { padding:9px 12px; border-bottom:1px solid #f2f2f2; white-space:nowrap; }
+.data-table tbody tr:hover { background:#f7fbf8; }
+.data-table tbody tr.total-row { font-weight:700; background:#eef7f0; }
+.data-table tbody tr.row-above-avg { border-left: 4px solid var(--positive); }
+.data-table tbody tr.row-below-avg { border-left: 4px solid var(--negative); }
+.data-table tbody tr.row-neutral { border-left: 4px solid #dcdfe1; }
+.data-table td.num { text-align:center; font-variant-numeric: tabular-nums; }
+.mini-month-table-wrap { overflow-x:auto; margin-top:10px; }
+.mini-month-table { border-collapse:collapse; width:100%; font-size:9px; table-layout:fixed; }
+.mini-month-table td { padding:3px 5px; text-align:center; border:1px solid #e9ece9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mini-month-table tr.mmt-month td { background:#eef2ef; font-weight:700; color:var(--oppo-green-dark); }
+.mini-month-table tr.mmt-value td { font-weight:600; }
+.mini-month-table tr.mmt-growth td.mmt-up { color:var(--positive); font-weight:700; }
+.mini-month-table tr.mmt-growth td.mmt-down { color:var(--negative); font-weight:700; }
+.mini-month-table tr.mmt-growth td.mmt-flat { color:var(--text-secondary); }
+.mini-month-table td.mmt-label { text-align:left; font-weight:700; color:var(--text-secondary); background:#fafbfa; position:sticky; left:0; font-size:8.5px; }
+#pg-month-table { table-layout:fixed; }
+#pg-month-table th, #pg-month-table td { overflow:hidden; text-overflow:ellipsis; }
+#channel-month-table th, #channel-month-table td { text-align:center; }
+.data-table th.num { text-align:center; }
+.tag { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10.5px; font-weight:700; background:#eef1f4; color:#495057; }
+.row-units td { border-bottom: none !important; padding-bottom:4px !important; }
+.row-revenue td { padding-top:2px !important; }
+.legend-inline { display:flex; gap:14px; align-items:center; font-size:11.5px; color:var(--text-secondary); margin-top:8px; flex-wrap:wrap; }
+.legend-dot { width:9px; height:9px; border-radius:2px; display:inline-block; margin-right:5px; vertical-align:middle; }
+
+.notes-section { background: #fffbeb; border:1px solid #fde68a; border-radius: var(--radius); padding:18px 22px; margin-bottom: var(--gap); font-size:12.5px; color:#78350f; }
+.notes-section h4 { font-size:13px; margin-bottom:8px; color:#78350f; }
+.notes-section ul { padding-left:18px; }
+.notes-section li { margin-bottom:5px; }
+.dashboard-footer { text-align:center; padding: 16px; font-size:11.5px; color: var(--text-secondary); }
+
+@media (max-width:900px) { .kpi-row { grid-template-columns: repeat(2,1fr); } }
+@media print { body { background:white; } .table-scroll { max-height:none; overflow:visible; } }
+</style>
+</head>
+<body>
+<div id="loading-overlay" style="position:fixed; inset:0; background:#f4f6f5; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
+    <div style="width:44px; height:44px; border:4px solid #dde1e0; border-top-color:#1BB350; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+    <div id="loading-message" style="font-size:14px; color:#495057; font-weight:600; text-align:center; max-width:360px;">Đang tải dữ liệu từ Google Sheet (CENTER)... Có thể mất vài phút nếu Apps Script đang chậm, xin đợi.</div>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+</div>
+<div id="error-overlay" style="display:none; position:fixed; inset:0; background:#fff5f5; z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:14px; padding:20px; text-align:center;">
+    <div style="font-size:32px;">⚠️</div>
+    <div id="error-message" style="font-size:14px; color:#a3350f; font-weight:600; max-width:520px;">Không tải được dữ liệu.</div>
+    <div style="font-size:12.5px; color:#6c757d; max-width:520px;">Kiểm tra: Apps Script đã Triển khai phiên bản mới nhất chưa (hỗ trợ tham số ?sheet=), và tên tab trong Google Sheet có đúng là "CENTER" không.</div>
+    <button onclick="location.reload()" style="padding:8px 18px; border-radius:6px; border:1px solid #dde1e0; background:#fff; cursor:pointer; font-weight:600;">Tải lại trang</button>
+</div>
+
+<div class="dashboard-container">
+    <header class="dashboard-header">
+        <h1>BÁO CÁO SELLOUT OPPO ĐA KÊNH — CENTER 2026</h1>
+        <p>Nguồn: Google Sheet "CENTER" (tự động cập nhật) · Toàn bộ dữ liệu là sản phẩm OPPO qua các kênh MWG / FPT / IND / Điện Máy Chợ Lớn...</p>
+        <p id="last-updated" style="margin-top:4px; font-size:11.5px;"></p>
+        <span class="badge">Sellout · Sellout Activated · Doanh thu</span>
+        <details style="margin-top:12px; font-size:11.5px; color:rgba(255,255,255,0.75);">
+            <summary style="cursor:pointer; user-select:none;">⚙️ Cài đặt nâng cao (chốt kỳ dữ liệu)</summary>
+            <div style="margin-top:8px; padding:10px 12px; background:rgba(255,255,255,0.08); border-radius:8px; max-width:520px;">
+                <p style="margin-bottom:8px;">Chốt kỳ giúp mở dashboard nhanh hơn về sau (chỉ tải phần dữ liệu mới, không tải lại từ đầu). Nên làm khoảng mỗi 6 tháng, hoặc bất cứ khi nào thấy dashboard bắt đầu chậm. Việc chốt kỳ tốn vài phút (tải toàn bộ dữ liệu 1 lần).</p>
+                <button id="create-checkpoint-btn" onclick="createCheckpoint()" style="padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.4); background:transparent; color:#fff; cursor:pointer; font-weight:600; font-size:11.5px;">Chốt kỳ ngay</button>
+                <div id="checkpoint-status" style="margin-top:6px;"></div>
+            </div>
+        </details>
+    </header>
+
+    <section class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-label">Tổng Sellout</div>
+            <div class="kpi-value" id="kpi-sellout">-</div>
+            <div class="kpi-sub" id="kpi-sellout-sub">-</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Tổng Sellout Activated</div>
+            <div class="kpi-value" id="kpi-activated">-</div>
+            <div class="kpi-sub positive" id="kpi-activated-sub">-</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Tổng doanh thu</div>
+            <div class="kpi-value" id="kpi-revenue">-</div>
+            <div class="kpi-sub" id="kpi-revenue-sub">-</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Số Shop/Đối tác</div>
+            <div class="kpi-value" id="kpi-stores">-</div>
+            <div class="kpi-sub" id="kpi-stores-sub">-</div>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>📋 Số lượng Sale &amp; PG theo Kênh theo tháng</h3>
+                <div class="chart-sub">Mỗi kênh 2 dòng: Số Sale hoạt động / Số PG hoạt động trong tháng đó (đếm số người khác nhau, không phải số lượt). Riêng <b>PG kênh MWG ở tháng gần nhất</b> lấy theo <b>Roster HR thực tế</b> (69 PG có tên + 3 vị trí "Cần Load PG" đang tuyển = 72), không phải đếm từ dữ liệu bán hàng. Cột "TB HR 2026" = trung bình số người/tháng (tính trên các tháng đã có dữ liệu). Cột cuối = Doanh thu trung bình/PG/tháng.</div>
+            </div>
+        </div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="pg-month-table">
+                <thead><tr id="pg-month-table-head"></tr></thead>
+                <tbody id="pg-month-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="chart-row">
+        <div class="chart-container chart-tall" style="grid-column: span 2;">
+            <h3>So sánh hiệu suất giữa các kênh</h3>
+            <div class="chart-sub">MWG (TGDĐ+ĐMX) / IND / KA (các kênh khác) theo tháng — lọc theo Tháng / Kênh / Sản phẩm, áp dụng cho các biểu đồ bên dưới. Nhãn % trên trục tháng là tăng trưởng so với tháng trước.</div>
+            <div class="filter-bar">
+                <label>Tháng</label>
+                <div class="multiselect" id="ms-ch-month"></div>
+                <label>Kênh</label>
+                <div class="multiselect" id="ms-ch-channel"></div>
+                <label>Tìm sản phẩm</label>
+                <input type="text" id="ch-product-search" placeholder="Nhập tên model...">
+                <button class="reset-btn" id="ch-reset">Xóa lọc</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="chart-row">
+        <div class="chart-container chart-tall">
+            <h3>Doanh số theo kênh theo tháng</h3>
+            <div class="chart-sub">Số máy Sellout — số thực, không quy đổi %.</div>
+            <canvas id="chart-channel-month-units"></canvas>
+            <div class="mini-month-table-wrap">
+                <table class="mini-month-table" id="mini-table-units"></table>
+            </div>
+        </div>
+        <div class="chart-container chart-tall">
+            <h3>Doanh thu theo kênh theo tháng</h3>
+            <div class="chart-sub">Đơn vị: đồng — số thực, không quy đổi %.</div>
+            <canvas id="chart-channel-month-revenue"></canvas>
+            <div class="mini-month-table-wrap">
+                <table class="mini-month-table" id="mini-table-revenue"></table>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Bảng Sellout &amp; Doanh thu theo kênh theo tháng</h3>
+                <div class="chart-sub">Dùng chung bộ lọc với biểu đồ phía trên. Mỗi kênh 2 hàng: Doanh số (DS) / Doanh thu (DT). % trong ngoặc là tăng giảm so với tháng trước. Bấm vào tên kênh để xem chi tiết theo từng Sale.</div>
+            </div>
+        </div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="channel-month-table">
+                <thead><tr id="channel-month-table-head"></tr></thead>
+                <tbody id="channel-month-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Cụm biểu đồ Reno / Phân khúc giá / Tỉ trọng Kênh</h3>
+                <div class="chart-sub">Lọc riêng theo Sale và Tháng, áp dụng chung cho cả 3 biểu đồ bên dưới.</div>
+            </div>
+        </div>
+        <div class="filter-bar">
+            <label>Sale</label>
+            <div class="multiselect" id="ms-reno-sale"></div>
+            <label>Tháng</label>
+            <div class="multiselect" id="ms-reno-month"></div>
+            <button class="reset-btn" id="reno-reset">Xóa lọc</button>
+        </div>
+        <div class="chart-row-3">
+            <div class="chart-container chart-tall">
+                <h3>Tỉ trọng Reno so với sản phẩm khác theo Kênh</h3>
+                <div class="chart-sub">% Sellout thuộc dòng Reno so với các dòng còn lại, theo từng kênh và tổng</div>
+                <canvas id="chart-model"></canvas>
+            </div>
+            <div class="chart-container chart-tall">
+                <h3>Tỉ trọng phân khúc giá theo từng kênh</h3>
+                <div class="chart-sub">% doanh thu mỗi kênh theo phân khúc giá (100% stacked)</div>
+                <canvas id="chart-segment-channel"></canvas>
+            </div>
+            <div class="chart-container chart-tall">
+                <h3>Tỉ trọng đóng góp theo Kênh</h3>
+                <div class="chart-sub">% doanh thu mỗi kênh đóng góp trên tổng doanh thu</div>
+                <canvas id="chart-channel-revenue-pie"></canvas>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="chart-row">
+        <div class="chart-container chart-tall" style="grid-column: span 2;">
+            <h3>Xu hướng % Hoàn thành Target theo tháng</h3>
+            <div class="chart-sub">%HT Doanh thu của từng kênh qua các tháng (đường 100% = đạt target) — cho biết đang cải thiện hay tụt lùi, thay vì chỉ nhìn 1 tháng gần nhất.</div>
+            <canvas id="chart-target-trend"></canvas>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Hiệu suất theo Level đối tác IND (OPPO CLUB)</h3>
+                <div class="chart-sub">So sánh Sellout &amp; Doanh thu trung bình mỗi đối tác giữa các cấp Level (GOLD/PLATINUM/TITAN...) — làm căn cứ xét nâng/hạ cấp dựa trên hiệu suất thực tế, không chỉ theo quy định cấp bậc.</div>
+            </div>
+        </div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="level-table">
+                <thead>
+                    <tr>
+                        <th data-field="level">Level</th>
+                        <th data-field="num_stores" class="num">Số đối tác</th>
+                        <th data-field="total_sellout" class="num">Tổng Sellout</th>
+                        <th data-field="avg_sellout" class="num">Sellout TB/đối tác</th>
+                        <th data-field="total_revenue" class="num">Tổng Doanh thu</th>
+                        <th data-field="avg_revenue" class="num">Doanh thu TB/đối tác</th>
+                    </tr>
+                </thead>
+                <tbody id="level-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Hiệu suất theo Kênh phụ (KA)</h3>
+                <div class="chart-sub">Tách kênh KA thành từng chuỗi con (FPT / Viettel / Điện Máy Chợ Lớn / CellphoneS) — khớp chính xác theo Store ID từ danh sách anh cung cấp. Bấm vào tên kênh phụ để xem chi tiết từng shop.</div>
+            </div>
+        </div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="ka-subchannel-table">
+                <thead>
+                    <tr>
+                        <th data-field="subchannel">Kênh phụ</th>
+                        <th data-field="num_stores" class="num">Số shop</th>
+                        <th data-field="total_sellout" class="num">Tổng Sellout</th>
+                        <th data-field="avg_sellout" class="num">Sellout TB/shop</th>
+                        <th data-field="total_revenue" class="num">Tổng Doanh thu</th>
+                        <th data-field="avg_revenue" class="num">Doanh thu TB/shop</th>
+                    </tr>
+                </thead>
+                <tbody id="ka-subchannel-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Hiệu suất theo Size Shop (MWG)</h3>
+                <div class="chart-sub">Size shop lấy từ dữ liệu Size Shop MWG (S/A/B/C/D). Bấm vào Size để xem chi tiết từng shop trong size đó.</div>
+            </div>
+        </div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="mwg-size-table">
+                <thead>
+                    <tr>
+                        <th data-field="size">Size</th>
+                        <th data-field="num_stores" class="num">Số shop</th>
+                        <th data-field="total_sellout" class="num">Tổng Sellout</th>
+                        <th data-field="avg_sellout" class="num">Sellout TB/shop</th>
+                        <th data-field="total_revenue" class="num">Tổng Doanh thu</th>
+                        <th data-field="avg_revenue" class="num">Doanh thu TB/shop</th>
+                    </tr>
+                </thead>
+                <tbody id="mwg-size-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Target theo Kênh &amp; theo Sale</h3>
+                <div class="chart-sub">Target Sellout, Doanh thu &amp; Reno16 Series cố định theo từng kênh (MWG/KA/IND). % HT tính theo <b>tháng gần nhất có dữ liệu</b>. Bấm vào tên kênh để xem chi tiết từng Sale trong kênh đó (target được phân bổ theo tỷ trọng đóng góp lịch sử).</div>
+            </div>
+        </div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="channel-target-table">
+                <thead>
+                    <tr>
+                        <th data-field="channel">Kênh</th>
+                        <th data-field="target_sellout" class="num">Target Sellout</th>
+                        <th data-field="actual_sellout" class="num">Sellout thực tế</th>
+                        <th data-field="pct_sellout" class="num">% HT Sellout</th>
+                        <th data-field="target_revenue" class="num">Target Doanh thu</th>
+                        <th data-field="actual_revenue" class="num">Doanh thu thực tế</th>
+                        <th data-field="pct_revenue" class="num">% HT Doanh thu</th>
+                        <th data-field="target_reno16" class="num">Target Reno16</th>
+                        <th data-field="actual_reno16" class="num">Reno16 thực tế</th>
+                        <th data-field="pct_reno16" class="num">% HT Reno16</th>
+                    </tr>
+                </thead>
+                <tbody id="channel-target-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Chi tiết theo Shop/Đối tác</h3>
+                <div class="chart-sub">Chỉ hiện shop đã có Target (Doanh thu). Vạch <span style="color:var(--negative);font-weight:700;">đỏ</span> = chưa đạt Target; <span style="color:var(--positive);font-weight:700;">xanh</span> = đã đạt/vượt Target (chỉ tính khi đã chọn Tháng). % HT Target = Doanh thu thực tế tháng đã chọn / Target. Nhấp tiêu đề cột để sắp xếp.</div>
+            </div>
+            <div class="table-controls">
+                <input type="text" id="store-search" placeholder="Tìm shop hoặc Store ID...">
+                <select id="filter-channel"><option value="all">Tất cả kênh</option></select>
+                <select id="filter-sale"><option value="all">Tất cả Sale</option></select>
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
+                <div class="multiselect" id="ms-store-month"></div>
+            </div>
+        </div>
+        <div id="target-warning-banner" style="display:none; background:#fff3e0; border:1px solid #ffcc80; border-radius:8px; padding:12px 16px; margin-bottom:12px; font-size:12.5px; color:#a3350f;"></div>
+        <div class="table-scroll">
+            <table class="data-table" id="store-table">
+                <thead>
+                    <tr>
+                        <th data-field="store">Shop/Đối tác</th>
+                        <th data-field="sale">Sale</th>
+                        <th data-field="sellout" class="num">Sellout</th>
+                        <th data-field="revenue" class="num">Doanh thu</th>
+                        <th data-field="target" class="num">Target (Doanh thu)</th>
+                        <th data-field="pct_target" class="num">% HT Target</th>
+                    </tr>
+                </thead>
+                <tbody id="store-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="notes-section">
+        <h4>Lưu ý / rủi ro về dữ liệu (Strategic Notes)</h4>
+        <ul>
+            <li><b>Sellout vs Sellout Activated</b>: Sellout là tổng số máy bán ra; Sellout Activated là số máy đã thực sự kích hoạt (thực dùng). Chênh lệch lớn giữa 2 số này ở shop nào đáng chú ý — có thể là hàng tồn kênh chưa đến tay người dùng cuối.</li>
+            <li><b>Không có mục % hoàn thành chỉ tiêu</b> — sheet nguồn chưa có cột Target; nếu anh bổ sung target theo shop, em sẽ thêm mục này.</li>
+            <li>Toàn bộ dữ liệu trong sheet CENTER là sản phẩm OPPO — không có so sánh với hãng khác như dashboard MWG.</li>
+            <li><b>% so với tháng trước</b> trên trục tháng của 2 biểu đồ kênh được tính trên tổng đang hiển thị (theo đúng bộ lọc Tháng/Kênh/Model đang chọn) — nếu bộ lọc chỉ chọn 1 tháng, sẽ không có tháng liền trước để so sánh và nhãn sẽ bỏ trống.</li>
+        </ul>
+    </section>
+
+    <footer class="dashboard-footer">Dữ liệu từ Google Sheet "Data TG 2026" — tab CENTER · Không có số liệu nào được tự tạo</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmfOzNub6Ao6jmdc6RsIu1P1162aYXfB_ib25RuVByIIWI-aqFoVvINWZMM5FAI15n/exec';
+const SHEET_NAME = 'CENTER';
+
+// Cột trong sheet CENTER (theo vị trí, 0-based)
+const COL = {
+    DATE: 0, MONTH: 1, STORE_ID: 2, STORE: 3, PG: 4, SALES: 5, CHANNEL: 6,
+    LEVEL: 7, DISTRICT: 8, PROVINCE: 9, AREA: 10, SERIES_DETAIL: 11, SERIES: 12,
+    MODEL: 13, MODEL_CODE: 14, CATEGORY: 15, COLOR: 16, PRICE: 17, SEGMENT: 18,
+    SELLOUT: 19, SELLOUT_ACTIVATED: 20, DOANH_THU: 21, TARGET: 22
+};
+const SEGMENT_HINT_ORDER = ['<3M','< 5M','3-5M','5-7M','7-10M','10-15M','15-20M','20-30M','>20M','>30M'];
+
+// Gộp 9 kênh lẻ thành 3 nhóm: MWG (TGDĐ + ĐMX) / IND / KA (tất cả còn lại)
+const MWG_CHANNEL_NAMES = new Set(['TGDĐ', 'TGDD', 'ĐMX', 'DMX']);
+function groupChannel(raw) {
+    const c = (raw || '').trim();
+    if (MWG_CHANNEL_NAMES.has(c)) return 'MWG';
+    if (c.toUpperCase() === 'IND') return 'IND';
+    return 'KA';
+}
+const CHANNEL_GROUP_ORDER = ['MWG', 'IND', 'KA'];
+const CHANNEL_GROUP_COLORS = { 'MWG': '#FFC800', 'IND': '#1BB350', 'KA': '#B0B7BD' };
+
+function segmentSortKey(seg) {
+    const idx = SEGMENT_HINT_ORDER.indexOf(seg);
+    if (idx >= 0) return idx;
+    const m = /(\d+)/.exec(seg || '');
+    return m ? parseInt(m[1], 10) + 100 : 999;
+}
+
+function num(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    const n = parseFloat(String(v).replace(/,/g, ''));
+    return isNaN(n) ? 0 : n;
+}
+function normStr(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).trim().replace(/\s+/g, ' ');
+}
+function parseMonthNum(v) {
+    const n = parseInt(v, 10);
+    return isNaN(n) ? null : n;
+}
+
+// ================= Tính toán dữ liệu từ các dòng CSV/JSON thô =================
+function computeData(rows) {
+    // Crosstab hợp nhất: mọi biểu đồ/bảng (trừ store) đều lọc+gộp từ đây
+    const crosstabMap = new Map(); // key m|channel|model|series|segment|sales -> {sellout, activated, rev}
+    const storeMap = new Map(); // key store -> {sellout, activated, rev}
+    const storeMonthMap = new Map(); // key store|month -> {sellout, activated, rev, channel}
+    const storeChannelRevMap = new Map(); // store -> {channel: rev} để chọn kênh chính
+    const storeLevelRevMap = new Map(); // store -> {level: rev} để chọn level chính
+    const storeSaleRevMap = new Map(); // store -> {sale: rev} để chọn sale chính
+    const storeTargetMap = new Map(); // store -> target (lấy giá trị lớn nhất từng thấy, nếu có cột Target ngay trong CENTER)
+    const storeIdRevMap = new Map(); // store -> {storeId: rev} để chọn Store ID chính (dùng khớp với sheet Target 2026)
+    const channelMonthSales = new Map(); // key channel|month -> Set(sale) — đếm số lượng Sale hoạt động
+    const channelMonthPgs = new Map(); // key channel|month -> Set(pg) — đếm số lượng PG hoạt động
+
+    const monthsSet = new Set();
+    const channelsSet = new Set();
+    const seriesSet = new Set();
+    const segmentsSet = new Set();
+    const modelsSet = new Set();
+    const salesSet = new Set();
+    const seriesDetailMap = new Map(); // key m|channel|seriesDetail -> {sellout, rev}
+
+    let totalSellout = 0, totalActivated = 0, totalRevenue = 0;
+
+    for (const row of rows) {
+        if (!row || row.length < 5) continue;
+        const dateStr = row[COL.DATE];
+        if (!dateStr) continue;
+        const month = parseMonthNum(row[COL.MONTH]);
+        const store = row[COL.STORE] || '(Không rõ)';
+        const channel = groupChannel(row[COL.CHANNEL]);
+        const series = row[COL.SERIES] || '(Không rõ)';
+        const seriesDetail = row[COL.SERIES_DETAIL] || '(Không rõ)';
+        const model = row[COL.MODEL] || '(Không rõ)';
+        const level = row[COL.LEVEL] || '(Không rõ)';
+        const segment = row[COL.SEGMENT] || '(Không rõ)';
+        const sales = normStr(row[COL.SALES]) || '(Không rõ)';
+        const pg = normStr(row[COL.PG]) || '(Không rõ)';
+        const storeId = row[COL.STORE_ID] !== undefined && row[COL.STORE_ID] !== '' ? String(row[COL.STORE_ID]).trim() : '';
+        const sellout = num(row[COL.SELLOUT]);
+        const activated = num(row[COL.SELLOUT_ACTIVATED]);
+        const revenue = num(row[COL.DOANH_THU]);
+        const targetVal = num(row[COL.TARGET]);
+
+        if (month) monthsSet.add(month);
+        channelsSet.add(channel);
+        seriesSet.add(series);
+        segmentsSet.add(segment);
+        modelsSet.add(model);
+        salesSet.add(sales);
+
+        totalSellout += sellout;
+        totalActivated += activated;
+        totalRevenue += revenue;
+
+        if (month) {
+            const key = month + '|' + channel + '|' + model + '|' + series + '|' + segment + '|' + sales;
+            let rec = crosstabMap.get(key);
+            if (!rec) { rec = { sellout: 0, activated: 0, rev: 0 }; crosstabMap.set(key, rec); }
+            rec.sellout += sellout; rec.activated += activated; rec.rev += revenue;
+
+            const cmKey = channel + '|' + month;
+            if (sales && sales !== '(Không rõ)') {
+                if (!channelMonthSales.has(cmKey)) channelMonthSales.set(cmKey, new Set());
+                channelMonthSales.get(cmKey).add(sales);
+            }
+            if (pg && pg !== '(Không rõ)') {
+                if (!channelMonthPgs.has(cmKey)) channelMonthPgs.set(cmKey, new Set());
+                channelMonthPgs.get(cmKey).add(pg);
+            }
+        }
+
+        if (!storeMap.has(store)) storeMap.set(store, { sellout: 0, activated: 0, rev: 0 });
+        const st = storeMap.get(store);
+        st.sellout += sellout; st.activated += activated; st.rev += revenue;
+
+        if (!storeChannelRevMap.has(store)) storeChannelRevMap.set(store, {});
+        const scr = storeChannelRevMap.get(store); scr[channel] = (scr[channel]||0) + revenue;
+        if (!storeLevelRevMap.has(store)) storeLevelRevMap.set(store, {});
+        const slr = storeLevelRevMap.get(store); slr[level] = (slr[level]||0) + revenue;
+        if (!storeSaleRevMap.has(store)) storeSaleRevMap.set(store, {});
+        const ssr = storeSaleRevMap.get(store); ssr[sales] = (ssr[sales]||0) + revenue;
+        if (targetVal > 0) storeTargetMap.set(store, Math.max(storeTargetMap.get(store) || 0, targetVal));
+        if (month) {
+            const sdKey = month + '|' + channel + '|' + seriesDetail + '|' + sales;
+            let sdRec = seriesDetailMap.get(sdKey);
+            if (!sdRec) { sdRec = { sellout: 0, rev: 0 }; seriesDetailMap.set(sdKey, sdRec); }
+            sdRec.sellout += sellout; sdRec.rev += revenue;
+        }
+        if (storeId) {
+            if (!storeIdRevMap.has(store)) storeIdRevMap.set(store, {});
+            const sir = storeIdRevMap.get(store); sir[storeId] = (sir[storeId]||0) + revenue;
+        }
+
+        if (month) {
+            const smKey = store + '|' + month;
+            if (!storeMonthMap.has(smKey)) storeMonthMap.set(smKey, { channel, sellout: 0, activated: 0, rev: 0 });
+            const sm = storeMonthMap.get(smKey);
+            sm.sellout += sellout; sm.activated += activated; sm.rev += revenue;
+        }
+    }
+
+    function argmaxKey(obj) {
+        let best = null, bestVal = -1;
+        Object.entries(obj).forEach(([k,v]) => { if (v > bestVal) { bestVal = v; best = k; } });
+        return best;
+    }
+
+    const monthLabels = Array.from(monthsSet).sort((a, b) => a - b).map(m => 'T' + m);
+    const monthsSorted = Array.from(monthsSet).sort((a, b) => a - b);
+    const channelsList = CHANNEL_GROUP_ORDER.filter(c => channelsSet.has(c));
+    const seriesList = Array.from(seriesSet).sort();
+    const segmentsList = Array.from(segmentsSet).sort((a, b) => segmentSortKey(a) - segmentSortKey(b));
+    const modelsList = Array.from(modelsSet).sort();
+    const salesList = Array.from(salesSet).sort();
+
+    const crosstab = [];
+    crosstabMap.forEach((v, key) => {
+        const [m, channel, model, series, segment, sales] = key.split('|');
+        crosstab.push({ m: parseInt(m, 10), channel, model, series, segment, sales, sellout: v.sellout, activated: v.activated, rev: v.rev });
+    });
+
+    const storeRows = [];
+    storeMap.forEach((v, store) => {
+        storeRows.push({
+            store,
+            channel: argmaxKey(storeChannelRevMap.get(store) || {}) || '(Không rõ)',
+            level: argmaxKey(storeLevelRevMap.get(store) || {}) || '(Không rõ)',
+            sale: argmaxKey(storeSaleRevMap.get(store) || {}) || '(Không rõ)',
+            store_id: argmaxKey(storeIdRevMap.get(store) || {}) || '',
+            target: storeTargetMap.get(store) || 0,
+            sellout: v.sellout, activated: v.activated, revenue: v.rev,
+            activation_rate: v.sellout ? +(v.activated / v.sellout * 100).toFixed(1) : 0,
+        });
+    });
+
+    const storeMonthLookup = {};
+    storeMonthMap.forEach((v, key) => {
+        const [store, month] = key.split('|');
+        if (!storeMonthLookup[store]) storeMonthLookup[store] = {};
+        storeMonthLookup[store][month] = { sellout: v.sellout, activated: v.activated, rev: v.rev, channel: v.channel };
+    });
+
+    const seriesDetailCrosstab = [];
+    seriesDetailMap.forEach((v, key) => {
+        const [m, channel, seriesDetail, sales] = key.split('|');
+        seriesDetailCrosstab.push({ m: parseInt(m, 10), channel, series_detail: seriesDetail, sales, sellout: v.sellout, rev: v.rev });
+    });
+
+    // channel_month_headcount: { channel: { month: { sales: [...names], pgs: [...names] } } } — dùng để đếm số lượng Sale/PG hoạt động
+    const channelMonthHeadcount = {};
+    channelMonthSales.forEach((set, key) => {
+        const [channel, month] = key.split('|');
+        if (!channelMonthHeadcount[channel]) channelMonthHeadcount[channel] = {};
+        if (!channelMonthHeadcount[channel][month]) channelMonthHeadcount[channel][month] = { sales: [], pgs: [] };
+        channelMonthHeadcount[channel][month].sales = Array.from(set);
+    });
+    channelMonthPgs.forEach((set, key) => {
+        const [channel, month] = key.split('|');
+        if (!channelMonthHeadcount[channel]) channelMonthHeadcount[channel] = {};
+        if (!channelMonthHeadcount[channel][month]) channelMonthHeadcount[channel][month] = { sales: [], pgs: [] };
+        channelMonthHeadcount[channel][month].pgs = Array.from(set);
+    });
+
+    return {
+        kpi: {
+            totalSellout, totalActivated, totalRevenue,
+            activationRate: totalSellout ? +(totalActivated / totalSellout * 100).toFixed(1) : 0,
+            numStores: storeMap.size,
+            numChannels: channelsList.length,
+        },
+        month_labels: monthLabels,
+        months_sorted: monthsSorted,
+        channels_list: channelsList,
+        series_list: seriesList,
+        segments_list: segmentsList,
+        models_list: modelsList,
+        sales_list: salesList,
+        crosstab: crosstab,
+        series_detail_crosstab: seriesDetailCrosstab,
+        store_rows: storeRows,
+        store_month_lookup: storeMonthLookup,
+        channel_month_headcount: channelMonthHeadcount,
+    };
+}
+
+// ================= Fetch dữ liệu qua Apps Script (phân trang, thử lại khi lỗi) =================
+function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+async function fetchJSON(url, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs || 60000);
+    try {
+        const resp = await fetch(url, { cache: 'no-store', signal: controller.signal });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return await resp.json();
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function fetchRowsFromAppsScript(baseUrl, sheetName, startRow) {
+    const msgEl = document.getElementById('loading-message');
+    const CHUNK_SIZE = 15000;
+    const MAX_CONCURRENT = 2;
+    const MAX_RETRIES = 3;
+    const sheetParam = 'sheet=' + encodeURIComponent(sheetName);
+    startRow = startRow || 1;
+
+    if (msgEl) msgEl.textContent = 'Đang kiểm tra kích thước dữ liệu...';
+    let info;
+    try {
+        info = await fetchJSON(baseUrl + '?' + sheetParam + '&mode=info', 60000);
+    } catch (err) {
+        throw new Error('Không gọi được Apps Script (bước info): ' + err.message);
+    }
+    if (info && info.error) throw new Error('Apps Script báo lỗi: ' + info.error);
+    const lastRow = info.lastRow;
+    if (!lastRow || lastRow < 2) throw new Error('Sheet "' + sheetName + '" không có dữ liệu (lastRow=' + lastRow + ')');
+
+    if (startRow > lastRow) {
+        return { rows: [], lastRow };
+    }
+
+    const chunks = [];
+    for (let start = startRow; start <= lastRow; start += CHUNK_SIZE) {
+        const count = Math.min(CHUNK_SIZE, lastRow - start + 1);
+        chunks.push({ start, count });
+    }
+
+    let loadedCount = 0;
+    const results = new Array(chunks.length);
+    if (msgEl) msgEl.textContent = 'Đang tải dữ liệu (0/' + chunks.length + ' phần)...';
+
+    async function fetchOneChunkAttempt(ch) {
+        const url = baseUrl + '?' + sheetParam + '&mode=data&start=' + ch.start + '&count=' + ch.count;
+        const part = await fetchJSON(url, 180000);
+        if (part && !Array.isArray(part) && part.error) throw new Error('Apps Script báo lỗi: ' + part.error);
+        if (!Array.isArray(part)) throw new Error('sai định dạng (không phải mảng): ' + JSON.stringify(part).slice(0, 200));
+        return part;
+    }
+
+    async function fetchOneChunk(ch, idx) {
+        let lastErr = null;
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                const part = await fetchOneChunkAttempt(ch);
+                results[idx] = part;
+                loadedCount++;
+                if (msgEl) msgEl.textContent = 'Đang tải dữ liệu (' + loadedCount + '/' + chunks.length + ' phần)...';
+                return;
+            } catch (err) {
+                lastErr = err;
+                if (attempt < MAX_RETRIES) {
+                    if (msgEl) msgEl.textContent = 'Phần ' + (idx + 1) + '/' + chunks.length + ' lỗi, đang thử lại (lần ' + (attempt + 1) + ')...';
+                    await sleep(1500 * attempt);
+                }
+            }
+        }
+        throw new Error('Lỗi tải phần ' + (idx + 1) + '/' + chunks.length + ' (dòng ' + ch.start + '-' + (ch.start + ch.count - 1) + ') sau ' + MAX_RETRIES + ' lần thử: ' + lastErr.message);
+    }
+
+    for (let i = 0; i < chunks.length; i += MAX_CONCURRENT) {
+        const batch = chunks.slice(i, i + MAX_CONCURRENT);
+        await Promise.all(batch.map((ch, j) => fetchOneChunk(ch, i + j)));
+        if (i + MAX_CONCURRENT < chunks.length) await sleep(400);
+    }
+
+    if (msgEl) msgEl.textContent = 'Đang xử lý dữ liệu...';
+    const allRows = [];
+    for (const part of results) for (const row of part) allRows.push(row);
+    return { rows: allRows, lastRow };
+}
+
+const TARGET_SHEET_NAME = 'Target 2026';
+
+async function fetchTargetMap(baseUrl) {
+    // Sheet Target nhỏ (theo shop), không cần phân trang — thử tải, nếu sheet chưa tồn tại thì bỏ qua êm ái
+    // Cấu trúc Target 2026: cột B (index 1) = Store ID, cột C (index 2) = Target doanh thu
+    try {
+        const { rows } = await fetchRowsFromAppsScript(baseUrl, TARGET_SHEET_NAME);
+        rows.shift(); // bỏ header
+        const map = {};
+        rows.forEach(r => {
+            if (!r || r.length < 3) return;
+            const storeId = r[1] !== undefined && r[1] !== '' ? String(r[1]).trim() : '';
+            const target = num(r[2]);
+            if (storeId) map[storeId] = target;
+        });
+        return map;
+    } catch (err) {
+        console.warn('Không tải được sheet Target 2026 (sẽ bỏ qua, Target hiện "-"):', err.message);
+        return {};
+    }
+}
+
+// ================= Gộp dữ liệu checkpoint (đã tính sẵn) + dữ liệu mới (vừa tính) =================
+function mergeFinalData(a, b) {
+    const months_sorted = Array.from(new Set([...a.months_sorted, ...b.months_sorted])).sort((x,y)=>x-y);
+    const month_labels = months_sorted.map(m => 'T'+m);
+
+    // --- crosstab & series_detail_crosstab: nối trực tiếp (mỗi bản ghi độc lập, phần render tự cộng dồn khi lọc) ---
+    const crosstab = a.crosstab.concat(b.crosstab);
+    const series_detail_crosstab = a.series_detail_crosstab.concat(b.series_detail_crosstab);
+
+    // --- store_rows: gộp theo tên store ---
+    const storeMap = new Map();
+    function ingestStores(src) {
+        src.store_rows.forEach(s => {
+            let cur = storeMap.get(s.store);
+            if (!cur) {
+                cur = { store: s.store, channel: s.channel, level: s.level, sale: s.sale, store_id: s.store_id, target: 0, sellout: 0, activated: 0, revenue: 0 };
+                storeMap.set(s.store, cur);
+            }
+            cur.channel = (s.channel && s.channel !== '(Không rõ)') ? s.channel : cur.channel;
+            cur.level = (s.level && s.level !== '(Không rõ)') ? s.level : cur.level;
+            cur.sale = (s.sale && s.sale !== '(Không rõ)') ? s.sale : cur.sale;
+            cur.store_id = s.store_id || cur.store_id;
+            cur.sellout += s.sellout || 0;
+            cur.activated += s.activated || 0;
+            cur.revenue += s.revenue || 0;
+        });
+    }
+    ingestStores(a);
+    ingestStores(b);
+    const store_rows = Array.from(storeMap.values()).map(s => {
+        s.activation_rate = s.sellout ? +(s.activated / s.sellout * 100).toFixed(1) : 0;
+        return s;
+    });
+
+    // --- store_month_lookup: gộp theo store rồi theo tháng ---
+    const store_month_lookup = {};
+    function ingestStoreMonth(src) {
+        Object.keys(src.store_month_lookup || {}).forEach(store => {
+            if (!store_month_lookup[store]) store_month_lookup[store] = {};
+            Object.keys(src.store_month_lookup[store]).forEach(m => {
+                const cell = src.store_month_lookup[store][m];
+                if (!store_month_lookup[store][m]) store_month_lookup[store][m] = { sellout:0, activated:0, rev:0, channel: cell.channel };
+                store_month_lookup[store][m].sellout += cell.sellout || 0;
+                store_month_lookup[store][m].activated += cell.activated || 0;
+                store_month_lookup[store][m].rev += cell.rev || 0;
+                if (cell.channel && cell.channel !== '(Không rõ)') store_month_lookup[store][m].channel = cell.channel;
+            });
+        });
+    }
+    ingestStoreMonth(a);
+    ingestStoreMonth(b);
+
+    // --- channel_month_headcount: gộp theo kênh rồi theo tháng, HỢP (union) danh sách tên để không đếm trùng người ---
+    const channel_month_headcount = {};
+    function ingestHeadcount(src) {
+        Object.keys(src.channel_month_headcount || {}).forEach(channel => {
+            if (!channel_month_headcount[channel]) channel_month_headcount[channel] = {};
+            Object.keys(src.channel_month_headcount[channel]).forEach(m => {
+                const cell = src.channel_month_headcount[channel][m];
+                if (!channel_month_headcount[channel][m]) channel_month_headcount[channel][m] = { sales: [], pgs: [] };
+                channel_month_headcount[channel][m].sales = Array.from(new Set([...channel_month_headcount[channel][m].sales, ...(cell.sales||[])]));
+                channel_month_headcount[channel][m].pgs = Array.from(new Set([...channel_month_headcount[channel][m].pgs, ...(cell.pgs||[])]));
+            });
+        });
+    }
+    ingestHeadcount(a);
+    ingestHeadcount(b);
+
+    // --- danh sách phân loại: hợp cả 2 bên ---
+    const channelsSetUnion = new Set([...(a.channels_list||[]), ...(b.channels_list||[])]);
+    const channels_list = CHANNEL_GROUP_ORDER.filter(c => channelsSetUnion.has(c));
+    const series_list = Array.from(new Set([...(a.series_list||[]), ...(b.series_list||[])])).sort();
+    const segments_list = Array.from(new Set([...a.segments_list, ...b.segments_list])).sort((x,y)=>segmentSortKey(x)-segmentSortKey(y));
+    const models_list = Array.from(new Set([...(a.models_list||[]), ...(b.models_list||[])])).sort();
+    const sales_list = Array.from(new Set([...a.sales_list, ...b.sales_list])).sort();
+
+    // --- kpi: tính lại từ dữ liệu đã gộp cho chắc chắn đúng ---
+    let totalSellout = 0, totalActivated = 0, totalRevenue = 0;
+    crosstab.forEach(rec => { totalSellout += rec.sellout; totalActivated += rec.activated; totalRevenue += rec.rev; });
+
+    return {
+        kpi: {
+            totalSellout, totalActivated, totalRevenue,
+            activationRate: totalSellout ? +(totalActivated/totalSellout*100).toFixed(1) : 0,
+            numStores: store_rows.length,
+            numChannels: channels_list.length,
+        },
+        month_labels, months_sorted,
+        channels_list, series_list, segments_list, models_list, sales_list,
+        crosstab, series_detail_crosstab,
+        store_rows, store_month_lookup, channel_month_headcount,
+    };
+}
+
+async function loadAndRender() {
+    const loadingEl = document.getElementById('loading-overlay');
+    const errorEl = document.getElementById('error-overlay');
+    const msgEl = document.getElementById('loading-message');
+    try {
+        // Bước 1: thử tải checkpoint đã chốt (nếu có)
+        if (msgEl) msgEl.textContent = 'Đang kiểm tra checkpoint đã lưu...';
+        let checkpoint = null;
+        try {
+            const cp = await fetchJSON(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME) + '&mode=checkpoint', 30000);
+            if (cp && cp.exists !== false && cp.data) checkpoint = cp;
+        } catch (err) {
+            console.warn('Không tải được checkpoint (sẽ tải toàn bộ dữ liệu):', err.message);
+        }
+
+        const startRow = checkpoint ? (checkpoint.lastProcessedRow + 1) : 1;
+        const fetchResult = await fetchRowsFromAppsScript(APPS_SCRIPT_URL, SHEET_NAME, startRow);
+        let rows = fetchResult.rows;
+        if (!checkpoint) rows = rows.slice(1); // bỏ dòng header nếu tải từ đầu
+
+        let DATA;
+        let sourceNote;
+        if (checkpoint) {
+            const deltaData = rows.length ? computeData(rows) : null;
+            DATA = deltaData ? mergeFinalData(checkpoint.data, deltaData) : checkpoint.data;
+            sourceNote = 'Checkpoint (' + new Date(checkpoint.savedAt).toLocaleDateString('vi-VN') + ') + ' + rows.length.toLocaleString('vi-VN') + ' dòng mới';
+        } else {
+            DATA = computeData(rows);
+            sourceNote = rows.length.toLocaleString('vi-VN') + ' dòng (chưa có checkpoint)';
+        }
+        window.__lastFetchInfo = { checkpoint, latestLastRow: fetchResult.lastRow };
+
+        // Nối Target theo Store ID từ sheet Target 2026 — luôn lấy mới, áp lên DATA đã gộp cuối cùng
+        if (msgEl) msgEl.textContent = 'Đang tải Target theo shop...';
+        const targetByStoreId = await fetchTargetMap(APPS_SCRIPT_URL);
+        let matchedCount = 0;
+        DATA.store_rows.forEach(r => {
+            if (r.store_id && targetByStoreId[r.store_id] !== undefined) {
+                r.target = targetByStoreId[r.store_id];
+                if (r.target > 0) matchedCount++;
+            } else {
+                r.target = 0;
+            }
+        });
+        DATA.debug_target = {
+            targetSheetRowCount: Object.keys(targetByStoreId).length,
+            matchedCount,
+            sampleTargetIds: Object.keys(targetByStoreId).slice(0, 5),
+            sampleStoreIds: DATA.store_rows.slice(0, 5).map(r => r.store_id),
+        };
+        console.log('Target debug:', DATA.debug_target);
+
+        if (loadingEl) loadingEl.style.display = 'none';
+        const updEl = document.getElementById('last-updated');
+        if (updEl) updEl.textContent = 'Dữ liệu tải lúc: ' + new Date().toLocaleString('vi-VN') + ' · ' + sourceNote;
+        initDashboard(DATA);
+    } catch (err) {
+        console.error('Lỗi tải/tính dashboard:', err);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) {
+            errorEl.style.display = 'flex';
+            const msgEl = document.getElementById('error-message');
+            if (msgEl) msgEl.textContent = 'Không tải được dữ liệu: ' + err.message;
+        }
+    }
+}
+
+// ================= Khởi tạo giao diện sau khi có DATA =================
+function initDashboard(DATA) {
+
+// Cố định sẵn khung 12 tháng cho mọi bảng/biểu đồ theo tháng — tháng nào chưa có dữ liệu sẽ tự hiện 0, khi có dữ liệu mới sẽ tự điền vào đúng cột, không cần đổi bố cục
+const ALL_12_MONTHS = Array.from({length: 12}, (_, i) => i + 1);
+// Biên chế PG kênh MWG theo file HR mới nhất anh cung cấp (69 PG có tên thật + 3 vị trí "Cần Load PG" đang tuyển) — thay cho số đếm từ dữ liệu bán hàng, chỉ áp dụng cho THÁNG MỚI NHẤT (Roster không có lịch sử theo tháng)
+const MWG_HR_PG_ROSTER_TOTAL = 72;
+// Size Shop MWG (S/A/B/C/D) khớp theo Store ID thật (khớp với Target 2026 / store_id trong CENTER) — ghép từ Partner ID -> Store ID -> Size đã có ở dashboard MWG
+const MWG_STORE_ID_TO_SIZE = {"789": "S", "782": "S", "791": "S", "783": "S", "7742": "S", "790": "S", "11545": "S", "12325": "S", "12245": "S", "10169": "S", "29770": "A", "531": "S", "6835": "A", "17677": "B", "18662": "B", "12888": "A", "11763": "A", "16807": "A", "11759": "A", "29695": "A", "17019": "B", "13561": "A", "792": "A", "18290": "B", "12184": "A", "11947": "B", "16504": "C", "28260": "B", "11666": "C", "29608": "B", "24688": "C", "14735": "A", "19516": "B", "10170": "B", "13560": "B", "22454": "C", "21369": "C", "20426": "C", "11762": "D", "30228": "C", "28262": "D", "21489": "B", "28376": "C", "24678": "C", "22287": "C", "14087": "C", "19589": "C", "28722": "C", "31168": "C", "16505": "C", "20837": "D", "13162": "C", "14086": "B", "21486": "D", "18666": "C", "21295": "C", "28807": "C", "22292": "C", "30972": "C", "17505": "C", "29815": "C", "21252": "D", "22000": "C", "29548": "D", "29162": "C", "20235": "D", "18438": "D", "29450": "C", "20751": "C", "28916": "D", "21702": "D", "22486": "D", "28424": "C", "28464": "C", "28263": "D", "29633": "D", "24952": "D", "22026": "D", "28249": "D", "28932": "D", "29697": "D", "30036": "D", "28297": "D", "16924": "D", "30413": "D", "28978": "D", "29788": "D", "28860": "D", "28152": "D", "29618": "D", "28782": "D", "30119": "D", "28401": "D", "28402": "D", "28434": "D", "31191": "D", "30067": "D", "28433": "D", "28151": "D", "28813": "D", "28746": "D", "28723": "D", "28516": "D", "28814": "D", "28377": "D", "28250": "D", "28386": "D", "30166": "D", "29012": "D", "30235": "D", "28912": "D", "30334": "D", "30387": "D", "30238": "D", "28430": "D", "28651": "D", "28308": "D", "30847": "D", "28718": "D", "28432": "D", "29955": "D", "28759": "D", "28720": "D", "28400": "D"};
+// Kênh phụ KA (FPT/Viettel/Điện Máy Chợ Lớn/CellphoneS) khớp theo Store ID thật — lấy từ sheet "KENH KA" anh cung cấp, chính xác hơn hẳn cách đoán tiền tố tên Shop
+const KA_STORE_ID_TO_SUBCHANNEL = {"11023": "ĐIỆN MÁY CHỢ LỚN", "9785": "ĐIỆN MÁY CHỢ LỚN", "13063": "ĐIỆN MÁY CHỢ LỚN", "17501": "VIETTEL", "24118": "FPT", "31333": "CELLPHONES", "1274": "VIETTEL", "8617": "VIETTEL", "11022": "FPT", "11761": "VIETTEL", "22085": "FPT", "30484": "CELLPHONES", "35155": "CELLPHONES", "16546": "FPT", "1300": "VIETTEL", "22002": "ĐIỆN MÁY CHỢ LỚN", "31353": "FPT", "2319": "FPT", "29383": "FPT", "11183": "FPT", "22003": "ĐIỆN MÁY CHỢ LỚN", "30546": "FPT", "21871": "FPT", "22666": "FPT", "22819": "VIETTEL"};
+const ALL_12_MONTH_LABELS = ALL_12_MONTHS.map(m => 'T' + m);
+
+const CHANNEL_GROUP_COLORS_JS = { 'MWG': '#FFC800', 'IND': '#1BB350', 'KA': '#B0B7BD' };
+
+// Target cố định theo kênh — anh cung cấp, dùng làm gốc để phân bổ xuống từng Sale
+const CHANNEL_TARGETS = {
+    'MWG': { sellout: 3500, revenue: 30000000000 },
+    'KA':  { sellout: 600,  revenue: 4000000000 },
+    'IND': { sellout: 2000, revenue: 12000000000 },
+};
+// Target theo sản phẩm cụ thể (nhận diện qua cột "Series Detail", ví dụ "Reno16 series")
+const PRODUCT_TARGETS = {
+    'reno16': { label: 'Reno16 Series', MWG: 1100, KA: 125, IND: 275 },
+};
+const channelColor = CHANNEL_GROUP_COLORS_JS;
+
+function fmtVND(v) {
+    if (Math.abs(v) >= 1e9) return (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}) + ' tỷ';
+    if (Math.abs(v) >= 1e6) return (v/1e6).toLocaleString('vi-VN', {maximumFractionDigits:1}) + ' tr';
+    return v.toLocaleString('vi-VN');
+}
+function fmtInt(v) { return Math.round(v).toLocaleString('vi-VN'); }
+function fmtPct(v) { return v.toFixed(1) + '%'; }
+
+// ================= Số lượng Sale & PG theo Kênh theo tháng =================
+function renderPgMonthTable() {
+    const months = ALL_12_MONTHS;
+    const activeMonths = DATA.months_sorted.length ? DATA.months_sorted : months; // chỉ tính trung bình trên các tháng THỰC SỰ có dữ liệu
+    const numActiveMonths = activeMonths.length || 1;
+
+    const headRow = document.getElementById('pg-month-table-head');
+    let colgroupHtml = '<colgroup><col style="width:60px;"><col style="width:60px;">' + months.map(()=>'<col>').join('') + '<col style="width:80px;"><col style="width:140px;"></colgroup>';
+    const theadEl = headRow.closest('thead');
+    let existingColgroup = theadEl.parentElement.querySelector('colgroup');
+    if (existingColgroup) existingColgroup.remove();
+    theadEl.insertAdjacentHTML('beforebegin', colgroupHtml);
+    let headHtml = '<th data-field="channel">Kênh</th><th data-field="hr">HR</th>';
+    months.forEach(m => { headHtml += `<th class="num">T${m}</th>`; });
+    headHtml += '<th class="num">TB HR 2026</th><th class="num">Doanh thu TB/người/tháng</th>';
+    headRow.innerHTML = headHtml;
+
+    const channels = DATA.channels_list || [];
+    const hc = DATA.channel_month_headcount || {};
+
+    // Tổng doanh thu mỗi kênh (chỉ tính trên các tháng có dữ liệu, để chia trung bình cho đúng)
+    const channelRevTotal = {};
+    DATA.crosstab.forEach(rec => {
+        if (!activeMonths.includes(rec.m)) return;
+        channelRevTotal[rec.channel] = (channelRevTotal[rec.channel] || 0) + rec.rev;
+    });
+
+    const rows = channels.map(channel => {
+        const channelData = hc[channel] || {};
+        const salesCountByMonth = months.map(m => (channelData[m] && channelData[m].sales) ? channelData[m].sales.length : 0);
+        let pgCountByMonth = months.map(m => (channelData[m] && channelData[m].pgs) ? channelData[m].pgs.length : 0);
+
+        const avgSales = activeMonths.reduce((s,m) => s + ((channelData[m] && channelData[m].sales) ? channelData[m].sales.length : 0), 0) / numActiveMonths;
+        let pgSumForAvg = activeMonths.reduce((s,m) => s + ((channelData[m] && channelData[m].pgs) ? channelData[m].pgs.length : 0), 0);
+        let avgPgs = pgSumForAvg / numActiveMonths;
+
+        // Kênh MWG: thay số PG của THÁNG GẦN NHẤT bằng số liệu Roster HR thực tế (69 PG có tên + 3 vị trí đang tuyển = 72) thay vì đếm từ dữ liệu bán hàng
+        if (channel === 'MWG' && activeMonths.length) {
+            const latestM = activeMonths[activeMonths.length - 1];
+            const latestIdx = months.indexOf(latestM);
+            const oldLatestVal = pgCountByMonth[latestIdx] || 0;
+            if (latestIdx >= 0) pgCountByMonth[latestIdx] = MWG_HR_PG_ROSTER_TOTAL;
+            pgSumForAvg = pgSumForAvg - oldLatestVal + MWG_HR_PG_ROSTER_TOTAL;
+            avgPgs = pgSumForAvg / numActiveMonths;
+        }
+
+        const avgMonthlyRev = (channelRevTotal[channel] || 0) / numActiveMonths;
+        const revPerSale = avgSales > 0 ? avgMonthlyRev / avgSales : 0;
+        const revPerPg = avgPgs > 0 ? avgMonthlyRev / avgPgs : 0;
+
+        return { channel, salesCountByMonth, pgCountByMonth, avgSales, avgPgs, revPerSale, revPerPg };
+    });
+
+    const tbody = document.getElementById('pg-month-table-body');
+    let bodyHtml = rows.map(r => {
+        return `<tr class="row-units">
+            <td rowspan="2" style="vertical-align:middle;"><span class="tag">${r.channel}</span></td>
+            <td><span class="metric-tag units" style="display:inline-block;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:4px;background:#e6f0ff;color:#1a4fa0;">SALE</span></td>
+            ${r.salesCountByMonth.map(v => `<td class="num">${v}</td>`).join('')}
+            <td class="num"><b>${r.avgSales.toFixed(1)}</b></td>
+            <td class="num">${fmtVND(r.revPerSale)} đ</td>
+        </tr>
+        <tr class="row-revenue">
+            <td><span class="metric-tag revenue" style="display:inline-block;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:4px;background:#e6f7ec;color:var(--oppo-green-dark);">PG</span></td>
+            ${r.pgCountByMonth.map(v => `<td class="num">${v}</td>`).join('')}
+            <td class="num"><b>${r.avgPgs.toFixed(1)}</b></td>
+            <td class="num">${fmtVND(r.revPerPg)} đ</td>
+        </tr>`;
+    }).join('');
+
+    if (!rows.length) {
+        bodyHtml = `<tr><td colspan="${months.length+4}" style="text-align:center; color:var(--text-secondary); padding:16px;">Không có dữ liệu.</td></tr>`;
+    }
+    tbody.innerHTML = bodyHtml;
+}
+renderPgMonthTable();
+
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', { display: false });
+
+// ================= Plugin dùng chung: hiện TỔNG trên đầu mỗi cột (áp dụng cho mọi biểu đồ cột chồng) =================
+const totalLabelPlugin = {
+    id: 'totalLabel',
+    afterDatasetsDraw(chart, args, opts) {
+        if (!opts || !opts.enabled) return;
+        const { ctx } = chart;
+        const labels = chart.data.labels || [];
+        const formatter = opts.formatter || (v => Math.round(v).toLocaleString('vi-VN'));
+        labels.forEach((label, index) => {
+            let summedTotal = 0;
+            let topY = Infinity;
+            let x = null;
+            chart.data.datasets.forEach((ds, dsIndex) => {
+                if (!chart.isDatasetVisible(dsIndex)) return;
+                const val = ds.data[index] || 0;
+                summedTotal += val;
+                const meta = chart.getDatasetMeta(dsIndex);
+                const bar = meta.data[index];
+                if (bar) { x = bar.x; topY = Math.min(topY, bar.y); }
+            });
+            const displayTotal = (opts.totalsOverride && opts.totalsOverride[index] !== undefined) ? opts.totalsOverride[index] : summedTotal;
+            if (displayTotal > 0 && x !== null && isFinite(topY)) {
+                ctx.save();
+                ctx.font = '700 10.5px -apple-system, sans-serif';
+                ctx.fillStyle = '#1a1a1a';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(formatter(displayTotal), x, topY - 5);
+                ctx.restore();
+            }
+        });
+    }
+};
+Chart.register(totalLabelPlugin);
+
+// ---- KPI ----
+document.getElementById('kpi-sellout').textContent = fmtInt(DATA.kpi.totalSellout) + ' máy';
+document.getElementById('kpi-sellout-sub').textContent = DATA.month_labels.length ? (DATA.month_labels[0] + '–' + DATA.month_labels[DATA.month_labels.length-1]) : '-';
+document.getElementById('kpi-activated').textContent = fmtInt(DATA.kpi.totalActivated) + ' máy';
+document.getElementById('kpi-activated-sub').textContent = 'Tỷ lệ kích hoạt: ' + fmtPct(DATA.kpi.activationRate);
+document.getElementById('kpi-revenue').textContent = fmtVND(DATA.kpi.totalRevenue) + ' đ';
+document.getElementById('kpi-revenue-sub').textContent = DATA.kpi.numChannels + ' kênh';
+document.getElementById('kpi-stores').textContent = DATA.kpi.numStores;
+document.getElementById('kpi-stores-sub').textContent = 'Shop/Đối tác đang theo dõi';
+
+// ================= Multiselect component dùng chung =================
+function buildMultiselect(containerId, options, store, filterKey, allLabel, onChange) {
+    const container = document.getElementById(containerId);
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'multiselect-btn';
+    const label = document.createElement('span'); label.textContent = allLabel; btn.appendChild(label);
+    const panel = document.createElement('div'); panel.className = 'multiselect-panel hidden';
+    const allOpt = document.createElement('label'); allOpt.className = 'multiselect-option all-option';
+    allOpt.innerHTML = `<input type="checkbox" checked data-all="1"> ${allLabel}`;
+    panel.appendChild(allOpt);
+    const checkboxes = [];
+    options.forEach(opt => {
+        const row = document.createElement('label'); row.className = 'multiselect-option';
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = opt.value;
+        row.appendChild(cb); row.appendChild(document.createTextNode(' ' + opt.text));
+        panel.appendChild(row); checkboxes.push(cb);
+    });
+    const allCb = allOpt.querySelector('input');
+    function updateLabel() {
+        const selected = store[filterKey];
+        if (selected.length === 0) label.textContent = allLabel;
+        else if (selected.length === 1) label.textContent = options.find(o=>o.value===selected[0])?.text || selected[0];
+        else label.textContent = selected.length + ' đã chọn';
+        btn.classList.toggle('active', selected.length > 0);
+    }
+    allCb.addEventListener('change', () => {
+        if (allCb.checked) { checkboxes.forEach(cb => cb.checked = false); store[filterKey] = []; updateLabel(); onChange(); }
+    });
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            const anyChecked = checkboxes.some(c => c.checked);
+            allCb.checked = !anyChecked;
+            store[filterKey] = checkboxes.filter(c => c.checked).map(c => c.value);
+            updateLabel(); onChange();
+        });
+    });
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.multiselect-panel').forEach(p => { if (p !== panel) p.classList.add('hidden'); });
+        panel.classList.toggle('hidden');
+    });
+    container.appendChild(btn); container.appendChild(panel);
+    container._reset = () => { allCb.checked = true; checkboxes.forEach(cb => cb.checked = false); store[filterKey] = []; updateLabel(); };
+}
+document.addEventListener('click', () => { document.querySelectorAll('.multiselect-panel').forEach(p => p.classList.add('hidden')); });
+
+// ================= Chart + Table: So sánh kênh theo tháng =================
+let chFilters = { months: [], channels: [], productSearch: '' };
+buildMultiselect('ms-ch-month', ALL_12_MONTH_LABELS.map((lbl,i) => ({ value:String(ALL_12_MONTHS[i]), text: lbl })), chFilters, 'months', 'Tất cả', () => refreshChannelCharts());
+buildMultiselect('ms-ch-channel', DATA.channels_list.map(c => ({ value:c, text:c })), chFilters, 'channels', 'Tất cả', () => refreshChannelCharts());
+document.getElementById('ch-product-search').addEventListener('input', e => { chFilters.productSearch = e.target.value.trim(); refreshChannelCharts(); });
+document.getElementById('ch-reset').addEventListener('click', () => {
+    document.querySelectorAll('#ms-ch-month, #ms-ch-channel').forEach(el => { if (el._reset) el._reset(); });
+    chFilters.productSearch = '';
+    document.getElementById('ch-product-search').value = '';
+    refreshChannelCharts();
+});
+
+function crosstabPassesFilter(rec) {
+    if (chFilters.months.length && !chFilters.months.includes(String(rec.m))) return false;
+    if (chFilters.channels.length && !chFilters.channels.includes(rec.channel)) return false;
+    if (chFilters.productSearch && !rec.model.toLowerCase().includes(chFilters.productSearch.toLowerCase())) return false;
+    return true;
+}
+
+function computeFilteredChannelMonth() {
+    const result = {};
+    DATA.channels_list.forEach(c => { result[c] = {}; ALL_12_MONTHS.forEach(m => result[c][m] = {sellout:0, activated:0, rev:0}); });
+    DATA.crosstab.forEach(rec => {
+        if (!crosstabPassesFilter(rec)) return;
+        if (!result[rec.channel]) result[rec.channel] = {};
+        if (!result[rec.channel][rec.m]) result[rec.channel][rec.m] = {sellout:0, activated:0, rev:0};
+        result[rec.channel][rec.m].sellout += rec.sellout;
+        result[rec.channel][rec.m].activated += rec.activated;
+        result[rec.channel][rec.m].rev += rec.rev;
+    });
+    return result;
+}
+// Tổng theo tháng (không tách kênh) dùng để tính % so với tháng trước — tôn trọng bộ lọc Kênh/Model nhưng KHÔNG tôn trọng bộ lọc Tháng (để luôn có tháng liền trước làm mốc so sánh)
+function computeMonthTotalsForGrowth() {
+    const totals = {}; // month -> {sellout, rev}
+    ALL_12_MONTHS.forEach(m => { totals[m] = { sellout: 0, rev: 0 }; });
+    DATA.crosstab.forEach(rec => {
+        if (chFilters.channels.length && !chFilters.channels.includes(rec.channel)) return;
+        if (chFilters.productSearch && !rec.model.toLowerCase().includes(chFilters.productSearch.toLowerCase())) return;
+        if (!totals[rec.m]) totals[rec.m] = { sellout: 0, rev: 0 };
+        totals[rec.m].sellout += rec.sellout;
+        totals[rec.m].rev += rec.rev;
+    });
+    return totals;
+}
+function momLabel(m, metric, monthTotals) {
+    const idx = ALL_12_MONTHS.indexOf(m);
+    if (idx <= 0) return 'T' + m;
+    const prevM = ALL_12_MONTHS[idx - 1];
+    const cur = monthTotals[m] ? monthTotals[m][metric] : 0;
+    const prev = monthTotals[prevM] ? monthTotals[prevM][metric] : 0;
+    if (!prev) return 'T' + m;
+    const growth = (cur - prev) / prev * 100;
+    const sign = growth >= 0 ? '+' : '';
+    return 'T' + m + ' (' + sign + growth.toFixed(0) + '%)';
+}
+function activeMonthsList() {
+    if (chFilters.months.length === 0) return ALL_12_MONTHS;
+    return chFilters.months.map(m => parseInt(m,10)).sort((a,b)=>a-b);
+}
+function activeChannelsList() {
+    return chFilters.channels.length ? chFilters.channels : DATA.channels_list;
+}
+
+let channelMonthUnitsChart = null;
+let channelMonthRevenueChart = null;
+let modelChart = null;
+let segmentChannelChart = null;
+
+function renderMiniMonthTable(tableId, months, valueByMonth, valueLabel, formatFn) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    let colgroup = '<colgroup><col style="width:70px;">' + months.map(()=>'<col>').join('') + '</colgroup>';
+    let monthRow = '<tr class="mmt-month"><td class="mmt-label">Tháng</td>';
+    let valueRow = '<tr class="mmt-value"><td class="mmt-label">' + escapeHtml(valueLabel) + '</td>';
+    let growthRow = '<tr class="mmt-growth"><td class="mmt-label">So tháng trước</td>';
+    months.forEach((m, i) => {
+        const cur = valueByMonth[m] || 0;
+        monthRow += `<td>T${m}</td>`;
+        valueRow += `<td>${formatFn(cur)}</td>`;
+        if (i === 0) {
+            growthRow += `<td class="mmt-flat">-</td>`;
+        } else {
+            const prevM = months[i-1];
+            const prev = valueByMonth[prevM] || 0;
+            if (!prev) {
+                growthRow += `<td class="mmt-flat">-</td>`;
+            } else {
+                const growth = (cur - prev) / prev * 100;
+                const cls = growth > 0.05 ? 'mmt-up' : (growth < -0.05 ? 'mmt-down' : 'mmt-flat');
+                const sign = growth >= 0 ? '+' : '';
+                growthRow += `<td class="${cls}">${sign}${growth.toFixed(1)}%</td>`;
+            }
+        }
+    });
+    monthRow += '</tr>'; valueRow += '</tr>'; growthRow += '</tr>';
+    table.innerHTML = colgroup + monthRow + valueRow + growthRow;
+}
+
+function renderChannelMonthChart() {
+    const data = computeFilteredChannelMonth();
+    const months = activeMonthsList();
+    const channels = activeChannelsList();
+    const unitLabels = months.map(m => 'T' + m);
+    const revLabels = months.map(m => 'T' + m);
+
+    // Tổng số theo tháng (cộng tất cả kênh đang lọc) — dùng cho bảng mini 3 hàng dưới biểu đồ
+    const selloutTotalByMonth = {}, revTotalByMonth = {};
+    months.forEach(m => {
+        selloutTotalByMonth[m] = channels.reduce((s,c) => s + ((data[c] && data[c][m]) ? data[c][m].sellout : 0), 0);
+        revTotalByMonth[m] = channels.reduce((s,c) => s + ((data[c] && data[c][m]) ? data[c][m].rev : 0), 0);
+    });
+
+    // ---- Biểu đồ Doanh số (Sellout, số thực) ----
+    const unitDatasets = channels.map(c => ({
+        label: c,
+        data: months.map(m => (data[c] && data[c][m] ? data[c][m].sellout : 0)),
+        backgroundColor: channelColor[c] || '#999',
+        stack: 's1'
+    }));
+    if (channelMonthUnitsChart) channelMonthUnitsChart.destroy();
+    channelMonthUnitsChart = new Chart(document.getElementById('chart-channel-month-units').getContext('2d'), {
+        type: 'bar',
+        data: { labels: unitLabels, datasets: unitDatasets },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins: {
+                legend: { position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmtInt(c.parsed.y) + ' máy' } },
+                datalabels: {
+                    display: true, color:'#fff', font:{size:10,weight:'700'},
+                    formatter: (value, ctx) => {
+                        const monthTotal = ctx.chart.data.datasets.reduce((s,ds)=>s+ds.data[ctx.dataIndex],0);
+                        if (!monthTotal || value/monthTotal < 0.05) return '';
+                        return fmtInt(value);
+                    }
+                }
+            },
+            scales: { x: { stacked:true, grid:{display:false}, ticks:{font:{size:10}} }, y: { stacked:true, beginAtZero:true, display:false } }
+        }
+    });
+    renderMiniMonthTable('mini-table-units', months, selloutTotalByMonth, 'Sellout', v => fmtInt(v));
+
+    // ---- Biểu đồ Doanh thu (số thực) ----
+    const revDatasets = channels.map(c => ({
+        label: c,
+        data: months.map(m => (data[c] && data[c][m] ? data[c][m].rev : 0)),
+        backgroundColor: channelColor[c] || '#999',
+        stack: 's1'
+    }));
+    if (channelMonthRevenueChart) channelMonthRevenueChart.destroy();
+    channelMonthRevenueChart = new Chart(document.getElementById('chart-channel-month-revenue').getContext('2d'), {
+        type: 'bar',
+        data: { labels: revLabels, datasets: revDatasets },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins: {
+                legend: { position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmtVND(c.parsed.y) + ' đ' } },
+                datalabels: {
+                    display: true, color:'#fff', font:{size:10,weight:'700'},
+                    formatter: (value, ctx) => {
+                        const monthTotal = ctx.chart.data.datasets.reduce((s,ds)=>s+ds.data[ctx.dataIndex],0);
+                        if (!monthTotal || value/monthTotal < 0.05) return '';
+                        return fmtVND(value);
+                    }
+                }
+            },
+            scales: { x: { stacked:true, grid:{display:false}, ticks:{font:{size:10}} }, y: { stacked:true, beginAtZero:true, display:false } }
+        }
+    });
+    renderMiniMonthTable('mini-table-revenue', months, revTotalByMonth, 'Doanh thu (tỷ đ)', v => (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}));
+}
+
+let chTableSort = { field:'total', dir:'desc' };
+let expandedChMonthChannels = new Set();
+
+function channelMonthSaleDetailHtml(channel, months, colspan) {
+    const monthSet = new Set(months);
+    const bySaleMonth = {}; // sales -> month -> {sellout, rev}
+    DATA.crosstab.forEach(rec => {
+        if (rec.channel !== channel) return;
+        if (!monthSet.has(rec.m)) return;
+        if (!bySaleMonth[rec.sales]) bySaleMonth[rec.sales] = {};
+        if (!bySaleMonth[rec.sales][rec.m]) bySaleMonth[rec.sales][rec.m] = { sellout: 0, rev: 0 };
+        bySaleMonth[rec.sales][rec.m].sellout += rec.sellout;
+        bySaleMonth[rec.sales][rec.m].rev += rec.rev;
+    });
+    const salesList = Object.keys(bySaleMonth).filter(s => {
+        const totalSellout = months.reduce((sum,m) => sum + ((bySaleMonth[s][m] && bySaleMonth[s][m].sellout) || 0), 0);
+        return totalSellout > 0;
+    });
+    if (!salesList.length) {
+        return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#f7fbf8; padding:12px 16px; color:var(--text-secondary);">Không có dữ liệu Sale cho kênh ${escapeHtml(channel)} trong khoảng đang lọc.</td></tr>`;
+    }
+    const rows = salesList.map(sales => {
+        const selloutByMonth = months.map(m => (bySaleMonth[sales][m] && bySaleMonth[sales][m].sellout) || 0);
+        const revByMonth = months.map(m => (bySaleMonth[sales][m] && bySaleMonth[sales][m].rev) || 0);
+        return { sales, selloutByMonth, revByMonth, totalSellout: selloutByMonth.reduce((a,b)=>a+b,0), totalRev: revByMonth.reduce((a,b)=>a+b,0) };
+    }).sort((a,b) => b.totalRev - a.totalRev);
+
+    const totalSelloutByMonth = months.map((m,i) => rows.reduce((s,r)=>s+r.selloutByMonth[i],0));
+    const totalRevByMonth = months.map((m,i) => rows.reduce((s,r)=>s+r.revByMonth[i],0));
+    const grandSellout = totalSelloutByMonth.reduce((s,v)=>s+v,0);
+    const grandRev = totalRevByMonth.reduce((s,v)=>s+v,0);
+
+    const monthHeaderHtml = months.map(m => `<span style="text-align:center;">T${m}</span>`).join('');
+    const rowsHtml = rows.map(r => {
+        const selloutCellsHtml = r.selloutByMonth.map(v => `<span style="text-align:center;">${v?fmtInt(v)+' máy':'-'}</span>`).join('');
+        const revCellsHtml = r.revByMonth.map(v => `<span style="text-align:center;">${v?fmtVND(v)+' đ':'-'}</span>`).join('');
+        return `<div style="display:grid; grid-template-columns: 1.3fr repeat(${months.length}, 1fr) 1fr; gap:6px; padding:4px 0; border-bottom:1px solid #e3e6e5; font-size:11.5px; align-items:center;">
+            <span><span class="metric-tag units" style="display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#e6f0ff;color:#1a4fa0;margin-right:4px;">DS</span>${escapeHtml(r.sales)}</span>
+            ${selloutCellsHtml}
+            <span style="text-align:center; font-weight:700;">${fmtInt(r.totalSellout)} máy</span>
+        </div>
+        <div style="display:grid; grid-template-columns: 1.3fr repeat(${months.length}, 1fr) 1fr; gap:6px; padding:4px 0 8px; border-bottom:1px solid #cbd2d9; font-size:11.5px; align-items:center;">
+            <span><span class="metric-tag revenue" style="display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#e6f7ec;color:var(--oppo-green-dark);margin-right:4px;">DT</span></span>
+            ${revCellsHtml}
+            <span style="text-align:center; font-weight:700;">${fmtVND(r.totalRev)} đ</span>
+        </div>`;
+    }).join('');
+
+    return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#f7fbf8; padding:12px 16px;">
+        <div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;">Chi tiết theo Sale, theo từng tháng — Kênh ${escapeHtml(channel)}</div>
+        <div style="display:grid; grid-template-columns: 1.3fr repeat(${months.length}, 1fr) 1fr; gap:6px; padding:0 0 4px; font-size:10px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; border-bottom:1px solid #8fa;">
+            <span>Sale</span>${monthHeaderHtml}<span style="text-align:center;">Tổng</span>
+        </div>
+        ${rowsHtml}
+        <div style="display:grid; grid-template-columns: 1.3fr repeat(${months.length}, 1fr) 1fr; gap:6px; padding:6px 0 0; font-size:11.5px; font-weight:700; align-items:center;">
+            <span>TỔNG (DS)</span>${totalSelloutByMonth.map(v=>`<span style="text-align:center;">${fmtInt(v)} máy</span>`).join('')}<span style="text-align:center;">${fmtInt(grandSellout)} máy</span>
+        </div>
+        <div style="display:grid; grid-template-columns: 1.3fr repeat(${months.length}, 1fr) 1fr; gap:6px; padding:2px 0 0; font-size:11.5px; font-weight:700; align-items:center; color:var(--oppo-green-dark);">
+            <span>TỔNG (DT)</span>${totalRevByMonth.map(v=>`<span style="text-align:center;">${fmtVND(v)} đ</span>`).join('')}<span style="text-align:center;">${fmtVND(grandRev)} đ</span>
+        </div>
+    </td></tr>`;
+}
+
+function renderChannelMonthTable() {
+    const data = computeFilteredChannelMonth();
+    const months = activeMonthsList();
+    const channels = activeChannelsList();
+    const labels = months.map(m => 'T'+m);
+
+    const headRow = document.getElementById('channel-month-table-head');
+    let headHtml = '<th data-field="channel">Kênh</th>';
+    labels.forEach((lbl,i) => { headHtml += `<th data-field="mo${i}" class="num">${lbl}</th>`; });
+    headHtml += '<th data-field="total" class="num">Tổng</th>';
+    headRow.innerHTML = headHtml;
+
+    let rows = channels.map(c => {
+        const selloutByMonth = months.map(m => (data[c] && data[c][m]) ? data[c][m].sellout : 0);
+        const revByMonth = months.map(m => (data[c] && data[c][m]) ? data[c][m].rev : 0);
+        const totalSellout = selloutByMonth.reduce((a,b)=>a+b,0);
+        const totalRev = revByMonth.reduce((a,b)=>a+b,0);
+        return { channel:c, selloutByMonth, revByMonth, totalSellout, totalRev };
+    });
+
+    rows.sort((a,b) => {
+        let av,bv;
+        if (chTableSort.field === 'channel') { av=a.channel.toLowerCase(); bv=b.channel.toLowerCase(); }
+        else if (chTableSort.field === 'total') { av=a.totalRev; bv=b.totalRev; }
+        else { const mi = parseInt(chTableSort.field.replace('mo','')); av=a.selloutByMonth[mi]; bv=b.selloutByMonth[mi]; }
+        let cmp = av<bv?-1:av>bv?1:0;
+        return chTableSort.dir==='asc'?cmp:-cmp;
+    });
+
+    function growthCell(arr, i, fmt) {
+        const cur = arr[i];
+        if (i === 0) return `${fmt(cur)}`;
+        const prev = arr[i-1];
+        if (!prev) return `${fmt(cur)}`;
+        const g = (cur - prev) / prev * 100;
+        const cls = g > 0.05 ? 'style="color:var(--positive);"' : (g < -0.05 ? 'style="color:var(--negative);"' : '');
+        const sign = g >= 0 ? '+' : '';
+        return `${fmt(cur)} <span ${cls}>(${sign}${g.toFixed(1)}%)</span>`;
+    }
+    const fmtSellout = v => fmtInt(v);
+    const fmtRev = v => fmtVND(v);
+
+    const totalSelloutByMonth = months.map((_,i) => rows.reduce((s,r)=>s+r.selloutByMonth[i],0));
+    const totalRevByMonth = months.map((_,i) => rows.reduce((s,r)=>s+r.revByMonth[i],0));
+
+    const tbody = document.getElementById('channel-month-table-body');
+    let bodyHtml = rows.map(r => {
+        const dsCells = r.selloutByMonth.map((v,i) => `<td class="num">${growthCell(r.selloutByMonth, i, fmtSellout)}</td>`).join('');
+        const dtCells = r.revByMonth.map((v,i) => `<td class="num">${growthCell(r.revByMonth, i, fmtRev)}</td>`).join('');
+        const arrow = expandedChMonthChannels.has(r.channel) ? '▾' : '▸';
+        const rowHtml = `<tr>
+            <td><span class="shop-link" data-chmonth-channel="${escapeHtml(r.channel)}" style="cursor:pointer;">${arrow} <b>${escapeHtml(r.channel)}</b></span> <span class="tag" style="font-size:9px;">DS</span></td>
+            ${dsCells}
+            <td class="num"><b>${fmtInt(r.totalSellout)}</b></td>
+        </tr>
+        <tr style="border-bottom:1px solid #cbd2d9;">
+            <td style="color:var(--text-secondary);"><span class="tag" style="font-size:9px;">DT</span></td>
+            ${dtCells}
+            <td class="num"><b>${fmtVND(r.totalRev)}</b></td>
+        </tr>`;
+        return rowHtml + (expandedChMonthChannels.has(r.channel) ? channelMonthSaleDetailHtml(r.channel, months, months.length + 2) : '');
+    }).join('');
+    bodyHtml += `<tr class="total-row">
+        <td>TỔNG (DS)</td>${totalSelloutByMonth.map((v,i)=>`<td class="num">${growthCell(totalSelloutByMonth, i, fmtSellout)}</td>`).join('')}<td class="num">${fmtInt(totalSelloutByMonth.reduce((a,b)=>a+b,0))}</td>
+    </tr>
+    <tr class="total-row">
+        <td>TỔNG (DT)</td>${totalRevByMonth.map((v,i)=>`<td class="num">${growthCell(totalRevByMonth, i, fmtRev)}</td>`).join('')}<td class="num">${fmtVND(totalRevByMonth.reduce((a,b)=>a+b,0))}</td>
+    </tr>`;
+    tbody.innerHTML = bodyHtml;
+    tbody.querySelectorAll('.shop-link').forEach(el => {
+        el.addEventListener('click', () => {
+            const ch = el.dataset.chmonthChannel;
+            if (expandedChMonthChannels.has(ch)) expandedChMonthChannels.delete(ch);
+            else expandedChMonthChannels.add(ch);
+            renderChannelMonthTable();
+        });
+    });
+
+    document.querySelectorAll('#channel-month-table thead th').forEach(th => {
+        th.onclick = () => {
+            const field = th.dataset.field;
+            if (chTableSort.field === field) chTableSort.dir = chTableSort.dir==='asc'?'desc':'asc';
+            else { chTableSort.field = field; chTableSort.dir = 'desc'; }
+            renderChannelMonthTable();
+        };
+        const base = th.textContent.replace(/[▲▼]/g,'').trim(); th.textContent = base;
+        if (th.dataset.field === chTableSort.field) th.textContent = base + (chTableSort.dir==='asc'?' ▲':' ▼');
+    });
+}
+
+function refreshChannelCharts() {
+    renderChannelMonthChart();
+    renderChannelMonthTable();
+}
+refreshChannelCharts();
+
+// ================= Bộ lọc riêng cho cụm Reno / Phân khúc giá / Tỉ trọng Kênh (theo Sale + Tháng) =================
+let renoFilters = { sales: [], months: [] };
+buildMultiselect('ms-reno-sale', DATA.sales_list.map(s => ({ value:s, text:s })), renoFilters, 'sales', 'Tất cả', () => refreshRenoCluster());
+buildMultiselect('ms-reno-month', ALL_12_MONTH_LABELS.map((lbl,i) => ({ value:String(ALL_12_MONTHS[i]), text: lbl })), renoFilters, 'months', 'Tất cả', () => refreshRenoCluster());
+document.getElementById('reno-reset').addEventListener('click', () => {
+    document.querySelectorAll('#ms-reno-sale, #ms-reno-month').forEach(el => { if (el._reset) el._reset(); });
+    refreshRenoCluster();
+});
+function renoClusterPassesFilter(rec) {
+    if (renoFilters.months.length && !renoFilters.months.includes(String(rec.m))) return false;
+    if (renoFilters.sales.length && !renoFilters.sales.includes(rec.sales)) return false;
+    return true;
+}
+
+// ================= Tỉ trọng Reno so với sản phẩm khác theo Kênh =================
+function renderModelChart() {
+    const channels = DATA.channels_list;
+    const isReno = (series) => String(series || '').toLowerCase().includes('reno');
+
+    // Cộng dồn sellout Reno / Khác cho từng kênh (chỉ trong dữ liệu đang được lọc)
+    const byChannel = {}; // channel -> {reno, other}
+    let totalReno = 0, totalOther = 0;
+    DATA.crosstab.forEach(rec => {
+        if (!renoClusterPassesFilter(rec)) return;
+        if (!byChannel[rec.channel]) byChannel[rec.channel] = { reno: 0, other: 0 };
+        if (isReno(rec.series)) { byChannel[rec.channel].reno += rec.sellout; totalReno += rec.sellout; }
+        else { byChannel[rec.channel].other += rec.sellout; totalOther += rec.sellout; }
+    });
+
+    const labels = [...channels, 'TỔNG'];
+    const renoRaw = channels.map(c => (byChannel[c] ? byChannel[c].reno : 0)).concat([totalReno]);
+    const otherRaw = channels.map(c => (byChannel[c] ? byChannel[c].other : 0)).concat([totalOther]);
+    // Quy đổi về % để mọi thanh dài bằng nhau (100%-stacked thật sự), giữ số máy thô riêng để hiện trong tooltip/nhãn
+    const renoPct = labels.map((_, i) => { const total = renoRaw[i] + otherRaw[i]; return total ? renoRaw[i] / total * 100 : 0; });
+    const otherPct = labels.map((_, i) => 100 - renoPct[i]);
+
+    const datasets = [
+        { label: 'Reno', data: renoPct, raw: renoRaw, backgroundColor: '#1BB350', stack: 's1' },
+        { label: 'Khác', data: otherPct, raw: otherRaw, backgroundColor: '#cfd6d2', stack: 's1' },
+    ];
+    if (modelChart) modelChart.destroy();
+    modelChart = new Chart(document.getElementById('chart-model').getContext('2d'), {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+            indexAxis: 'y',
+            responsive:true, maintainAspectRatio:false,
+            layout: { padding: { right: 10 } },
+            plugins: {
+                legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
+                tooltip: { callbacks: { label: c => c.dataset.label+': '+c.parsed.x.toFixed(1)+'% ('+fmtInt(c.dataset.raw[c.dataIndex])+' máy)' } },
+                datalabels: {
+                    display: true,
+                    color: (ctx) => ctx.datasetIndex === 0 ? '#fff' : '#555',
+                    font: { size: 11, weight: '700' }, anchor: 'center', align: 'center',
+                    formatter: (value) => value >= 6 ? value.toFixed(1) + '%' : ''
+                }
+            },
+            scales: {
+                x: { stacked:true, beginAtZero:true, max:100, ticks: { callback: v => v + '%' } },
+                y: { stacked:true }
+            }
+        }
+    });
+}
+
+// ================= Tỉ trọng phân khúc giá theo từng kênh =================
+function renderSegmentChannelChart() {
+    const channels = DATA.channels_list;
+    const segs = DATA.segments_list;
+    const segChannelRev = {};
+    const channelTotals = {};
+    DATA.crosstab.forEach(rec => {
+        if (!renoClusterPassesFilter(rec)) return;
+        const key = rec.segment + '|' + rec.channel;
+        segChannelRev[key] = (segChannelRev[key]||0) + rec.rev;
+        channelTotals[rec.channel] = (channelTotals[rec.channel]||0) + rec.rev;
+    });
+
+    const SEG_COLORS = ['#8e8e93','#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#CCB974','#64B5CD','#c9a0dc'];
+    const datasets = segs.map((seg,i) => ({
+        label: seg,
+        data: channels.map(c => {
+            const val = segChannelRev[seg+'|'+c] || 0;
+            return channelTotals[c] ? (val/channelTotals[c]*100) : 0;
+        }),
+        backgroundColor: SEG_COLORS[i % SEG_COLORS.length],
+        stack: 's1'
+    }));
+    if (segmentChannelChart) segmentChannelChart.destroy();
+    segmentChannelChart = new Chart(document.getElementById('chart-segment-channel').getContext('2d'), {
+        type: 'bar',
+        data: { labels: channels, datasets },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins: { legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:10}} },
+                tooltip: { callbacks: { label: c => c.dataset.label+': '+c.parsed.y.toFixed(1)+'%' } },
+                datalabels: { display:true, color:'#fff', font:{size:9,weight:'700'}, formatter: v => v<5?'':v.toFixed(0)+'%' } },
+            scales: { x: { stacked:true, grid:{display:false} }, y: { stacked:true, beginAtZero:true, max:100, display:false } }
+        }
+    });
+}
+
+// ================= Tỉ trọng đóng góp theo Kênh (Pie) =================
+let channelRevenuePieChart = null;
+function renderChannelRevenuePieChart() {
+    const channels = DATA.channels_list;
+    const channelRev = {};
+    let total = 0;
+    DATA.crosstab.forEach(rec => {
+        if (!renoClusterPassesFilter(rec)) return;
+        channelRev[rec.channel] = (channelRev[rec.channel] || 0) + rec.rev;
+        total += rec.rev;
+    });
+    const data = channels.map(c => channelRev[c] || 0);
+    if (channelRevenuePieChart) channelRevenuePieChart.destroy();
+    channelRevenuePieChart = new Chart(document.getElementById('chart-channel-revenue-pie').getContext('2d'), {
+        type: 'pie',
+        data: { labels: channels, datasets: [{ data, backgroundColor: channels.map(c => channelColor[c] || '#999') }] },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins: {
+                legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
+                tooltip: { callbacks: { label: c => c.label+': '+fmtVND(c.parsed)+' đ ('+(total?(c.parsed/total*100).toFixed(1):0)+'%)' } },
+                datalabels: {
+                    display:true, color:'#fff', font:{size:12,weight:'700'},
+                    formatter: (v) => total ? (v/total*100).toFixed(1)+'%' : ''
+                }
+            }
+        }
+    });
+}
+
+function refreshRenoCluster() {
+    renderModelChart();
+    renderSegmentChannelChart();
+    renderChannelRevenuePieChart();
+}
+refreshRenoCluster();
+
+// ================= Target theo Kênh & Target theo Sale =================
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let channelTargetSort = { field:'target_revenue', dir:'desc' };
+let expandedTargetChannels = new Set();
+
+const LATEST_MONTH = DATA.months_sorted.length ? Math.max(...DATA.months_sorted) : null;
+
+// Tính 1 lần duy nhất, cố định — không đổi theo bộ lọc, dựa trên trung bình toàn bộ dữ liệu lịch sử
+function computeSaleTargetAllocation() {
+    const channelSalesAgg = {}; // channel -> sales -> {sellout, rev}
+    const salesTotalRevByChannel = {}; // sales -> {channel: totalRev} — dùng để xác định kênh CHÍNH (doanh thu cao nhất), tránh bị ghi đè bởi kênh xử lý sau cùng
+    DATA.crosstab.forEach(rec => {
+        if (!CHANNEL_TARGETS[rec.channel]) return;
+        if (!channelSalesAgg[rec.channel]) channelSalesAgg[rec.channel] = {};
+        if (!channelSalesAgg[rec.channel][rec.sales]) channelSalesAgg[rec.channel][rec.sales] = { sellout: 0, rev: 0 };
+        const o = channelSalesAgg[rec.channel][rec.sales];
+        o.sellout += rec.sellout; o.rev += rec.rev;
+
+        if (!salesTotalRevByChannel[rec.sales]) salesTotalRevByChannel[rec.sales] = {};
+        salesTotalRevByChannel[rec.sales][rec.channel] = (salesTotalRevByChannel[rec.sales][rec.channel] || 0) + rec.rev;
+    });
+
+    const numMonths = DATA.months_sorted.length || 1;
+    const result = {}; // sales -> { channel, target_sellout, target_revenue, target_reno16 }
+    const reno16Conf = PRODUCT_TARGETS['reno16'];
+
+    Object.keys(CHANNEL_TARGETS).forEach(channel => {
+        const salesMap = channelSalesAgg[channel] || {};
+        const avgs = {};
+        let totalAvgSellout = 0, totalAvgRevenue = 0;
+        Object.keys(salesMap).forEach(sales => {
+            const o = salesMap[sales];
+            const avgSellout = o.sellout / numMonths;
+            const avgRevenue = o.rev / numMonths;
+            avgs[sales] = { avgSellout, avgRevenue };
+            totalAvgSellout += avgSellout;
+            totalAvgRevenue += avgRevenue;
+        });
+        const target = CHANNEL_TARGETS[channel];
+        const targetReno16Channel = reno16Conf[channel] || 0;
+        Object.keys(avgs).forEach(sales => {
+            const shareSellout = totalAvgSellout ? avgs[sales].avgSellout / totalAvgSellout : 0;
+            const shareRevenue = totalAvgRevenue ? avgs[sales].avgRevenue / totalAvgRevenue : 0;
+            if (!result[sales]) result[sales] = { channel, target_sellout: 0, target_revenue: 0, target_reno16: 0 };
+            result[sales].target_sellout += target.sellout * shareSellout;
+            result[sales].target_revenue += target.revenue * shareRevenue;
+            // Target Reno16 phân bổ theo đúng tỷ trọng sellout (giống cách phân bổ target sellout chung)
+            result[sales].target_reno16 += targetReno16Channel * shareSellout;
+        });
+    });
+
+    // Gán kênh CHÍNH = kênh có tổng doanh thu cao nhất của chính sale đó (không phải kênh xử lý sau cùng)
+    Object.keys(result).forEach(sales => {
+        const byChannel = salesTotalRevByChannel[sales] || {};
+        let bestChannel = result[sales].channel, bestRev = -1;
+        Object.entries(byChannel).forEach(([ch, rev]) => { if (rev > bestRev) { bestRev = rev; bestChannel = ch; } });
+        result[sales].channel = bestChannel;
+    });
+
+    return result;
+}
+const saleTargetAllocation = computeSaleTargetAllocation();
+
+// Thực tế của tháng gần nhất, theo Sale và theo Kênh
+function computeActualForLatestMonth() {
+    const bySales = {}; // sales -> {sellout, rev}
+    const byChannel = {}; // channel -> {sellout, rev}
+    if (LATEST_MONTH === null) return { bySales, byChannel };
+    DATA.crosstab.forEach(rec => {
+        if (rec.m !== LATEST_MONTH) return;
+        if (!bySales[rec.sales]) bySales[rec.sales] = { sellout: 0, rev: 0 };
+        bySales[rec.sales].sellout += rec.sellout;
+        bySales[rec.sales].rev += rec.rev;
+        if (!byChannel[rec.channel]) byChannel[rec.channel] = { sellout: 0, rev: 0 };
+        byChannel[rec.channel].sellout += rec.sellout;
+        byChannel[rec.channel].rev += rec.rev;
+    });
+    return { bySales, byChannel };
+}
+const latestActual = computeActualForLatestMonth();
+
+function computeProductActualForLatestMonth(matchFn) {
+    const byChannel = {}; // channel -> sellout
+    if (LATEST_MONTH === null) return byChannel;
+    DATA.series_detail_crosstab.forEach(rec => {
+        if (rec.m !== LATEST_MONTH) return;
+        if (!matchFn(rec.series_detail)) return;
+        byChannel[rec.channel] = (byChannel[rec.channel] || 0) + rec.sellout;
+    });
+    return byChannel;
+}
+
+function computeProductActualBySalesForLatestMonth(matchFn) {
+    const bySales = {}; // sales -> sellout
+    if (LATEST_MONTH === null) return bySales;
+    DATA.series_detail_crosstab.forEach(rec => {
+        if (rec.m !== LATEST_MONTH) return;
+        if (!matchFn(rec.series_detail)) return;
+        bySales[rec.sales] = (bySales[rec.sales] || 0) + rec.sellout;
+    });
+    return bySales;
+}
+
+function renderChannelTargetTable() {
+    const reno16Conf = PRODUCT_TARGETS['reno16'];
+    const reno16MatchFn = (sd) => String(sd || '').toLowerCase().includes('reno16');
+    const reno16ActualByChannel = computeProductActualForLatestMonth(reno16MatchFn);
+
+    let rows = Object.keys(CHANNEL_TARGETS).map(channel => {
+        const target = CHANNEL_TARGETS[channel];
+        const act = latestActual.byChannel[channel] || { sellout: 0, rev: 0 };
+        const targetReno16 = reno16Conf[channel] || 0;
+        const actualReno16 = reno16ActualByChannel[channel] || 0;
+        return {
+            channel,
+            target_sellout: target.sellout, target_revenue: target.revenue,
+            actual_sellout: act.sellout, actual_revenue: act.rev,
+            pct_sellout: target.sellout > 0 ? +(act.sellout / target.sellout * 100).toFixed(1) : null,
+            pct_revenue: target.revenue > 0 ? +(act.rev / target.revenue * 100).toFixed(1) : null,
+            target_reno16: targetReno16, actual_reno16: actualReno16,
+            pct_reno16: targetReno16 > 0 ? +(actualReno16 / targetReno16 * 100).toFixed(1) : null,
+        };
+    });
+    rows.sort((a,b) => {
+        let av=a[channelTargetSort.field], bv=b[channelTargetSort.field];
+        if (av === null) av = -1; if (bv === null) bv = -1;
+        if (typeof av === 'string') { av=av.toLowerCase(); bv=bv.toLowerCase(); }
+        let cmp = av<bv?-1:av>bv?1:0;
+        return channelTargetSort.dir==='asc'?cmp:-cmp;
+    });
+    const tbody = document.getElementById('channel-target-table-body');
+    const totalTargetSellout = rows.reduce((s,r)=>s+r.target_sellout,0);
+    const totalActualSellout = rows.reduce((s,r)=>s+r.actual_sellout,0);
+    const totalTargetRevenue = rows.reduce((s,r)=>s+r.target_revenue,0);
+    const totalActualRevenue = rows.reduce((s,r)=>s+r.actual_revenue,0);
+    const totalTargetReno16 = rows.reduce((s,r)=>s+r.target_reno16,0);
+    const totalActualReno16 = rows.reduce((s,r)=>s+r.actual_reno16,0);
+    const totalPctSellout = totalTargetSellout ? +(totalActualSellout/totalTargetSellout*100).toFixed(1) : null;
+    const totalPctRevenue = totalTargetRevenue ? +(totalActualRevenue/totalTargetRevenue*100).toFixed(1) : null;
+    const totalPctReno16 = totalTargetReno16 ? +(totalActualReno16/totalTargetReno16*100).toFixed(1) : null;
+    let bodyHtml = rows.map(r => {
+        const rowClass = r.pct_revenue >= 100 ? 'row-above-avg' : 'row-below-avg';
+        const arrow = expandedTargetChannels.has(r.channel) ? '▾' : '▸';
+        const rowHtml = `<tr class="${rowClass}">
+            <td><span class="shop-link" data-target-channel="${escapeHtml(r.channel)}" style="cursor:pointer;">${arrow} <span class="tag">${r.channel}</span></span></td>
+            <td class="num">${fmtInt(r.target_sellout)} máy</td>
+            <td class="num">${fmtInt(r.actual_sellout)} máy</td>
+            <td class="num">${fmtPct(r.pct_sellout)}</td>
+            <td class="num">${fmtVND(r.target_revenue)} đ</td>
+            <td class="num">${fmtVND(r.actual_revenue)} đ</td>
+            <td class="num">${fmtPct(r.pct_revenue)}</td>
+            <td class="num">${fmtInt(r.target_reno16)} máy</td>
+            <td class="num">${fmtInt(r.actual_reno16)} máy</td>
+            <td class="num">${r.pct_reno16===null?'-':fmtPct(r.pct_reno16)}</td>
+        </tr>`;
+        return rowHtml + (expandedTargetChannels.has(r.channel) ? saleDetailRowsForChannel(r.channel, 10) : '');
+    }).join('');
+    bodyHtml += `<tr class="total-row">
+        <td>TỔNG</td>
+        <td class="num">${fmtInt(totalTargetSellout)} máy</td>
+        <td class="num">${fmtInt(totalActualSellout)} máy</td>
+        <td class="num">${totalPctSellout===null?'-':fmtPct(totalPctSellout)}</td>
+        <td class="num">${fmtVND(totalTargetRevenue)} đ</td>
+        <td class="num">${fmtVND(totalActualRevenue)} đ</td>
+        <td class="num">${totalPctRevenue===null?'-':fmtPct(totalPctRevenue)}</td>
+        <td class="num">${fmtInt(totalTargetReno16)} máy</td>
+        <td class="num">${fmtInt(totalActualReno16)} máy</td>
+        <td class="num">${totalPctReno16===null?'-':fmtPct(totalPctReno16)}</td>
+    </tr>`;
+    tbody.innerHTML = bodyHtml;
+    tbody.querySelectorAll('.shop-link').forEach(el => {
+        el.addEventListener('click', () => {
+            const ch = el.dataset.targetChannel;
+            if (expandedTargetChannels.has(ch)) expandedTargetChannels.delete(ch);
+            else expandedTargetChannels.add(ch);
+            renderChannelTargetTable();
+        });
+    });
+    document.querySelectorAll('#channel-target-table thead th').forEach(th => {
+        const base = th.textContent.replace(/[▲▼]/g,'').trim(); th.textContent = base;
+        if (th.dataset.field === channelTargetSort.field) th.textContent = base + (channelTargetSort.dir==='asc'?' ▲':' ▼');
+    });
+}
+document.querySelectorAll('#channel-target-table thead th').forEach(th => {
+    th.addEventListener('click', () => {
+        const field = th.dataset.field;
+        if (channelTargetSort.field === field) channelTargetSort.dir = channelTargetSort.dir==='asc'?'desc':'asc';
+        else { channelTargetSort.field = field; channelTargetSort.dir = 'desc'; }
+        renderChannelTargetTable();
+    });
+});
+renderChannelTargetTable();
+
+// ================= Xu hướng % Hoàn thành Target theo tháng =================
+(function(){
+    const channels = Object.keys(CHANNEL_TARGETS);
+    const monthRevByChannel = {}; // channel -> month -> rev
+    channels.forEach(c => { monthRevByChannel[c] = {}; ALL_12_MONTHS.forEach(m => monthRevByChannel[c][m] = 0); });
+    DATA.crosstab.forEach(rec => {
+        if (!monthRevByChannel[rec.channel]) return;
+        monthRevByChannel[rec.channel][rec.m] = (monthRevByChannel[rec.channel][rec.m] || 0) + rec.rev;
+    });
+
+    const datasets = channels.map(c => ({
+        label: c,
+        data: ALL_12_MONTHS.map(m => {
+            const target = CHANNEL_TARGETS[c].revenue;
+            return target > 0 ? +((monthRevByChannel[c][m] || 0) / target * 100).toFixed(1) : 0;
+        }),
+        borderColor: channelColor[c] || '#999',
+        backgroundColor: (channelColor[c] || '#999') + '30',
+        borderWidth: 2.5, tension: 0.25, pointRadius: 3,
+        datalabels: {
+            display: true, color: channelColor[c] || '#333', font: { size: 9.5, weight: '700' },
+            align: 'top', offset: 4,
+            formatter: v => v.toFixed(0) + '%'
+        }
+    }));
+
+    new Chart(document.getElementById('chart-target-trend').getContext('2d'), {
+        type: 'line',
+        data: { labels: ALL_12_MONTH_LABELS, datasets },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            layout: { padding: { top: 16 } },
+            interaction:{ mode:'index', intersect:false },
+            plugins: {
+                legend: { position:'top', labels:{usePointStyle:true, padding:16, font:{size:11}} },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%' } },
+                datalabels: { display: true }
+            },
+            scales: {
+                x: { grid:{display:false} },
+                y: { beginAtZero:true, display:false }
+            }
+        },
+        plugins: [{
+            id: 'targetLine100',
+            afterDraw(chart) {
+                const yScale = chart.scales.y;
+                const xScale = chart.scales.x;
+                if (!yScale || 100 < yScale.min || 100 > yScale.max) return;
+                const y = yScale.getPixelForValue(100);
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.strokeStyle = '#dc3545';
+                ctx.setLineDash([5,4]);
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(xScale.left, y);
+                ctx.lineTo(xScale.right, y);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }]
+    });
+})();
+
+function saleDetailRowsForChannel(channel, colspan) {
+    const salesInChannel = Object.keys(saleTargetAllocation).filter(s => saleTargetAllocation[s].channel === channel);
+    if (!salesInChannel.length) {
+        return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#f7fbf8; padding:12px 16px; color:var(--text-secondary);">Không có Sale nào được phân bổ target cho kênh ${escapeHtml(channel)}.</td></tr>`;
+    }
+    const reno16MatchFn = (sd) => String(sd || '').toLowerCase().includes('reno16');
+    const reno16ActualBySales = computeProductActualBySalesForLatestMonth(reno16MatchFn);
+
+    const rows = salesInChannel.map(sales => {
+        const alloc = saleTargetAllocation[sales];
+        const act = latestActual.bySales[sales] || { sellout: 0, rev: 0 };
+        const actualReno16 = reno16ActualBySales[sales] || 0;
+        return {
+            sales,
+            target_sellout: alloc.target_sellout, target_revenue: alloc.target_revenue, target_reno16: alloc.target_reno16,
+            actual_sellout: act.sellout, actual_revenue: act.rev, actual_reno16: actualReno16,
+            pct_sellout: alloc.target_sellout > 0 ? +(act.sellout / alloc.target_sellout * 100).toFixed(1) : null,
+            pct_revenue: alloc.target_revenue > 0 ? +(act.rev / alloc.target_revenue * 100).toFixed(1) : null,
+            pct_reno16: alloc.target_reno16 > 0 ? +(actualReno16 / alloc.target_reno16 * 100).toFixed(1) : null,
+        };
+    }).sort((a,b) => b.target_revenue - a.target_revenue);
+
+    const GRID_COLS = '1.1fr repeat(9, 0.85fr)';
+    const rowsHtml = rows.map(r => {
+        const pctSelloutCell = r.pct_sellout === null ? '-' : fmtPct(r.pct_sellout);
+        const pctRevenueCell = r.pct_revenue === null ? '-' : fmtPct(r.pct_revenue);
+        const pctReno16Cell = r.pct_reno16 === null ? '-' : fmtPct(r.pct_reno16);
+        return `<div style="display:grid; grid-template-columns: ${GRID_COLS}; gap:4px; padding:4px 0; border-bottom:1px solid #e3e6e5; font-size:10px; align-items:center;">
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(r.sales)}">${escapeHtml(r.sales)}</span>
+            <span style="text-align:center;">${fmtInt(r.target_sellout)}</span>
+            <span style="text-align:center;">${fmtInt(r.actual_sellout)}</span>
+            <span style="text-align:center;">${pctSelloutCell}</span>
+            <span style="text-align:center;">${fmtVND(r.target_revenue)}</span>
+            <span style="text-align:center;">${fmtVND(r.actual_revenue)}</span>
+            <span style="text-align:center; font-weight:700;">${pctRevenueCell}</span>
+            <span style="text-align:center;">${fmtInt(r.target_reno16)}</span>
+            <span style="text-align:center;">${fmtInt(r.actual_reno16)}</span>
+            <span style="text-align:center; font-weight:700;">${pctReno16Cell}</span>
+        </div>`;
+    }).join('');
+    return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#f7fbf8; padding:10px 12px;">
+        <div style="font-size:10.5px; font-weight:700; color:var(--text-secondary); margin-bottom:5px; text-transform:uppercase;">Chi tiết Sale — Kênh ${escapeHtml(channel)}</div>
+        <div style="display:grid; grid-template-columns: ${GRID_COLS}; gap:4px; padding:0 0 3px; font-size:9px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; border-bottom:1px solid #cbd2d9;">
+            <span>Sale</span><span style="text-align:center;">Tgt SL</span><span style="text-align:center;">SL TT</span><span style="text-align:center;">%HT SL</span><span style="text-align:center;">Tgt DT</span><span style="text-align:center;">DT TT</span><span style="text-align:center;">%HT DT</span><span style="text-align:center;">Tgt R16</span><span style="text-align:center;">R16 TT</span><span style="text-align:center;">%HT R16</span>
+        </div>
+        ${rowsHtml}
+    </td></tr>`;
+}
+
+// ================= Bảng chi tiết Shop/Đối tác =================
+let storeFilters = { search:'', channel:'all', sale:'all', months: [] };
+let storeSort = { field:'sellout', dir:'desc' };
+
+(function(){
+    const sel = document.getElementById('filter-channel');
+    DATA.channels_list.forEach(c => { const opt = document.createElement('option'); opt.value=c; opt.textContent=c; sel.appendChild(opt); });
+})();
+(function(){
+    const sel = document.getElementById('filter-sale');
+    DATA.sales_list.forEach(s => { const opt = document.createElement('option'); opt.value=s; opt.textContent=s; sel.appendChild(opt); });
+})();
+buildMultiselect('ms-store-month', ALL_12_MONTH_LABELS.map((lbl,i) => ({ value:String(ALL_12_MONTHS[i]), text: lbl })), storeFilters, 'months', 'Tất cả', () => renderStoreTable());
+
+function getStoreRowsComputed() {
+    // tra cứu nhanh sale/target/channel tổng thể theo store (thuộc tính tĩnh, không đổi theo tháng)
+    const storeMeta = {};
+    DATA.store_rows.forEach(r => { storeMeta[r.store] = { sale: r.sale, target: r.target, channel: r.channel, store_id: r.store_id }; });
+
+    let rows;
+    if (storeFilters.months.length === 0) {
+        // dùng số liệu tổng đã tính sẵn
+        rows = DATA.store_rows.slice();
+    } else {
+        // tính lại theo tháng được chọn từ store_month_lookup
+        const selectedMonths = storeFilters.months;
+        rows = [];
+        Object.keys(DATA.store_month_lookup).forEach(store => {
+            const monthData = DATA.store_month_lookup[store];
+            let sellout=0, activated=0, rev=0, channel=null;
+            selectedMonths.forEach(m => {
+                const cell = monthData[m];
+                if (cell) { sellout += cell.sellout; activated += cell.activated; rev += cell.rev; channel = cell.channel || channel; }
+            });
+            if (sellout === 0 && activated === 0 && rev === 0) return;
+            const meta = storeMeta[store] || { sale:'(Không rõ)', target:0, channel:'(Không rõ)', store_id:'' };
+            rows.push({ store, channel: channel || meta.channel, sale: meta.sale, target: meta.target, store_id: meta.store_id, sellout, activated, revenue: rev, activation_rate: sellout ? +(activated/sellout*100).toFixed(1) : 0 });
+        });
+    }
+    return rows.filter(r => {
+        if (r.target <= 0) return false; // chỉ hiện shop có Target
+        if (storeFilters.search) {
+            const q = storeFilters.search.toLowerCase();
+            const matchName = r.store.toLowerCase().includes(q);
+            const matchId = r.store_id && String(r.store_id).toLowerCase().includes(q);
+            if (!matchName && !matchId) return false;
+        }
+        if (storeFilters.channel !== 'all' && r.channel !== storeFilters.channel) return false;
+        if (storeFilters.sale !== 'all' && r.sale !== storeFilters.sale) return false;
+        return true;
+    });
+}
+
+function renderStoreTable() {
+    const banner = document.getElementById('target-warning-banner');
+    if (banner && DATA.debug_target) {
+        const dbg = DATA.debug_target;
+        if (dbg.targetSheetRowCount === 0) {
+            banner.style.display = 'block';
+            banner.innerHTML = '⚠️ Không đọc được dữ liệu từ sheet "' + TARGET_SHEET_NAME + '" (0 dòng). Kiểm tra: tên tab có đúng chính xác "' + TARGET_SHEET_NAME + '" không (phân biệt hoa/thường, khoảng trắng), và sheet có cột A = Store ID, cột B = Target.';
+        } else if (dbg.matchedCount === 0) {
+            banner.style.display = 'block';
+            banner.innerHTML = '⚠️ Đã đọc được ' + dbg.targetSheetRowCount + ' dòng Target, nhưng không khớp được Store ID nào với dữ liệu CENTER. Mẫu Store ID trong sheet Target: [' + dbg.sampleTargetIds.join(', ') + ']. Mẫu Store ID trong CENTER: [' + dbg.sampleStoreIds.join(', ') + ']. Kiểm tra 2 cột này có cùng định dạng không (số/chữ, có khoảng trắng thừa...).';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+    const rows = getStoreRowsComputed();
+    const monthSelected = storeFilters.months.length > 0;
+    rows.forEach(r => { r.pct_target = (monthSelected && r.target > 0) ? +(r.revenue / r.target * 100).toFixed(1) : null; });
+    rows.sort((a,b) => {
+        let av=a[storeSort.field], bv=b[storeSort.field];
+        if (av === null) av = -1; if (bv === null) bv = -1;
+        if (typeof av === 'string') { av=av.toLowerCase(); bv=bv.toLowerCase(); }
+        let cmp = av<bv?-1:av>bv?1:0;
+        return storeSort.dir==='asc'?cmp:-cmp;
+    });
+    const tbody = document.getElementById('store-table-body');
+    let bodyHtml = rows.map(r => {
+        let rowClass = 'row-neutral';
+        if (r.pct_target !== null) rowClass = r.pct_target >= 100 ? 'row-above-avg' : 'row-below-avg';
+        const targetCell = r.target > 0 ? fmtVND(r.target) + ' đ' : '-';
+        const pctTargetCell = r.pct_target === null ? '-' : fmtPct(r.pct_target);
+        return `<tr class="${rowClass}">
+            <td>${r.store}</td>
+            <td>${r.sale}</td>
+            <td class="num">${fmtInt(r.sellout)} máy</td>
+            <td class="num">${fmtVND(r.revenue)} đ</td>
+            <td class="num">${targetCell}</td>
+            <td class="num">${pctTargetCell}</td>
+        </tr>`;
+    }).join('');
+    if (rows.length > 0) {
+        const totSellout = rows.reduce((s,r)=>s+r.sellout,0);
+        const totRevenue = rows.reduce((s,r)=>s+r.revenue,0);
+        const totTarget = rows.reduce((s,r)=>s+r.target,0);
+        const totPct = (monthSelected && totTarget > 0) ? +(totRevenue/totTarget*100).toFixed(1) : null;
+        const totalRowHtml = `<tr class="total-row">
+            <td>TỔNG (${rows.length} shop)</td>
+            <td>-</td>
+            <td class="num">${fmtInt(totSellout)} máy</td>
+            <td class="num">${fmtVND(totRevenue)} đ</td>
+            <td class="num">${totTarget > 0 ? fmtVND(totTarget) + ' đ' : '-'}</td>
+            <td class="num">${totPct === null ? '-' : fmtPct(totPct)}</td>
+        </tr>`;
+        bodyHtml = totalRowHtml + bodyHtml; // đặt dòng TỔNG ở đầu bảng
+    }
+    tbody.innerHTML = bodyHtml;
+    document.querySelectorAll('#store-table thead th').forEach(th => {
+        const base = th.textContent.replace(/[▲▼]/g,'').trim(); th.textContent = base;
+        if (th.dataset.field === storeSort.field) th.textContent = base + (storeSort.dir==='asc'?' ▲':' ▼');
+    });
+}
+document.querySelectorAll('#store-table thead th').forEach(th => {
+    th.addEventListener('click', () => {
+        const field = th.dataset.field;
+        if (storeSort.field === field) storeSort.dir = storeSort.dir==='asc'?'desc':'asc';
+        else { storeSort.field = field; storeSort.dir = 'desc'; }
+        renderStoreTable();
+    });
+});
+document.getElementById('store-search').addEventListener('input', e => { storeFilters.search = e.target.value; renderStoreTable(); });
+document.getElementById('filter-channel').addEventListener('change', e => { storeFilters.channel = e.target.value; renderStoreTable(); });
+document.getElementById('filter-sale').addEventListener('change', e => { storeFilters.sale = e.target.value; renderStoreTable(); });
+renderStoreTable();
+
+// ================= Hàm dùng chung: hiện chi tiết shop khi bấm vào 1 nhóm (Level/Kênh phụ/Size) =================
+function shopListDetailHtml(groupLabel, storeRowsSubset, colspan) {
+    if (!storeRowsSubset.length) {
+        return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#f7fbf8; padding:12px 16px; color:var(--text-secondary);">Không có shop nào trong nhóm ${escapeHtml(groupLabel)}.</td></tr>`;
+    }
+    const sorted = storeRowsSubset.slice().sort((a,b) => b.revenue - a.revenue);
+    const n = sorted.length;
+    const numMonths = DATA.months_sorted.length || 1; // dùng để tính TB/tháng cho từng shop
+    const totalSellout = sorted.reduce((s,r)=>s+r.sellout,0);
+    const totalRevenue = sorted.reduce((s,r)=>s+r.revenue,0);
+    const avgSelloutPerShop = n ? totalSellout / n : 0;
+    const avgRevenuePerShop = n ? totalRevenue / n : 0;
+    const rowsHtml = sorted.map(s => {
+        const shopAvgSellout = s.sellout / numMonths;
+        const shopAvgRevenue = s.revenue / numMonths;
+        return `<tr>
+            <td style="text-align:left; padding:5px 8px; font-weight:600;">${escapeHtml(s.store)}</td>
+            <td style="text-align:center; padding:5px 8px;">${fmtInt(s.sellout)} máy</td>
+            <td style="text-align:center; padding:5px 8px;">${fmtInt(shopAvgSellout)} máy</td>
+            <td style="text-align:center; padding:5px 8px;">${fmtVND(s.revenue)} đ</td>
+            <td style="text-align:center; padding:5px 8px;">${fmtVND(shopAvgRevenue)} đ</td>
+        </tr>`;
+    }).join('');
+    return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#f7fbf8; padding:12px 16px;">
+        <div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;">Chi tiết Shop — ${escapeHtml(groupLabel)} (${n} shop, tính trên ${numMonths} tháng có dữ liệu)</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px 16px; background:#eef7f0; border-radius:6px; padding:8px 10px; margin-bottom:8px; font-size:12px;">
+            <span>Tổng Sellout cả nhóm: <b>${fmtInt(totalSellout)} máy</b></span>
+            <span>TB Sellout/shop: <b>${fmtInt(avgSelloutPerShop)} máy</b></span>
+            <span>Tổng Doanh thu cả nhóm: <b>${fmtVND(totalRevenue)} đ</b></span>
+            <span>TB Doanh thu/shop: <b>${fmtVND(avgRevenuePerShop)} đ</b></span>
+        </div>
+        <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+            <thead>
+                <tr style="border-bottom:1px solid #cbd2d9;">
+                    <th style="text-align:left; padding:4px 8px; color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Shop</th>
+                    <th style="text-align:center; padding:4px 8px; color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Tổng Sellout</th>
+                    <th style="text-align:center; padding:4px 8px; color:var(--text-secondary); font-size:10px; text-transform:uppercase;">TB Sellout/tháng</th>
+                    <th style="text-align:center; padding:4px 8px; color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Tổng Doanh thu</th>
+                    <th style="text-align:center; padding:4px 8px; color:var(--text-secondary); font-size:10px; text-transform:uppercase;">TB Doanh thu/tháng</th>
+                </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
+        </div>
+    </td></tr>`;
+}
+
+// ================= Hiệu suất theo Level đối tác IND =================
+function perfTotalRowHtml(rows, labelText) {
+    const totalStores = rows.reduce((s,r)=>s+r.num_stores,0);
+    const totalSellout = rows.reduce((s,r)=>s+r.total_sellout,0);
+    const totalRevenue = rows.reduce((s,r)=>s+r.total_revenue,0);
+    const avgSellout = totalStores ? totalSellout/totalStores : 0;
+    const avgRevenue = totalStores ? totalRevenue/totalStores : 0;
+    return `<tr class="total-row">
+        <td>${labelText}</td>
+        <td class="num">${totalStores}</td>
+        <td class="num">${fmtInt(totalSellout)} máy</td>
+        <td class="num"><b>${fmtInt(avgSellout)} máy</b></td>
+        <td class="num">${fmtVND(totalRevenue)} đ</td>
+        <td class="num"><b>${fmtVND(avgRevenue)} đ</b></td>
+    </tr>`;
+}
+
+let levelSort = { field:'avg_revenue', dir:'desc' };
+let expandedLevels = new Set();
+function renderLevelTable() {
+    const groups = {};
+    const storesByLevel = {};
+    DATA.store_rows.forEach(r => {
+        if (r.channel !== 'IND') return; // Level chỉ có ý nghĩa với kênh IND (OPPO CLUB)
+        const key = r.level || '(Không rõ)';
+        if (!groups[key]) groups[key] = { level: key, num_stores: 0, total_sellout: 0, total_revenue: 0 };
+        if (!storesByLevel[key]) storesByLevel[key] = [];
+        storesByLevel[key].push(r);
+        const g = groups[key];
+        g.num_stores++;
+        g.total_sellout += r.sellout;
+        g.total_revenue += r.revenue;
+    });
+    let rows = Object.values(groups).map(g => ({
+        level: g.level, num_stores: g.num_stores,
+        total_sellout: g.total_sellout, avg_sellout: g.num_stores ? g.total_sellout / g.num_stores : 0,
+        total_revenue: g.total_revenue, avg_revenue: g.num_stores ? g.total_revenue / g.num_stores : 0,
+    }));
+    rows.sort((a,b) => {
+        let av=a[levelSort.field], bv=b[levelSort.field];
+        if (typeof av === 'string') { av=av.toLowerCase(); bv=bv.toLowerCase(); }
+        let cmp = av<bv?-1:av>bv?1:0;
+        return levelSort.dir==='asc'?cmp:-cmp;
+    });
+    const tbody = document.getElementById('level-table-body');
+    tbody.innerHTML = rows.map(r => {
+        const arrow = expandedLevels.has(r.level) ? '▾' : '▸';
+        const rowHtml = `<tr>
+            <td><span class="shop-link" data-level="${escapeHtml(r.level)}" style="cursor:pointer;">${arrow} <span class="tag">${r.level}</span></span></td>
+            <td class="num">${r.num_stores}</td>
+            <td class="num">${fmtInt(r.total_sellout)} máy</td>
+            <td class="num"><b>${fmtInt(r.avg_sellout)} máy</b></td>
+            <td class="num">${fmtVND(r.total_revenue)} đ</td>
+            <td class="num"><b>${fmtVND(r.avg_revenue)} đ</b></td>
+        </tr>`;
+        return rowHtml + (expandedLevels.has(r.level) ? shopListDetailHtml(r.level, storesByLevel[r.level] || [], 6) : '');
+    }).join('') + perfTotalRowHtml(rows, 'TỔNG (IND)');
+    tbody.querySelectorAll('.shop-link').forEach(el => {
+        el.addEventListener('click', () => {
+            const lv = el.dataset.level;
+            if (expandedLevels.has(lv)) expandedLevels.delete(lv);
+            else expandedLevels.add(lv);
+            renderLevelTable();
+        });
+    });
+    document.querySelectorAll('#level-table thead th').forEach(th => {
+        const base = th.textContent.replace(/[▲▼]/g,'').trim(); th.textContent = base;
+        if (th.dataset.field === levelSort.field) th.textContent = base + (levelSort.dir==='asc'?' ▲':' ▼');
+    });
+}
+document.querySelectorAll('#level-table thead th').forEach(th => {
+    th.addEventListener('click', () => {
+        const field = th.dataset.field;
+        if (levelSort.field === field) levelSort.dir = levelSort.dir==='asc'?'desc':'asc';
+        else { levelSort.field = field; levelSort.dir = 'desc'; }
+        renderLevelTable();
+    });
+});
+renderLevelTable();
+
+// ================= Hiệu suất theo Kênh phụ (KA) — tách theo tiền tố tên Shop =================
+function getKaSubChannel(storeId, storeName) {
+    if (storeId && KA_STORE_ID_TO_SUBCHANNEL[storeId]) return KA_STORE_ID_TO_SUBCHANNEL[storeId];
+    return '(Chưa xác định)';
+}
+let kaSubSort = { field:'avg_revenue', dir:'desc' };
+let expandedKaSub = new Set();
+function renderKaSubchannelTable() {
+    const groups = {};
+    const storesBySub = {};
+    DATA.store_rows.forEach(r => {
+        if (r.channel !== 'KA') return;
+        const key = getKaSubChannel(r.store_id, r.store);
+        if (!groups[key]) groups[key] = { sub: key, num_stores: 0, total_sellout: 0, total_revenue: 0 };
+        if (!storesBySub[key]) storesBySub[key] = [];
+        storesBySub[key].push(r);
+        const g = groups[key];
+        g.num_stores++;
+        g.total_sellout += r.sellout;
+        g.total_revenue += r.revenue;
+    });
+    let rows = Object.values(groups).map(g => ({
+        sub: g.sub, num_stores: g.num_stores,
+        total_sellout: g.total_sellout, avg_sellout: g.num_stores ? g.total_sellout / g.num_stores : 0,
+        total_revenue: g.total_revenue, avg_revenue: g.num_stores ? g.total_revenue / g.num_stores : 0,
+    }));
+    const fieldMap = { subchannel:'sub', num_stores:'num_stores', total_sellout:'total_sellout', avg_sellout:'avg_sellout', total_revenue:'total_revenue', avg_revenue:'avg_revenue' };
+    rows.sort((a,b) => {
+        const f = fieldMap[kaSubSort.field] || 'avg_revenue';
+        let av=a[f], bv=b[f];
+        if (typeof av === 'string') { av=av.toLowerCase(); bv=bv.toLowerCase(); }
+        let cmp = av<bv?-1:av>bv?1:0;
+        return kaSubSort.dir==='asc'?cmp:-cmp;
+    });
+    const tbody = document.getElementById('ka-subchannel-table-body');
+    tbody.innerHTML = rows.map(r => {
+        const arrow = expandedKaSub.has(r.sub) ? '▾' : '▸';
+        const rowHtml = `<tr>
+            <td><span class="shop-link" data-kasub="${escapeHtml(r.sub)}" style="cursor:pointer;">${arrow} <span class="tag">${escapeHtml(r.sub)}</span></span></td>
+            <td class="num">${r.num_stores}</td>
+            <td class="num">${fmtInt(r.total_sellout)} máy</td>
+            <td class="num"><b>${fmtInt(r.avg_sellout)} máy</b></td>
+            <td class="num">${fmtVND(r.total_revenue)} đ</td>
+            <td class="num"><b>${fmtVND(r.avg_revenue)} đ</b></td>
+        </tr>`;
+        return rowHtml + (expandedKaSub.has(r.sub) ? shopListDetailHtml(r.sub, storesBySub[r.sub] || [], 6) : '');
+    }).join('') + perfTotalRowHtml(rows, 'TỔNG (KA)');
+    tbody.querySelectorAll('.shop-link').forEach(el => {
+        el.addEventListener('click', () => {
+            const key = el.dataset.kasub;
+            if (expandedKaSub.has(key)) expandedKaSub.delete(key);
+            else expandedKaSub.add(key);
+            renderKaSubchannelTable();
+        });
+    });
+    document.querySelectorAll('#ka-subchannel-table thead th').forEach(th => {
+        const base = th.textContent.replace(/[▲▼]/g,'').trim(); th.textContent = base;
+        if (th.dataset.field === kaSubSort.field) th.textContent = base + (kaSubSort.dir==='asc'?' ▲':' ▼');
+    });
+}
+document.querySelectorAll('#ka-subchannel-table thead th').forEach(th => {
+    th.addEventListener('click', () => {
+        const field = th.dataset.field;
+        if (kaSubSort.field === field) kaSubSort.dir = kaSubSort.dir==='asc'?'desc':'asc';
+        else { kaSubSort.field = field; kaSubSort.dir = 'desc'; }
+        renderKaSubchannelTable();
+    });
+});
+renderKaSubchannelTable();
+
+// ================= Hiệu suất theo Size Shop (MWG) =================
+const MWG_SIZE_ORDER = ['S','A','B','C','D','Chưa xác định'];
+let mwgSizeSort = { field:'size_order', dir:'asc' };
+let expandedMwgSize = new Set();
+function renderMwgSizeTable() {
+    const groups = {};
+    const storesBySize = {};
+    DATA.store_rows.forEach(r => {
+        if (r.channel !== 'MWG') return;
+        const size = (r.store_id && MWG_STORE_ID_TO_SIZE[r.store_id]) ? MWG_STORE_ID_TO_SIZE[r.store_id] : 'Chưa xác định';
+        if (!groups[size]) groups[size] = { size, num_stores: 0, total_sellout: 0, total_revenue: 0 };
+        if (!storesBySize[size]) storesBySize[size] = [];
+        storesBySize[size].push(r);
+        const g = groups[size];
+        g.num_stores++;
+        g.total_sellout += r.sellout;
+        g.total_revenue += r.revenue;
+    });
+    let rows = Object.values(groups).map(g => ({
+        size: g.size, size_order: MWG_SIZE_ORDER.indexOf(g.size),
+        num_stores: g.num_stores,
+        total_sellout: g.total_sellout, avg_sellout: g.num_stores ? g.total_sellout / g.num_stores : 0,
+        total_revenue: g.total_revenue, avg_revenue: g.num_stores ? g.total_revenue / g.num_stores : 0,
+    }));
+    rows.sort((a,b) => {
+        let av=a[mwgSizeSort.field], bv=b[mwgSizeSort.field];
+        if (typeof av === 'string') { av=av.toLowerCase(); bv=bv.toLowerCase(); }
+        let cmp = av<bv?-1:av>bv?1:0;
+        return mwgSizeSort.dir==='asc'?cmp:-cmp;
+    });
+    const tbody = document.getElementById('mwg-size-table-body');
+    tbody.innerHTML = rows.map(r => {
+        const arrow = expandedMwgSize.has(r.size) ? '▾' : '▸';
+        const rowHtml = `<tr>
+            <td><span class="shop-link" data-mwgsize="${escapeHtml(r.size)}" style="cursor:pointer;">${arrow} <span class="tag">Size ${escapeHtml(r.size)}</span></span></td>
+            <td class="num">${r.num_stores}</td>
+            <td class="num">${fmtInt(r.total_sellout)} máy</td>
+            <td class="num"><b>${fmtInt(r.avg_sellout)} máy</b></td>
+            <td class="num">${fmtVND(r.total_revenue)} đ</td>
+            <td class="num"><b>${fmtVND(r.avg_revenue)} đ</b></td>
+        </tr>`;
+        return rowHtml + (expandedMwgSize.has(r.size) ? shopListDetailHtml('Size ' + r.size, storesBySize[r.size] || [], 6) : '');
+    }).join('') + perfTotalRowHtml(rows, 'TỔNG (MWG)');
+    tbody.querySelectorAll('.shop-link').forEach(el => {
+        el.addEventListener('click', () => {
+            const key = el.dataset.mwgsize;
+            if (expandedMwgSize.has(key)) expandedMwgSize.delete(key);
+            else expandedMwgSize.add(key);
+            renderMwgSizeTable();
+        });
+    });
+    document.querySelectorAll('#mwg-size-table thead th').forEach(th => {
+        const base = th.textContent.replace(/[▲▼]/g,'').trim(); th.textContent = base;
+        if (th.dataset.field === mwgSizeSort.field || (th.dataset.field === 'size' && mwgSizeSort.field === 'size_order')) th.textContent = base + (mwgSizeSort.dir==='asc'?' ▲':' ▼');
+    });
+}
+document.querySelectorAll('#mwg-size-table thead th').forEach(th => {
+    th.addEventListener('click', () => {
+        let field = th.dataset.field;
+        if (field === 'size') field = 'size_order';
+        if (mwgSizeSort.field === field) mwgSizeSort.dir = mwgSizeSort.dir==='asc'?'desc':'asc';
+        else { mwgSizeSort.field = field; mwgSizeSort.dir = 'desc'; }
+        renderMwgSizeTable();
+    });
+});
+renderMwgSizeTable();
+
+} // end initDashboard
+
+// ================= Tạo checkpoint mới (chạy thủ công, ~mỗi 6 tháng hoặc khi thấy chậm) =================
+async function createCheckpoint() {
+    if (!confirm('Tạo checkpoint mới sẽ tải TOÀN BỘ dữ liệu hiện tại (chậm, vài phút) và lưu kết quả lên Drive để các lần mở sau nhanh hơn.\n\nChỉ nên làm khi đã sẵn sàng "chốt" 1 giai đoạn (ví dụ mỗi 6 tháng). Tiếp tục?')) return;
+    const btn = document.getElementById('create-checkpoint-btn');
+    const statusEl = document.getElementById('checkpoint-status');
+    if (btn) btn.disabled = true;
+    try {
+        if (statusEl) statusEl.textContent = 'Đang tải toàn bộ dữ liệu...';
+        const fetchResult = await fetchRowsFromAppsScript(APPS_SCRIPT_URL, SHEET_NAME, 1);
+        const rows = fetchResult.rows.slice(1); // bỏ header
+        if (statusEl) statusEl.textContent = 'Đang tính toán...';
+        const DATA = computeData(rows);
+        if (statusEl) statusEl.textContent = 'Đang lưu checkpoint lên Drive...';
+        const resp = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'saveCheckpoint',
+                sheet: SHEET_NAME,
+                dataJson: JSON.stringify(DATA),
+                lastProcessedRow: fetchResult.lastRow,
+            }),
+        });
+        const result = await resp.json();
+        if (result.error) throw new Error(result.error);
+        if (statusEl) statusEl.textContent = '✅ Đã lưu checkpoint tại dòng ' + result.lastProcessedRow + '. Mở lại trang để dùng checkpoint mới.';
+    } catch (err) {
+        if (statusEl) statusEl.textContent = '❌ Lỗi: ' + err.message;
+        console.error(err);
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+loadAndRender();
+</script>
+</body>
+</html>
