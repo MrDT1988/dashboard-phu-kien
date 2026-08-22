@@ -6,6 +6,7 @@
 <title>DB TG 2026 — Tổng hợp OPPO Tiền Giang - Bến Tre</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
 :root {
     --bg-primary: #10151d;
@@ -1583,7 +1584,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Thị phần theo tháng — FPT &amp; Viettel</h3>
-                <div class="chart-sub">Khung bảng thị phần theo hãng, 12 tháng + Cả năm, dòng TỔNG cuối bảng - cùng cấu trúc bảng "theo hãng" bên Chi tiết MWG. <b>Chưa có nguồn số liệu thị phần theo Kênh phụ</b> nên hiện tại toàn bộ ô để trống ("-") - anh Thái bổ sung số liệu sau. Nút DS/DT chuyển chỉ số hiển thị (Doanh số máy / Doanh thu).</div>
+                <div class="chart-sub" id="ka-market-share-note">Thị phần theo hãng, 12 tháng + Cả năm, dòng TỔNG cuối bảng. Nguồn: Sheet "Share KA" (dữ liệu trực tiếp, tự đọc mỗi lần mở trang). <b>DS (Doanh số máy)</b> chính xác tuyệt đối. <b>DT (Doanh thu)</b> là <b>ước tính</b> dựa trên khoảng giá của từng đơn (sheet gốc không có giá chính xác từng đơn) nên chỉ mang tính tham khảo. Nút DS/DT chuyển chỉ số hiển thị.</div>
             </div>
         </div>
         <div class="ka-market-share-grid">
@@ -6916,14 +6917,122 @@ function renderKaShopRevenueTable() {
 }
 renderKaShopRevenueTable();
 
-// ---- 2 bảng thị phần 12 tháng theo Kênh phụ FPT/Viettel - KHUNG SẴN (chưa có nguồn dữ liệu thị phần
-// thật, anh Thái sẽ bổ sung số liệu sau). Mô phỏng cấu trúc bảng nhiệt "theo hãng" bên MWG (hàng =
-// hãng, cột = T1..T12 + Cả năm, dòng TỔNG cuối bảng) nhưng để trống toàn bộ ô ("-") - CHỈ cần điền số
-// vào đúng ô KA_MARKET_SHARE_DATA[subchannel][hãng][tháng] = {ds, dt} là bảng tự cập nhật, không cần
-// đụng code render.
+// ---- 2 bảng thị phần 12 tháng theo Kênh phụ FPT/Viettel ----
 const KA_MARKET_SHARE_BRANDS = ['OPPO', 'Samsung', 'Xiaomi', 'Vivo', 'Realme', 'Apple', 'Khác'];
 const KA_MARKET_SHARE_DATA = { FPT: {}, VIETTEL: {} };
 let kaMarketShareMetric = { FPT: 'ds', VIETTEL: 'ds' };
+
+// ================= Nguồn dữ liệu Thị phần: Sheet "Share KA" =================
+const SHARE_KA_SHEET_ID = '1KTM47_s6ywR1eWTQPyZlVICPR_XcHzTpcJNwHopJJfw';
+const SHARE_KA_TAB = 'Share KA';
+function shareKaGvizUrl() {
+    return 'https://docs.google.com/spreadsheets/d/' + SHARE_KA_SHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(SHARE_KA_TAB);
+}
+// Mã hãng bên khối FPT (cột Brand2): OP=OPPO, SS=Samsung, XM=Xiaomi, IP=Apple, HO=Honor(->Khác),
+// FP=máy bàn phím (loại bỏ, không tính vào thị phần smartphone), Others/mã lạ khác -> Khác.
+function shareKaFptBrandMap(code) {
+    const c = String(code || '').trim().toUpperCase();
+    if (c === 'OP') return 'OPPO';
+    if (c === 'SS') return 'Samsung';
+    if (c === 'XM') return 'Xiaomi';
+    if (c === 'IP') return 'Apple';
+    if (c === 'VV' || c === 'VIVO') return 'Vivo';
+    if (c === 'RM' || c === 'REALME') return 'Realme';
+    if (c === 'FP') return null; // máy bàn phím - loại khỏi thị phần
+    if (!c) return null;
+    return 'Khác'; // HO, Others, mã chưa xác định
+}
+// Bên khối Viettel, cột HANG đã ghi tên hãng đầy đủ sẵn.
+function shareKaViettelBrandMap(name) {
+    const s = String(name || '').trim();
+    if (!s) return null;
+    const low = s.toLowerCase();
+    if (low === 'oppo') return 'OPPO';
+    if (low === 'samsung') return 'Samsung';
+    if (low === 'xiaomi') return 'Xiaomi';
+    if (low === 'vivo') return 'Vivo';
+    if (low === 'realme') return 'Realme';
+    if (low === 'apple' || low === 'iphone') return 'Apple';
+    return 'Khác';
+}
+// Sheet chỉ có khoảng giá (VD "4_10M-15M", "1_<5M", "7_>30M") chứ không có giá chính xác từng đơn
+// -> DT (doanh thu) chỉ là ƯỚC TÍNH bằng giá trung bình của khoảng đó. DS (số lượng) thì chính xác.
+function shareKaPkBucketToPrice(pk) {
+    if (!pk) return 0;
+    let s = String(pk).trim().replace(/^\d+_/, '').toLowerCase();
+    if (s.indexOf('further') !== -1) return 0;
+    let m = s.match(/>\s*(\d+(?:\.\d+)?)\s*m/);
+    if (m) return (parseFloat(m[1]) + 5) * 1e6;
+    m = s.match(/<\s*(\d+(?:\.\d+)?)\s*m/);
+    if (m) return (parseFloat(m[1]) / 2) * 1e6;
+    m = s.match(/(\d+(?:\.\d+)?)\s*m\s*-\s*(\d+(?:\.\d+)?)\s*m/);
+    if (m) return (parseFloat(m[1]) + parseFloat(m[2])) / 2 * 1e6;
+    return 0;
+}
+function shareKaParseFptMonth(dateStr) {
+    const m = String(dateStr || '').match(/^\d{2}\.(\d{2})\.\d{4}$/);
+    return m ? parseInt(m[1], 10) : null;
+}
+function shareKaParseViettelMonth(thangStr) {
+    const m = String(thangStr || '').match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+}
+function shareKaAddEntry(sub, brand, month, qty, revenue) {
+    if (!brand || !month) return;
+    if (!KA_MARKET_SHARE_DATA[sub][brand]) KA_MARKET_SHARE_DATA[sub][brand] = {};
+    if (!KA_MARKET_SHARE_DATA[sub][brand][month]) KA_MARKET_SHARE_DATA[sub][brand][month] = { ds: 0, dt: 0 };
+    KA_MARKET_SHARE_DATA[sub][brand][month].ds += qty;
+    KA_MARKET_SHARE_DATA[sub][brand][month].dt += revenue;
+}
+function loadShareKaMarketShare() {
+    return fetch(shareKaGvizUrl()).then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+    }).then(text => {
+        const rows = Papa.parse(text, { skipEmptyLines: false }).data;
+        let headerRow = -1;
+        for (let i = 0; i < rows.length && i < 6; i++) {
+            if (rows[i][0] === 'Ngày' || rows[i][1] === 'Mã Shop') { headerRow = i; break; }
+        }
+        const dataStart = headerRow >= 0 ? headerRow + 1 : 2;
+        const fptData = {}, viettelData = {};
+        KA_MARKET_SHARE_BRANDS.forEach(b => { fptData[b] = {}; viettelData[b] = {}; });
+
+        let fptRows = 0, viettelRows = 0;
+        for (let i = dataStart; i < rows.length; i++) {
+            const r = rows[i];
+            if (!r) continue;
+            if (r[3] !== undefined && String(r[3]).trim() !== '') {
+                const brand = shareKaFptBrandMap(r[3]);
+                if (brand) {
+                    const month = shareKaParseFptMonth(r[0]);
+                    const qty = parseInt(String(r[4] || '0').replace(/[^0-9\-]/g, ''), 10) || 0;
+                    const price = shareKaPkBucketToPrice(r[5]);
+                    if (month) { shareKaAddEntryInto(fptData, brand, month, qty, qty * price); fptRows++; }
+                }
+            }
+            if (r[15] !== undefined && String(r[15]).trim() !== '') {
+                const brand = shareKaViettelBrandMap(r[15]);
+                if (brand) {
+                    const month = shareKaParseViettelMonth(r[18]);
+                    const qty = parseInt(String(r[16] || '0').replace(/[^0-9\-]/g, ''), 10) || 0;
+                    const price = shareKaPkBucketToPrice(r[17]);
+                    if (month) { shareKaAddEntryInto(viettelData, brand, month, qty, qty * price); viettelRows++; }
+                }
+            }
+        }
+        if (fptRows < 5 && viettelRows < 5) throw new Error('Đọc được quá ít dòng dữ liệu, có thể sheet đổi cấu trúc');
+        KA_MARKET_SHARE_DATA.FPT = fptData;
+        KA_MARKET_SHARE_DATA.VIETTEL = viettelData;
+    });
+}
+function shareKaAddEntryInto(target, brand, month, qty, revenue) {
+    if (!target[brand]) target[brand] = {};
+    if (!target[brand][month]) target[brand][month] = { ds: 0, dt: 0 };
+    target[brand][month].ds += qty;
+    target[brand][month].dt += revenue;
+}
+
 function renderKaMarketShareTable(subchannel, tbodyId) {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
@@ -6961,6 +7070,18 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
         });
     });
 });
+// Tải dữ liệu thị phần thật từ Sheet "Share KA" (bất đồng bộ) - nếu lỗi thì vẫn giữ bảng khung trống,
+// không làm hỏng phần còn lại của dashboard, và hiện 1 dòng cảnh báo nhỏ.
+(function () {
+    const noteEl = document.getElementById('ka-market-share-note');
+    loadShareKaMarketShare().then(() => {
+        renderKaMarketShareTable('FPT', 'ka-market-share-fpt-body');
+        renderKaMarketShareTable('VIETTEL', 'ka-market-share-viettel-body');
+    }).catch(err => {
+        console.error('Không tải được dữ liệu Thị phần (Share KA):', err);
+        if (noteEl) noteEl.insertAdjacentHTML('afterend', '<div style="color:var(--negative); font-size:11.5px; margin-top:4px;">⚠️ Không tải được dữ liệu thị phần từ Sheet Share KA (' + escapeHtml(err.message) + ') — đang hiện bảng trống.</div>');
+    });
+})();
 
 // ================= Hiệu suất theo Size Shop (MWG) =================
 const MWG_SIZE_ORDER = ['S','A','B','C','D','Chưa xác định'];
