@@ -907,7 +907,11 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Target theo Kênh &amp; theo Sale</h3>
-                <div class="chart-sub">Target Sellout, Doanh thu &amp; Reno16 Series cố định theo từng kênh (MWG/KA/IND). % HT tính theo <b>tháng gần nhất có dữ liệu</b>. Bấm vào tên kênh để xem chi tiết từng Sale trong kênh đó (target được phân bổ theo tỷ trọng đóng góp lịch sử).</div>
+                <div class="chart-sub" id="channel-target-sub">Target Sellout, Doanh thu &amp; Reno16 Series cố định theo từng kênh (MWG/KA/IND). % HT tính theo <b>tháng gần nhất có dữ liệu</b> (đổi được bằng bộ lọc Tháng bên phải). Bấm vào tên kênh để xem chi tiết từng Sale trong kênh đó (target được phân bổ theo tỷ trọng đóng góp lịch sử).</div>
+            </div>
+            <div class="table-controls">
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
+                <select id="channel-target-month-select"><option value="">Tháng gần nhất</option></select>
             </div>
         </div>
         <div class="table-scroll" style="max-height:none;">
@@ -3856,12 +3860,13 @@ function computeSaleTargetAllocation() {
 const saleTargetAllocation = computeSaleTargetAllocation();
 
 // Thực tế của tháng gần nhất, theo Sale và theo Kênh
-function computeActualForLatestMonth() {
+function computeActualForLatestMonth(month) {
+    const targetMonth = month || LATEST_MONTH;
     const bySales = {}; // sales -> {sellout, rev}
     const byChannel = {}; // channel -> {sellout, rev}
-    if (LATEST_MONTH === null) return { bySales, byChannel };
+    if (targetMonth === null) return { bySales, byChannel };
     DATA.crosstab.forEach(rec => {
-        if (rec.m !== LATEST_MONTH) return;
+        if (rec.m !== targetMonth) return;
         if (!bySales[rec.sales]) bySales[rec.sales] = { sellout: 0, rev: 0 };
         bySales[rec.sales].sellout += rec.sellout;
         bySales[rec.sales].rev += rec.rev;
@@ -3873,36 +3878,44 @@ function computeActualForLatestMonth() {
 }
 const latestActual = computeActualForLatestMonth();
 
-function computeProductActualForLatestMonth(matchFn) {
+function computeProductActualForLatestMonth(matchFn, month) {
+    const targetMonth = month || LATEST_MONTH;
     const byChannel = {}; // channel -> sellout
-    if (LATEST_MONTH === null) return byChannel;
+    if (targetMonth === null) return byChannel;
     DATA.series_detail_crosstab.forEach(rec => {
-        if (rec.m !== LATEST_MONTH) return;
+        if (rec.m !== targetMonth) return;
         if (!matchFn(rec.series_detail)) return;
         byChannel[rec.channel] = (byChannel[rec.channel] || 0) + rec.sellout;
     });
     return byChannel;
 }
 
-function computeProductActualBySalesForLatestMonth(matchFn) {
+function computeProductActualBySalesForLatestMonth(matchFn, month) {
+    const targetMonth = month || LATEST_MONTH;
     const bySales = {}; // sales -> sellout
-    if (LATEST_MONTH === null) return bySales;
+    if (targetMonth === null) return bySales;
     DATA.series_detail_crosstab.forEach(rec => {
-        if (rec.m !== LATEST_MONTH) return;
+        if (rec.m !== targetMonth) return;
         if (!matchFn(rec.series_detail)) return;
         bySales[rec.sales] = (bySales[rec.sales] || 0) + rec.sellout;
     });
     return bySales;
 }
 
+// Bộ lọc Tháng cho bảng "Target theo Kênh & theo Sale" - null = tự động dùng tháng gần nhất có dữ liệu
+// (hành vi mặc định cũ), chọn cụ thể 1 tháng khác sẽ so Target với đúng tháng đó.
+let channelTargetMonthFilter = null;
+
 function renderChannelTargetTable() {
+    const targetMonth = channelTargetMonthFilter || LATEST_MONTH;
+    const actualForMonth = computeActualForLatestMonth(targetMonth);
     const reno16Conf = PRODUCT_TARGETS['reno16'];
     const reno16MatchFn = (sd) => String(sd || '').toLowerCase().includes('reno16');
-    const reno16ActualByChannel = computeProductActualForLatestMonth(reno16MatchFn);
+    const reno16ActualByChannel = computeProductActualForLatestMonth(reno16MatchFn, targetMonth);
 
     let rows = Object.keys(CHANNEL_TARGETS).map(channel => {
         const target = CHANNEL_TARGETS[channel];
-        const act = latestActual.byChannel[channel] || { sellout: 0, rev: 0 };
+        const act = actualForMonth.byChannel[channel] || { sellout: 0, rev: 0 };
         const targetReno16 = reno16Conf[channel] || 0;
         const actualReno16 = reno16ActualByChannel[channel] || 0;
         return {
@@ -3947,7 +3960,7 @@ function renderChannelTargetTable() {
             <td class="num">${fmtInt(r.actual_reno16)} máy</td>
             <td class="num">${r.pct_reno16===null?'-':fmtPct(r.pct_reno16)}</td>
         </tr>`;
-        return rowHtml + (expandedTargetChannels.has(r.channel) ? saleDetailRowsForChannel(r.channel, 10) : '');
+        return rowHtml + (expandedTargetChannels.has(r.channel) ? saleDetailRowsForChannel(r.channel, 10, targetMonth) : '');
     }).join('');
     bodyHtml += `<tr class="total-row">
         <td>TỔNG</td>
@@ -3983,6 +3996,27 @@ document.querySelectorAll('#channel-target-table thead th').forEach(th => {
         renderChannelTargetTable();
     });
 });
+function setupChannelTargetMonthFilter() {
+    const sel = document.getElementById('channel-target-month-select');
+    if (!sel) return;
+    const months = (DATA.months_sorted || []).slice().sort((a,b)=>a-b);
+    months.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = String(m);
+        opt.textContent = 'Tháng ' + m + (m === LATEST_MONTH ? ' (gần nhất)' : '');
+        sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => {
+        channelTargetMonthFilter = sel.value ? parseInt(sel.value, 10) : null;
+        const subEl = document.getElementById('channel-target-sub');
+        if (subEl) {
+            const shownMonth = channelTargetMonthFilter || LATEST_MONTH;
+            subEl.innerHTML = 'Target Sellout, Doanh thu &amp; Reno16 Series cố định theo từng kênh (MWG/KA/IND). % HT đang tính theo <b>Tháng ' + shownMonth + '</b>' + (channelTargetMonthFilter ? '' : ' (tháng gần nhất có dữ liệu)') + '. Bấm vào tên kênh để xem chi tiết từng Sale trong kênh đó (target được phân bổ theo tỷ trọng đóng góp lịch sử).';
+        }
+        renderChannelTargetTable();
+    });
+}
+setupChannelTargetMonthFilter();
 renderChannelTargetTable();
 
 // ================= Xu hướng % Hoàn thành Target theo tháng =================
@@ -4050,17 +4084,18 @@ renderChannelTargetTable();
     });
 })();
 
-function saleDetailRowsForChannel(channel, colspan) {
+function saleDetailRowsForChannel(channel, colspan, month) {
     const salesInChannel = Object.keys(saleTargetAllocation).filter(s => saleTargetAllocation[s].channel === channel);
     if (!salesInChannel.length) {
         return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#101a15; padding:12px 16px; color:var(--text-secondary);">Không có Sale nào được phân bổ target cho kênh ${escapeHtml(channel)}.</td></tr>`;
     }
     const reno16MatchFn = (sd) => String(sd || '').toLowerCase().includes('reno16');
-    const reno16ActualBySales = computeProductActualBySalesForLatestMonth(reno16MatchFn);
+    const reno16ActualBySales = computeProductActualBySalesForLatestMonth(reno16MatchFn, month);
+    const actualForMonth = computeActualForLatestMonth(month);
 
     const rows = salesInChannel.map(sales => {
         const alloc = saleTargetAllocation[sales];
-        const act = latestActual.bySales[sales] || { sellout: 0, rev: 0 };
+        const act = actualForMonth.bySales[sales] || { sellout: 0, rev: 0 };
         const actualReno16 = reno16ActualBySales[sales] || 0;
         return {
             sales,
