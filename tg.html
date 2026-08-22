@@ -616,7 +616,10 @@ thead th.latest-month-col { background: rgba(255,193,7,0.28) !important; }
 #shop-combined-table thead th { z-index: 3; background: #57687e; }
 /* Cột Shop/Size/Sale: canh giữa + font to hơn 1 tí để nổi bật, gộp 1 ô duy nhất (rowspan 3 dòng DS/DT/ĐG) nên tự
    động nằm ngay giữa khối — trùng với hàng "DT" ở giữa. */
-#shop-combined-table td.shop-name-cell, #shop-combined-table td.shop-size-cell, #shop-combined-table td.shop-sale-cell,
+#shop-combined-table td.shop-name-cell {
+    text-align: left; vertical-align: middle; font-size: 11px;
+}
+#shop-combined-table td.shop-size-cell, #shop-combined-table td.shop-sale-cell,
 #shop-combined-table td.shop-total-label-cell {
     text-align: center; vertical-align: middle; font-size: 11px;
 }
@@ -1146,16 +1149,47 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             </div>
             <div class="chart-container chart-tall">
                 <h3>Tỉ trọng từng hãng theo phân khúc giá</h3>
-                <div class="chart-sub">% doanh thu mỗi hãng chiếm trong từng phân khúc giá (100% stacked) — cho thấy OPPO mạnh/yếu ở phân khúc nào</div>
+                <div class="chart-sub">% doanh thu mỗi hãng chiếm trong từng phân khúc giá (100% stacked) — cho thấy OPPO mạnh/yếu ở phân khúc nào. Rê chuột vào từng phần cột để xem chi tiết model.</div>
                 <div id="chart-segment-total" style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:8px;"></div>
                 <canvas id="chart-segment"></canvas>
             </div>
             <div class="chart-container chart-tall">
                 <h3>Tỉ trọng phân khúc giá theo từng hãng</h3>
-                <div class="chart-sub">% doanh số (máy) của mỗi hãng nằm ở phân khúc nào (100% stacked, chuẩn hóa theo chính hãng đó) — cho thấy hãng đang bán tốt ở phân khúc nào</div>
+                <div class="chart-sub">% doanh số (máy) của mỗi hãng nằm ở phân khúc nào (100% stacked, chuẩn hóa theo chính hãng đó) — cho thấy hãng đang bán tốt ở phân khúc nào. Rê chuột vào từng phần cột để xem chi tiết model.</div>
                 <canvas id="chart-brand-segment"></canvas>
             </div>
         </section>
+
+        <div style="margin:0 0 var(--gap);">
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>TOP 10 sản phẩm bán chạy — 6 hãng lớn</h3>
+                <div class="chart-sub">Xếp hạng theo số lượng máy bán ra (S.O), trong đúng phân khúc giá đang chọn (thẻ bên dưới). Bộ lọc Tháng riêng cho bảng này (không dùng chung với 3 biểu đồ phía trên).</div>
+            </div>
+            <div class="table-controls">
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
+                <div class="multiselect" id="ms-top-products-month"></div>
+            </div>
+        </div>
+        <div class="sale-card-group" id="top-products-seg-cards" style="margin-bottom:14px;"></div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="top-products-table">
+                <thead>
+                    <tr>
+                        <th style="width:36px; text-align:center;">#</th>
+                        <th>Model</th>
+                        <th>Hãng</th>
+                        <th class="num">Giá bán</th>
+                        <th class="num">S.O (máy)</th>
+                        <th class="num">% trong phân khúc</th>
+                    </tr>
+                </thead>
+                <tbody id="top-products-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+        </div>
 
         <div class="cluster-wrap">
         <section class="table-section" id="mwg-sec-sale">
@@ -1257,7 +1291,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                     <table class="data-table" id="shop-combined-table">
                         <thead>
                             <tr>
-                                <th data-field="shop" style="text-align:center;">Shop</th>
+                                <th data-field="shop" style="text-align:left;">Shop</th>
                                 <th data-field="shop_size" style="text-align:center;">Size</th>
                                 <th data-field="sale" style="text-align:center;">Sale/ASM</th>
                                 <th data-field="metric_tag" style="text-align:center; min-width:44px;">DS/DT</th>
@@ -1356,6 +1390,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <div class="filter-bar">
                 <label>Tháng <span style="color:var(--negative)">*</span></label>
                 <div class="multiselect" id="ms-daily-month"></div>
+                <label>Ngày</label>
+                <div class="multiselect" id="ms-daily-day"></div>
                 <label>Sale/ASM</label>
                 <div class="multiselect" id="ms-daily-sale"></div>
                 <label>Phân khúc giá</label>
@@ -9069,13 +9105,80 @@ document.querySelectorAll('#mwg-size-table thead th').forEach(th => {
     });
 });
 
+// Gộp phân khúc giá chi tiết (9 mức gốc) thành 6 mức chuẩn theo yêu cầu, dùng CHUNG cho cả 3 biểu đồ tỉ
+// trọng phân khúc giá bên dưới (không đụng tới DATA.segment_order gốc vì còn dùng ở nơi khác trong dashboard).
+const SEGMENT_6_ORDER = ['<5M', '5-10M', '10-15M', '15-20M', '20-30M', '>30M'];
+let topProductsSeg = SEGMENT_6_ORDER[0]; // khai báo sớm vì refreshSegCharts() gọi renderTopProductsTable() ngay khi khởi tạo
+let topProductsFilters = { months: [] }; // tương tự, khai báo sớm để tránh lỗi truy cập trước khởi tạo (TDZ)
+function mapSeg6(seg) {
+    if (seg === '<3M' || seg === '3-5M') return '<5M';
+    if (seg === '5-7M' || seg === '7-10M') return '5-10M';
+    if (seg === '10-15M') return '10-15M';
+    if (seg === '15-20M') return '15-20M';
+    if (seg === '20-30M') return '20-30M';
+    if (seg === '>20M' || seg === '>30M') return '>30M';
+    return null;
+}
+
 let segmentChart = null;
 let brandSegmentChart = null;
 let segmentUnitsChart = null;
 
+// Chi tiết model theo phân khúc(6 mức)+hãng, để hiện trong tooltip khi hover — nguồn duy nhất có cả
+// Model lẫn Phân khúc là DATA.daily.rows (bảng "theo ngày"), nên chỉ áp dụng được bộ lọc Tháng/Sale/Size
+// shop của segFilters (không áp dụng được bộ lọc Shop vì daily.rows không có chiều Shop).
+function computeSegModelBreakdown() {
+    const result = {}; // seg6 -> brand -> model -> units
+    const monthSet = segFilters.months.length ? new Set(segFilters.months.map(m => parseInt(m))) : null;
+    const saleSet = segFilters.sales.length ? new Set(segFilters.sales) : null;
+    const sizeSet = segFilters.sizeShops.length ? new Set(segFilters.sizeShops) : null;
+    DATA.daily.rows.forEach(row => {
+        const [m, d, saleI, segI, brandI, rev, units, sizeI, modelI] = row;
+        if (monthSet && !monthSet.has(m)) return;
+        if (saleSet && !saleSet.has(DATA.daily.sales[saleI])) return;
+        if (sizeSet && !sizeSet.has(DATA.daily.sizes[sizeI])) return;
+        const rawSeg = DATA.daily.segments[segI];
+        const s6 = mapSeg6(rawSeg);
+        if (!s6) return;
+        const brandName = DATA.daily.brands[brandI];
+        const b = DATA.top_brands.includes(brandName) ? brandName : 'Khác';
+        const modelName = (DATA.daily.models && modelI !== undefined) ? DATA.daily.models[modelI] : null;
+        if (!modelName) return;
+        if (!result[s6]) result[s6] = {};
+        if (!result[s6][b]) result[s6][b] = {};
+        result[s6][b][modelName] = (result[s6][b][modelName] || 0) + units;
+    });
+    return result;
+}
+function segModelTooltipLines(segModelBreakdown, seg, brand) {
+    const models = (segModelBreakdown[seg] && segModelBreakdown[seg][brand]) || {};
+    const entries = Object.entries(models).sort((a,b) => b[1]-a[1]);
+    if (!entries.length) return [];
+    const lines = ['', 'Chi tiết model:'];
+    entries.slice(0,8).forEach(([name, units]) => lines.push(`  ${name}: ${fmtInt(units)} máy`));
+    if (entries.length > 8) lines.push(`  +${entries.length-8} model khác`);
+    return lines;
+}
+
 function refreshSegCharts() {
-    const segBrandRev = computeSegBrandRevenue();
-    const segs = DATA.segment_order;
+    renderSizePerfTable();
+    if (typeof renderTopProductsTable === 'function') renderTopProductsTable();
+    const segModelBreakdown = computeSegModelBreakdown();
+    const segBrandRevRaw = computeSegBrandRevenue();
+    const segBrandUnitsRaw = computeSegBrandUnits();
+    const segs = SEGMENT_6_ORDER;
+    const segBrandRev = {}; segs.forEach(s => { segBrandRev[s] = {}; ALL_BRANDS_ORDER.forEach(b => segBrandRev[s][b] = 0); });
+    DATA.segment_order.forEach(rawSeg => {
+        const s6 = mapSeg6(rawSeg);
+        if (!s6 || !segBrandRevRaw[rawSeg]) return;
+        ALL_BRANDS_ORDER.forEach(b => segBrandRev[s6][b] += segBrandRevRaw[rawSeg][b] || 0);
+    });
+    const segBrandUnits = {}; segs.forEach(s => { segBrandUnits[s] = {}; ALL_BRANDS_ORDER.forEach(b => segBrandUnits[s][b] = 0); });
+    DATA.segment_order.forEach(rawSeg => {
+        const s6 = mapSeg6(rawSeg);
+        if (!s6 || !segBrandUnitsRaw[rawSeg]) return;
+        ALL_BRANDS_ORDER.forEach(b => segBrandUnits[s6][b] += segBrandUnitsRaw[rawSeg][b] || 0);
+    });
 
     // Chart 1: per segment, % by brand (segment-normalized)
     const segTotals = segs.map(seg => ALL_BRANDS_ORDER.reduce((s,b)=>s+segBrandRev[seg][b],0));
@@ -9100,7 +9203,16 @@ function refreshSegCharts() {
             layout: { padding: { top: 20 } },
             plugins: {
                 legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
-                tooltip: { callbacks: { label: c => c.dataset.label+': '+c.parsed.y.toFixed(1)+'%' } },
+                tooltip: { callbacks: {
+                    label: c => {
+                        const brand = ALL_BRANDS_ORDER[c.datasetIndex];
+                        const seg = segs[c.dataIndex];
+                        const units = (segBrandUnits[seg] && segBrandUnits[seg][brand]) || 0;
+                        const rev = (segBrandRev[seg] && segBrandRev[seg][brand]) || 0;
+                        return c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '% (' + fmtInt(units) + ' máy, ' + fmtVND(rev) + ')';
+                    },
+                    afterLabel: c => segModelTooltipLines(segModelBreakdown, segs[c.dataIndex], ALL_BRANDS_ORDER[c.datasetIndex])
+                } },
                 datalabels: { display:true, color:'#fff', font:{size:10,weight:'700'}, formatter: v => v < 4 ? '' : v.toFixed(0)+'%' }
             },
             scales: {
@@ -9112,7 +9224,6 @@ function refreshSegCharts() {
 
     // Chart 2: per brand, % by segment (brand-normalized) — theo DOANH SỐ (máy), không phải doanh thu,
     // vì chart này thể hiện hãng đang "bán tốt" ở phân khúc nào (số lượng máy bán ra), không phải giá trị tiền.
-    const segBrandUnits = computeSegBrandUnits();
     const brandTotals = {};
     ALL_BRANDS_ORDER.forEach(b => { brandTotals[b] = segs.reduce((s,seg)=>s+segBrandUnits[seg][b],0); });
     const segColors = ['#8e8e93','#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#CCB974','#64B5CD'];
@@ -9130,7 +9241,15 @@ function refreshSegCharts() {
             layout: { padding: { top: 20 } },
             plugins: {
                 legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:10}} },
-                tooltip: { callbacks: { label: c => c.dataset.label+': '+c.parsed.y.toFixed(1)+'%' } },
+                tooltip: { callbacks: {
+                    label: c => {
+                        const seg = segs[c.datasetIndex];
+                        const brand = ALL_BRANDS_ORDER[c.dataIndex];
+                        const units = (segBrandUnits[seg] && segBrandUnits[seg][brand]) || 0;
+                        return c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '% (' + fmtInt(units) + ' máy)';
+                    },
+                    afterLabel: c => segModelTooltipLines(segModelBreakdown, segs[c.datasetIndex], ALL_BRANDS_ORDER[c.dataIndex])
+                } },
                 datalabels: { display:true, color:'#fff', font:{size:10,weight:'700'}, formatter: v => v < 4 ? '' : v.toFixed(0)+'%' }
             },
             scales: {
@@ -9141,7 +9260,17 @@ function refreshSegCharts() {
     });
 
     // Chart 3: tỉ trọng đóng góp từng phân khúc theo số lượng (units, 100% stacked), toàn thị trường, theo tháng
-    const unitsByMonth = computeSegmentUnitsByMonth();
+    const unitsByMonthRaw = computeSegmentUnitsByMonth();
+    const unitsByMonth = {};
+    Object.keys(unitsByMonthRaw).forEach(m => {
+        unitsByMonth[m] = {};
+        segs.forEach(s => unitsByMonth[m][s] = 0);
+        Object.keys(unitsByMonthRaw[m]).forEach(rawSeg => {
+            const s6 = mapSeg6(rawSeg);
+            if (!s6) return;
+            unitsByMonth[m][s6] += unitsByMonthRaw[m][rawSeg] || 0;
+        });
+    });
     const monthsWithData = segFilters.months.length
         ? segFilters.months.map(m => parseInt(m,10)).sort((a,b)=>a-b)
         : Array.from({length: DATA.month_labels.length}, (_,i)=>i+1);
@@ -9176,22 +9305,92 @@ function refreshSegCharts() {
             }
         }
     });
-
-    renderSizePerfTable();
 }
 refreshSegCharts();
 
+// ---- TOP 10 sản phẩm bán chạy — 6 hãng lớn, theo từng phân khúc giá (thẻ chọn 6 mức) ----
+// Bộ lọc Tháng RIÊNG cho bảng này (không dùng chung ms-seg-month của 3 biểu đồ phía trên); Sale/Size shop
+// vẫn dùng chung segFilters. Nguồn dữ liệu vẫn là DATA.daily.rows (duy nhất có Model + Phân khúc).
+function computeTopProductsBreakdown() {
+    const result = {}; // seg6 -> brand -> model -> {units, rev}
+    const monthSet = topProductsFilters.months.length ? new Set(topProductsFilters.months.map(m => parseInt(m))) : null;
+    const saleSet = segFilters.sales.length ? new Set(segFilters.sales) : null;
+    const sizeSet = segFilters.sizeShops.length ? new Set(segFilters.sizeShops) : null;
+    DATA.daily.rows.forEach(row => {
+        const [m, d, saleI, segI, brandI, rev, units, sizeI, modelI] = row;
+        if (monthSet && !monthSet.has(m)) return;
+        if (saleSet && !saleSet.has(DATA.daily.sales[saleI])) return;
+        if (sizeSet && !sizeSet.has(DATA.daily.sizes[sizeI])) return;
+        const s6 = mapSeg6(DATA.daily.segments[segI]);
+        if (!s6) return;
+        const brandName = DATA.daily.brands[brandI];
+        const b = DATA.top_brands.includes(brandName) ? brandName : 'Khác';
+        const modelName = (DATA.daily.models && modelI !== undefined) ? DATA.daily.models[modelI] : null;
+        if (!modelName) return;
+        if (!result[s6]) result[s6] = {};
+        if (!result[s6][b]) result[s6][b] = {};
+        if (!result[s6][b][modelName]) result[s6][b][modelName] = { units: 0, rev: 0 };
+        result[s6][b][modelName].units += units;
+        result[s6][b][modelName].rev += rev;
+    });
+    return result;
+}
+function renderTopProductsCards() {
+    const el = document.getElementById('top-products-seg-cards');
+    if (!el) return;
+    el.innerHTML = SEGMENT_6_ORDER.map(s => `<button type="button" class="sale-card-btn${topProductsSeg === s ? ' active' : ''}" data-top-seg="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('');
+    el.querySelectorAll('.sale-card-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            topProductsSeg = btn.dataset.topSeg;
+            renderTopProductsCards();
+            renderTopProductsTable();
+        });
+    });
+}
+function renderTopProductsTable() {
+    const tbody = document.getElementById('top-products-table-body');
+    if (!tbody) return;
+    const breakdown = computeTopProductsBreakdown();
+    const byModel = {}; // model -> { brand, units, rev }
+    const segData = breakdown[topProductsSeg] || {};
+    TOP_BRANDS_FIXED.forEach(brand => {
+        const models = segData[brand] || {};
+        Object.entries(models).forEach(([model, v]) => {
+            const prev = byModel[model] || { brand, units: 0, rev: 0 };
+            byModel[model] = { brand, units: prev.units + v.units, rev: prev.rev + v.rev };
+        });
+    });
+    const rows = Object.entries(byModel).map(([model, v]) => ({ model, brand: v.brand, units: v.units, avgPrice: v.units ? v.rev / v.units : 0 })).sort((a,b) => b.units - a.units).slice(0, 10);
+    const segTotal = TOP_BRANDS_FIXED.reduce((s,b) => s + Object.values(segData[b] || {}).reduce((a,c) => a+c.units, 0), 0);
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:20px;">Không có dữ liệu trong phân khúc này (theo bộ lọc hiện tại).</td></tr>';
+        return;
+    }
+    tbody.innerHTML = rows.map((r, i) => `<tr>
+        <td style="text-align:center;">${i+1}</td>
+        <td>${escapeHtml(r.model)}</td>
+        <td>${escapeHtml(brandDisplay(r.brand))}</td>
+        <td class="num">${fmtVND(r.avgPrice)}</td>
+        <td class="num">${fmtInt(r.units)} máy</td>
+        <td class="num">${segTotal ? (r.units/segTotal*100).toFixed(1) : '0.0'}%</td>
+    </tr>`).join('');
+}
+buildMultiselect('ms-top-products-month', DATA.month_labels.map((lbl,i) => ({ value:String(i+1), text: lbl })), topProductsFilters, 'months', 'Tất cả', () => renderTopProductsTable());
+renderTopProductsCards();
+renderTopProductsTable();
+
 // ---- Chart: Doanh số & Doanh thu theo ngày (dùng CHUNG 1 bộ lọc — bắt buộc chọn Tháng) ----
-let dailyFilters = { months: [], sales: [], segments: [], sizeShops: [] };
+let dailyFilters = { months: [], days: [], sales: [], segments: [], sizeShops: [] };
 function renderDailyBoth() { renderDailyChart(); renderDailyRevenueChart(); }
 
 buildMultiselect('ms-daily-month', DATA.month_labels.map((lbl,i) => ({ value:String(i+1), text: lbl })), dailyFilters, 'months', 'Chưa chọn', () => renderDailyBoth());
+buildMultiselect('ms-daily-day', Array.from({length:31}, (_,i) => ({ value:String(i+1), text:'Ngày '+(i+1) })), dailyFilters, 'days', 'Tất cả', () => renderDailyBoth());
 buildMultiselect('ms-daily-sale', DATA.daily.sales.map(s => ({ value:s, text:s })), dailyFilters, 'sales', 'Tất cả', () => renderDailyBoth());
 buildMultiselect('ms-daily-segment', DATA.daily.segments.map(s => ({ value:s, text:s })), dailyFilters, 'segments', 'Tất cả', () => renderDailyBoth());
 buildMultiselect('ms-daily-sizeshop', DATA.daily.sizes.map(s => ({ value:s, text:s })), dailyFilters, 'sizeShops', 'Tất cả', () => renderDailyBoth());
 
 document.getElementById('daily-reset').addEventListener('click', () => {
-    document.querySelectorAll('#ms-daily-month, #ms-daily-sale, #ms-daily-segment, #ms-daily-sizeshop').forEach(el => { if (el._reset) el._reset(); });
+    document.querySelectorAll('#ms-daily-month, #ms-daily-day, #ms-daily-sale, #ms-daily-segment, #ms-daily-sizeshop').forEach(el => { if (el._reset) el._reset(); });
     renderDailyBoth();
 });
 
@@ -9412,6 +9611,7 @@ function renderDailyChart() {
     canvas.style.display = 'block';
 
     const monthSet = new Set(dailyFilters.months.map(m => parseInt(m)));
+    const daySet = dailyFilters.days.length ? new Set(dailyFilters.days.map(d => parseInt(d))) : null;
     const saleSet = dailyFilters.sales.length ? new Set(dailyFilters.sales) : null;
     const segSet = dailyFilters.segments.length ? new Set(dailyFilters.segments) : null;
     const sizeSet = dailyFilters.sizeShops.length ? new Set(dailyFilters.sizeShops) : null;
@@ -9426,6 +9626,7 @@ function renderDailyChart() {
     DATA.daily.rows.forEach(row => {
         const [m, d, saleI, segI, brandI, rev, units, sizeI, modelI] = row;
         if (!monthSet.has(m)) return;
+        if (daySet && !daySet.has(d)) return;
         if (saleSet && !saleSet.has(DATA.daily.sales[saleI])) return;
         if (segSet && !segSet.has(DATA.daily.segments[segI])) return;
         if (sizeSet && !sizeSet.has(DATA.daily.sizes[sizeI])) return;
@@ -9629,6 +9830,7 @@ function renderDailyRevenueChart() {
     canvas.style.display = 'block';
 
     const monthSet = new Set(dailyFilters.months.map(m => parseInt(m)));
+    const daySet = dailyFilters.days.length ? new Set(dailyFilters.days.map(d => parseInt(d))) : null;
     const saleSet = dailyFilters.sales.length ? new Set(dailyFilters.sales) : null;
     const segSet = dailyFilters.segments.length ? new Set(dailyFilters.segments) : null;
     const sizeSet = dailyFilters.sizeShops.length ? new Set(dailyFilters.sizeShops) : null;
@@ -9642,6 +9844,7 @@ function renderDailyRevenueChart() {
     DATA.daily.rows.forEach(row => {
         const [m, d, saleI, segI, brandI, rev, units, sizeI, modelI] = row;
         if (!monthSet.has(m)) return;
+        if (daySet && !daySet.has(d)) return;
         if (saleSet && !saleSet.has(DATA.daily.sales[saleI])) return;
         if (segSet && !segSet.has(DATA.daily.segments[segI])) return;
         if (sizeSet && !sizeSet.has(DATA.daily.sizes[sizeI])) return;
@@ -11314,9 +11517,8 @@ function renderSaleTable() {
     tbody.innerHTML = rows.map(r => {
         const hasUnits = r.total_units > 0, hasRev = r.total_revenue > 0, hasPk = r.pk1020_total_units > 0;
         const isExpanded = expandedSaleShops.has(r.sale);
-        const arrow = isExpanded ? '▾' : '▸';
         const rowHtml = `<tr>
-            <td><span class="shop-link" data-sale-name="${escapeHtml(r.sale)}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${arrow} ${escapeHtml(r.sale)}</span></td>
+            <td style="color:var(--text-primary); font-weight:600;">${escapeHtml(r.sale)}</td>
             <td class="num">${r.num_shops}</td>
             <td class="num">${r.oppo_avg_price > 0 ? fmtVND(r.oppo_avg_price) : '-'}</td>
             <td class="num khung-so khung-divider">${fmtInt(r.oppo_units)}</td>
@@ -11368,9 +11570,6 @@ function renderSaleTable() {
         }
     });
 
-    tbody.querySelectorAll('.shop-link[data-sale-name]').forEach(el => {
-        el.addEventListener('click', () => toggleSaleExpand(el.dataset.saleName));
-    });
     tbody.querySelectorAll('.shop-link[data-shop-jump]').forEach(el => {
         el.addEventListener('click', () => jumpToShopDetail(el.dataset.shopJump));
     });
