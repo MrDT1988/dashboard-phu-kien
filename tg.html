@@ -6933,7 +6933,7 @@ function renderKaShopRevenueTable() {
 renderKaShopRevenueTable();
 
 // ---- 2 bảng thị phần 12 tháng theo Kênh phụ FPT/Viettel ----
-const KA_MARKET_SHARE_BRANDS = ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'Khác'];
+const KA_MARKET_SHARE_BRANDS = ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'Honor', 'Khác'];
 const KA_MARKET_SHARE_DATA = { FPT: {}, VIETTEL: {} };
 let kaMarketShareMetric = { FPT: 'ds', VIETTEL: 'ds' };
 
@@ -6954,6 +6954,7 @@ function shareKaFptBrandMap(code) {
     if (c === 'VV' || c === 'VIVO') return 'Khác';
     if (c === 'RM' || c === 'REALME') return 'Khác';
     if (c === 'FP') return null; // máy bàn phím - loại khỏi thị phần
+    if (c === 'HO') return 'Honor';
     if (!c) return null;
     return 'Khác'; // HO, Others, mã chưa xác định
 }
@@ -6968,6 +6969,7 @@ function shareKaViettelBrandMap(name) {
     if (low === 'vivo') return 'Khác';
     if (low === 'realme') return 'Khác';
     if (low === 'apple' || low === 'iphone') return 'Apple';
+    if (low === 'honor') return 'Honor';
     return 'Khác';
 }
 // Sheet chỉ có khoảng giá (VD "4_10M-15M", "1_<5M", "7_>30M") chứ không có giá chính xác từng đơn
@@ -7020,7 +7022,7 @@ function loadShareKaMarketShare() {
                     const month = shareKaParseFptMonth(r[0]);
                     const qty = parseInt(String(r[4] || '0').replace(/[^0-9\-]/g, ''), 10) || 0;
                     const bucket = shareKaNormalizeBucket(r[5]);
-                    const shop = String(r[1] || '').trim();
+                    const shop = String(r[2] || '').trim();
                     if (month) SHARE_KA_RAW_ROWS.FPT.push({ shop, brand, month, qty, bucket });
                 }
             }
