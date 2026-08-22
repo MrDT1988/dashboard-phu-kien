@@ -236,6 +236,13 @@ body{
 #bonusTable th:last-child, #bonusTable td:last-child{ background:#E9F7F0; }
 #mienBonusTable th:nth-child(n+2), #mienBonusTable td:nth-child(n+2){ text-align:center; }
 #mienBonusTable th:last-child, #mienBonusTable td:last-child{ background:#E9F7F0; }
+#targetProgressTable th:nth-child(n+2), #targetProgressTable td:nth-child(n+2){ text-align:center; }
+#targetProgressTable th:last-child, #targetProgressTable td:last-child{ background:#E9F7F0; }
+#targetProgressTable tr.mien-row{ cursor:pointer; font-weight:700; background:var(--ice-bg); }
+#targetProgressTable tr.mien-row:hover{ filter:brightness(0.97); }
+#targetProgressTable tr.mien-row td:first-child::before{ content:'▸ '; }
+#targetProgressTable tr.mien-row.expanded td:first-child::before{ content:'▾ '; }
+#targetProgressTable tr.region-row td:first-child{ padding-left:28px; color:var(--text-secondary); font-weight:400; }
 .table-pagination{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--text-secondary);}
 .table-pagination button{
   border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;margin-left:6px;
@@ -478,39 +485,33 @@ body{
   <div class="section-title">Chương trình thưởng theo Miền (theo % hoàn thành Target)</div>
   <section class="table-section">
     <div class="table-head">
-      <h3>Bảng thưởng theo Miền</h3>
-      <div class="table-controls" id="mienBonusInfo"></div>
+      <h3>Target &amp; % Hoàn thành theo Miền</h3>
+      <div class="table-controls">
+        <select id="targetProgressMonthSelect"><option value="">— Chọn tháng —</option></select>
+      </div>
     </div>
     <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
       <div class="dot"></div>
       <div>
-        <b>Tiêu chí:</b> Target tháng của Miền = Target năm ÷ 12. So doanh thu Sell-in tháng của cả Miền với Target tháng đó:
-        Hoàn thành ≥ 60% thưởng 3.000.000đ/miền · ≥ 80% thưởng 5.000.000đ/miền · ≥ 100% thưởng 7.000.000đ/miền.
-        Mỗi tháng chỉ tính mức cao nhất đạt được (không cộng dồn 3 mốc).
+        <b>Tiêu chí:</b> Target tháng = Target năm ÷ 12. Hoàn thành ≥ 60% thưởng 3.000.000đ · ≥ 80% thưởng 5.000.000đ · ≥ 100% thưởng 7.000.000đ (tính mức cao nhất đạt được, không cộng dồn).
+        Bấm vào 1 dòng Miền để xem chi tiết từng khu vực trong miền đó.
       </div>
     </div>
     <div style="overflow-x:auto;">
-    <table class="data-table" id="mienBonusTable">
+    <table class="data-table" id="targetProgressTable">
       <thead>
         <tr>
-          <th data-key="mien">Miền</th>
-          <th data-key="targetThang" class="num cen">Target/tháng</th>
-          <th data-key="m0" class="num cen">T1.26</th>
-          <th data-key="m1" class="num cen">T2.26</th>
-          <th data-key="m2" class="num cen">T3.26</th>
-          <th data-key="m3" class="num cen">T4.26</th>
-          <th data-key="m4" class="num cen">T5.26</th>
-          <th data-key="m5" class="num cen">T6.26</th>
-          <th data-key="m6" class="num cen">T7.26</th>
-          <th data-key="m7" class="num cen">T8.26</th>
-          <th data-key="m8" class="num cen">T9.26</th>
-          <th data-key="m9" class="num cen">T10.26</th>
-          <th data-key="m10" class="num cen">T11.26</th>
-          <th data-key="m11" class="num cen">T12.26</th>
-          <th data-key="total" class="num cen">Tổng thưởng</th>
+          <th>Miền / Khu vực</th>
+          <th class="num cen">Target/tháng</th>
+          <th class="num cen">Mốc 60%</th>
+          <th class="num cen">Mốc 80%</th>
+          <th class="num cen">Mốc 100%</th>
+          <th class="num cen">Doanh thu tháng</th>
+          <th class="num cen">% HT</th>
+          <th class="num cen">Thưởng</th>
         </tr>
       </thead>
-      <tbody id="mienBonusTableBody"></tbody>
+      <tbody id="targetProgressBody"></tbody>
     </table>
     </div>
   </section>
@@ -4592,10 +4593,11 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   });
   bonusMatrix.sort((a,b) => b.total - a.total);
 
-  // ---- bonus theo Miền, dựa trên % hoàn thành Target tháng (target năm / 12) ----
+  // ---- Target theo Miền & Khu vực, dựa trên % hoàn thành Target tháng (target năm / 12) ----
   // Mốc: >=60% HT thưởng 3.000.000/miền · >=80% thưởng 5.000.000/miền · >=100% thưởng 7.000.000/miền
   // (chỉ tính mức cao nhất đạt được trong tháng đó, không cộng dồn 3 mốc)
   const MIEN_ORDER = ['Miền Bắc','Miền Trung','Miền Nam'];
+  const targetProgressMonths = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26'];
   const mienMonthlyRevenue = {};
   MIEN_ORDER.forEach(m => mienMonthlyRevenue[m] = new Array(8).fill(0));
   regions.forEach(r => {
@@ -4609,24 +4611,29 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     if(pct >= 0.6) return 3000000;
     return 0;
   }
-  const mienBonusMatrix = MIEN_ORDER.map(mName => {
+  function buildMonthlyDetail(targetThang, revArr){
+    return revArr.map(rev => {
+      const pct = targetThang ? rev / targetThang : 0;
+      return { revenue: rev, pct: Math.round(pct*1000)/10, bonus: targetTierBonus(pct) };
+    });
+  }
+  const regionTargetDetail = regions.map(r => {
+    const targetThang = r.target_nam / 12;
+    return {
+      name: r.name, mien: r.mien,
+      targetThang, t60: targetThang*0.6, t80: targetThang*0.8, t100: targetThang,
+      monthly: buildMonthlyDetail(targetThang, regionMonthly[r.name] || new Array(8).fill(0)),
+    };
+  });
+  const targetProgressMien = MIEN_ORDER.map(mName => {
     const mObj = mien.find(x => x.name === mName);
-    const targetNamMien = mObj ? mObj.target_nam : 0;
-    const targetThangMien = targetNamMien / 12;
-    const rev = mienMonthlyRevenue[mName];
-    const monthCells = [];
-    let total = 0;
-    for(let i=0;i<12;i++){
-      if(i < 8){
-        const pct = targetThangMien ? rev[i] / targetThangMien : 0;
-        const bonus = targetTierBonus(pct);
-        monthCells.push({ revenue: rev[i], pct: Math.round(pct*1000)/10, bonus });
-        total += bonus;
-      } else {
-        monthCells.push(null);
-      }
-    }
-    return { mien: mName, targetThang: targetThangMien, months: monthCells, total };
+    const targetThang = mObj ? mObj.target_nam / 12 : 0;
+    return {
+      name: mName,
+      targetThang, t60: targetThang*0.6, t80: targetThang*0.8, t100: targetThang,
+      monthly: buildMonthlyDetail(targetThang, mienMonthlyRevenue[mName]),
+      regions: regionTargetDetail.filter(r => r.mien === mName).sort((a,b)=>b.targetThang-a.targetThang),
+    };
   });
 
   const nhap2026 = groups.reduce((s,g)=>s+g.nhap2026,0);
@@ -4671,7 +4678,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     revMonthLabels14, monthlyRevPk14, monthlyRevCl14,
     profitMonthLabels12, monthlyProfitPk12, monthlyProfitCl12,
     bonusMatrix,
-    mienBonusMatrix,
+    targetProgressMonths, targetProgressMien,
   };
 }
 
@@ -5061,28 +5068,68 @@ function renderBonusTable(){
   document.getElementById('bonusInfo').textContent = `${rows.length} khu vực đạt thưởng · Tổng thưởng ${fmtMoneyFull(totalBonus)}`;
 }
 
-function renderMienBonusTable(){
-  const rows = DATA.mienBonusMatrix || [];
-  if(!document.getElementById('mienBonusTableBody')) return;
-  document.getElementById('mienBonusTableBody').innerHTML = rows.map(r => {
-    const monthCells = r.months.map(cell => {
-      if(cell == null) return `<td class="num cen"><span style="color:var(--text-secondary)">–</span></td>`;
-      if(cell.bonus === 0) return `<td class="num cen"><span style="color:var(--text-secondary)" title="${cell.pct}% HT">-</span></td>`;
-      const badgeClass = cell.bonus >= 7000000 ? 'bad' : (cell.bonus >= 5000000 ? 'warn' : 'good');
-      return `<td class="num cen"><span class="badge ${badgeClass}" title="${cell.pct}% HT">${fmtMoneyShort(cell.bonus)}</span></td>`;
-    }).join('');
-    return `
-    <tr>
-      <td>${r.mien}</td>
-      <td class="num cen">${fmtMoneyShort(r.targetThang)}</td>
-      ${monthCells}
-      <td class="num cen"><b>${fmtMoneyFull(r.total)}</b></td>
-    </tr>`;
-  }).join('') || `<tr><td colspan="15" style="text-align:center;color:var(--text-secondary);padding:20px;">Chưa có dữ liệu</td></tr>`;
+let targetProgressMonthIdx = null; // index into DATA.targetProgressMonths, or null
+let targetProgressExpanded = new Set(); // set of expanded mien names
 
-  const totalBonus = rows.reduce((s,r)=>s+r.total,0);
-  const info = document.getElementById('mienBonusInfo');
-  if(info) info.textContent = `Tổng thưởng 3 miền: ${fmtMoneyFull(totalBonus)}`;
+function setupTargetProgressFilter(){
+  const sel = document.getElementById('targetProgressMonthSelect');
+  if(!sel) return;
+  const months = DATA.targetProgressMonths || [];
+  sel.innerHTML = '<option value="">— Chọn tháng —</option>' + months.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  sel.addEventListener('change', () => {
+    targetProgressMonthIdx = sel.value === '' ? null : parseInt(sel.value,10);
+    renderTargetProgressTable();
+  });
+}
+
+function targetProgressRowHtml(name, rowClass, dataAttr, monthlyEntry, targetThang, t60, t80, t100){
+  const bonusCell = monthlyEntry.bonus > 0
+    ? `<span class="badge ${monthlyEntry.bonus>=7000000?'bad':(monthlyEntry.bonus>=5000000?'warn':'good')}">${fmtMoneyShort(monthlyEntry.bonus)}</span>`
+    : '<span style="color:var(--text-secondary)">-</span>';
+  return `
+  <tr class="${rowClass}" ${dataAttr}>
+    <td>${name}</td>
+    <td class="num cen">${fmtMoneyShort(targetThang)}</td>
+    <td class="num cen">${fmtMoneyShort(t60)}</td>
+    <td class="num cen">${fmtMoneyShort(t80)}</td>
+    <td class="num cen">${fmtMoneyShort(t100)}</td>
+    <td class="num cen">${fmtMoneyShort(monthlyEntry.revenue)}</td>
+    <td class="num cen"><span class="badge ${tienDoBadgeClass(monthlyEntry.pct)}">${monthlyEntry.pct}%</span></td>
+    <td class="num cen">${bonusCell}</td>
+  </tr>`;
+}
+
+function renderTargetProgressTable(){
+  const tbody = document.getElementById('targetProgressBody');
+  if(!tbody) return;
+  if(targetProgressMonthIdx === null){
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:24px;">Chọn 1 tháng phía trên để xem chi tiết Target &amp; % hoàn thành</td></tr>`;
+    return;
+  }
+  const mi = targetProgressMonthIdx;
+  const rowsHtml = DATA.targetProgressMien.map(m => {
+    const isExpanded = targetProgressExpanded.has(m.name);
+    let html = targetProgressRowHtml(
+      m.name, 'mien-row' + (isExpanded ? ' expanded' : ''), `data-mien="${m.name}"`,
+      m.monthly[mi], m.targetThang, m.t60, m.t80, m.t100
+    );
+    if(isExpanded){
+      html += m.regions.map(r => targetProgressRowHtml(
+        r.name, 'region-row', '', r.monthly[mi], r.targetThang, r.t60, r.t80, r.t100
+      )).join('');
+    }
+    return html;
+  }).join('');
+  tbody.innerHTML = rowsHtml;
+
+  tbody.querySelectorAll('tr.mien-row').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const name = tr.dataset.mien;
+      if(targetProgressExpanded.has(name)) targetProgressExpanded.delete(name);
+      else targetProgressExpanded.add(name);
+      renderTargetProgressTable();
+    });
+  });
 }
 
 // ===================== REVENUE BY MONTH CHART (2025-2026) =====================
@@ -5320,7 +5367,8 @@ function runDashboard(){
   setupMienFilter();
   renderRegionTable();
   renderBonusTable();
-  renderMienBonusTable();
+  setupTargetProgressFilter();
+  renderTargetProgressTable();
   setupSkuMonthlyAllPicker();
   renderSkuMonthlyAllTable();
 }
