@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Phụ Kiện 2026 — Nam Phong</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
 :root{
   --navy:#1E2761;
@@ -194,6 +195,19 @@ body{
 .mini-table tr:last-child td{font-weight:800;color:var(--navy-dark);background:#fafbfe;}
 .mini-table tr:last-child td:first-child{background:var(--ice-bg);}
 
+.loading-overlay{
+  position:fixed;inset:0;background:rgba(20,26,69,0.92);z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;
+}
+.loading-overlay .spinner{
+  width:40px;height:40px;border:4px solid rgba(255,255,255,0.25);border-top-color:var(--orange);
+  border-radius:50%;animation:spin 0.8s linear infinite;
+}
+.loading-overlay .loading-text{font-size:14px;max-width:420px;text-align:center;padding:0 20px;}
+.loading-overlay.loading-error .spinner{border-top-color:var(--red);animation:none;}
+.loading-overlay.loading-error{background:rgba(90,20,20,0.92);}
+@keyframes spin{to{transform:rotate(360deg);}}
+
 .data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
 .data-table thead th{
   text-align:left;padding:9px 10px;border-bottom:2px solid var(--line);
@@ -236,13 +250,17 @@ body{
 </style>
 </head>
 <body>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Đang tải dữ liệu trực tiếp từ Google Sheets...</div>
+</div>
 <div class="dashboard-container">
 
   <header class="dashboard-header">
     <div class="htxt">
       <div class="tag">Nam Phong 2026</div>
       <h1>Dashboard Tổng Quan Nhóm Hàng Phụ Kiện</h1>
-      <div class="sub">Lũy kế T1 – T7.2026 · Mô hình phân phối phụ kiện giá rẻ toàn quốc</div>
+      <div class="sub">Lũy kế T1 – T7.2026 · Mô hình phân phối phụ kiện giá rẻ toàn quốc · <span id="liveIndicator" style="opacity:.85;">🔴 Dữ liệu trực tiếp từ Google Sheets</span></div>
     </div>
   </header>
 
@@ -4052,7 +4070,385 @@ body{
 </script>
 
 <script>
-const DATA = JSON.parse(document.getElementById('dashboard-data').textContent);
+// ===================== LIVE GOOGLE SHEETS LOADER =====================
+const SHEET_ID = '1eyi3c6M4QIzADfLvVDHlzHLQJKMQhoWvkY73MbEtooA';
+function gvizUrl(sheetName){
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+}
+
+function fetchCsv(url){
+  return fetch(url).then(res => {
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    return res.text();
+  }).then(text => Papa.parse(text, { skipEmptyLines: false }).data);
+}
+
+// ---- number parsers ----
+function numFloat(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function numClean(v){ // strips "đ", "." thousand separators, spaces -> integer
+  const s = String(v == null ? '' : v).replace(/[^0-9\-]/g,'');
+  return s ? parseInt(s,10) : 0;
+}
+
+function canonGroup(raw){
+  if(!raw) return null;
+  const s = String(raw).trim();
+  if(s.indexOf('Cable') !== -1) return 'Cable';
+  if(s.indexOf('Adapter') !== -1) return 'Adapter';
+  if(s.indexOf('sạc') !== -1) return 'Bộ sạc';
+  if(s.indexOf('Tai nghe') !== -1) return 'Tai nghe';
+  if(s.indexOf('Powerbank') !== -1) return 'Powerbank (SDP)';
+  if(s.indexOf('Dán') !== -1) return 'Cường lực (Dán MH)';
+  return s;
+}
+
+const MIEN_MAP = {
+  'HA NOI':'Miền Bắc','HAI DUONG':'Miền Bắc','LAO CAI':'Miền Bắc','QUANG NINH':'Miền Bắc',
+  'VIET TRI':'Miền Bắc','BAC NINH':'Miền Bắc','THANH HOA':'Miền Bắc','VINH':'Miền Bắc',
+  'HUE':'Miền Trung','DA NANG':'Miền Trung','BINH DINH':'Miền Trung','NHA TRANG':'Miền Trung',
+  'TAY NGUYEN':'Miền Trung','VUNG TAU':'Miền Trung',
+  'LONG AN':'Miền Nam','DONG NAI':'Miền Nam','TIEN GIANG':'Miền Nam','VINH LONG':'Miền Nam',
+  'BINH DUONG':'Miền Nam','CA MAU':'Miền Nam','BINH PHUOC':'Miền Nam','CAN THO':'Miền Nam',
+  'AN GIANG':'Miền Nam','KIEN GIANG':'Miền Nam','DONG THAP':'Miền Nam','HO CHI MINH':'Miền Nam',
+};
+
+// ---- Sheet 1: "Nhập & bán hàng" ----
+function parseNhapBanSheet(rows){
+  const skus = [];
+  let currentGroup = null;
+  for(let i = 3; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || r[2] === undefined || String(r[2]).trim() === '') continue;
+    if(r[1] && String(r[1]).trim() !== '') currentGroup = canonGroup(r[1]);
+    const months = [29,30,31,32,33,34,35].map(idx => numFloat(r[idx]));
+    skus.push({
+      group: currentGroup,
+      sku: String(r[2]).trim(),
+      fob: numFloat(r[3]),
+      profitUnit: numFloat(r[4]),
+      invValue2026: numFloat(r[5]),
+      profitCum: numFloat(r[6]),
+      nhap2026: numFloat(r[14]),
+      tonKho: numFloat(r[20]),
+      siPerDay: numFloat(r[21]),
+      dos: numFloat(r[22]),
+      banTong: numFloat(r[24]),
+      ban2026: numFloat(r[28]),
+      months, // T1..T7 2026 volume
+    });
+  }
+  return skus;
+}
+
+// ---- Sheet 2: "Chi tiết bán hàng khu vực" ----
+function parseKhuVucSheet(rows){
+  const regions = [];
+  for(let i = 4; i <= 32 && i < rows.length; i++){
+    const r = rows[i];
+    if(!r || !r[1] || String(r[1]).trim() === '') continue;
+    const name = String(r[1]).trim();
+    if(name === 'Việt Nam' || name === 'Miền Bắc' || name === 'Miền Trung' || name === 'Miền Nam') continue;
+    regions.push({
+      name,
+      shops: numClean(r[2]),
+      si_pk: numClean(r[3]),
+      dt_pk: numClean(r[4]),
+      shop_si_pk: numClean(r[5]),
+      do_phu_pk: numFloat(r[6]),
+      si_cl: numClean(r[7]),
+      dt_cl: numClean(r[8]),
+      shop_si_cl: numClean(r[9]),
+      do_phu_cl: numFloat(r[10]),
+      si_hub_total: numClean(r[11]),
+      target_thang: numClean(r[12]),
+      target_nam: numClean(r[13]),
+      tien_do: Math.round(numFloat(r[14]) * 1000) / 10,
+    });
+  }
+  return regions;
+}
+
+// ---- Sheet 3: "Chi tiết bán hàng theo tháng" (region x month, PK + GLASS) ----
+function parseTheoThangSheet(rows){
+  // find PHỤ KIỆN block
+  let pkAreaRow = -1;
+  for(let i = 0; i < rows.length && i < 6; i++){
+    if(rows[i][1] === 'AREA'){ pkAreaRow = i; break; }
+  }
+  const pkDataStart = pkAreaRow + 2;
+  const pkMonths = ['T11.25','T12.25','T01.26','T02.26','T03.26','T04.26','T05.26','T06.26'];
+  const pk = {}; // name -> {month: {sl, tong}}
+  for(let i = pkDataStart; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || !r[1] || String(r[1]).trim() === '') continue;
+    if(r[1] === 'GLASS') break;
+    const name = String(r[1]).trim();
+    if(name === 'VN') continue;
+    const vals = {};
+    pkMonths.forEach((m, idx) => {
+      const slIdx = 2 + idx*2, tongIdx = slIdx + 1;
+      vals[m] = { sl: numFloat(r[slIdx]), tong: numFloat(r[tongIdx]) };
+    });
+    pk[name] = vals;
+  }
+
+  // find GLASS block
+  let glassRow = -1;
+  for(let i = 0; i < rows.length; i++){
+    if(rows[i][1] === 'GLASS'){ glassRow = i; break; }
+  }
+  const glassDataStart = glassRow + 3;
+  const glassMonths = ['T12.25','T01.26','T02.26','T03.26','T04.26','T05.26','T06.26'];
+  const glass = {};
+  for(let i = glassDataStart; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || !r[1] || String(r[1]).trim() === '') continue;
+    const name = String(r[1]).trim();
+    if(name === 'VN') continue;
+    const vals = {};
+    glassMonths.forEach((m, idx) => {
+      const slIdx = 2 + idx*2, tongIdx = slIdx + 1;
+      vals[m] = { sl: numFloat(r[slIdx]), tong: numFloat(r[tongIdx]) };
+    });
+    glass[name] = vals;
+  }
+
+  return { pk, glass };
+}
+
+// ---- region merge helper (Long An -> Tien Giang, Hai Duong -> Thanh Hoa, Binh Duong -> Ho Chi Minh) ----
+function mergeRegionInto(regionsMap, targetName, sourceName){
+  const t = regionsMap[targetName], s = regionsMap[sourceName];
+  if(!t || !s) return;
+  ['shops','si_pk','dt_pk','shop_si_pk','si_cl','dt_cl','shop_si_cl','si_hub_total','target_thang','target_nam'].forEach(k => {
+    t[k] = (t[k]||0) + (s[k]||0);
+  });
+  t.do_phu_pk = t.shops ? Math.round((t.shop_si_pk/t.shops)*10000)/10000 : 0;
+  t.do_phu_cl = t.shops ? Math.round((t.shop_si_cl/t.shops)*10000)/10000 : 0;
+  t.tien_do = t.target_nam ? Math.round((t.si_hub_total/t.target_nam)*1000)/10 : 0;
+  delete regionsMap[sourceName];
+}
+
+// ---- build full DATA object from the 3 parsed sheets ----
+function buildDashboardData(skus, regionsRaw, theoThang){
+  const GROUP_ORDER = ["Cable","Adapter","Bộ sạc","Tai nghe","Powerbank (SDP)","Cường lực (Dán MH)"];
+  const CL_NAME = "Cường lực (Dán MH)";
+
+  // ---- groups aggregation ----
+  const groupsAgg = {};
+  GROUP_ORDER.forEach(g => groupsAgg[g] = { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0, banTong:0 });
+  skus.forEach(d => {
+    const g = groupsAgg[d.group] ? d.group : d.group; // group already canonicalized
+    if(!groupsAgg[g]) groupsAgg[g] = { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0, banTong:0 };
+    const gg = groupsAgg[g];
+    gg.nhap2026 += d.nhap2026;
+    gg.ban2026 += d.ban2026;
+    gg.tonKho += d.tonKho;
+    gg.siPerDaySum += d.siPerDay;
+    gg.profitCum += d.profitCum;
+    gg.invValue += d.invValue2026;
+    gg.banTong += d.banTong;
+    gg.skus += 1;
+  });
+  const totBan = GROUP_ORDER.reduce((s,g)=>s+(groupsAgg[g]?groupsAgg[g].ban2026:0),0);
+  const totProfit = GROUP_ORDER.reduce((s,g)=>s+(groupsAgg[g]?groupsAgg[g].profitCum:0),0);
+  const groups = GROUP_ORDER.map(g => {
+    const v = groupsAgg[g] || { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0, banTong:0 };
+    const dos = v.siPerDaySum ? v.tonKho / v.siPerDaySum : 0;
+    return {
+      name: g, skus: v.skus,
+      nhap2026: v.nhap2026, ban2026: v.ban2026,
+      pctVol: totBan ? Math.round((v.ban2026/totBan)*1000)/10 : 0,
+      profitCum: v.profitCum,
+      pctProfit: totProfit ? Math.round((v.profitCum/totProfit)*1000)/10 : 0,
+      tonKho: v.tonKho, invValue: v.invValue,
+      dos: Math.round(dos*10)/10,
+      profitPerUnit: v.banTong ? Math.round(v.profitCum/v.banTong) : 0,
+    };
+  });
+
+  // ---- monthly PK vs CL (from SKU sheet, 7 months) ----
+  const monthlyPk = [0,0,0,0,0,0,0], monthlyCl = [0,0,0,0,0,0,0];
+  const groupMonthlyVol = {}; GROUP_ORDER.forEach(g => groupMonthlyVol[g] = [0,0,0,0,0,0,0]);
+  const monthlyRevPk = [0,0,0,0,0,0,0], monthlyRevCl = [0,0,0,0,0,0,0];
+  const skuMonthlyPk = [], skuMonthlyAll = [];
+  const skuMonthlyRevPk = [], skuMonthlyRevCl = [];
+
+  skus.forEach(d => {
+    const isCl = d.group === CL_NAME;
+    const price = d.fob + d.profitUnit;
+    for(let i=0;i<7;i++){
+      const v = d.months[i] || 0;
+      if(isCl){ monthlyCl[i] += v; monthlyRevCl[i] += v*price; }
+      else { monthlyPk[i] += v; monthlyRevPk[i] += v*price; }
+      if(groupMonthlyVol[d.group]) groupMonthlyVol[d.group][i] += v;
+    }
+    const total7 = d.months.reduce((s,x)=>s+x,0);
+    const revMonths = d.months.map(v => Math.round(v*price));
+    if(!isCl){
+      skuMonthlyPk.push({ group: d.group, sku: d.sku, months: d.months.slice(), total: total7 });
+      skuMonthlyRevPk.push({ group: d.group, sku: d.sku, months: revMonths, total: revMonths.reduce((s,x)=>s+x,0) });
+    } else {
+      skuMonthlyRevCl.push({ group: d.group, sku: d.sku, months: revMonths, total: revMonths.reduce((s,x)=>s+x,0) });
+    }
+    const dos = Math.round(d.dos*10)/10;
+    skuMonthlyAll.push({
+      group: d.group, sku: d.sku, months: d.months.slice(), total: total7,
+      avgMonth: Math.round((total7/7)*10)/10, tonKho: d.tonKho,
+      dos, needReorder: dos < 60 && dos > 0,
+    });
+  });
+
+  // ---- region parsing + merge ----
+  const regionsMap = {};
+  regionsRaw.forEach(r => regionsMap[r.name] = r);
+  mergeRegionInto(regionsMap, 'TIEN GIANG', 'LONG AN');
+  mergeRegionInto(regionsMap, 'THANH HOA', 'HAI DUONG');
+  mergeRegionInto(regionsMap, 'HO CHI MINH', 'BINH DUONG');
+  Object.keys(regionsMap).forEach(name => { regionsMap[name].mien = MIEN_MAP[name] || ''; });
+  const regions = Object.values(regionsMap);
+
+  const mienAgg = {};
+  regions.forEach(r => {
+    if(!mienAgg[r.mien]) mienAgg[r.mien] = { si_hub_total:0, target_nam:0 };
+    mienAgg[r.mien].si_hub_total += r.si_hub_total;
+    mienAgg[r.mien].target_nam += r.target_nam;
+  });
+  const mien = Object.keys(mienAgg).map(name => ({
+    name, si_hub_total: mienAgg[name].si_hub_total, target_nam: mienAgg[name].target_nam,
+  }));
+
+  // ---- region monthly (T1-T6.26) + region2025 (T11.25+T12.25) from sheet3 ----
+  const regionMonthly = {}, region2025 = {};
+  const monthsT1T6 = ['T01.26','T02.26','T03.26','T04.26','T05.26','T06.26'];
+  regions.forEach(r => {
+    // original (pre-merge) source names might differ post-merge; use current key name plus merged-in sources
+    regionMonthly[r.name] = [0,0,0,0,0,0];
+    region2025[r.name] = 0;
+  });
+  const mergeMap = { 'LONG AN':'TIEN GIANG', 'HAI DUONG':'THANH HOA', 'BINH DUONG':'HO CHI MINH' };
+  function addSheet3ToRegion(rawName, pkVals, glassVals){
+    const target = mergeMap[rawName] || rawName;
+    if(!regionMonthly[target]) return;
+    monthsT1T6.forEach((m, i) => {
+      const pkT = (pkVals && pkVals[m]) ? pkVals[m].tong : 0;
+      const glT = (glassVals && glassVals[m]) ? glassVals[m].tong : 0;
+      regionMonthly[target][i] += pkT + glT;
+    });
+    const rev2025 = ((pkVals && pkVals['T11.25']) ? pkVals['T11.25'].tong : 0)
+                  + ((pkVals && pkVals['T12.25']) ? pkVals['T12.25'].tong : 0)
+                  + ((glassVals && glassVals['T12.25']) ? glassVals['T12.25'].tong : 0);
+    region2025[target] += rev2025;
+  }
+  const allAreaNames = new Set([...Object.keys(theoThang.pk), ...Object.keys(theoThang.glass)]);
+  allAreaNames.forEach(name => addSheet3ToRegion(name, theoThang.pk[name], theoThang.glass[name]));
+
+  // ---- national 2025 & rev14 (sum across all sheet3 rows, PK+GLASS, T11.25/T12.25) ----
+  let nat1125Pk = 0, nat1225Pk = 0, nat1225Cl = 0;
+  let nat1125PkVol = 0, nat1225PkVol = 0, nat1225ClVol = 0;
+  Object.values(theoThang.pk).forEach(v => {
+    if(v['T11.25']){ nat1125Pk += v['T11.25'].tong; nat1125PkVol += v['T11.25'].sl; }
+    if(v['T12.25']){ nat1225Pk += v['T12.25'].tong; nat1225PkVol += v['T12.25'].sl; }
+  });
+  Object.values(theoThang.glass).forEach(v => {
+    if(v['T12.25']){ nat1225Cl += v['T12.25'].tong; nat1225ClVol += v['T12.25'].sl; }
+  });
+
+  const monthlyLabels9 = ['T11.25','T12.25','T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*'];
+  const monthlyPk9 = [nat1125PkVol, nat1225PkVol].concat(monthlyPk);
+  const monthlyCl9 = [null, nat1225ClVol].concat(monthlyCl);
+
+  const revMonthLabels14 = ['T11.25','T12.25','T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*','T8.26','T9.26','T10.26','T11.26','T12.26'];
+  const monthlyRevPk14 = [nat1125Pk, nat1225Pk].concat(monthlyRevPk).concat([null,null,null,null,null]);
+  const monthlyRevCl14 = [null, nat1225Cl].concat(monthlyRevCl).concat([null,null,null,null,null]);
+
+  // ---- bonus matrix ----
+  function getRate(rev){
+    if(rev > 150000000) return 0.04;
+    if(rev > 100000000) return 0.03;
+    if(rev > 50000000) return 0.02;
+    return null;
+  }
+  const bonusMatrix = [];
+  regions.forEach(r => {
+    const monthly = regionMonthly[r.name] || [0,0,0,0,0,0];
+    const monthBonuses = [];
+    let total = 0;
+    for(let i=0;i<12;i++){
+      if(i < 6){
+        const rate = getRate(monthly[i]);
+        if(rate){ const b = Math.round(monthly[i]*rate); monthBonuses.push(b); total += b; }
+        else monthBonuses.push(0);
+      } else monthBonuses.push(null);
+    }
+    if(total > 0) bonusMatrix.push({ region: r.name, mien: r.mien, months: monthBonuses, total });
+  });
+  bonusMatrix.sort((a,b) => b.total - a.total);
+
+  // ---- totals ----
+  const monthlyRevPkSum = monthlyRevPk.reduce((s,x)=>s+x,0);
+  const monthlyRevClSum = monthlyRevCl.reduce((s,x)=>s+x,0);
+  const nhap2026 = groups.reduce((s,g)=>s+g.nhap2026,0);
+  const ban2026 = groups.reduce((s,g)=>s+g.ban2026,0);
+  const tonKho = groups.reduce((s,g)=>s+g.tonKho,0);
+  const invValue = groups.reduce((s,g)=>s+g.invValue,0);
+  const profitCum = groups.reduce((s,g)=>s+g.profitCum,0);
+  const doanhThuSI = mien.reduce((s,m)=>s+m.si_hub_total,0);
+  const targetNam = mien.reduce((s,m)=>s+m.target_nam,0);
+
+  return {
+    total: {
+      nhap2026, ban2026, tonKho, invValue, profitCum,
+      doanhThuSI, targetNam,
+      pctTarget: targetNam ? Math.round((doanhThuSI/targetNam)*1000)/10 : 0,
+    },
+    groups,
+    monthlyLabels: ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*'],
+    monthlySales: monthlyPk.map((v,i)=>v+monthlyCl[i]),
+    skus: skus.map(d => ({
+      group: d.group, sku: d.sku, fob: d.fob, profitUnit: d.profitUnit,
+      nhap2026: d.nhap2026, ban2026: d.ban2026, tonKho: d.tonKho,
+      dos: Math.round(d.dos*10)/10, profitCum: d.profitCum,
+    })),
+    regions: regions.sort((a,b)=>b.tien_do-a.tien_do),
+    mien,
+    monthlyPk, monthlyCl,
+    monthLabels7: ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26'],
+    monthlyRevPk, monthlyRevCl,
+    monthlyRevTotal: monthlyRevPk.map((v,i)=>v+monthlyRevCl[i]),
+    groupMonthlyRev: {}, // not used by current renderers directly
+    skuMonthlyPk,
+    invTable: skuMonthlyAll.map(s => ({
+      group: s.group, sku: s.sku, tonKho: s.tonKho,
+      siPerDay: 0, dos: s.dos, needReorder: s.needReorder,
+    })),
+    groupMonthlyVol,
+    skuMonthlyRevPk, skuMonthlyRevCl,
+    skuMonthlyAll,
+    regionMonthly, region2025,
+    monthlyLabels9, monthlyPk9, monthlyCl9,
+    revMonthLabels14, monthlyRevPk14, monthlyRevCl14,
+    bonusMatrix,
+  };
+}
+
+function loadLiveDashboardData(){
+  return Promise.all([
+    fetchCsv(gvizUrl('Nhập & bán hàng')),
+    fetchCsv(gvizUrl('Chi tiết bán hàng khu vực')),
+    fetchCsv(gvizUrl('Chi tiết bán hàng theo tháng')),
+  ]).then(([r1, r2, r3]) => {
+    const skus = parseNhapBanSheet(r1);
+    const regionsRaw = parseKhuVucSheet(r2);
+    const theoThang = parseTheoThangSheet(r3);
+    if(skus.length < 10) throw new Error('Dữ liệu SKU quá ít, có thể sheet đổi cấu trúc');
+    return buildDashboardData(skus, regionsRaw, theoThang);
+  });
+}
+
+
+let DATA = null;
+const DATA_STATIC_FALLBACK = JSON.parse(document.getElementById('dashboard-data').textContent);
 
 const NAVY = "#1E2761";
 const ORANGE = "#FF6B35";
@@ -4066,16 +4462,19 @@ Chart.defaults.color = "#6B7280";
 Chart.defaults.maintainAspectRatio = false;
 Chart.defaults.responsive = true;
 
-const PK_GROUPS = DATA.groups.filter(g => g.name !== "Cường lực (Dán MH)");
-const CL_GROUP = DATA.groups.find(g => g.name === "Cường lực (Dán MH)");
-const PK_TOTAL = {
-  nhap2026: PK_GROUPS.reduce((s,g)=>s+g.nhap2026,0),
-  ban2026: PK_GROUPS.reduce((s,g)=>s+g.ban2026,0),
-  tonKho: PK_GROUPS.reduce((s,g)=>s+g.tonKho,0),
-  invValue: PK_GROUPS.reduce((s,g)=>s+g.invValue,0),
-  profitCum: PK_GROUPS.reduce((s,g)=>s+g.profitCum,0),
-  skus: PK_GROUPS.reduce((s,g)=>s+g.skus,0),
-};
+let PK_GROUPS, CL_GROUP, PK_TOTAL;
+function computeDerivedConsts(){
+  PK_GROUPS = DATA.groups.filter(g => g.name !== "Cường lực (Dán MH)");
+  CL_GROUP = DATA.groups.find(g => g.name === "Cường lực (Dán MH)");
+  PK_TOTAL = {
+    nhap2026: PK_GROUPS.reduce((s,g)=>s+g.nhap2026,0),
+    ban2026: PK_GROUPS.reduce((s,g)=>s+g.ban2026,0),
+    tonKho: PK_GROUPS.reduce((s,g)=>s+g.tonKho,0),
+    invValue: PK_GROUPS.reduce((s,g)=>s+g.invValue,0),
+    profitCum: PK_GROUPS.reduce((s,g)=>s+g.profitCum,0),
+    skus: PK_GROUPS.reduce((s,g)=>s+g.skus,0),
+  };
+}
 
 function fmtInt(n){ return Math.round(n).toLocaleString('vi-VN'); }
 function fmtMoneyShort(n){
@@ -4519,10 +4918,11 @@ function updateChartGroupMonthly(){
 }
 
 // ===================== SKU MONTHLY ALL TABLE (card picker, PK & CL) =====================
-const ALL_GROUP_NAMES = DATA.groups.map(g=>g.name);
+let ALL_GROUP_NAMES;
 let skuMonthlyAllState = null;
 
 function setupSkuMonthlyAllPicker(){
+  ALL_GROUP_NAMES = DATA.groups.map(g=>g.name);
   const picker = document.getElementById('skuMonthlyAllPicker');
   picker.innerHTML = ALL_GROUP_NAMES.map(name => {
     const grp = DATA.groups.find(g=>g.name===name);
@@ -4576,24 +4976,53 @@ function renderSkuMonthlyAllTable(){
 
 
 // ===================== INIT =====================
-renderKPIs();
-renderCompare();
-renderChartMonthly();
-renderChartPkClShare();
-renderChartRevMonth();
-renderRevMiniTable();
-renderChartNhapBan();
-renderChartVolShare();
-setupGroupPicker();
-renderChartGroupMonthly();
-renderChartProfit();
-renderChartInvValue();
-renderChartRegions();
-setupMienFilter();
-renderRegionTable();
-renderBonusTable();
-setupSkuMonthlyAllPicker();
-renderSkuMonthlyAllTable();
+function runDashboard(){
+  computeDerivedConsts();
+  renderKPIs();
+  renderCompare();
+  renderChartMonthly();
+  renderChartPkClShare();
+  renderChartRevMonth();
+  renderRevMiniTable();
+  renderChartNhapBan();
+  renderChartVolShare();
+  setupGroupPicker();
+  renderChartGroupMonthly();
+  renderChartProfit();
+  renderChartInvValue();
+  renderChartRegions();
+  setupMienFilter();
+  renderRegionTable();
+  renderBonusTable();
+  setupSkuMonthlyAllPicker();
+  renderSkuMonthlyAllTable();
+}
+
+function setLoadingState(msg, isError){
+  const el = document.getElementById('loadingOverlay');
+  if(!el) return;
+  if(msg === null){ el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.querySelector('.loading-text').textContent = msg;
+  el.classList.toggle('loading-error', !!isError);
+}
+
+function startDashboard(){
+  setLoadingState('Đang tải dữ liệu trực tiếp từ Google Sheets...', false);
+  loadLiveDashboardData().then(liveData => {
+    DATA = liveData;
+    setLoadingState(null);
+    runDashboard();
+  }).catch(err => {
+    console.error('Live data load failed, falling back to cached snapshot:', err);
+    setLoadingState('Không tải được dữ liệu trực tiếp — đang dùng bản lưu gần nhất. (' + err.message + ')', true);
+    DATA = DATA_STATIC_FALLBACK;
+    runDashboard();
+    setTimeout(() => setLoadingState(null), 4000);
+  });
+}
+
+startDashboard();
 
 </script>
 </body>
