@@ -213,7 +213,8 @@ body{
 #regionTable th:nth-child(n+5):nth-child(-n+18), #regionTable td:nth-child(n+5):nth-child(-n+18){ background:#FFF2E8; }
 #regionTable th:nth-child(n+19), #regionTable td:nth-child(n+19){ background:#E9F7F0; }
 #regionTable tbody tr:hover td{ filter:brightness(0.97); }
-#bonusTable th:nth-child(n+3), #bonusTable td:nth-child(n+3){ text-align:center; }
+#bonusTable th:nth-child(n+2), #bonusTable td:nth-child(n+2){ text-align:center; }
+#bonusTable th:last-child, #bonusTable td:last-child{ background:#E9F7F0; }
 .table-pagination{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--text-secondary);}
 .table-pagination button{
   border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;margin-left:6px;
@@ -409,7 +410,7 @@ body{
       <div class="dot"></div>
       <div>
         <b>Tiêu chí:</b> Khu vực có doanh thu Sell-in tháng &gt; 50 triệu thưởng 2% doanh thu · &gt; 100 triệu thưởng 3% doanh thu · &gt; 150 triệu thưởng 4% doanh thu.
-        Bảng dưới chỉ hiển thị các khu vực/tháng đủ điều kiện thưởng.
+        Mỗi tháng tính độc lập theo doanh thu tháng đó. Bảng chỉ hiển thị khu vực có ít nhất 1 tháng đạt thưởng.
       </div>
     </div>
     <div style="overflow-x:auto;">
@@ -417,12 +418,19 @@ body{
       <thead>
         <tr>
           <th data-key="region">Khu vực</th>
-          <th data-key="mien">Miền</th>
-          <th data-key="month">Tháng</th>
-          <th data-key="revenue" class="num">Doanh thu tháng</th>
-          <th data-key="tierLabel" class="num">Mức đạt</th>
-          <th data-key="rate" class="num">% thưởng</th>
-          <th data-key="bonus" class="num">Tiền thưởng</th>
+          <th data-key="m0" class="num cen">T1.26</th>
+          <th data-key="m1" class="num cen">T2.26</th>
+          <th data-key="m2" class="num cen">T3.26</th>
+          <th data-key="m3" class="num cen">T4.26</th>
+          <th data-key="m4" class="num cen">T5.26</th>
+          <th data-key="m5" class="num cen">T6.26</th>
+          <th data-key="m6" class="num cen">T7.26</th>
+          <th data-key="m7" class="num cen">T8.26</th>
+          <th data-key="m8" class="num cen">T9.26</th>
+          <th data-key="m9" class="num cen">T10.26</th>
+          <th data-key="m10" class="num cen">T11.26</th>
+          <th data-key="m11" class="num cen">T12.26</th>
+          <th data-key="total" class="num cen">Tổng thưởng</th>
         </tr>
       </thead>
       <tbody id="bonusTableBody"></tbody>
@@ -3810,204 +3818,235 @@ body{
     null,
     null
   ],
-  "bonusProgram": [
+  "bonusMatrix": [
     {
       "region": "BINH DINH",
       "mien": "Miền Trung",
-      "month": "T3.26",
-      "revenue": 244871000.0,
-      "rate": 0.04,
-      "tierLabel": "> 150 triệu",
-      "bonus": 9794840
+      "months": [
+        0,
+        3026700,
+        9794840,
+        3204090,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 16025630
     },
     {
       "region": "TIEN GIANG",
       "mien": "Miền Nam",
-      "month": "T2.26",
-      "revenue": 162470000.0,
-      "rate": 0.04,
-      "tierLabel": "> 150 triệu",
-      "bonus": 6498800
+      "months": [
+        1040100,
+        6498800,
+        3305850,
+        1020600,
+        3020400,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 14885750
     },
     {
       "region": "TAY NGUYEN",
       "mien": "Miền Trung",
-      "month": "T3.26",
-      "revenue": 154675000.0,
-      "rate": 0.04,
-      "tierLabel": "> 150 triệu",
-      "bonus": 6187000
+      "months": [
+        0,
+        0,
+        6187000,
+        0,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 6187000
     },
     {
       "region": "THANH HOA",
       "mien": "Miền Bắc",
-      "month": "T4.26",
-      "revenue": 115501000.0,
-      "rate": 0.03,
-      "tierLabel": "> 100 triệu",
-      "bonus": 3465030
-    },
-    {
-      "region": "TIEN GIANG",
-      "mien": "Miền Nam",
-      "month": "T3.26",
-      "revenue": 110195000.0,
-      "rate": 0.03,
-      "tierLabel": "> 100 triệu",
-      "bonus": 3305850
-    },
-    {
-      "region": "BINH DINH",
-      "mien": "Miền Trung",
-      "month": "T4.26",
-      "revenue": 106803000.0,
-      "rate": 0.03,
-      "tierLabel": "> 100 triệu",
-      "bonus": 3204090
+      "months": [
+        0,
+        0,
+        1973200,
+        3465030,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 5438230
     },
     {
       "region": "AN GIANG",
       "mien": "Miền Nam",
-      "month": "T3.26",
-      "revenue": 102345000.0,
-      "rate": 0.03,
-      "tierLabel": "> 100 triệu",
-      "bonus": 3070350
-    },
-    {
-      "region": "BINH DINH",
-      "mien": "Miền Trung",
-      "month": "T2.26",
-      "revenue": 100890000.0,
-      "rate": 0.03,
-      "tierLabel": "> 100 triệu",
-      "bonus": 3026700
-    },
-    {
-      "region": "TIEN GIANG",
-      "mien": "Miền Nam",
-      "month": "T5.26",
-      "revenue": 100680000.0,
-      "rate": 0.03,
-      "tierLabel": "> 100 triệu",
-      "bonus": 3020400
+      "months": [
+        0,
+        0,
+        3070350,
+        0,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 3070350
     },
     {
       "region": "VUNG TAU",
       "mien": "Miền Trung",
-      "month": "T2.26",
-      "revenue": 100590000.0,
-      "rate": 0.03,
-      "tierLabel": "> 100 triệu",
-      "bonus": 3017700
+      "months": [
+        0,
+        3017700,
+        0,
+        0,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 3017700
     },
     {
-      "region": "THANH HOA",
+      "region": "HO CHI MINH",
+      "mien": "Miền Nam",
+      "months": [
+        0,
+        1033000,
+        1127600,
+        0,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 2160600
+    },
+    {
+      "region": "VINH",
       "mien": "Miền Bắc",
-      "month": "T3.26",
-      "revenue": 98660000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1973200
+      "months": [
+        0,
+        1028000,
+        0,
+        1022000,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 2050000
     },
     {
       "region": "CA MAU",
       "mien": "Miền Nam",
-      "month": "T3.26",
-      "revenue": 96814000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1936280
+      "months": [
+        0,
+        0,
+        1936280,
+        0,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 1936280
     },
     {
       "region": "HA NOI",
       "mien": "Miền Bắc",
-      "month": "T4.26",
-      "revenue": 59484000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1189680
-    },
-    {
-      "region": "HO CHI MINH",
-      "mien": "Miền Nam",
-      "month": "T3.26",
-      "revenue": 56380000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1127600
+      "months": [
+        0,
+        0,
+        0,
+        1189680,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 1189680
     },
     {
       "region": "HUE",
       "mien": "Miền Trung",
-      "month": "T3.26",
-      "revenue": 55090000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1101800
-    },
-    {
-      "region": "TIEN GIANG",
-      "mien": "Miền Nam",
-      "month": "T1.26",
-      "revenue": 52005000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1040100
-    },
-    {
-      "region": "HO CHI MINH",
-      "mien": "Miền Nam",
-      "month": "T2.26",
-      "revenue": 51650000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1033000
-    },
-    {
-      "region": "VINH",
-      "mien": "Miền Bắc",
-      "month": "T2.26",
-      "revenue": 51400000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1028000
-    },
-    {
-      "region": "VINH",
-      "mien": "Miền Bắc",
-      "month": "T4.26",
-      "revenue": 51100000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1022000
-    },
-    {
-      "region": "TIEN GIANG",
-      "mien": "Miền Nam",
-      "month": "T4.26",
-      "revenue": 51030000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1020600
+      "months": [
+        0,
+        0,
+        1101800,
+        0,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 1101800
     },
     {
       "region": "DA NANG",
       "mien": "Miền Trung",
-      "month": "T2.26",
-      "revenue": 50009000.0,
-      "rate": 0.02,
-      "tierLabel": "> 50 triệu",
-      "bonus": 1000180
+      "months": [
+        0,
+        1000180,
+        0,
+        0,
+        0,
+        0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "total": 1000180
     }
-  ],
-  "bonusProgramMonths": [
-    "T1.26",
-    "T2.26",
-    "T3.26",
-    "T4.26",
-    "T5.26",
-    "T6.26"
   ]
 }
 </script>
@@ -4303,29 +4342,24 @@ function renderRegionTable(){
 }
 
 // ===================== BONUS PROGRAM TABLE =====================
-function bonusTierBadge(rate){
-  if(rate >= 0.04) return 'bad';   // reuse red for top tier (highest, most prominent)
-  if(rate >= 0.03) return 'warn';
-  return 'good';
-}
-
 function renderBonusTable(){
-  const rows = [...DATA.bonusProgram];
-  document.getElementById('bonusTableBody').innerHTML = rows.map(r => `
+  const rows = [...DATA.bonusMatrix];
+  document.getElementById('bonusTableBody').innerHTML = rows.map(r => {
+    const monthCells = r.months.map(v => {
+      if(v == null) return `<td class="num cen"><span style="color:var(--text-secondary)">–</span></td>`;
+      if(v === 0) return `<td class="num cen"><span style="color:var(--text-secondary)">-</span></td>`;
+      return `<td class="num cen">${fmtMoneyShort(v)}</td>`;
+    }).join('');
+    return `
     <tr>
       <td>${r.region}</td>
-      <td>${r.mien}</td>
-      <td>${r.month}</td>
-      <td class="num">${fmtMoneyFull(r.revenue)}</td>
-      <td class="num">${r.tierLabel}</td>
-      <td class="num"><span class="badge ${bonusTierBadge(r.rate)}">${(r.rate*100).toFixed(0)}%</span></td>
-      <td class="num"><b>${fmtMoneyFull(r.bonus)}</b></td>
-    </tr>
-  `).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Không có khu vực nào đạt thưởng trong giai đoạn này</td></tr>`;
+      ${monthCells}
+      <td class="num cen"><b>${fmtMoneyFull(r.total)}</b></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="14" style="text-align:center;color:var(--text-secondary);padding:20px;">Không có khu vực nào đạt thưởng trong giai đoạn này</td></tr>`;
 
-  const totalBonus = rows.reduce((s,r)=>s+r.bonus,0);
-  const uniqueRegions = new Set(rows.map(r=>r.region)).size;
-  document.getElementById('bonusInfo').textContent = `${rows.length} lượt đạt thưởng · ${uniqueRegions} khu vực · Tổng thưởng ${fmtMoneyFull(totalBonus)}`;
+  const totalBonus = rows.reduce((s,r)=>s+r.total,0);
+  document.getElementById('bonusInfo').textContent = `${rows.length} khu vực đạt thưởng · Tổng thưởng ${fmtMoneyFull(totalBonus)}`;
 }
 
 // ===================== REVENUE BY MONTH CHART (2025-2026) =====================
