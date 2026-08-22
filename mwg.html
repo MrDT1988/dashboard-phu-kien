@@ -572,23 +572,46 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <div class="chart-container chart-tall">
                 <h3>Tỉ trọng đóng góp từng phân khúc giá theo Số lượng (Toàn thị trường)</h3>
                 <div class="chart-sub">Cột 100% xếp chồng theo tháng, mỗi phần là % đóng góp của 1 phân khúc giá, tính trên toàn bộ thị trường (không riêng OPPO) — cho biết phân khúc nào đang bán được nhiều máy nhất.</div>
-                <div id="seg-units-empty" style="padding:30px 0; text-align:center; color:var(--text-secondary); font-size:12.5px;">📅 Vui lòng chọn ít nhất 1 Tháng ở bộ lọc phía trên để xem biểu đồ.</div>
-                <canvas id="chart-segment-units" style="display:none;"></canvas>
+                <canvas id="chart-segment-units"></canvas>
             </div>
             <div class="chart-container chart-tall">
                 <h3>Tỉ trọng từng hãng theo phân khúc giá</h3>
                 <div class="chart-sub">% doanh thu mỗi hãng chiếm trong từng phân khúc giá (100% stacked) — cho thấy OPPO mạnh/yếu ở phân khúc nào. Rê chuột vào từng phần cột để xem chi tiết model.</div>
                 <div id="chart-segment-total" style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:8px;"></div>
-                <div id="seg-brand-empty" style="padding:30px 0; text-align:center; color:var(--text-secondary); font-size:12.5px;">📅 Vui lòng chọn ít nhất 1 Tháng ở bộ lọc phía trên để xem biểu đồ.</div>
-                <canvas id="chart-segment" style="display:none;"></canvas>
+                <canvas id="chart-segment"></canvas>
             </div>
             <div class="chart-container chart-tall">
                 <h3>Tỉ trọng phân khúc giá theo từng hãng</h3>
                 <div class="chart-sub">% doanh số (máy) của mỗi hãng nằm ở phân khúc nào (100% stacked, chuẩn hóa theo chính hãng đó) — cho thấy hãng đang bán tốt ở phân khúc nào. Rê chuột vào từng phần cột để xem chi tiết model.</div>
-                <div id="brand-seg-empty" style="padding:30px 0; text-align:center; color:var(--text-secondary); font-size:12.5px;">📅 Vui lòng chọn ít nhất 1 Tháng ở bộ lọc phía trên để xem biểu đồ.</div>
-                <canvas id="chart-brand-segment" style="display:none;"></canvas>
+                <canvas id="chart-brand-segment"></canvas>
             </div>
         </section>
+
+        <div style="margin:0 0 var(--gap);">
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>TOP 10 sản phẩm bán chạy — 6 hãng lớn</h3>
+                <div class="chart-sub">Xếp hạng theo số lượng máy bán ra (S.O), trong đúng phân khúc giá đang chọn (thẻ bên dưới), dùng chung bộ lọc Tháng/Sale/Size shop ở trên.</div>
+            </div>
+        </div>
+        <div class="sale-card-group" id="top-products-seg-cards" style="margin-bottom:14px;"></div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="top-products-table">
+                <thead>
+                    <tr>
+                        <th style="width:36px; text-align:center;">#</th>
+                        <th>Model</th>
+                        <th>Hãng</th>
+                        <th class="num">S.O (máy)</th>
+                        <th class="num">% trong phân khúc</th>
+                    </tr>
+                </thead>
+                <tbody id="top-products-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+        </div>
         </div>
 
         <div class="cluster-wrap">
@@ -2816,20 +2839,7 @@ function segModelTooltipLines(segModelBreakdown, seg, brand) {
 
 function refreshSegCharts() {
     renderSizePerfTable();
-    const hasMonth = segFilters.months.length > 0;
-    ['seg-units-empty','seg-brand-empty','brand-seg-empty'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.style.display = hasMonth ? 'none' : 'block';
-    });
-    ['chart-segment-units','chart-segment','chart-brand-segment'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.style.display = hasMonth ? 'block' : 'none';
-    });
-    if (!hasMonth) {
-        const segTotalEl = document.getElementById('chart-segment-total'); if (segTotalEl) segTotalEl.textContent = '';
-        if (segmentChart) { segmentChart.destroy(); segmentChart = null; }
-        if (brandSegmentChart) { brandSegmentChart.destroy(); brandSegmentChart = null; }
-        if (segmentUnitsChart) { segmentUnitsChart.destroy(); segmentUnitsChart = null; }
-        return;
-    }
+    if (typeof renderTopProductsTable === 'function') renderTopProductsTable();
     const segModelBreakdown = computeSegModelBreakdown();
     const segBrandRevRaw = computeSegBrandRevenue();
     const segBrandUnitsRaw = computeSegBrandUnits();
@@ -2974,6 +2984,49 @@ function refreshSegCharts() {
     });
 }
 refreshSegCharts();
+
+// ---- TOP 10 sản phẩm bán chạy — 6 hãng lớn, theo từng phân khúc giá (thẻ chọn 6 mức) ----
+let topProductsSeg = SEGMENT_6_ORDER[0];
+function renderTopProductsCards() {
+    const el = document.getElementById('top-products-seg-cards');
+    if (!el) return;
+    el.innerHTML = SEGMENT_6_ORDER.map(s => `<button type="button" class="sale-card-btn${topProductsSeg === s ? ' active' : ''}" data-top-seg="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('');
+    el.querySelectorAll('.sale-card-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            topProductsSeg = btn.dataset.topSeg;
+            renderTopProductsCards();
+            renderTopProductsTable();
+        });
+    });
+}
+function renderTopProductsTable() {
+    const tbody = document.getElementById('top-products-table-body');
+    if (!tbody) return;
+    const segModelBreakdown = computeSegModelBreakdown();
+    const byModel = {}; // model -> { brand, units }
+    const segData = segModelBreakdown[topProductsSeg] || {};
+    TOP_BRANDS_FIXED.forEach(brand => {
+        const models = segData[brand] || {};
+        Object.entries(models).forEach(([model, units]) => {
+            byModel[model] = { brand, units: (byModel[model] ? byModel[model].units : 0) + units };
+        });
+    });
+    const rows = Object.entries(byModel).map(([model, v]) => ({ model, brand: v.brand, units: v.units })).sort((a,b) => b.units - a.units).slice(0, 10);
+    const segTotal = TOP_BRANDS_FIXED.reduce((s,b) => s + Object.values(segData[b] || {}).reduce((a,c) => a+c, 0), 0);
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary); padding:20px;">Không có dữ liệu trong phân khúc này (theo bộ lọc hiện tại).</td></tr>';
+        return;
+    }
+    tbody.innerHTML = rows.map((r, i) => `<tr>
+        <td style="text-align:center;">${i+1}</td>
+        <td>${escapeHtml(r.model)}</td>
+        <td>${escapeHtml(brandDisplay(r.brand))}</td>
+        <td class="num">${fmtInt(r.units)} máy</td>
+        <td class="num">${segTotal ? (r.units/segTotal*100).toFixed(1) : '0.0'}%</td>
+    </tr>`).join('');
+}
+renderTopProductsCards();
+renderTopProductsTable();
 
 // ---- Chart: Doanh số & Doanh thu theo ngày (dùng CHUNG 1 bộ lọc — bắt buộc chọn Tháng) ----
 let dailyFilters = { months: [], days: [], sales: [], segments: [], sizeShops: [] };
