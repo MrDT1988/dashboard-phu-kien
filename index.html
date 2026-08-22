@@ -251,7 +251,7 @@ body{
   <section class="chart-row">
     <div class="chart-container">
       <h3>Xu hướng bán hàng theo tháng — PK vs CL</h3>
-      <div class="chart-note">T1.2026 – T7.2026 (*T7 tạm tính)</div>
+      <div class="chart-note">T11.2025 – T7.2026 (*T7 tạm tính)</div>
       <div class="chart-canvas-wrap"><canvas id="chartMonthly"></canvas></div>
     </div>
     <div class="chart-container">
@@ -263,7 +263,7 @@ body{
 
   <section class="chart-row" style="grid-template-columns:1fr;">
     <div class="chart-container">
-      <h3>Doanh thu theo tháng — 2026</h3>
+      <h3>Doanh thu theo tháng — 2025-2026</h3>
       <div class="chart-note">Doanh thu = SL bán × (FOB + Lợi nhuận/sp) · Di chuột vào cột để xem chi tiết theo từng model · T8–T12.26 chưa có dữ liệu</div>
       <div class="chart-canvas-wrap"><canvas id="chartRevMonth"></canvas></div>
       <div class="mini-table-wrap">
@@ -3696,7 +3696,88 @@ body{
     "KIEN GIANG": 21470000.0,
     "DONG THAP": 17445000.0,
     "HO CHI MINH": 96558000.0
-  }
+  },
+  "monthlyLabels9": [
+    "T11.25",
+    "T12.25",
+    "T1.26",
+    "T2.26",
+    "T3.26",
+    "T4.26",
+    "T5.26",
+    "T6.26",
+    "T7.26*"
+  ],
+  "monthlyPk9": [
+    19542,
+    7074,
+    2135.0,
+    7296.0,
+    14447.0,
+    6124.0,
+    3697.0,
+    10691.0,
+    4012.0
+  ],
+  "monthlyCl9": [
+    null,
+    12690,
+    51630.0,
+    35550.0,
+    32430.0,
+    41280.0,
+    16610.0,
+    9000.0,
+    9500.0
+  ],
+  "revMonthLabels14": [
+    "T11.25",
+    "T12.25",
+    "T1.26",
+    "T2.26",
+    "T3.26",
+    "T4.26",
+    "T5.26",
+    "T6.26",
+    "T7.26*",
+    "T8.26",
+    "T9.26",
+    "T10.26",
+    "T11.26",
+    "T12.26"
+  ],
+  "monthlyRevPk14": [
+    1166407000,
+    426737000,
+    105545000.0,
+    603591000.0,
+    933642000.0,
+    392216000.0,
+    248780000.0,
+    707453000.0,
+    326316000.0,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "monthlyRevCl14": [
+    null,
+    76140000,
+    309780000.0,
+    213300000.0,
+    194580000.0,
+    247680000.0,
+    99660000.0,
+    54000000.0,
+    57000000.0,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
 }
 </script>
 
@@ -3845,22 +3926,22 @@ function renderChartMonthly(){
   charts.monthly = new Chart(ctx, {
     type:'line',
     data:{
-      labels: DATA.monthlyLabels,
+      labels: DATA.monthlyLabels9,
       datasets:[
         {
-          label:'Phụ kiện (PK)', data: DATA.monthlyPk,
+          label:'Phụ kiện (PK)', data: DATA.monthlyPk9,
           borderColor: NAVY, backgroundColor: NAVY+"20", fill:false, tension:.3,
           borderWidth:3, pointRadius:4, pointBackgroundColor: NAVY, pointHoverRadius:6,
         },
         {
-          label:'Cường lực (CL)', data: DATA.monthlyCl,
+          label:'Cường lực (CL)', data: DATA.monthlyCl9,
           borderColor: ORANGE, backgroundColor: ORANGE+"20", fill:false, tension:.3,
           borderWidth:3, pointRadius:4, pointBackgroundColor: ORANGE, pointHoverRadius:6,
         }
       ]
     },
     options:{
-      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } }, tooltip:{ callbacks:{ label: c => `${c.dataset.label}: ${fmtInt(c.raw)} sp` } } },
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } }, tooltip:{ callbacks:{ label: c => c.raw==null ? `${c.dataset.label}: chưa có dữ liệu` : `${c.dataset.label}: ${fmtInt(c.raw)} sp` } } },
       scales:{
         x:{ grid:{ display:false } },
         y:{ grid:{ color:GRID }, beginAtZero:true, ticks:{ callback:v=>fmtInt(v) } }
@@ -3990,7 +4071,7 @@ function renderRegionTable(){
   }).join('');
 }
 
-// ===================== REVENUE BY MONTH CHART (12 months) =====================
+// ===================== REVENUE BY MONTH CHART (2025-2026) =====================
 const ALL_12_MONTHS = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*','T8.26','T9.26','T10.26','T11.26','T12.26'];
 
 function pad12(arr7){
@@ -4004,10 +4085,10 @@ function renderChartRevMonth(){
   charts.revMonth = new Chart(ctx, {
     type:'bar',
     data:{
-      labels: ALL_12_MONTHS,
+      labels: DATA.revMonthLabels14,
       datasets:[
-        { label:'Phụ kiện (PK)', data: pad12(DATA.monthlyRevPk), backgroundColor: NAVY, borderRadius:4, stack:'rev' },
-        { label:'Cường lực (CL)', data: pad12(DATA.monthlyRevCl), backgroundColor: ORANGE, borderRadius:4, stack:'rev' },
+        { label:'Phụ kiện (PK)', data: DATA.monthlyRevPk14, backgroundColor: NAVY, borderRadius:4, stack:'rev' },
+        { label:'Cường lực (CL)', data: DATA.monthlyRevCl14, backgroundColor: ORANGE, borderRadius:4, stack:'rev' },
       ]
     },
     options:{
@@ -4018,11 +4099,11 @@ function renderChartRevMonth(){
             label: c => c.raw==null ? 'Chưa có dữ liệu' : `${c.dataset.label}: ${fmtMoneyFull(c.raw)}`,
             afterLabel: c => {
               if(c.raw==null) return [];
-              const monthIdx = c.dataIndex;
-              if(monthIdx > 6) return [];
+              const skuMonthIdx = c.dataIndex - 2; // T1.26 starts at index 2 (after T11.25, T12.25)
+              if(skuMonthIdx < 0 || skuMonthIdx > 6) return [];
               const isPk = c.datasetIndex === 0;
               const list = isPk ? DATA.skuMonthlyRevPk : DATA.skuMonthlyRevCl;
-              const withVal = list.map(s => ({ sku:s.sku, val:s.months[monthIdx] })).filter(s=>s.val>0);
+              const withVal = list.map(s => ({ sku:s.sku, val:s.months[skuMonthIdx] })).filter(s=>s.val>0);
               withVal.sort((a,b)=>b.val-a.val);
               const top = withVal.slice(0,8);
               const lines = ['', 'Chi tiết theo model:'];
@@ -4045,18 +4126,18 @@ function renderRevMiniTable(){
   const table = document.getElementById('revMiniTable');
   let totalPk=0, totalCl=0;
   const rowMonth = ['Tháng'], rowPk = ['PK'], rowCl = ['CL'], rowTotal = ['Tổng'];
-  for(let i=0;i<12;i++){
-    rowMonth.push(ALL_12_MONTHS[i]);
-    if(i < 7){
-      const pk = DATA.monthlyRevPk[i], cl = DATA.monthlyRevCl[i];
-      totalPk += pk; totalCl += cl;
-      rowPk.push(fmtMoneyShort(pk));
-      rowCl.push(fmtMoneyShort(cl));
-      rowTotal.push(fmtMoneyShort(pk+cl));
+  DATA.revMonthLabels14.forEach((label, i) => {
+    rowMonth.push(label);
+    const pk = DATA.monthlyRevPk14[i], cl = DATA.monthlyRevCl14[i];
+    if(pk != null || cl != null){
+      totalPk += pk || 0; totalCl += cl || 0;
+      rowPk.push(pk != null ? fmtMoneyShort(pk) : '–');
+      rowCl.push(cl != null ? fmtMoneyShort(cl) : '–');
+      rowTotal.push(fmtMoneyShort((pk||0)+(cl||0)));
     } else {
       rowPk.push('–'); rowCl.push('–'); rowTotal.push('–');
     }
-  }
+  });
   rowMonth.push('LŨY KẾ');
   rowPk.push(fmtMoneyShort(totalPk));
   rowCl.push(fmtMoneyShort(totalCl));
