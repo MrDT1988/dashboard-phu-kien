@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BÁO CÁO KẾT QUẢ KINH DOANH MWG 2026</title>
+<title>Report MWG</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
@@ -426,7 +426,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 <div class="dashboard-container">
 
     <header class="dashboard-header">
-        <h1>BÁO CÁO KẾT QUẢ KINH DOANH MWG 2026</h1>
+        <h1>Report MWG</h1>
         <p>Nguồn: Google Sheet "Data MWG" (tự động cập nhật) · Đã loại 5 shop chuyên Apple (AAR) khỏi toàn bộ số liệu</p>
         <p id="last-updated" style="margin-top:4px; font-size:11.5px;"></p>
         <span class="badge">OPPO vs. Toàn thị trường</span>
@@ -2758,13 +2758,39 @@ document.querySelectorAll('#mwg-size-table thead th').forEach(th => {
     });
 });
 
+// Gộp phân khúc giá chi tiết (9 mức gốc) thành 6 mức chuẩn theo yêu cầu, dùng CHUNG cho cả 3 biểu đồ tỉ
+// trọng phân khúc giá bên dưới (không đụng tới DATA.segment_order gốc vì còn dùng ở nơi khác trong dashboard).
+const SEGMENT_6_ORDER = ['<5M', '5-10M', '10-15M', '15-20M', '20-30M', '>30M'];
+function mapSeg6(seg) {
+    if (seg === '<3M' || seg === '3-5M') return '<5M';
+    if (seg === '5-7M' || seg === '7-10M') return '5-10M';
+    if (seg === '10-15M') return '10-15M';
+    if (seg === '15-20M') return '15-20M';
+    if (seg === '20-30M') return '20-30M';
+    if (seg === '>20M' || seg === '>30M') return '>30M';
+    return null;
+}
+
 let segmentChart = null;
 let brandSegmentChart = null;
 let segmentUnitsChart = null;
 
 function refreshSegCharts() {
-    const segBrandRev = computeSegBrandRevenue();
-    const segs = DATA.segment_order;
+    const segBrandRevRaw = computeSegBrandRevenue();
+    const segBrandUnitsRaw = computeSegBrandUnits();
+    const segs = SEGMENT_6_ORDER;
+    const segBrandRev = {}; segs.forEach(s => { segBrandRev[s] = {}; ALL_BRANDS_ORDER.forEach(b => segBrandRev[s][b] = 0); });
+    DATA.segment_order.forEach(rawSeg => {
+        const s6 = mapSeg6(rawSeg);
+        if (!s6 || !segBrandRevRaw[rawSeg]) return;
+        ALL_BRANDS_ORDER.forEach(b => segBrandRev[s6][b] += segBrandRevRaw[rawSeg][b] || 0);
+    });
+    const segBrandUnits = {}; segs.forEach(s => { segBrandUnits[s] = {}; ALL_BRANDS_ORDER.forEach(b => segBrandUnits[s][b] = 0); });
+    DATA.segment_order.forEach(rawSeg => {
+        const s6 = mapSeg6(rawSeg);
+        if (!s6 || !segBrandUnitsRaw[rawSeg]) return;
+        ALL_BRANDS_ORDER.forEach(b => segBrandUnits[s6][b] += segBrandUnitsRaw[rawSeg][b] || 0);
+    });
 
     // Chart 1: per segment, % by brand (segment-normalized)
     const segTotals = segs.map(seg => ALL_BRANDS_ORDER.reduce((s,b)=>s+segBrandRev[seg][b],0));
@@ -2801,7 +2827,6 @@ function refreshSegCharts() {
 
     // Chart 2: per brand, % by segment (brand-normalized) — theo DOANH SỐ (máy), không phải doanh thu,
     // vì chart này thể hiện hãng đang "bán tốt" ở phân khúc nào (số lượng máy bán ra), không phải giá trị tiền.
-    const segBrandUnits = computeSegBrandUnits();
     const brandTotals = {};
     ALL_BRANDS_ORDER.forEach(b => { brandTotals[b] = segs.reduce((s,seg)=>s+segBrandUnits[seg][b],0); });
     const segColors = ['#8e8e93','#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#CCB974','#64B5CD'];
@@ -2830,7 +2855,17 @@ function refreshSegCharts() {
     });
 
     // Chart 3: tỉ trọng đóng góp từng phân khúc theo số lượng (units, 100% stacked), toàn thị trường, theo tháng
-    const unitsByMonth = computeSegmentUnitsByMonth();
+    const unitsByMonthRaw = computeSegmentUnitsByMonth();
+    const unitsByMonth = {};
+    Object.keys(unitsByMonthRaw).forEach(m => {
+        unitsByMonth[m] = {};
+        segs.forEach(s => unitsByMonth[m][s] = 0);
+        Object.keys(unitsByMonthRaw[m]).forEach(rawSeg => {
+            const s6 = mapSeg6(rawSeg);
+            if (!s6) return;
+            unitsByMonth[m][s6] += unitsByMonthRaw[m][rawSeg] || 0;
+        });
+    });
     const monthsWithData = segFilters.months.length
         ? segFilters.months.map(m => parseInt(m,10)).sort((a,b)=>a-b)
         : Array.from({length: DATA.month_labels.length}, (_,i)=>i+1);
