@@ -4090,11 +4090,44 @@ function fetchCsv(url){
 }
 
 // ---- number parsers ----
-function numFloat(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
-function numClean(v){ // strips "đ", "." thousand separators, spaces -> integer
-  const s = String(v == null ? '' : v).replace(/[^0-9\-]/g,'');
-  return s ? parseInt(s,10) : 0;
+// Google Sheets (via gviz CSV) can return formatted display text like "30.588 đ"
+// (dot = thousands separator) or "7,395238095" (comma = decimal, VN locale).
+// This parser detects the pattern instead of blindly using JS parseFloat (which
+// would misread "30.588" as 30.588 instead of 30588).
+function smartNum(v){
+  if(v == null) return 0;
+  let s = String(v).trim().replace(/đ/gi,'').replace(/\s/g,'');
+  if(s === '') return 0;
+  const neg = s.charAt(0) === '-';
+  if(neg) s = s.slice(1);
+
+  if(s.indexOf(',') !== -1){
+    // VN convention: dot = thousands, comma = decimal
+    s = s.replace(/\./g,'').replace(',', '.');
+    const n = parseFloat(s);
+    return neg ? -(isNaN(n)?0:n) : (isNaN(n)?0:n);
+  }
+  const dotCount = (s.match(/\./g)||[]).length;
+  if(dotCount === 0){
+    const n = parseInt(s.replace(/[^0-9]/g,''),10);
+    return neg ? -(n||0) : (n||0);
+  }
+  if(dotCount > 1){
+    // multiple dots -> definitely thousands separators (e.g. 4.910.687.000)
+    const n = parseInt(s.replace(/\./g,''),10);
+    return neg ? -(n||0) : (n||0);
+  }
+  // exactly one dot: 3 digits after it -> thousands separator; otherwise real decimal
+  const parts = s.split('.');
+  if(parts[1] && parts[1].length === 3){
+    const n = parseInt(s.replace(/\./g,''),10);
+    return neg ? -(n||0) : (n||0);
+  }
+  const n = parseFloat(s);
+  return neg ? -(isNaN(n)?0:n) : (isNaN(n)?0:n);
 }
+function numFloat(v){ return smartNum(v); }
+function numClean(v){ return Math.round(smartNum(v)); }
 
 function canonGroup(raw){
   if(!raw) return null;
