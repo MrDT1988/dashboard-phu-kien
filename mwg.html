@@ -145,7 +145,7 @@ select, input, textarea, button { color: var(--text-primary); }
     font-size:10.5px; font-weight:800; color:#04140e; background:var(--oppo-green);
     padding:2px 7px; border-radius:10px; letter-spacing:0.3px; box-shadow:0 0 8px rgba(34,229,160,0.4);
 }
-.mc-kpi-oppo-val { font-size:17px; font-weight:800; color:var(--oppo-green-dark); }
+.mc-kpi-oppo-val { font-size:17px; font-weight:800; color:var(--text-primary); }
 .mc-kpi-oppo-sub { font-size:11.5px; color:var(--text-secondary); }
 .mc-kpi-oppo-sub.positive { color:var(--positive); font-weight:700; }
 .mc-kpi-oppo-sub.negative { color:var(--negative); font-weight:700; }
@@ -163,7 +163,7 @@ select, input, textarea, button { color: var(--text-primary); }
 #mc-kpi-row { gap:10px; }
 #mc-kpi-row .kpi-card {
     display:flex; flex-direction:column; padding:13px 15px;
-    background:#0d131b; border-left-color: var(--oppo-green);
+    background:#0d131b; border-left-color:var(--text-primary);
 }
 #mc-kpi-row .mc-kpi-oppo { flex:0 0 auto; margin-top:9px; padding-top:8px; }
 
@@ -198,11 +198,11 @@ select, input, textarea, button { color: var(--text-primary); }
 .table-controls input, .table-controls select {
     padding:7px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:12.5px; background:var(--bg-input);
 }
-.table-scroll { overflow-x:auto; max-height: 640px; overflow-y:auto; border:1px solid var(--border-color); border-radius:8px; }
+.table-scroll { overflow-x:auto; max-height: 640px; overflow-y:auto; border:1px solid var(--border-color); border-radius:8px; background:#48566a; }
 .data-table { width:100%; border-collapse:collapse; font-size:12.5px; border-radius:8px; overflow:hidden; }
 .data-table thead th {
-    position: sticky; top:0; background: #0e1f1a; text-align:left; padding:11px 12px;
-    border-bottom:2px solid var(--oppo-green); color:var(--oppo-green); font-weight:700; font-size:11px;
+    position: sticky; top:0; background: #57687e; text-align:left; padding:11px 12px;
+    border-bottom:2px solid var(--oppo-green); color:var(--text-primary); font-weight:700; font-size:11px;
     text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; cursor:pointer; user-select:none; z-index:1;
 }
 .data-table thead th:hover { color:#04140e; background:var(--oppo-green); }
@@ -216,7 +216,7 @@ select, input, textarea, button { color: var(--text-primary); }
 
 .dual-table-row { display:grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
 .table-box { border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; background:#10161f; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-.table-box-title { font-size:13px; font-weight:700; color:var(--oppo-green); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border-color); }
+.table-box-title { font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border-color); }
 @media (max-width: 1000px) {
     .dual-table-row { grid-template-columns: 1fr; }
 }
@@ -224,7 +224,7 @@ select, input, textarea, button { color: var(--text-primary); }
 .mini-month-table-wrap { overflow-x:auto; margin-top:14px; }
 .mini-month-table { border-collapse:collapse; width:100%; font-size:9px; table-layout:fixed; }
 .mini-month-table td { padding:3px 4px; text-align:center; border:1px solid var(--border-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.mini-month-table tr.mmt-month td { background:rgba(34,229,160,0.10); font-weight:700; color:var(--oppo-green); }
+.mini-month-table tr.mmt-month td { background:rgba(34,229,160,0.10); font-weight:700; color:var(--text-primary); }
 .mini-month-table tr.mmt-value td { font-weight:600; }
 .mini-month-table td.mmt-label { text-align:left; font-weight:700; color:var(--text-secondary); background:#0d131b; position:sticky; left:0; font-size:8.5px; }
 .latest-month-col { background: rgba(255,193,7,0.14) !important; }
@@ -290,7 +290,7 @@ thead th.latest-month-col { background: rgba(255,193,7,0.28) !important; }
 .row-revenue td { padding-top:2px !important; }
 .metric-tag { display:inline-block; font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:4px; margin-right:6px; vertical-align:middle; }
 .metric-tag.units { background:rgba(79,158,255,0.16); color:#79c0ff; }
-.metric-tag.revenue { background:rgba(34,229,160,0.16); color:var(--oppo-green); }
+.metric-tag.revenue { background:rgba(34,229,160,0.16); color:var(--text-primary); }
 .metric-tag.avgprice { background:rgba(179,136,255,0.16); color:#c9a0ff; }
 /* Bảng nhiệt (heatmap) "Doanh thu & doanh số theo hãng theo tháng" - cùng kiểu với bảng nhiệt Sale bên DB TG */
 .brand-heat-metric-btn { padding:6px 15px; border:1px solid var(--border-color); border-radius:16px; background:var(--bg-input); font-family:inherit; font-size:11.5px; font-weight:700; cursor:pointer; color:var(--text-secondary); transition:background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
@@ -300,7 +300,7 @@ thead th.latest-month-col { background: rgba(255,193,7,0.28) !important; }
 .brand-heat-table th { padding:7px 4px; text-align:center; font-size:10px; color:var(--text-secondary); font-weight:700; border-bottom:1.5px solid var(--border-color); }
 .brand-heat-table td { padding:8px 4px; text-align:center; font-variant-numeric:tabular-nums; border-bottom:1px solid var(--border-color); transition:background 0.15s ease; }
 .brand-heat-table .bht-name { text-align:left; font-weight:700; color:var(--text-primary); padding-left:8px; }
-.brand-heat-table .bht-total { color:var(--oppo-green); }
+.brand-heat-table .bht-total { color:var(--text-primary); }
 .brand-heat-table .bht-pct { display:block; font-size:0.85em; opacity:0.8; margin-top:2px; }
 .brand-heat-table tr:last-child td { border-bottom:none; border-top:2px solid var(--oppo-green-dark) !important; font-weight:700; }
 .brand-heat-table th.latest-month-col { background:rgba(255,193,7,0.28) !important; }
@@ -321,7 +321,7 @@ thead th.latest-month-col { background: rgba(255,193,7,0.28) !important; }
    (dùng để bo góc) vì nó vô tình cắt mất vùng "sticky" của thead, khiến tiêu đề trôi mất khi cuộn. Bo góc đã có sẵn ở
    .table-scroll bọc ngoài nên bỏ ở đây không ảnh hưởng giao diện. z-index cao hơn hàng TỔNG (2) để luôn nổi trên cùng. */
 #shop-combined-table { overflow: visible; }
-#shop-combined-table thead th { z-index: 3; background: #0e1f1a; }
+#shop-combined-table thead th { z-index: 3; background: #57687e; }
 /* Cột Shop/Size/Sale: canh giữa + font to hơn 1 tí để nổi bật, gộp 1 ô duy nhất (rowspan 3 dòng DS/DT/ĐG) nên tự
    động nằm ngay giữa khối — trùng với hàng "DT" ở giữa. */
 #shop-combined-table td.shop-name-cell, #shop-combined-table td.shop-size-cell, #shop-combined-table td.shop-sale-cell,
@@ -339,7 +339,7 @@ thead th.latest-month-col { background: rgba(255,193,7,0.28) !important; }
 .chart-container.accent-blue h3::before { background:#4f9eff; box-shadow: 0 0 6px rgba(79,158,255,0.6); }
 #chart-daily-mini-table tr.mmt-month td { background:rgba(79,158,255,0.12); color:#79c0ff; }
 #chart-daily-mini-table td.mmt-label { background:#0d1420; }
-#chart-daily-revenue-mini-table tr.mmt-month td { background:rgba(34,229,160,0.12); color:var(--oppo-green); }
+#chart-daily-revenue-mini-table tr.mmt-month td { background:rgba(34,229,160,0.12); color:var(--text-primary); }
 #chart-daily-revenue-mini-table td.mmt-label { background:#0d1a17; }
 
 /* 2 khối bố cục lớn: Phần 1 "Overview MWG 2026" (xám nhạt) và Phần 2 "Review Tháng" (xanh lá nhạt) */
@@ -387,7 +387,7 @@ html { scroll-behavior: smooth; }
 tr.product-detail-row { animation: detailRowIn 0.22s ease; }
 tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 .shop-link, a[data-sale-expand], a[data-sizeperf] { transition: color 0.15s ease; }
-.shop-link:hover, a[data-sale-expand]:hover, a[data-sizeperf]:hover { color: var(--oppo-green); text-shadow: 0 0 8px rgba(34,229,160,0.4); }
+.shop-link:hover, a[data-sale-expand]:hover, a[data-sizeperf]:hover { color:var(--oppo-green); text-shadow: 0 0 8px rgba(34,229,160,0.4); }
 .kpi-value.count-up { transition: color 0.2s ease; }
 
 @media (max-width:640px) {
@@ -496,7 +496,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                     <div class="multiselect" id="ms-f1-shop"></div>
                     <button class="reset-btn" id="f1-reset">Xóa lọc</button>
                 </div>
-                <div id="chart-monthly-brand-total" style="font-size:13px; font-weight:700; color:var(--oppo-green-dark); margin-bottom:8px;"></div>
+                <div id="chart-monthly-brand-total" style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:8px;"></div>
                 <canvas id="chart-monthly-brand"></canvas>
             </div>
         </section>
@@ -509,7 +509,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                 </div>
             </div>
             <div class="table-box">
-                <div id="chart-monthly-brand-revenue-total" style="font-size:12.5px; font-weight:700; color:var(--oppo-green-dark); margin-bottom:8px;"></div>
+                <div id="chart-monthly-brand-revenue-total" style="font-size:12.5px; font-weight:700; color:var(--text-primary); margin-bottom:8px;"></div>
                 <div style="display:flex; gap:8px; margin-bottom:12px;" id="brand-heat-metric-btns">
                     <button type="button" class="brand-heat-metric-btn active" data-metric="rev">DT</button>
                     <button type="button" class="brand-heat-metric-btn" data-metric="units">DS</button>
@@ -574,7 +574,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <div class="chart-container chart-tall">
                 <h3>Tỉ trọng từng hãng theo phân khúc giá</h3>
                 <div class="chart-sub">% doanh thu mỗi hãng chiếm trong từng phân khúc giá (100% stacked) — cho thấy OPPO mạnh/yếu ở phân khúc nào</div>
-                <div id="chart-segment-total" style="font-size:13px; font-weight:700; color:var(--oppo-green-dark); margin-bottom:8px;"></div>
+                <div id="chart-segment-total" style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:8px;"></div>
                 <canvas id="chart-segment"></canvas>
             </div>
             <div class="chart-container chart-tall">
@@ -725,7 +725,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                 <div class="multiselect" id="ms-mc-sizeshop"></div>
                 <button class="reset-btn" id="mc-reset">Xóa lọc</button>
             </div>
-            <div id="mc-period-label" style="font-size:12.5px; font-weight:600; color:var(--oppo-green-dark); margin-bottom:14px;"></div>
+            <div id="mc-period-label" style="font-size:12.5px; font-weight:600; color:var(--text-primary); margin-bottom:14px;"></div>
             <div class="kpi-row" id="mc-kpi-row">
                 <div class="kpi-card">
                     <div class="kpi-label">S.O (Số lượng)</div>
@@ -813,7 +813,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <div class="chart-container chart-tall" style="grid-column: span 2;">
                 <h3>Doanh thu theo ngày</h3>
                 <div class="chart-sub">Mỗi ngày là 1 cột xếp chồng theo hãng, theo Doanh thu — dùng để theo dõi khi nhập số liệu realtime.</div>
-                <div id="chart-daily-revenue-total" style="font-size:13px; font-weight:700; color:var(--oppo-green-dark); margin-bottom:8px;"></div>
+                <div id="chart-daily-revenue-total" style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:8px;"></div>
                 <div id="daily-revenue-empty-state" style="padding:40px 0; text-align:center; color:var(--text-secondary); font-size:13px;">
                     Vui lòng chọn ít nhất 1 Tháng ở trên để xem biểu đồ doanh thu theo ngày.
                 </div>
@@ -2717,7 +2717,7 @@ function renderSizePerfTable() {
     const bodyRows = rows.map(r => {
         const arrow = expandedSizePerf.has(r.size) ? '▾' : '▸';
         const rowHtml = `<tr>
-            <td><span class="shop-link" data-sizeperf="${escapeHtml(r.size)}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${arrow} Size ${escapeHtml(r.size)}</span></td>
+            <td><span class="shop-link" data-sizeperf="${escapeHtml(r.size)}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${arrow} Size ${escapeHtml(r.size)}</span></td>
             <td class="num">${r.num_shops}</td>
             <td class="num">${fmtInt(r.total_units)} máy</td>
             <td class="num"><b>${fmtInt(r.avg_units)} máy</b></td>
@@ -3552,8 +3552,8 @@ function renderDailyRevenueMiniTable(sortedDayKeys, labels, dayTotalsRaw, dayKey
         dayRow += `<td>${lbl}</td>`;
         valueRow += `<td>${fmtVND(dayTotalsRaw[i])}</td>`;
     });
-    dayRow += `<td style="background:rgba(34,229,160,0.14); color:var(--oppo-green); font-weight:800;">Tổng</td>`;
-    valueRow += `<td style="background:rgba(34,229,160,0.14); color:var(--oppo-green); font-weight:700;">${fmtVND(grandTotalAllDays)}</td>`;
+    dayRow += `<td style="background:rgba(34,229,160,0.14); color:var(--text-primary); font-weight:800;">Tổng</td>`;
+    valueRow += `<td style="background:rgba(34,229,160,0.14); color:var(--text-primary); font-weight:700;">${fmtVND(grandTotalAllDays)}</td>`;
     dayRow += '</tr>'; valueRow += '</tr>';
 
     // ---- Bảng mini: Thị phần OPPO theo Sale/ASM (theo Doanh thu), theo từng ngày, cột cuối = Tổng cả kỳ ----
@@ -3574,7 +3574,7 @@ function renderDailyRevenueMiniTable(sortedDayKeys, labels, dayTotalsRaw, dayKey
         }).filter(r => r.totalAll > 0).sort((a,b) => b.totalAll - a.totalAll);
 
         if (rows.length) {
-            const headerRow = `<tr class="mmt-month"><td class="mmt-label" colspan="${labels.length + 2}" style="text-align:left; background:rgba(34,229,160,0.14); color:var(--oppo-green); font-weight:800;">Thị phần OPPO theo Sale/ASM (theo Doanh thu, trừ Apple)</td></tr>`;
+            const headerRow = `<tr class="mmt-month"><td class="mmt-label" colspan="${labels.length + 2}" style="text-align:left; background:rgba(34,229,160,0.14); color:var(--text-primary); font-weight:800;">Thị phần OPPO theo Sale/ASM (theo Doanh thu, trừ Apple)</td></tr>`;
             const bodyRows = rows.map(r => {
                 const cells = r.shareByDay.map((v, i) => {
                     if (v === null) return `<td style="color:var(--text-secondary);">-</td>`;
@@ -3719,7 +3719,7 @@ function toggleShopExpand(shopName) {
 
 function shopNameCell(shopName) {
     const arrow = expandedShops.has(shopName) ? '▾' : '▸';
-    return `<span class="shop-link" data-shop="${escapeHtml(shopName)}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${arrow} ${escapeHtml(shopName)}</span>`;
+    return `<span class="shop-link" data-shop="${escapeHtml(shopName)}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${arrow} ${escapeHtml(shopName)}</span>`;
 }
 
 function productDetailRowHtml(shopName, colspan, shopRow) {
@@ -4616,7 +4616,7 @@ function thiDuaSaleDetailRowHtml(groupLabel, shopDetails, modelBreakdown, colspa
         return `
         <div style="display:flex; justify-content:space-between; gap:12px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.10); font-size:12.5px;">
             <span style="${shareColorStyle(d.oppoShare)}">${escapeHtml(d.shop)}</span>
-            <span style="font-weight:600; white-space:nowrap;">${fmtVND(d.oppoRev)} OPPO · %OPPO/DT bán lẻ ${fmtPct(d.oppoShare)} · <span style="color:var(--oppo-green-dark);">Thưởng DT: ${fmtM(shopBonus)}</span> · <span style="color:var(--oppo-green);">Bonus Model: ${fmtM(d.bonusModel)}</span></span>
+            <span style="font-weight:600; white-space:nowrap;">${fmtVND(d.oppoRev)} OPPO · %OPPO/DT bán lẻ ${fmtPct(d.oppoShare)} · <span style="color:var(--text-primary);">Thưởng DT: ${fmtM(shopBonus)}</span> · <span style="color:var(--text-primary);">Bonus Model: ${fmtM(d.bonusModel)}</span></span>
         </div>`;
     }).join('');
     const modelTotal = modelBreakdown.reduce((s, r) => s + r.amount, 0);
@@ -4663,7 +4663,7 @@ function renderThiDuaSaleTable() {
         const matchNote = d.matchedSales.length ? ' (' + d.matchedSales.join(', ') + ')' : ' — ⚠️ không tìm thấy Sale khớp từ khóa "' + g.keyword + '"';
         if (d.matchedSales.length && d.oppoShare < 25) belowThreshold.push({ label: g.label, share: d.oppoShare });
         bodyHtml += `<tr>
-            <td><span class="shop-link" data-thidua-sale="${g.keyword}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${arrow} ${escapeHtml(g.label)}</span><br><span style="font-size:10.5px; color:var(--text-secondary);">${escapeHtml(matchNote)}</span></td>
+            <td><span class="shop-link" data-thidua-sale="${g.keyword}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${arrow} ${escapeHtml(g.label)}</span><br><span style="font-size:10.5px; color:var(--text-secondary);">${escapeHtml(matchNote)}</span></td>
             <td class="num">${fmtVND(d.oppoRev)}</td>
             <td class="num">${fmtVND(d.retailRev)}</td>
             <td class="num" style="${shareColorStyle(d.oppoShare)}">${fmtPct(d.oppoShare)}</td>
@@ -4838,7 +4838,7 @@ function renderTargetAttainmentTable() {
         if (r.pct !== null && r.pct < 100) belowTarget.push({ sale: r.sale, pct: r.pct });
         const arrow = expandedTargetAttainmentSales.has(r.sale) ? '▾' : '▸';
         bodyHtml += `<tr>
-            <td><span class="shop-link" data-target-att-sale="${escapeHtml(r.sale)}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${arrow} ${escapeHtml(r.sale)}</span></td>
+            <td><span class="shop-link" data-target-att-sale="${escapeHtml(r.sale)}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${arrow} ${escapeHtml(r.sale)}</span></td>
             <td class="num">${r.shopsWithTarget} / ${r.totalShops}</td>
             <td class="num khung-actual khung-divider">${fmtVND(r.actualRev)}</td>
             <td class="num khung-actual">${r.totalTarget > 0 ? fmtVND(r.totalTarget) : '-'}</td>
@@ -4984,7 +4984,7 @@ function saleShopDetailRowHtml(saleName, shopRows, colspan, benchmarks) {
         const avgPriceStyle = hasAvgPrice ? `color:${s.oppoAvgPrice >= saleAvgPrice ? 'var(--positive)' : 'var(--negative)'};font-weight:700;` : '';
         const avgPriceTitle = hasAvgPrice ? ` title="Đơn giá TB shop ${s.oppoAvgPrice >= saleAvgPrice ? 'cao hơn' : 'thấp hơn'} TB của sale ${escapeHtml(saleName)} (${fmtVND(saleAvgPrice)})"` : '';
         return `<tr>
-            <td><span class="shop-link" data-shop-jump="${escapeHtml(s.shop)}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${escapeHtml(s.shop)}</span></td>
+            <td><span class="shop-link" data-shop-jump="${escapeHtml(s.shop)}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${escapeHtml(s.shop)}</span></td>
             <td class="num" style="${avgPriceStyle}"${avgPriceTitle}>${s.oppoAvgPrice > 0 ? fmtVND(s.oppoAvgPrice) : '-'}</td>
             <td class="num khung-so khung-divider">${fmtInt(s.oppoUnits)}</td>
             <td class="num khung-so">${fmtInt(s.totalUnits)}</td>
@@ -5101,7 +5101,7 @@ function renderSaleTable() {
         const isExpanded = expandedSaleShops.has(r.sale);
         const arrow = isExpanded ? '▾' : '▸';
         const rowHtml = `<tr>
-            <td><span class="shop-link" data-sale-name="${escapeHtml(r.sale)}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${arrow} ${escapeHtml(r.sale)}</span></td>
+            <td><span class="shop-link" data-sale-name="${escapeHtml(r.sale)}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${arrow} ${escapeHtml(r.sale)}</span></td>
             <td class="num">${r.num_shops}</td>
             <td class="num">${r.oppo_avg_price > 0 ? fmtVND(r.oppo_avg_price) : '-'}</td>
             <td class="num khung-so khung-divider">${fmtInt(r.oppo_units)}</td>
