@@ -3221,6 +3221,19 @@ function renderChannelMonthChart() {
 let chTableSort = { field:'total', dir:'desc' };
 let expandedChMonthChannels = new Set();
 
+// Viết tắt tên Sale khi hiển thị trong bảng chi tiết: chỉ lấy chữ cuối (vd "Cao Chí Bảo" -> "Bảo");
+// nếu trùng chữ cuối với Sale khác trong cùng danh sách thì lấy 2 chữ cuối để phân biệt.
+function abbreviateSaleName(name, allNames) {
+    const parts = String(name).trim().split(/\s+/);
+    const last1 = parts[parts.length - 1];
+    const collideCount = allNames.filter(n => {
+        const p = String(n).trim().split(/\s+/);
+        return p[p.length - 1] === last1;
+    }).length;
+    if (collideCount > 1 && parts.length >= 2) return parts.slice(-2).join(' ');
+    return last1;
+}
+
 function channelMonthSaleDetailHtml(channel, months, colspan) {
     const monthSet = new Set(months);
     const bySaleMonth = {}; // sales -> month -> {sellout, rev}
@@ -3259,7 +3272,7 @@ function channelMonthSaleDetailHtml(channel, months, colspan) {
         const dgCellsHtml = r.selloutByMonth.map((v,i) => `<span style="text-align:center;">${v ? fmtVND(r.revByMonth[i]/v) : '-'}</span>`).join('');
         const dgTotalHtml = r.totalSellout ? fmtVND(r.totalRev/r.totalSellout) : '-';
         return `<div style="display:grid; grid-template-columns: 1.3fr repeat(${months.length}, 1fr) 1fr; gap:6px; padding:4px 0; font-size:11.5px; align-items:center;">
-            <span><span class="metric-tag units" style="display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(79,158,255,0.16);color:#79c0ff;margin-right:4px;">DS</span>${escapeHtml(r.sales)}</span>
+            <span title="${escapeHtml(r.sales)}"><span class="metric-tag units" style="display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(79,158,255,0.16);color:#79c0ff;margin-right:4px;">DS</span>${escapeHtml(abbreviateSaleName(r.sales, salesList))}</span>
             ${selloutCellsHtml}
             <span style="text-align:center; font-weight:700;">${fmtInt(r.totalSellout)} máy</span>
         </div>
@@ -3339,7 +3352,8 @@ function renderChannelMonthTable() {
     const totalRevByMonth = months.map((_,i) => rows.reduce((s,r)=>s+r.revByMonth[i],0));
 
     const tbody = document.getElementById('channel-month-table-body');
-    let bodyHtml = rows.map(r => {
+    const CHANNEL_BAND_COLORS = ['rgba(94,158,255,0.08)','rgba(255,176,58,0.08)','rgba(168,120,255,0.08)'];
+    let bodyHtml = rows.map((r, rIdx) => {
         const dsCells = r.selloutByMonth.map((v,i) => `<td class="num">${growthCell(r.selloutByMonth, i, fmtSellout)}</td>`).join('');
         const dtCells = r.revByMonth.map((v,i) => `<td class="num">${growthCell(r.revByMonth, i, fmtRev)}</td>`).join('');
         const dgCells = r.selloutByMonth.map((v,i) => {
@@ -3348,20 +3362,20 @@ function renderChannelMonthTable() {
         }).join('');
         const avgPriceTotal = r.totalSellout > 0 ? fmtVND(r.totalRev / r.totalSellout) : '-';
         const arrow = expandedChMonthChannels.has(r.channel) ? '▾' : '▸';
-        const rowHtml = `<tr>
-            <td><span class="shop-link" data-chmonth-channel="${escapeHtml(r.channel)}" style="cursor:pointer;">${arrow} <b>${escapeHtml(r.channel)}</b></span></td>
+        const band = CHANNEL_BAND_COLORS[rIdx % CHANNEL_BAND_COLORS.length];
+        const bandStyle = `style="background:${band};"`;
+        const rowHtml = `<tr ${bandStyle}>
+            <td rowspan="3" style="vertical-align:middle; text-align:center;"><span class="shop-link" data-chmonth-channel="${escapeHtml(r.channel)}" style="cursor:pointer;">${arrow} <b>${escapeHtml(r.channel)}</b></span></td>
             <td style="text-align:center;"><span class="metric-tag units">DS</span></td>
             ${dsCells}
             <td class="num"><b>${fmtInt(r.totalSellout)}</b></td>
         </tr>
-        <tr>
-            <td></td>
+        <tr ${bandStyle}>
             <td style="text-align:center;"><span class="metric-tag revenue">DT</span></td>
             ${dtCells}
             <td class="num"><b>${fmtVND(r.totalRev)}</b></td>
         </tr>
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.10);">
-            <td></td>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.10); background:${band};">
             <td style="text-align:center;"><span class="metric-tag avgprice">ĐG</span></td>
             ${dgCells}
             <td class="num"><b>${avgPriceTotal}</b></td>
