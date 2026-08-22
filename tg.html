@@ -6933,7 +6933,7 @@ function renderKaShopRevenueTable() {
 renderKaShopRevenueTable();
 
 // ---- 2 bảng thị phần 12 tháng theo Kênh phụ FPT/Viettel ----
-const KA_MARKET_SHARE_BRANDS = ['OPPO', 'Samsung', 'Xiaomi', 'Vivo', 'Realme', 'Apple', 'Khác'];
+const KA_MARKET_SHARE_BRANDS = ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'Khác'];
 const KA_MARKET_SHARE_DATA = { FPT: {}, VIETTEL: {} };
 let kaMarketShareMetric = { FPT: 'ds', VIETTEL: 'ds' };
 
@@ -6951,8 +6951,8 @@ function shareKaFptBrandMap(code) {
     if (c === 'SS') return 'Samsung';
     if (c === 'XM') return 'Xiaomi';
     if (c === 'IP') return 'Apple';
-    if (c === 'VV' || c === 'VIVO') return 'Vivo';
-    if (c === 'RM' || c === 'REALME') return 'Realme';
+    if (c === 'VV' || c === 'VIVO') return 'Khác';
+    if (c === 'RM' || c === 'REALME') return 'Khác';
     if (c === 'FP') return null; // máy bàn phím - loại khỏi thị phần
     if (!c) return null;
     return 'Khác'; // HO, Others, mã chưa xác định
@@ -6965,8 +6965,8 @@ function shareKaViettelBrandMap(name) {
     if (low === 'oppo') return 'OPPO';
     if (low === 'samsung') return 'Samsung';
     if (low === 'xiaomi') return 'Xiaomi';
-    if (low === 'vivo') return 'Vivo';
-    if (low === 'realme') return 'Realme';
+    if (low === 'vivo') return 'Khác';
+    if (low === 'realme') return 'Khác';
     if (low === 'apple' || low === 'iphone') return 'Apple';
     return 'Khác';
 }
