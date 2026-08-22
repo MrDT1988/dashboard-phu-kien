@@ -374,7 +374,7 @@ body{
   <section class="chart-row" style="grid-template-columns:1fr;">
     <div class="chart-container">
       <h3>Lợi nhuận theo tháng — 2026</h3>
-      <div class="chart-note">Lợi nhuận = SL bán × (HUB S.I − Giá FOB tháng đó) · T8–T12.26 chưa có dữ liệu (chưa có giá FOB) · CL tô cam</div>
+      <div class="chart-note">Lợi nhuận = SL bán × (HUB S.I − Giá FOB tháng đó) · T8.26* dùng tạm giá FOB T7.26 (ước tính, Sheet chưa cập nhật) · T9–T12.26 chưa có dữ liệu · CL tô cam</div>
       <div class="chart-canvas-wrap"><canvas id="chartProfitMonth"></canvas></div>
       <div class="mini-table-wrap">
         <table class="mini-table" id="profitMiniTable"></table>
@@ -4215,16 +4215,18 @@ function parseNhapXuatSheet(rows, fobMap){
     }
     const banMonths12 = [28,29,30,31,32,33,34,35,36,37,38,39].map(idx => numFloat(r[idx]));
     const hubSI = numFloat(r[5]);
-    const fobMonths7 = fobEntry ? fobEntry.months.slice(3,10) : [0,0,0,0,0,0,0];
-    const fobLatest = fobEntry ? fobEntry.latest : 0;
+    const fobMonths7 = fobEntry ? fobEntry.months.slice(3,10) : [0,0,0,0,0,0,0]; // T01.26..T07.26
+    const fobLatest = fobEntry ? fobEntry.latest : 0; // = T07.26, used as estimate for T08.26
 
+    // profit for T1.26-T7.26 uses that exact month's FOB; T8.26 has no FOB yet on the
+    // sheet, so we estimate using the latest known FOB (T07.26) — flagged as an estimate.
     let profitCum = 0;
-    const profitMonths7 = [];
-    for(let m=0;m<7;m++){
+    const profitMonths8 = [];
+    for(let m=0;m<8;m++){
       const qty = banMonths12[m] || 0;
-      const fob = fobMonths7[m] || 0;
+      const fob = m < 7 ? (fobMonths7[m] || 0) : fobLatest;
       const p = qty * (hubSI - fob);
-      profitMonths7.push(p);
+      profitMonths8.push(p);
       profitCum += p;
     }
 
@@ -4243,7 +4245,7 @@ function parseNhapXuatSheet(rows, fobMap){
       months8: banMonths12.slice(0,8),
       months12: banMonths12,
       profitCum: profitCum,
-      profitMonths7: profitMonths7,
+      profitMonths8: profitMonths8,
     });
   }
   skus._rawGroupLabels = Array.from(rawGroupLabels);
@@ -4405,7 +4407,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   const monthlyPk = new Array(8).fill(0), monthlyCl = new Array(8).fill(0);
   const groupMonthlyVol = {}; GROUP_ORDER.forEach(g => groupMonthlyVol[g] = new Array(8).fill(0));
   const monthlyRevPk = new Array(8).fill(0), monthlyRevCl = new Array(8).fill(0);
-  const monthlyProfitPk7 = new Array(7).fill(0), monthlyProfitCl7 = new Array(7).fill(0);
+  const monthlyProfitPk7 = new Array(8).fill(0), monthlyProfitCl7 = new Array(8).fill(0);
   const skuMonthlyPk = [], skuMonthlyAll = [];
   const skuMonthlyRevPk = [], skuMonthlyRevCl = [];
 
@@ -4418,8 +4420,8 @@ function buildDashboardData(skus, regionsRaw, theoThang){
       else { monthlyPk[i] += v; monthlyRevPk[i] += rev; }
       if(groupMonthlyVol[d.group]) groupMonthlyVol[d.group][i] += v;
     }
-    for(let i=0;i<7;i++){
-      const p = d.profitMonths7[i] || 0;
+    for(let i=0;i<8;i++){
+      const p = d.profitMonths8[i] || 0;
       if(isCl) monthlyProfitCl7[i] += p; else monthlyProfitPk7[i] += p;
     }
     const total8 = d.months8.reduce((s,x)=>s+x,0);
@@ -4494,9 +4496,9 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   const monthlyRevPk14 = [nat1125Pk, nat1225Pk].concat(monthlyRevPk).concat([null,null,null,null]);
   const monthlyRevCl14 = [null, nat1225Cl].concat(monthlyRevCl).concat([null,null,null,null]);
 
-  const profitMonthLabels12 = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26','T9.26','T10.26','T11.26','T12.26'];
-  const monthlyProfitPk12 = monthlyProfitPk7.concat([null,null,null,null,null]);
-  const monthlyProfitCl12 = monthlyProfitCl7.concat([null,null,null,null,null]);
+  const profitMonthLabels12 = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26*','T9.26','T10.26','T11.26','T12.26'];
+  const monthlyProfitPk12 = monthlyProfitPk7.concat([null,null,null,null]);
+  const monthlyProfitCl12 = monthlyProfitCl7.concat([null,null,null,null]);
 
   function getRate(rev){
     if(rev > 150000000) return 0.04;
