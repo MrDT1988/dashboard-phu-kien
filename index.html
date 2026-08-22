@@ -243,6 +243,8 @@ body{
 #targetProgressTable tr.mien-row td:first-child::before{ content:'▸ '; }
 #targetProgressTable tr.mien-row.expanded td:first-child::before{ content:'▾ '; }
 #targetProgressTable tr.region-row td:first-child{ padding-left:28px; color:var(--text-secondary); font-weight:400; }
+#targetProgressTable tr.total-row{ font-weight:800; background:#1E276108; border-top:2px solid var(--navy); }
+#targetProgressTable tr.total-row td{ color:var(--navy); }
 .table-pagination{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--text-secondary);}
 .table-pagination button{
   border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;margin-left:6px;
@@ -5120,7 +5122,15 @@ function renderTargetProgressTable(){
     }
     return html;
   }).join('');
-  tbody.innerHTML = rowsHtml;
+
+  const totalTarget = DATA.targetProgressMien.reduce((s,m)=>s+m.targetThang,0);
+  const totalRevenue = DATA.targetProgressMien.reduce((s,m)=>s+m.monthly[mi].revenue,0);
+  const totalBonus = DATA.targetProgressMien.reduce((s,m)=>s+m.monthly[mi].bonus,0);
+  const totalPct = totalTarget ? Math.round((totalRevenue/totalTarget)*1000)/10 : 0;
+  const totalEntry = { revenue: totalRevenue, pct: totalPct, bonus: totalBonus };
+  const totalRow = targetProgressRowHtml('Tổng (3 Miền)', 'total-row', '', totalEntry, totalTarget, totalTarget*0.6, totalTarget*0.8, totalTarget);
+
+  tbody.innerHTML = rowsHtml + totalRow;
 
   tbody.querySelectorAll('tr.mien-row').forEach(tr => {
     tr.addEventListener('click', () => {
