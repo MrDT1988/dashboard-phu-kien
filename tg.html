@@ -836,26 +836,22 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                 <div class="chart-sub">Dùng chung bộ lọc với bảng phía trên. Bên trái: Sellout gộp Reno + Find theo tháng (cả năm) và chi tiết theo từng Kênh. Bên phải: tỉ trọng Reno &amp; Find so với các model khác, theo từng Kênh.</div>
             </div>
         </div>
-        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; align-items:start;">
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; align-items:stretch;">
             <div style="min-width:0;">
-                <div class="chart-container" style="padding:12px 12px 4px; margin-bottom:14px; height:190px; min-width:0;">
+                <div class="chart-container" style="padding:12px 12px 4px; height:190px; min-width:0;">
                     <canvas id="chart-renofind-month"></canvas>
-                </div>
-                <div class="table-scroll" style="max-height:none;">
-                    <table class="data-table" id="renofind-month-table">
-                        <thead><tr id="renofind-month-table-head"></tr></thead>
-                        <tbody id="renofind-month-table-body"></tbody>
-                    </table>
-                </div>
-                <div style="font-size:10.5px; font-weight:700; color:var(--text-secondary); margin:14px 0 6px; text-transform:uppercase;">Chi tiết theo Kênh</div>
-                <div class="table-scroll" style="max-height:none;">
-                    <table class="mini-week-table" id="renofind-mini-table"></table>
                 </div>
             </div>
             <div style="min-width:0;">
-                <div class="table-scroll" style="max-height:none;">
+                <div class="table-scroll" style="height:190px; max-height:190px;">
                     <table class="data-table" id="renofind-share-table"></table>
                 </div>
+            </div>
+        </div>
+        <div style="margin-top:16px;">
+            <div style="font-size:10.5px; font-weight:700; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;">Chi tiết theo Kênh</div>
+            <div class="table-scroll" style="max-height:none;">
+                <table class="mini-week-table" id="renofind-mini-table"></table>
             </div>
         </div>
     </section>
@@ -3607,38 +3603,26 @@ function renderRenoFindSection() {
         return `${fmt(cur)} <span ${cls}>(${sign}${g.toFixed(1)}%)</span>`;
     }
 
-    const totalArr = ALL_12_MONTHS.map(m => totalByMonth[m] || 0);
-    const grandTotal = totalArr.reduce((a, b) => a + b, 0);
-
-    const head = document.getElementById('renofind-month-table-head');
-    if (head) {
-        let h = '<th style="text-align:left;">Chỉ tiêu</th>';
-        labels.forEach(l => h += `<th class="num">${l}</th>`);
-        h += '<th class="num">Tổng</th>';
-        head.innerHTML = h;
-    }
-    const body = document.getElementById('renofind-month-table-body');
-    if (body) {
-        body.innerHTML = `<tr>
-            <td><b>Sellout Reno &amp; Find</b></td>
-            ${totalArr.map((v, i) => `<td class="num">${growthCell(totalArr, i, x => fmtInt(x) + ' máy')}</td>`).join('')}
-            <td class="num"><b>${fmtInt(grandTotal)} máy</b></td>
-        </tr>`;
-    }
-
     const miniTbl = document.getElementById('renofind-mini-table');
     if (miniTbl) {
-        const headRow = '<tr class="mwt-week"><td class="mwt-label">Kênh</td>' + labels.map(l => `<td>${l}</td>`).join('') + '<td>Tổng</td></tr>';
-        const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + `<td><b>${fmtInt(arr.reduce((a, b) => a + b, 0))}</b></td></tr>`;
+        const headRow = '<tr class="mwt-week"><td class="mwt-label">Kênh</td><td>TB tháng</td>' + labels.map(l => `<td>${l}</td>`).join('') + '<td>Tổng</td></tr>';
+        const rowHtml = (label, arr) => {
+            const total = arr.reduce((a, b) => a + b, 0);
+            const avg = Math.round(total / 12);
+            return '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td><td><b>' + fmtInt(avg) + '</b></td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + `<td><b>${fmtInt(total)}</b></td></tr>`;
+        };
         const bodyRows = channels.map(c => rowHtml(c, ALL_12_MONTHS.map(m => byChannelMonth[c][m] || 0))).join('');
-        miniTbl.innerHTML = headRow + bodyRows;
+        const totalArrAllCh = ALL_12_MONTHS.map(m => channels.reduce((s, c) => s + (byChannelMonth[c][m] || 0), 0));
+        const grandTotalAll = totalArrAllCh.reduce((a, b) => a + b, 0);
+        const totalRow = '<tr class="mwt-value" style="font-weight:800; border-top:2px solid rgba(255,255,255,0.15);"><td class="mwt-label">TỔNG</td><td>' + fmtInt(Math.round(grandTotalAll / 12)) + '</td>' + totalArrAllCh.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + `<td>${fmtInt(grandTotalAll)}</td></tr>`;
+        miniTbl.innerHTML = headRow + bodyRows + totalRow;
     }
 
     const shareTbl = document.getElementById('renofind-share-table');
     if (shareTbl) {
         const otherByC = channels.map(c => Math.max(0, (channelTotal[c] || 0) - (channelRenoFind[c] || 0)));
         const pctByC = channels.map(c => channelTotal[c] ? (channelRenoFind[c] / channelTotal[c] * 100) : 0);
-        let h = '<tr><th style="text-align:left;">Chỉ tiêu</th>' + channels.map(c => `<th class="num">${escapeHtml(c)}</th>`).join('') + '</tr>';
+        let h = '<tr><th style="text-align:left;">Product Share</th>' + channels.map(c => `<th class="num">${escapeHtml(c)}</th>`).join('') + '</tr>';
         h += `<tr><td>Reno &amp; Find (máy)</td>${channels.map(c => `<td class="num">${fmtInt(channelRenoFind[c] || 0)}</td>`).join('')}</tr>`;
         h += `<tr><td>Model khác (máy)</td>${otherByC.map(v => `<td class="num">${fmtInt(v)}</td>`).join('')}</tr>`;
         h += `<tr style="border-top:1px solid rgba(255,255,255,0.10);"><td><b>Tổng (máy)</b></td>${channels.map(c => `<td class="num"><b>${fmtInt(channelTotal[c] || 0)}</b></td>`).join('')}</tr>`;
