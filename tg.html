@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DB TG 2026 — Tổng hợp OPPO Tiền Giang - Bến Tre</title>
+<title>Report Tiền Giang</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -704,7 +704,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 <div class="dashboard-container">
     <header class="dashboard-header">
     <div class="dashboard-header-main">
-        <h1>DB TG 2026 — Tổng hợp OPPO Tiền Giang - Bến Tre</h1>
+        <h1>Report Tiền Giang</h1>
         <p>Tổng quan + Chi tiết MWG / KA / IND — Toàn bộ dữ liệu là sản phẩm OPPO qua các kênh MWG / FPT / IND / Điện Máy Chợ Lớn tại Tiền Giang - Bến Tre</p>
         <p id="last-updated" style="margin-top:4px; font-size:11.5px;"></p>
         <span class="badge">Sellout · Sellout Activated · Doanh thu</span>
@@ -3395,7 +3395,6 @@ function renderChannelMonthTable() {
     const totalRevByMonth = months.map((_,i) => rows.reduce((s,r)=>s+r.revByMonth[i],0));
 
     const tbody = document.getElementById('channel-month-table-body');
-    const CHANNEL_BAND_COLORS = ['rgba(94,158,255,0.08)','rgba(255,176,58,0.08)','rgba(168,120,255,0.08)'];
     let bodyHtml = rows.map((r, rIdx) => {
         const dsCells = r.selloutByMonth.map((v,i) => `<td class="num">${growthCell(r.selloutByMonth, i, fmtSellout)}</td>`).join('');
         const dtCells = r.revByMonth.map((v,i) => `<td class="num">${growthCell(r.revByMonth, i, fmtRev)}</td>`).join('');
@@ -3405,20 +3404,18 @@ function renderChannelMonthTable() {
         }).join('');
         const avgPriceTotal = r.totalSellout > 0 ? fmtVND(r.totalRev / r.totalSellout) : '-';
         const arrow = expandedChMonthChannels.has(r.channel) ? '▾' : '▸';
-        const band = CHANNEL_BAND_COLORS[rIdx % CHANNEL_BAND_COLORS.length];
-        const bandStyle = `style="background:${band};"`;
-        const rowHtml = `<tr ${bandStyle}>
+        const rowHtml = `<tr>
             <td rowspan="3" style="vertical-align:middle; text-align:center;"><span class="shop-link" data-chmonth-channel="${escapeHtml(r.channel)}" style="cursor:pointer;">${arrow} <b>${escapeHtml(r.channel)}</b></span></td>
             <td style="text-align:center;"><span class="metric-tag units">DS</span></td>
             ${dsCells}
             <td class="num"><b>${fmtInt(r.totalSellout)}</b></td>
         </tr>
-        <tr ${bandStyle}>
+        <tr>
             <td style="text-align:center;"><span class="metric-tag revenue">DT</span></td>
             ${dtCells}
             <td class="num"><b>${fmtVND(r.totalRev)}</b></td>
         </tr>
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.10); background:${band};">
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.10);">
             <td style="text-align:center;"><span class="metric-tag avgprice">ĐG</span></td>
             ${dgCells}
             <td class="num"><b>${avgPriceTotal}</b></td>
@@ -4168,6 +4165,12 @@ function renderStoreTable() {
         } else {
             banner.style.display = 'none';
         }
+    }
+    const tbody0 = document.getElementById('store-table-body');
+    const hasActiveFilter = storeFilters.search || storeFilters.channel !== 'all' || storeFilters.sale !== 'all' || storeFilters.months.length > 0;
+    if (!hasActiveFilter) {
+        tbody0.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:20px;">👆 Chọn ít nhất 1 bộ lọc ở trên (Tìm shop / Kênh / Sale / Tháng) để xem chi tiết từng Shop.</td></tr>';
+        return;
     }
     const rows = getStoreRowsComputed();
     const monthSelected = storeFilters.months.length > 0;
@@ -4929,22 +4932,18 @@ function computeIndSaleMomTrend(saleName, months, series, metric, latestInfo) {
 // hay đi xuống. Có dòng TỔNG riêng cho mỗi bảng, thứ tự Sale + khung nhẹ phân tách nhóm GIỐNG bảng bên
 // phải. Tách thành 2 bảng trên/dưới nhưng dùng CHUNG bộ lọc chỉ số (indSaleChartMetric) + bộ lọc Sale/Shop
 // chung (indFilters) - đúng dữ liệu nguồn computeIndSaleChartSeries(), chỉ khác nhóm Sale nào được vẽ.
-const IND_HEAT_UP_RGB = [46, 160, 67];
-const IND_HEAT_DOWN_RGB = [220, 53, 69];
-function indSaleHeatCellStyle(cur, prev, trend) {
-    const text = cur > 0 ? null : '-';
-    if (!trend) return { bg: '#121924', fg: 'var(--text-secondary)', text };
-    const pct = prev > 0 ? Math.abs(cur - prev) / prev : 1;
-    const intensity = Math.min(1, pct / 0.5); // đổi từ 50% trở lên coi như đậm nhất
-    const rgb = trend === 'up' ? IND_HEAT_UP_RGB : IND_HEAT_DOWN_RGB;
-    const alpha = 0.14 + intensity * 0.5;
-    return { bg: `rgba(${rgb.join(',')},${alpha.toFixed(2)})`, fg: intensity > 0.6 ? '#fff' : 'var(--text-primary)', text };
-}
 function indSaleHeatRowHtml(saleName, months, series, meta, trendArr, isGroupStart, isTotal) {
     const cells = series[saleName][indSaleChartMetric].map((v, i) => {
         const prev = i > 0 ? series[saleName][indSaleChartMetric][i - 1] : null;
-        const { bg, fg, text } = indSaleHeatCellStyle(v, prev, trendArr[i]);
-        return `<td style="background:${bg}; color:${fg};">${text === null ? meta.axisFmt(v) : text}</td>`;
+        let pctHtml = '';
+        if (prev != null && prev > 0) {
+            const g = (v - prev) / prev * 100;
+            const cls = g > 0.05 ? 'color:var(--positive);' : (g < -0.05 ? 'color:var(--negative);' : '');
+            const sign = g >= 0 ? '+' : '';
+            pctHtml = ` <span style="font-size:0.82em;${cls}">(${sign}${g.toFixed(1)}%)</span>`;
+        }
+        const text = v > 0 ? meta.axisFmt(v) + pctHtml : '<span style="color:var(--text-secondary);">-</span>';
+        return `<td>${text}</td>`;
     }).join('');
     const trStyle = isGroupStart ? ' style="border-top:2px solid rgba(255,255,255,0.15);"' : '';
     const nameCls = isTotal ? 'ish-name ish-total' : 'ish-name';
@@ -8747,29 +8746,21 @@ const BRAND_HEAT_METRIC_META = {
     units: { label: 'Doanh số (DS)', fmt: v => fmtInt(v) + ' máy' },
     avgprice: { label: 'Đơn giá TB (ĐG)', fmt: v => fmtVND(v) },
 };
-const BRAND_HEAT_UP_RGB = [46, 230, 115];
-const BRAND_HEAT_DOWN_RGB = [255, 92, 114];
-// Chỉ 2 màu cố định (không chia đậm/nhạt theo mức % thay đổi như trước) - vì đã có số % thị phần đi kèm
-// từng ô rồi nên không cần thêm lớp thông tin "đổi nhiều/đổi ít" qua độ đậm màu nữa, tránh rối mắt.
-function brandHeatCellStyle(cur, prev) {
-    const text = cur > 0 ? null : '-';
-    if (prev === null || (cur <= 0 && prev <= 0)) return { bg: '#121924', fg: 'var(--text-secondary)', text };
-    const trend = prev <= 0 ? 'up' : (cur > prev ? 'up' : (cur < prev ? 'down' : null));
-    if (!trend) return { bg: '#121924', fg: 'var(--text-secondary)', text };
-    const rgb = trend === 'up' ? BRAND_HEAT_UP_RGB : BRAND_HEAT_DOWN_RGB;
-    return { bg: `rgba(${rgb.join(',')},0.18)`, fg: 'var(--text-primary)', text };
-}
-// pctArr (nếu có) = % thị phần từng tháng, chỉ áp dụng cho chỉ số DT/DS (ĐG là tỉ lệ, không có "thị
-// phần") - hiện trong ngoặc XUỐNG DÒNG bên dưới giá trị (vd "1,2B" rồi xuống dòng "(25%)") cho bảng
-// tính đỡ rối mắt. Kế thừa màu chữ của ô (fg) để đọc được trên cả nền đậm/nhạt, chỉ nhỏ hơn + hơi mờ đi.
-// yearVal/yearPct (nếu có) = giá trị + % thị phần TÍNH CẢ NĂM 2026 (không phụ thuộc bộ lọc Tháng đang
-// chọn) - hiện ở cột "2026" thêm vào cuối bảng, tô nền riêng (không tô theo xu hướng như các ô tháng).
+// Bỏ tô nền heatmap theo tháng trước, dùng chung rule xanh/đỏ (màu CHỮ % tăng giảm) như các bảng khác
+// trong dashboard - đồng bộ giao diện, đỡ rối mắt hơn tô nền theo cường độ.
 function brandHeatRowHtml(label, arr, meta, isTotal, pctArr, yearVal, yearPct) {
     const cells = arr.map((v, i) => {
         const prev = i > 0 ? arr[i-1] : null;
-        const { bg, fg, text } = brandHeatCellStyle(v, prev);
-        const pctSuffix = (pctArr && text === null) ? `<br><span class="bht-pct">(${Math.round(pctArr[i])}%)</span>` : '';
-        return `<td style="background:${bg}; color:${fg};">${text === null ? meta.fmt(v) + pctSuffix : text}</td>`;
+        let growthHtml = '';
+        if (prev != null && prev > 0) {
+            const g = (v - prev) / prev * 100;
+            const cls = g > 0.05 ? 'color:var(--positive);' : (g < -0.05 ? 'color:var(--negative);' : '');
+            const sign = g >= 0 ? '+' : '';
+            growthHtml = ` <span style="font-size:0.78em;${cls}">(${sign}${g.toFixed(1)}%)</span>`;
+        }
+        const pctSuffix = (pctArr && v > 0) ? `<br><span class="bht-pct">(${Math.round(pctArr[i])}%)</span>` : '';
+        const text = v > 0 ? meta.fmt(v) + growthHtml + pctSuffix : '<span style="color:var(--text-secondary);">-</span>';
+        return `<td>${text}</td>`;
     }).join('');
     const nameCls = isTotal ? 'bht-name bht-total' : 'bht-name';
     let yearCell = '';
@@ -10203,6 +10194,13 @@ function renderShopWorstAlerts() {
 }
 
 function renderShopCombinedTable() {
+    const tbody0 = document.getElementById('shop-combined-table-body');
+    const hasActiveFilter = currentFilters.search || currentFilters.loaishop !== 'all' || currentFilters.size !== 'all'
+        || currentFilters.tinh !== 'all' || currentFilters.sale !== 'all' || currentFilters.months.length > 0 || currentFilters.onlyWorst;
+    if (!hasActiveFilter) {
+        tbody0.innerHTML = '<tr><td colspan="11" style="text-align:center; color:var(--text-secondary); padding:20px;">👆 Chọn ít nhất 1 bộ lọc ở trên (Loại shop / Size / Tỉnh / Sale / Tháng / Tìm shop / Chỉ shop tệ nhất) để xem chi tiết từng shop.</td></tr>';
+        return;
+    }
     const baseRows = getFilteredRows();
     const sumOppo = baseRows.reduce((s,r)=>s+r.oppo_rev,0);
     const sumTotal = baseRows.reduce((s,r)=>s+r.total_rev,0);
