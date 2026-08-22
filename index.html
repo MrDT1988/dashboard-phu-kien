@@ -234,6 +234,8 @@ body{
 #regionTable tbody tr:hover td{ filter:brightness(0.97); }
 #bonusTable th:nth-child(n+2), #bonusTable td:nth-child(n+2){ text-align:center; }
 #bonusTable th:last-child, #bonusTable td:last-child{ background:#E9F7F0; }
+#mienBonusTable th:nth-child(n+2), #mienBonusTable td:nth-child(n+2){ text-align:center; }
+#mienBonusTable th:last-child, #mienBonusTable td:last-child{ background:#E9F7F0; }
 .table-pagination{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--text-secondary);}
 .table-pagination button{
   border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;margin-left:6px;
@@ -469,6 +471,46 @@ body{
         </tr>
       </thead>
       <tbody id="bonusTableBody"></tbody>
+    </table>
+    </div>
+  </section>
+
+  <div class="section-title">Chương trình thưởng theo Miền (theo % hoàn thành Target)</div>
+  <section class="table-section">
+    <div class="table-head">
+      <h3>Bảng thưởng theo Miền</h3>
+      <div class="table-controls" id="mienBonusInfo"></div>
+    </div>
+    <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
+      <div class="dot"></div>
+      <div>
+        <b>Tiêu chí:</b> Target tháng của Miền = Target năm ÷ 12. So doanh thu Sell-in tháng của cả Miền với Target tháng đó:
+        Hoàn thành ≥ 60% thưởng 3.000.000đ/miền · ≥ 80% thưởng 5.000.000đ/miền · ≥ 100% thưởng 7.000.000đ/miền.
+        Mỗi tháng chỉ tính mức cao nhất đạt được (không cộng dồn 3 mốc).
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+    <table class="data-table" id="mienBonusTable">
+      <thead>
+        <tr>
+          <th data-key="mien">Miền</th>
+          <th data-key="targetThang" class="num cen">Target/tháng</th>
+          <th data-key="m0" class="num cen">T1.26</th>
+          <th data-key="m1" class="num cen">T2.26</th>
+          <th data-key="m2" class="num cen">T3.26</th>
+          <th data-key="m3" class="num cen">T4.26</th>
+          <th data-key="m4" class="num cen">T5.26</th>
+          <th data-key="m5" class="num cen">T6.26</th>
+          <th data-key="m6" class="num cen">T7.26</th>
+          <th data-key="m7" class="num cen">T8.26</th>
+          <th data-key="m8" class="num cen">T9.26</th>
+          <th data-key="m9" class="num cen">T10.26</th>
+          <th data-key="m10" class="num cen">T11.26</th>
+          <th data-key="m11" class="num cen">T12.26</th>
+          <th data-key="total" class="num cen">Tổng thưởng</th>
+        </tr>
+      </thead>
+      <tbody id="mienBonusTableBody"></tbody>
     </table>
     </div>
   </section>
@@ -4550,6 +4592,43 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   });
   bonusMatrix.sort((a,b) => b.total - a.total);
 
+  // ---- bonus theo Miền, dựa trên % hoàn thành Target tháng (target năm / 12) ----
+  // Mốc: >=60% HT thưởng 3.000.000/miền · >=80% thưởng 5.000.000/miền · >=100% thưởng 7.000.000/miền
+  // (chỉ tính mức cao nhất đạt được trong tháng đó, không cộng dồn 3 mốc)
+  const MIEN_ORDER = ['Miền Bắc','Miền Trung','Miền Nam'];
+  const mienMonthlyRevenue = {};
+  MIEN_ORDER.forEach(m => mienMonthlyRevenue[m] = new Array(8).fill(0));
+  regions.forEach(r => {
+    const monthly = regionMonthly[r.name] || new Array(8).fill(0);
+    if(!mienMonthlyRevenue[r.mien]) return;
+    for(let i=0;i<8;i++) mienMonthlyRevenue[r.mien][i] += monthly[i] || 0;
+  });
+  function targetTierBonus(pct){
+    if(pct >= 1.0) return 7000000;
+    if(pct >= 0.8) return 5000000;
+    if(pct >= 0.6) return 3000000;
+    return 0;
+  }
+  const mienBonusMatrix = MIEN_ORDER.map(mName => {
+    const mObj = mien.find(x => x.name === mName);
+    const targetNamMien = mObj ? mObj.target_nam : 0;
+    const targetThangMien = targetNamMien / 12;
+    const rev = mienMonthlyRevenue[mName];
+    const monthCells = [];
+    let total = 0;
+    for(let i=0;i<12;i++){
+      if(i < 8){
+        const pct = targetThangMien ? rev[i] / targetThangMien : 0;
+        const bonus = targetTierBonus(pct);
+        monthCells.push({ revenue: rev[i], pct: Math.round(pct*1000)/10, bonus });
+        total += bonus;
+      } else {
+        monthCells.push(null);
+      }
+    }
+    return { mien: mName, targetThang: targetThangMien, months: monthCells, total };
+  });
+
   const nhap2026 = groups.reduce((s,g)=>s+g.nhap2026,0);
   const ban2026 = groups.reduce((s,g)=>s+g.ban2026,0);
   const tonKho = groups.reduce((s,g)=>s+g.tonKho,0);
@@ -4592,6 +4671,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     revMonthLabels14, monthlyRevPk14, monthlyRevCl14,
     profitMonthLabels12, monthlyProfitPk12, monthlyProfitCl12,
     bonusMatrix,
+    mienBonusMatrix,
   };
 }
 
@@ -4981,6 +5061,30 @@ function renderBonusTable(){
   document.getElementById('bonusInfo').textContent = `${rows.length} khu vực đạt thưởng · Tổng thưởng ${fmtMoneyFull(totalBonus)}`;
 }
 
+function renderMienBonusTable(){
+  const rows = DATA.mienBonusMatrix || [];
+  if(!document.getElementById('mienBonusTableBody')) return;
+  document.getElementById('mienBonusTableBody').innerHTML = rows.map(r => {
+    const monthCells = r.months.map(cell => {
+      if(cell == null) return `<td class="num cen"><span style="color:var(--text-secondary)">–</span></td>`;
+      if(cell.bonus === 0) return `<td class="num cen"><span style="color:var(--text-secondary)" title="${cell.pct}% HT">-</span></td>`;
+      const badgeClass = cell.bonus >= 7000000 ? 'bad' : (cell.bonus >= 5000000 ? 'warn' : 'good');
+      return `<td class="num cen"><span class="badge ${badgeClass}" title="${cell.pct}% HT">${fmtMoneyShort(cell.bonus)}</span></td>`;
+    }).join('');
+    return `
+    <tr>
+      <td>${r.mien}</td>
+      <td class="num cen">${fmtMoneyShort(r.targetThang)}</td>
+      ${monthCells}
+      <td class="num cen"><b>${fmtMoneyFull(r.total)}</b></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="15" style="text-align:center;color:var(--text-secondary);padding:20px;">Chưa có dữ liệu</td></tr>`;
+
+  const totalBonus = rows.reduce((s,r)=>s+r.total,0);
+  const info = document.getElementById('mienBonusInfo');
+  if(info) info.textContent = `Tổng thưởng 3 miền: ${fmtMoneyFull(totalBonus)}`;
+}
+
 // ===================== REVENUE BY MONTH CHART (2025-2026) =====================
 const ALL_12_MONTHS = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*','T8.26','T9.26','T10.26','T11.26','T12.26'];
 
@@ -5216,6 +5320,7 @@ function runDashboard(){
   setupMienFilter();
   renderRegionTable();
   renderBonusTable();
+  renderMienBonusTable();
   setupSkuMonthlyAllPicker();
   renderSkuMonthlyAllTable();
 }
