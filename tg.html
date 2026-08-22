@@ -838,6 +838,9 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
         <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; align-items:start;">
             <div>
+                <div class="chart-container" style="padding:16px 16px 8px; margin-bottom:14px;">
+                    <canvas id="chart-renofind-month" style="max-height:260px;"></canvas>
+                </div>
                 <div class="table-scroll" style="max-height:none;">
                     <table class="data-table" id="renofind-month-table">
                         <thead><tr id="renofind-month-table-head"></tr></thead>
@@ -3521,6 +3524,7 @@ function renderWeeklyRevenueChart() {
 }
 
 // ================= Sell Out Reno & Find so với các model còn lại =================
+let renoFindMonthChart = null;
 function crosstabPassesFilterNoMonth(rec) {
     if (chFilters.channels.length && !chFilters.channels.includes(rec.channel)) return false;
     if (chFilters.sales.length && !chFilters.sales.includes(rec.sales)) return false;
@@ -3558,6 +3562,39 @@ function renderRenoFindSection() {
     const { byChannelMonth, totalByMonth, channelTotal, channelRenoFind } = computeRenoFindData();
     const labels = ALL_12_MONTHS.map(m => 'T' + m);
     const channels = DATA.channels_list;
+
+    // ---- Biểu đồ 12 tháng, cột chồng theo Kênh ----
+    const chartDatasets = channels.map(c => ({
+        label: c,
+        data: ALL_12_MONTHS.map(m => byChannelMonth[c][m] || 0),
+        backgroundColor: channelColor[c] || '#8b98a9',
+        stack: 's1'
+    }));
+    const canvasEl = document.getElementById('chart-renofind-month');
+    if (canvasEl) {
+        if (renoFindMonthChart) renoFindMonthChart.destroy();
+        renoFindMonthChart = new Chart(canvasEl.getContext('2d'), {
+            type: 'bar',
+            data: { labels, datasets: chartDatasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                layout: { padding: { top: 12 } },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 11 } } },
+                    tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmtInt(c.parsed.y) + ' máy' } },
+                    datalabels: {
+                        display: true, color: '#fff', font: { size: 10, weight: '700' },
+                        formatter: (value, ctx) => {
+                            const monthTotal = ctx.chart.data.datasets.reduce((s, ds) => s + ds.data[ctx.dataIndex], 0);
+                            if (!monthTotal || value / monthTotal < 0.05) return '';
+                            return fmtInt(value);
+                        }
+                    }
+                },
+                scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, y: { stacked: true, beginAtZero: true, display: false } }
+            }
+        });
+    }
 
     function growthCell(arr, i, fmt) {
         const cur = arr[i];
