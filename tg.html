@@ -1584,14 +1584,16 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Thị phần theo tháng — FPT &amp; Viettel</h3>
-                <div class="chart-sub" id="ka-market-share-note">Thị phần theo hãng, 12 tháng + Cả năm, dòng TỔNG cuối bảng. Nguồn: Sheet "Share KA" (dữ liệu trực tiếp, tự đọc mỗi lần mở trang). <b>DS (Doanh số máy)</b> chính xác tuyệt đối. <b>DT (Doanh thu)</b> là <b>ước tính</b> dựa trên khoảng giá của từng đơn (sheet gốc không có giá chính xác từng đơn) nên chỉ mang tính tham khảo. Nút DS/DT chuyển chỉ số hiển thị.</div>
+                <div class="chart-sub" id="ka-market-share-note">Thị phần theo hãng, 12 tháng + Cả năm, dòng TỔNG cuối bảng. Nguồn: Sheet "Share KA" (dữ liệu trực tiếp, tự đọc mỗi lần mở trang). <b>DS</b> = tổng số máy bán ra. <b>10-15M / 15-20M</b> = số máy đúng khoảng giá đó. <b>10-20M</b> = gộp cả 2 khoảng trên. Áp dụng cho cả FPT &amp; Viettel.</div>
             </div>
         </div>
         <div class="ka-market-share-grid">
             <div>
                 <div class="ind-sale-metric-switch" style="margin-bottom:10px;">
                     <button class="ind-sale-metric-btn ka-market-share-metric-btn active" data-sub="FPT" data-metric="ds">DS</button>
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="dt">DT</button>
+                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="b1015">10-15M</button>
+                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="b1520">15-20M</button>
+                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="b1020">10-20M</button>
                 </div>
                 <div class="table-scroll">
                     <table class="data-table ka-market-share-table">
@@ -1603,7 +1605,9 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <div>
                 <div class="ind-sale-metric-switch" style="margin-bottom:10px;">
                     <button class="ind-sale-metric-btn ka-market-share-metric-btn active" data-sub="VIETTEL" data-metric="ds">DS</button>
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="dt">DT</button>
+                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="b1015">10-15M</button>
+                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="b1520">15-20M</button>
+                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="b1020">10-20M</button>
                 </div>
                 <div class="table-scroll">
                     <table class="data-table ka-market-share-table">
@@ -6957,17 +6961,11 @@ function shareKaViettelBrandMap(name) {
 }
 // Sheet chỉ có khoảng giá (VD "4_10M-15M", "1_<5M", "7_>30M") chứ không có giá chính xác từng đơn
 // -> DT (doanh thu) chỉ là ƯỚC TÍNH bằng giá trung bình của khoảng đó. DS (số lượng) thì chính xác.
-function shareKaPkBucketToPrice(pk) {
-    if (!pk) return 0;
-    let s = String(pk).trim().replace(/^\d+_/, '').toLowerCase();
-    if (s.indexOf('further') !== -1) return 0;
-    let m = s.match(/>\s*(\d+(?:\.\d+)?)\s*m/);
-    if (m) return (parseFloat(m[1]) + 5) * 1e6;
-    m = s.match(/<\s*(\d+(?:\.\d+)?)\s*m/);
-    if (m) return (parseFloat(m[1]) / 2) * 1e6;
-    m = s.match(/(\d+(?:\.\d+)?)\s*m\s*-\s*(\d+(?:\.\d+)?)\s*m/);
-    if (m) return (parseFloat(m[1]) + parseFloat(m[2])) / 2 * 1e6;
-    return 0;
+// Sheet ghi khoảng giá dạng "4_10M-15M" (FPT) hoặc "10M - 15M" (Viettel) -> chuẩn hoá về 1 khoá
+// so khớp được cả 2 kênh, vd "10m-15m", để đếm chính xác số máy rơi vào từng mốc giá.
+function shareKaNormalizeBucket(pk) {
+    if (!pk) return '';
+    return String(pk).trim().replace(/^\d+_/, '').replace(/\s+/g, '').toLowerCase();
 }
 function shareKaParseFptMonth(dateStr) {
     const m = String(dateStr || '').match(/^\d{2}\.(\d{2})\.\d{4}$/);
@@ -6977,12 +6975,14 @@ function shareKaParseViettelMonth(thangStr) {
     const m = String(thangStr || '').match(/(\d+)/);
     return m ? parseInt(m[1], 10) : null;
 }
-function shareKaAddEntry(sub, brand, month, qty, revenue) {
+function shareKaAddEntry(sub, brand, month, qty, bucket) {
     if (!brand || !month) return;
     if (!KA_MARKET_SHARE_DATA[sub][brand]) KA_MARKET_SHARE_DATA[sub][brand] = {};
-    if (!KA_MARKET_SHARE_DATA[sub][brand][month]) KA_MARKET_SHARE_DATA[sub][brand][month] = { ds: 0, dt: 0 };
-    KA_MARKET_SHARE_DATA[sub][brand][month].ds += qty;
-    KA_MARKET_SHARE_DATA[sub][brand][month].dt += revenue;
+    if (!KA_MARKET_SHARE_DATA[sub][brand][month]) KA_MARKET_SHARE_DATA[sub][brand][month] = { ds: 0, b1015: 0, b1520: 0 };
+    const cell = KA_MARKET_SHARE_DATA[sub][brand][month];
+    cell.ds += qty;
+    if (bucket === '10m-15m') cell.b1015 += qty;
+    else if (bucket === '15m-20m') cell.b1520 += qty;
 }
 function loadShareKaMarketShare() {
     return fetch(shareKaGvizUrl()).then(res => {
@@ -7007,8 +7007,8 @@ function loadShareKaMarketShare() {
                 if (brand) {
                     const month = shareKaParseFptMonth(r[0]);
                     const qty = parseInt(String(r[4] || '0').replace(/[^0-9\-]/g, ''), 10) || 0;
-                    const price = shareKaPkBucketToPrice(r[5]);
-                    if (month) { shareKaAddEntryInto(fptData, brand, month, qty, qty * price); fptRows++; }
+                    const bucket = shareKaNormalizeBucket(r[5]);
+                    if (month) { shareKaAddEntryInto(fptData, brand, month, qty, bucket); fptRows++; }
                 }
             }
             if (r[15] !== undefined && String(r[15]).trim() !== '') {
@@ -7016,8 +7016,8 @@ function loadShareKaMarketShare() {
                 if (brand) {
                     const month = shareKaParseViettelMonth(r[18]);
                     const qty = parseInt(String(r[16] || '0').replace(/[^0-9\-]/g, ''), 10) || 0;
-                    const price = shareKaPkBucketToPrice(r[17]);
-                    if (month) { shareKaAddEntryInto(viettelData, brand, month, qty, qty * price); viettelRows++; }
+                    const bucket = shareKaNormalizeBucket(r[17]);
+                    if (month) { shareKaAddEntryInto(viettelData, brand, month, qty, bucket); viettelRows++; }
                 }
             }
         }
@@ -7026,13 +7026,20 @@ function loadShareKaMarketShare() {
         KA_MARKET_SHARE_DATA.VIETTEL = viettelData;
     });
 }
-function shareKaAddEntryInto(target, brand, month, qty, revenue) {
+function shareKaAddEntryInto(target, brand, month, qty, bucket) {
     if (!target[brand]) target[brand] = {};
-    if (!target[brand][month]) target[brand][month] = { ds: 0, dt: 0 };
-    target[brand][month].ds += qty;
-    target[brand][month].dt += revenue;
+    if (!target[brand][month]) target[brand][month] = { ds: 0, b1015: 0, b1520: 0 };
+    const cell = target[brand][month];
+    cell.ds += qty;
+    if (bucket === '10m-15m') cell.b1015 += qty;
+    else if (bucket === '15m-20m') cell.b1520 += qty;
 }
 
+function shareKaMetricValue(cell, metric) {
+    if (!cell) return 0;
+    if (metric === 'b1020') return (cell.b1015 || 0) + (cell.b1520 || 0);
+    return cell[metric] || 0;
+}
 function renderKaMarketShareTable(subchannel, tbodyId) {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
@@ -7040,24 +7047,23 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
     const dataForSub = KA_MARKET_SHARE_DATA[subchannel] || {};
     const totalsByMonth = ALL_12_MONTHS.map(m => KA_MARKET_SHARE_BRANDS.reduce((s, b) => {
         const cell = (dataForSub[b] || {})[m];
-        return s + (cell && cell[metric] ? cell[metric] : 0);
+        return s + shareKaMetricValue(cell, metric);
     }, 0));
     const rowsHtml = KA_MARKET_SHARE_BRANDS.map(brand => {
         const cells = ALL_12_MONTHS.map((m, idx) => {
             const cell = (dataForSub[brand] || {})[m];
-            if (!cell || !cell[metric]) return '<td>-</td>';
-            const val = cell[metric];
+            const val = shareKaMetricValue(cell, metric);
+            if (!val) return '<td>-</td>';
             const total = totalsByMonth[idx];
             const pct = total ? (val / total * 100) : 0;
-            const valText = metric === 'dt' ? fmtVND(val) : fmtInt(val);
-            return '<td>' + valText + '<div style="font-size:8.5px; color:var(--text-secondary);">(' + pct.toFixed(1) + '%)</div></td>';
+            return '<td>' + fmtInt(val) + '<div style="font-size:8.5px; color:var(--text-secondary);">(' + pct.toFixed(1) + '%)</div></td>';
         }).join('');
-        const yearVal = ALL_12_MONTHS.reduce((s, m) => { const cell = (dataForSub[brand] || {})[m]; return s + (cell && cell[metric] ? cell[metric] : 0); }, 0);
-        return '<tr><td>' + escapeHtml(brand) + '</td>' + cells + '<td><b>' + (yearVal ? (metric === 'dt' ? fmtVND(yearVal) : fmtInt(yearVal)) : '-') + '</b></td></tr>';
+        const yearVal = ALL_12_MONTHS.reduce((s, m) => { const cell = (dataForSub[brand] || {})[m]; return s + shareKaMetricValue(cell, metric); }, 0);
+        return '<tr><td>' + escapeHtml(brand) + '</td>' + cells + '<td><b>' + (yearVal ? fmtInt(yearVal) : '-') + '</b></td></tr>';
     }).join('');
-    const totalRowCells = totalsByMonth.map(v => '<td><b>' + (v ? (metric === 'dt' ? fmtVND(v) : fmtInt(v)) : '-') + '</b></td>').join('');
+    const totalRowCells = totalsByMonth.map(v => '<td><b>' + (v ? fmtInt(v) : '-') + '</b></td>').join('');
     const yearTotal = totalsByMonth.reduce((a,b)=>a+b,0);
-    const totalRow = '<tr style="font-weight:800; border-top:2px solid rgba(255,255,255,0.15);"><td>TỔNG</td>' + totalRowCells + '<td>' + (yearTotal ? (metric === 'dt' ? fmtVND(yearTotal) : fmtInt(yearTotal)) : '-') + '</td></tr>';
+    const totalRow = '<tr style="font-weight:800; border-top:2px solid rgba(255,255,255,0.15);"><td>TỔNG</td>' + totalRowCells + '<td>' + (yearTotal ? fmtInt(yearTotal) : '-') + '</td></tr>';
     tbody.innerHTML = rowsHtml + totalRow;
 }
 [['FPT', 'ka-market-share-fpt-body'], ['VIETTEL', 'ka-market-share-viettel-body']].forEach(([sub, tbodyId]) => {
