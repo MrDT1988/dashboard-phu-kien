@@ -572,18 +572,21 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <div class="chart-container chart-tall">
                 <h3>Tỉ trọng đóng góp từng phân khúc giá theo Số lượng (Toàn thị trường)</h3>
                 <div class="chart-sub">Cột 100% xếp chồng theo tháng, mỗi phần là % đóng góp của 1 phân khúc giá, tính trên toàn bộ thị trường (không riêng OPPO) — cho biết phân khúc nào đang bán được nhiều máy nhất.</div>
-                <canvas id="chart-segment-units"></canvas>
+                <div id="seg-units-empty" style="padding:30px 0; text-align:center; color:var(--text-secondary); font-size:12.5px;">📅 Vui lòng chọn ít nhất 1 Tháng ở bộ lọc phía trên để xem biểu đồ.</div>
+                <canvas id="chart-segment-units" style="display:none;"></canvas>
             </div>
             <div class="chart-container chart-tall">
                 <h3>Tỉ trọng từng hãng theo phân khúc giá</h3>
-                <div class="chart-sub">% doanh thu mỗi hãng chiếm trong từng phân khúc giá (100% stacked) — cho thấy OPPO mạnh/yếu ở phân khúc nào</div>
+                <div class="chart-sub">% doanh thu mỗi hãng chiếm trong từng phân khúc giá (100% stacked) — cho thấy OPPO mạnh/yếu ở phân khúc nào. Rê chuột vào từng phần cột để xem chi tiết model.</div>
                 <div id="chart-segment-total" style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:8px;"></div>
-                <canvas id="chart-segment"></canvas>
+                <div id="seg-brand-empty" style="padding:30px 0; text-align:center; color:var(--text-secondary); font-size:12.5px;">📅 Vui lòng chọn ít nhất 1 Tháng ở bộ lọc phía trên để xem biểu đồ.</div>
+                <canvas id="chart-segment" style="display:none;"></canvas>
             </div>
             <div class="chart-container chart-tall">
                 <h3>Tỉ trọng phân khúc giá theo từng hãng</h3>
-                <div class="chart-sub">% doanh số (máy) của mỗi hãng nằm ở phân khúc nào (100% stacked, chuẩn hóa theo chính hãng đó) — cho thấy hãng đang bán tốt ở phân khúc nào</div>
-                <canvas id="chart-brand-segment"></canvas>
+                <div class="chart-sub">% doanh số (máy) của mỗi hãng nằm ở phân khúc nào (100% stacked, chuẩn hóa theo chính hãng đó) — cho thấy hãng đang bán tốt ở phân khúc nào. Rê chuột vào từng phần cột để xem chi tiết model.</div>
+                <div id="brand-seg-empty" style="padding:30px 0; text-align:center; color:var(--text-secondary); font-size:12.5px;">📅 Vui lòng chọn ít nhất 1 Tháng ở bộ lọc phía trên để xem biểu đồ.</div>
+                <canvas id="chart-brand-segment" style="display:none;"></canvas>
             </div>
         </section>
         </div>
@@ -2775,7 +2778,59 @@ let segmentChart = null;
 let brandSegmentChart = null;
 let segmentUnitsChart = null;
 
+// Chi tiết model theo phân khúc(6 mức)+hãng, để hiện trong tooltip khi hover — nguồn duy nhất có cả
+// Model lẫn Phân khúc là DATA.daily.rows (bảng "theo ngày"), nên chỉ áp dụng được bộ lọc Tháng/Sale/Size
+// shop của segFilters (không áp dụng được bộ lọc Shop vì daily.rows không có chiều Shop).
+function computeSegModelBreakdown() {
+    const result = {}; // seg6 -> brand -> model -> units
+    const monthSet = segFilters.months.length ? new Set(segFilters.months.map(m => parseInt(m))) : null;
+    const saleSet = segFilters.sales.length ? new Set(segFilters.sales) : null;
+    const sizeSet = segFilters.sizeShops.length ? new Set(segFilters.sizeShops) : null;
+    DATA.daily.rows.forEach(row => {
+        const [m, d, saleI, segI, brandI, rev, units, sizeI, modelI] = row;
+        if (monthSet && !monthSet.has(m)) return;
+        if (saleSet && !saleSet.has(DATA.daily.sales[saleI])) return;
+        if (sizeSet && !sizeSet.has(DATA.daily.sizes[sizeI])) return;
+        const rawSeg = DATA.daily.segments[segI];
+        const s6 = mapSeg6(rawSeg);
+        if (!s6) return;
+        const brandName = DATA.daily.brands[brandI];
+        const b = DATA.top_brands.includes(brandName) ? brandName : 'Khác';
+        const modelName = (DATA.daily.models && modelI !== undefined) ? DATA.daily.models[modelI] : null;
+        if (!modelName) return;
+        if (!result[s6]) result[s6] = {};
+        if (!result[s6][b]) result[s6][b] = {};
+        result[s6][b][modelName] = (result[s6][b][modelName] || 0) + units;
+    });
+    return result;
+}
+function segModelTooltipLines(segModelBreakdown, seg, brand) {
+    const models = (segModelBreakdown[seg] && segModelBreakdown[seg][brand]) || {};
+    const entries = Object.entries(models).sort((a,b) => b[1]-a[1]);
+    if (!entries.length) return [];
+    const lines = ['', 'Chi tiết model:'];
+    entries.slice(0,8).forEach(([name, units]) => lines.push(`  ${name}: ${fmtInt(units)} máy`));
+    if (entries.length > 8) lines.push(`  +${entries.length-8} model khác`);
+    return lines;
+}
+
 function refreshSegCharts() {
+    renderSizePerfTable();
+    const hasMonth = segFilters.months.length > 0;
+    ['seg-units-empty','seg-brand-empty','brand-seg-empty'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.style.display = hasMonth ? 'none' : 'block';
+    });
+    ['chart-segment-units','chart-segment','chart-brand-segment'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.style.display = hasMonth ? 'block' : 'none';
+    });
+    if (!hasMonth) {
+        const segTotalEl = document.getElementById('chart-segment-total'); if (segTotalEl) segTotalEl.textContent = '';
+        if (segmentChart) { segmentChart.destroy(); segmentChart = null; }
+        if (brandSegmentChart) { brandSegmentChart.destroy(); brandSegmentChart = null; }
+        if (segmentUnitsChart) { segmentUnitsChart.destroy(); segmentUnitsChart = null; }
+        return;
+    }
+    const segModelBreakdown = computeSegModelBreakdown();
     const segBrandRevRaw = computeSegBrandRevenue();
     const segBrandUnitsRaw = computeSegBrandUnits();
     const segs = SEGMENT_6_ORDER;
@@ -2815,13 +2870,16 @@ function refreshSegCharts() {
             layout: { padding: { top: 20 } },
             plugins: {
                 legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
-                tooltip: { callbacks: { label: c => {
-                    const brand = ALL_BRANDS_ORDER[c.datasetIndex];
-                    const seg = segs[c.dataIndex];
-                    const units = (segBrandUnits[seg] && segBrandUnits[seg][brand]) || 0;
-                    const rev = (segBrandRev[seg] && segBrandRev[seg][brand]) || 0;
-                    return c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '% (' + fmtInt(units) + ' máy, ' + fmtVND(rev) + ')';
-                } } },
+                tooltip: { callbacks: {
+                    label: c => {
+                        const brand = ALL_BRANDS_ORDER[c.datasetIndex];
+                        const seg = segs[c.dataIndex];
+                        const units = (segBrandUnits[seg] && segBrandUnits[seg][brand]) || 0;
+                        const rev = (segBrandRev[seg] && segBrandRev[seg][brand]) || 0;
+                        return c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '% (' + fmtInt(units) + ' máy, ' + fmtVND(rev) + ')';
+                    },
+                    afterLabel: c => segModelTooltipLines(segModelBreakdown, segs[c.dataIndex], ALL_BRANDS_ORDER[c.datasetIndex])
+                } },
                 datalabels: { display:true, color:'#fff', font:{size:10,weight:'700'}, formatter: v => v < 4 ? '' : v.toFixed(0)+'%' }
             },
             scales: {
@@ -2850,12 +2908,15 @@ function refreshSegCharts() {
             layout: { padding: { top: 20 } },
             plugins: {
                 legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:10}} },
-                tooltip: { callbacks: { label: c => {
-                    const seg = segs[c.datasetIndex];
-                    const brand = ALL_BRANDS_ORDER[c.dataIndex];
-                    const units = (segBrandUnits[seg] && segBrandUnits[seg][brand]) || 0;
-                    return c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '% (' + fmtInt(units) + ' máy)';
-                } } },
+                tooltip: { callbacks: {
+                    label: c => {
+                        const seg = segs[c.datasetIndex];
+                        const brand = ALL_BRANDS_ORDER[c.dataIndex];
+                        const units = (segBrandUnits[seg] && segBrandUnits[seg][brand]) || 0;
+                        return c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '% (' + fmtInt(units) + ' máy)';
+                    },
+                    afterLabel: c => segModelTooltipLines(segModelBreakdown, segs[c.datasetIndex], ALL_BRANDS_ORDER[c.dataIndex])
+                } },
                 datalabels: { display:true, color:'#fff', font:{size:10,weight:'700'}, formatter: v => v < 4 ? '' : v.toFixed(0)+'%' }
             },
             scales: {
@@ -2911,8 +2972,6 @@ function refreshSegCharts() {
             }
         }
     });
-
-    renderSizePerfTable();
 }
 refreshSegCharts();
 
