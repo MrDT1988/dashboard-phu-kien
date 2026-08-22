@@ -4174,10 +4174,14 @@ function parseFobSheet(rows){
 function parseNhapXuatSheet(rows, fobMap){
   const skus = [];
   let currentGroup = null;
+  const rawGroupLabels = new Set();
   for(let i = 3; i < rows.length; i++){
     const r = rows[i];
     if(!r || r[3] === undefined || String(r[3]).trim() === '') continue;
-    if(r[1] && String(r[1]).trim() !== '') currentGroup = canonGroup(r[1]);
+    if(r[1] && String(r[1]).trim() !== ''){
+      currentGroup = canonGroup(r[1]);
+      rawGroupLabels.add(JSON.stringify(String(r[1])));
+    }
     const sku = String(r[3]).trim();
     const mau = r[4] ? String(r[4]).trim() : '';
     const key = sku + '|' + mau;
@@ -4220,6 +4224,7 @@ function parseNhapXuatSheet(rows, fobMap){
       profitMonths7: profitMonths7,
     });
   }
+  skus._rawGroupLabels = Array.from(rawGroupLabels);
   return skus;
 }
 
@@ -4535,7 +4540,11 @@ function loadLiveDashboardData(){
     const theoThang = parseTheoThangSheet(theoThangRows);
     const regionsRaw = parseKhuVucSheet(khuVucRows);
     if(skus.length < 10) throw new Error('Dữ liệu SKU quá ít, có thể sheet đổi cấu trúc');
-    return buildDashboardData(skus, regionsRaw, theoThang);
+    const data = buildDashboardData(skus, regionsRaw, theoThang);
+    data._debugRawGroupLabels = skus._rawGroupLabels;
+    data._debugSkuCount = skus.length;
+    data._debugCableCount = skus.filter(s=>s.group==='Cable').length;
+    return data;
   });
 }
 
@@ -5117,6 +5126,9 @@ function startDashboard(){
     DATA = liveData;
     setLoadingState(null);
     runDashboard();
+    if(DATA._debugCableCount === 0){
+      showDataSourceBanner('warn', `[Chẩn đoán] Đọc được ${DATA._debugSkuCount} mã SP nhưng Cable = 0. Nhãn nhóm gốc đọc được: ${JSON.stringify(DATA._debugRawGroupLabels)}`);
+    }
   }).catch(err => {
     console.error('Live data load failed, falling back to cached snapshot:', err);
     DATA = DATA_STATIC_FALLBACK;
