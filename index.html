@@ -401,7 +401,7 @@ body{
       <h3>Chi tiết theo khu vực (tỉnh/thành)</h3>
       <div class="table-controls">
         <select id="mienFilter"><option value="all">Tất cả miền</option></select>
-        <span style="color:var(--text-secondary);font-size:11.5px;">Doanh thu Sell-in theo tháng · T7–T12.26 chưa có dữ liệu</span>
+        <span style="color:var(--text-secondary);font-size:11.5px;">Doanh thu Sell-in theo tháng · T9–T12.26 chưa có dữ liệu</span>
       </div>
     </div>
     <div style="overflow-x:auto;">
@@ -4111,27 +4111,37 @@ function smartNum(v){
   if(s === '') return 0;
   const neg = s.charAt(0) === '-';
   if(neg) s = s.slice(1);
+  // percentage-formatted cells (e.g. "35%") -> fraction (0.35)
+  if(s.charAt(s.length-1) === '%'){
+    s = s.slice(0, -1);
+    const inner = smartPlainNum(s, false);
+    const n = inner / 100;
+    return neg ? -n : n;
+  }
+  return neg ? -smartPlainNum(s, true) : smartPlainNum(s, true);
+}
+function smartPlainNum(s, allowFloat){
   if(s.indexOf(',') !== -1){
     s = s.replace(/\./g,'').replace(',', '.');
     const n = parseFloat(s);
-    return neg ? -(isNaN(n)?0:n) : (isNaN(n)?0:n);
+    return isNaN(n)?0:n;
   }
   const dotCount = (s.match(/\./g)||[]).length;
   if(dotCount === 0){
     const n = parseInt(s.replace(/[^0-9]/g,''),10);
-    return neg ? -(n||0) : (n||0);
+    return n||0;
   }
   if(dotCount > 1){
     const n = parseInt(s.replace(/\./g,''),10);
-    return neg ? -(n||0) : (n||0);
+    return n||0;
   }
   const parts = s.split('.');
   if(parts[1] && parts[1].length === 3){
     const n = parseInt(s.replace(/\./g,''),10);
-    return neg ? -(n||0) : (n||0);
+    return n||0;
   }
   const n = parseFloat(s);
-  return neg ? -(isNaN(n)?0:n) : (isNaN(n)?0:n);
+  return isNaN(n)?0:n;
 }
 function numFloat(v){ return smartNum(v); }
 function numClean(v){ return Math.round(smartNum(v)); }
@@ -4908,11 +4918,11 @@ function renderRegionTable(){
   if(mienFilterState !== 'all') rows = rows.filter(r=>r.mien===mienFilterState);
   rows.sort((a,b)=>b.tien_do-a.tien_do);
   document.getElementById('regionTableBody').innerHTML = rows.map(r => {
-    const monthly = DATA.regionMonthly[r.name] || [0,0,0,0,0,0];
+    const monthly = DATA.regionMonthly[r.name] || [];
     const rev2025 = DATA.region2025[r.name] || 0;
     const monthCells = [];
     for(let i=0;i<12;i++){
-      const v = i < 6 ? monthly[i] : null;
+      const v = i < monthly.length ? monthly[i] : null;
       monthCells.push(`<td class="num cen">${v ? fmtMoneyShort(v) : '<span style="color:var(--text-secondary)">–</span>'}</td>`);
     }
     const totalMonths = monthly.reduce((s,x)=>s+x,0);
