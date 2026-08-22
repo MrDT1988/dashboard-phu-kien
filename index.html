@@ -4137,14 +4137,14 @@ function numDecimal(v){
 
 function canonGroup(raw){
   if(!raw) return null;
-  const s = String(raw).trim();
-  if(s.indexOf('Cable') !== -1) return 'Cable';
-  if(s.indexOf('Adapter') !== -1) return 'Adapter';
+  const s = String(raw).trim().toLowerCase();
+  if(s.indexOf('cable') !== -1) return 'Cable';
+  if(s.indexOf('adapter') !== -1) return 'Adapter';
   if(s.indexOf('sạc') !== -1) return 'Adapter';
-  if(s.indexOf('Tai nghe') !== -1) return 'Tai nghe';
-  if(s.indexOf('Powerbank') !== -1) return 'Powerbank (SDP)';
-  if(s.indexOf('Dán') !== -1 || s.indexOf('Cường') !== -1 || s.indexOf('MDMH') !== -1) return 'Cường lực (Dán MH)';
-  return s;
+  if(s.indexOf('tai nghe') !== -1) return 'Tai nghe';
+  if(s.indexOf('powerbank') !== -1) return 'Powerbank (SDP)';
+  if(s.indexOf('dán') !== -1 || s.indexOf('cường') !== -1 || s.indexOf('mdmh') !== -1) return 'Cường lực (Dán MH)';
+  return String(raw).trim();
 }
 
 const MIEN_MAP = {
