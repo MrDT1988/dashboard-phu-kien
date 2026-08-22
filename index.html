@@ -4206,6 +4206,7 @@ function parseNhapXuatSheet(rows, fobMap){
       group: currentGroup,
       sku: sku,
       mau: mau,
+      tenHeThong: r[2] ? String(r[2]).trim() : '',
       hubSI: hubSI,
       fobLatest: fobLatest,
       nhap2026: numFloat(r[13]),
@@ -4305,10 +4306,36 @@ function mergeRegionInto(regionsMap, targetName, sourceName){
   delete regionsMap[sourceName];
 }
 
+function skuLabel(d){
+  const tag = d.mau || d.dispSuffix;
+  return d.sku + (tag ? ' ('+tag+')' : '');
+}
+
 function buildDashboardData(skus, regionsRaw, theoThang){
   const GROUP_ORDER = ["Cable","Adapter","Tai nghe","Powerbank (SDP)","Cường lực (Dán MH)"];
   const CL_NAME = "Cường lực (Dán MH)";
   const MONTHS8_LABELS = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26*'];
+
+  // Disambiguate SKUs that share the same "group|mã|màu" key (e.g. two color-less
+  // variants of the same mã sản phẩm) by appending a short tag pulled from "Tên hệ thống".
+  function shortTag(tenHeThong){
+    if(!tenHeThong) return '';
+    const before = tenHeThong.split('(')[0].trim();
+    const parts = before.split(' ');
+    return parts.length ? parts[parts.length-1] : '';
+  }
+  const dupKeyCount = {};
+  skus.forEach(d => {
+    const k = d.group + '|' + d.sku + '|' + d.mau;
+    dupKeyCount[k] = (dupKeyCount[k]||0) + 1;
+  });
+  skus.forEach(d => {
+    const k = d.group + '|' + d.sku + '|' + d.mau;
+    if(dupKeyCount[k] > 1){
+      const tag = shortTag(d.tenHeThong);
+      if(tag) d.dispSuffix = tag;
+    }
+  });
 
   const groupsAgg = {};
   GROUP_ORDER.forEach(g => groupsAgg[g] = { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0 });
@@ -4368,7 +4395,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     }
     const dos = Math.round(d.dos*10)/10;
     skuMonthlyAll.push({
-      group: d.group, sku: d.sku + (d.mau ? ' ('+d.mau+')' : ''), months: d.months8.slice(), total: total8,
+      group: d.group, sku: skuLabel(d), months: d.months8.slice(), total: total8,
       avgMonth: Math.round((total8/8)*10)/10, tonKho: d.tonKho,
       dos, needReorder: dos < 60 && dos > 0,
     });
@@ -4470,7 +4497,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     monthlyLabels: MONTHS8_LABELS,
     monthlySales: monthlyPk.map((v,i)=>v+monthlyCl[i]),
     skus: skus.map(d => ({
-      group: d.group, sku: d.sku + (d.mau ? ' ('+d.mau+')' : ''), fob: d.fobLatest, profitUnit: d.hubSI - d.fobLatest,
+      group: d.group, sku: skuLabel(d), fob: d.fobLatest, profitUnit: d.hubSI - d.fobLatest,
       nhap2026: d.nhap2026, ban2026: d.months8.reduce((s,x)=>s+x,0), tonKho: d.tonKho,
       dos: Math.round(d.dos*10)/10, profitCum: Math.round(d.profitCum),
     })),
