@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÁO CÁO KẾT QUẢ KINH DOANH MWG 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root {
+    --bg-primary: #f4f6f5;
+    --bg-card: #ffffff;
+    --bg-header: #0d3320;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6c757d;
+    --text-on-dark: #ffffff;
+    --oppo-green: #1BB350;
+    --oppo-green-dark: #0d3320;
+    --positive: #1BB350;
+    --negative: #dc3545;
+    --neutral: #6c757d;
+    --gap: 16px;
+    --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+.dashboard-container { max-width: 1440px; margin:0 auto; padding: var(--gap); }
+.dashboard-header {
+    background: linear-gradient(135deg, var(--oppo-green-dark) 0%, #145c33 100%);
+    color: var(--text-on-dark);
+    padding: 24px 28px;
+    border-radius: var(--radius);
+    margin-bottom: var(--gap);
+}
+.dashboard-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.dashboard-header p { font-size: 13px; color: rgba(255,255,255,0.75); }
+.dashboard-header .badge {
+    display:inline-block; background: var(--oppo-green); color:#fff; font-size:11px;
+    padding: 3px 10px; border-radius:20px; font-weight:600; margin-top:8px;
+}
+
+.kpi-row {
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--gap); margin-bottom: var(--gap);
+}
+.kpi-card {
+    background: var(--bg-card); border-radius: var(--radius); padding: 18px 22px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid var(--oppo-green);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.kpi-card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.12); transform: translateY(-2px); }
+.kpi-label { font-size:12px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; font-weight:600; }
+.kpi-value { font-size:26px; font-weight:800; color:var(--text-primary); margin-bottom:4px; }
+.kpi-sub { font-size:12.5px; color: var(--text-secondary); }
+.kpi-sub.positive { color: var(--positive); font-weight:600; }
+
+.chart-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: var(--gap); margin-bottom: var(--gap); }
+.chart-row-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.chart-container { background: var(--bg-card); border-radius: var(--radius); padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: box-shadow 0.2s ease; }
+.chart-container:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
+.chart-container h3 { font-size:14.5px; font-weight:700; color: var(--text-primary); margin-bottom:4px; padding-left:11px; position:relative; }
+.chart-container h3::before { content:''; position:absolute; left:0; top:2px; bottom:2px; width:4px; border-radius:3px; background: var(--oppo-green); }
+.chart-container .chart-sub { font-size:12px; color:var(--text-secondary); margin-bottom:14px; }
+.chart-container canvas { max-height: 320px; }
+.chart-tall canvas { max-height: 380px; }
+
+.filter-bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+.filter-bar label { font-size:11.5px; color:var(--text-secondary); font-weight:600; margin-right:2px; }
+.filter-bar select, .filter-bar input {
+    padding:7px 10px; border:1px solid #dde1e0; border-radius:6px; font-size:12.5px; background:#fafafa;
+}
+.filter-bar .reset-btn {
+    padding:7px 12px; border:1px solid #dde1e0; border-radius:6px; font-size:12px; background:#fff;
+    color:var(--text-secondary); cursor:pointer; font-weight:600;
+}
+.filter-bar .reset-btn:hover { background:#f0f2f1; }
+.multiselect { position:relative; display:inline-block; }
+.multiselect-btn {
+    padding:7px 12px; border:1px solid #dde1e0; border-radius:6px; font-size:12.5px; background:#fafafa;
+    cursor:pointer; min-width:110px; text-align:left; display:flex; justify-content:space-between; align-items:center; gap:8px;
+}
+.multiselect-btn:after { content:'▾'; color:var(--text-secondary); font-size:10px; }
+.multiselect-btn.active { border-color: var(--oppo-green); }
+.multiselect-panel {
+    position:absolute; top:calc(100% + 4px); left:0; background:#fff; border:1px solid #dde1e0; border-radius:8px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.12); padding:8px; z-index:20; min-width:160px; max-height:260px; overflow-y:auto;
+}
+.multiselect-panel.hidden { display:none; }
+.multiselect-option { display:flex; align-items:center; gap:8px; padding:5px 6px; font-size:12.5px; border-radius:4px; cursor:pointer; }
+.multiselect-option:hover { background:#f4f6f5; }
+.multiselect-option.all-option { border-bottom:1px solid #eee; margin-bottom:4px; padding-bottom:8px; font-weight:600; }
+.multiselect-option input { cursor:pointer; }
+
+.table-section { background: var(--bg-card); border-radius: var(--radius); padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: var(--gap); transition: box-shadow 0.2s ease; }
+.table-section:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
+.table-section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
+.table-section h3 { font-size:14.5px; font-weight:700; padding-left:11px; position:relative; }
+.table-section h3::before { content:''; position:absolute; left:0; top:2px; bottom:2px; width:4px; border-radius:3px; background: var(--oppo-green); }
+.table-section .chart-sub { font-size:12px; color:var(--text-secondary); }
+.table-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.table-controls input, .table-controls select {
+    padding:7px 10px; border:1px solid #dde1e0; border-radius:6px; font-size:12.5px; background:#fafafa;
+}
+.table-scroll { overflow-x:auto; max-height: 640px; overflow-y:auto; border:1px solid #eee; border-radius:8px; }
+.data-table { width:100%; border-collapse:collapse; font-size:12.5px; border-radius:8px; overflow:hidden; }
+.data-table thead th {
+    position: sticky; top:0; background: #eef2ef; text-align:left; padding:11px 12px;
+    border-bottom:2px solid var(--oppo-green); color:var(--oppo-green-dark); font-weight:700; font-size:11px;
+    text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; cursor:pointer; user-select:none; z-index:1;
+}
+.data-table thead th:hover { color:#fff; background:var(--oppo-green); }
+.data-table tbody td { padding:9px 12px; border-bottom:1px solid #f2f2f2; white-space:nowrap; }
+.data-table tbody tr:hover { background:#f7fbf8; }
+.data-table tbody tr.total-row { font-weight:700; background:#eef7f0; }
+.data-table tbody tr.row-above-avg { border-left: 4px solid var(--positive); }
+.data-table tbody tr.row-below-avg { border-left: 4px solid var(--negative); }
+.data-table tbody tr.row-neutral { border-left: 4px solid #dcdfe1; }
+
+.dual-table-row { display:grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.table-box { border: 1px solid #e3e6e5; border-radius: 10px; padding: 16px; background:#fcfdfc; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+.table-box-title { font-size:13px; font-weight:700; color:var(--oppo-green-dark); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #e9ece9; }
+@media (max-width: 1000px) {
+    .dual-table-row { grid-template-columns: 1fr; }
+}
+.data-table td.num { text-align:center; font-variant-numeric: tabular-nums; }
+.mini-month-table-wrap { overflow-x:auto; margin-top:14px; }
+.mini-month-table { border-collapse:collapse; width:100%; font-size:9px; table-layout:fixed; }
+.mini-month-table td { padding:3px 4px; text-align:center; border:1px solid #e9ece9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mini-month-table tr.mmt-month td { background:#eef2ef; font-weight:700; color:var(--oppo-green-dark); }
+.mini-month-table tr.mmt-value td { font-weight:600; }
+.mini-month-table td.mmt-label { text-align:left; font-weight:700; color:var(--text-secondary); background:#fafbfa; position:sticky; left:0; font-size:8.5px; }
+#brand-month-table, #brand-month-units-table, #brand-share-mini-table { font-size:10.5px; }
+#brand-month-table th, #brand-month-units-table th, #brand-share-mini-table th { font-size:9.5px; padding:8px 6px; }
+#brand-month-table td, #brand-month-units-table td, #brand-share-mini-table td { padding:6px 6px; }
+#brand-month-table .pct-sub, #brand-month-units-table .pct-sub { font-size:9px; }
+.latest-month-col { background: #fff8e1 !important; }
+thead th.latest-month-col { background: #ffe9a8 !important; }
+.data-table th.num { text-align:center; }
+.tag { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10.5px; font-weight:700; }
+.tag.focus { background:#e6f7ec; color:var(--oppo-green-dark); }
+.tag.normal { background:#eef1f4; color:#495057; }
+.tag.unknown { background:#fff3e0; color:#a3350f; }
+.bar-cell { position:relative; }
+.bar-fill { position:absolute; left:0; top:0; bottom:0; background: rgba(27,179,80,0.12); z-index:0; }
+.bar-cell-content { position:relative; z-index:1; }
+.mini-compare { display:flex; align-items:center; gap:6px; }
+.mini-bar-track { width:60px; height:12px; background:#f0f2f1; border-radius:3px; overflow:hidden; display:flex; flex-shrink:0; }
+.mini-bar-oppo { background: var(--oppo-green); height:100%; }
+.mini-bar-other { background: #cbd2d9; height:100%; }
+.mini-bar-label { font-size:11px; color:var(--text-secondary); white-space:nowrap; }
+.legend-inline { display:flex; gap:14px; align-items:center; font-size:11.5px; color:var(--text-secondary); margin-top:8px; }
+.legend-dot { width:9px; height:9px; border-radius:2px; display:inline-block; margin-right:5px; vertical-align:middle; }
+
+.notes-section { background: #fffbeb; border:1px solid #fde68a; border-radius: var(--radius); padding:18px 22px; margin-bottom: var(--gap); font-size:12.5px; color:#78350f; }
+.notes-section h4 { font-size:13px; margin-bottom:8px; color:#78350f; }
+.notes-section ul { padding-left:18px; }
+.notes-section li { margin-bottom:5px; }
+
+.dashboard-footer { text-align:center; padding: 16px; font-size:11.5px; color: var(--text-secondary); }
+
+@media (max-width:900px) {
+    .kpi-row { grid-template-columns: repeat(2,1fr); }
+}
+.pct-sub { color: var(--text-secondary); font-size: 0.9em; }
+.row-units td { border-bottom: none !important; padding-bottom:4px !important; }
+.row-revenue td { padding-top:2px !important; }
+.metric-tag { display:inline-block; font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:4px; margin-right:6px; vertical-align:middle; }
+.metric-tag.units { background:#e6f0ff; color:#1a4fa0; }
+.metric-tag.revenue { background:#e6f7ec; color:var(--oppo-green-dark); }
+@media (max-width:640px) {
+    .data-table { font-size: 11px; }
+    .data-table thead th { padding: 6px 5px; font-size: 9px; }
+    .data-table tbody td { padding: 5px; white-space: normal; }
+    .pct-sub { display: block; font-size: 9.5px; margin-top:1px; }
+    .table-box { padding: 8px; }
+    .chart-container, .table-section { padding: 12px 14px; }
+    .filter-bar { gap: 6px; }
+    .filter-bar label { font-size: 10.5px; }
+}
+@media print {
+    body { background:white; }
+    .table-scroll { max-height:none; overflow:visible; }
+}
+</style>
+</head>
+<body>
+<div id="loading-overlay" style="position:fixed; inset:0; background:#f4f6f5; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
+    <div style="width:44px; height:44px; border:4px solid #dde1e0; border-top-color:#1BB350; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+    <div id="loading-message" style="font-size:14px; color:#495057; font-weight:600;">Đang tải dữ liệu mới nhất từ Google Sheet...</div>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+</div>
+<div id="error-overlay" style="display:none; position:fixed; inset:0; background:#fff5f5; z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:14px; padding:20px; text-align:center;">
+    <div style="font-size:32px;">⚠️</div>
+    <div id="error-message" style="font-size:14px; color:#a3350f; font-weight:600; max-width:480px;">Không tải được dữ liệu.</div>
+    <div style="font-size:12.5px; color:#6c757d; max-width:480px;">Kiểm tra: Apps Script đã Triển khai (Deploy) chưa, cấu hình "Ai có quyền truy cập" đã chọn "Bất kỳ ai" (Anyone) chưa, và tên sheet trong code (SHEET_NAME) có khớp đúng tên tab trong Google Sheet không.</div>
+    <button onclick="location.reload()" style="padding:8px 18px; border-radius:6px; border:1px solid #dde1e0; background:#fff; cursor:pointer; font-weight:600;">Tải lại trang</button>
+</div>
+<div class="dashboard-container">
+
+    <header class="dashboard-header">
+        <h1>BÁO CÁO KẾT QUẢ KINH DOANH MWG 2026</h1>
+        <p>Nguồn: Google Sheet "Data MWG" (tự động cập nhật) · Đã loại 5 shop chuyên Apple (AAR) khỏi toàn bộ số liệu</p>
+        <p id="last-updated" style="margin-top:4px; font-size:11.5px;"></p>
+        <span class="badge">OPPO vs. Toàn thị trường</span>
+        <details style="margin-top:12px; font-size:11.5px; color:rgba(255,255,255,0.75);">
+            <summary style="cursor:pointer; user-select:none;">⚙️ Cài đặt nâng cao (chốt kỳ dữ liệu)</summary>
+            <div style="margin-top:8px; padding:10px 12px; background:rgba(255,255,255,0.08); border-radius:8px; max-width:520px;">
+                <p style="margin-bottom:8px;">Chốt kỳ giúp mở dashboard nhanh hơn về sau (chỉ tải phần dữ liệu mới, không tải lại từ đầu). Nên làm khoảng mỗi 6 tháng. Việc chốt kỳ tốn vài phút (tải toàn bộ dữ liệu 1 lần).</p>
+                <button id="create-checkpoint-btn" onclick="createCheckpoint()" style="padding:6px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.4); background:transparent; color:#fff; cursor:pointer; font-weight:600; font-size:11.5px;">Chốt kỳ ngay</button>
+                <div id="checkpoint-status" style="margin-top:6px;"></div>
+            </div>
+        </details>
+    </header>
+
+    <section class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-label">Tổng doanh thu toàn ngành</div>
+            <div class="kpi-value" id="kpi-total-rev">-</div>
+            <div class="kpi-sub" id="kpi-total-sub">Đang tải...</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Doanh thu OPPO</div>
+            <div class="kpi-value" id="kpi-oppo-rev">-</div>
+            <div class="kpi-sub positive" id="kpi-oppo-rev-share">-</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Doanh số OPPO (máy)</div>
+            <div class="kpi-value" id="kpi-oppo-units">-</div>
+            <div class="kpi-sub positive" id="kpi-oppo-units-share">-</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Shop có bán OPPO</div>
+            <div class="kpi-value" id="kpi-shops">-</div>
+            <div class="kpi-sub" id="kpi-shops-sub">-</div>
+        </div>
+    </section>
+
+    <section class="chart-row">
+        <div class="chart-container chart-tall" style="grid-column: span 2;">
+            <h3>Doanh số theo hãng theo tháng</h3>
+            <div class="chart-sub">Đơn vị: máy — lọc theo Tháng / Sale / Phân khúc giá / Size shop (có thể chọn nhiều mục cùng lúc)</div>
+            <div class="filter-bar">
+                <label>Tháng</label>
+                <div class="multiselect" id="ms-month"></div>
+                <label>Sale/ASM</label>
+                <div class="multiselect" id="ms-sale"></div>
+                <label>Phân khúc giá</label>
+                <div class="multiselect" id="ms-segment"></div>
+                <label>Size shop</label>
+                <div class="multiselect" id="ms-sizeshop"></div>
+                <button class="reset-btn" id="f1-reset">Xóa lọc</button>
+            </div>
+            <div id="chart-monthly-brand-total" style="font-size:13px; font-weight:700; color:var(--oppo-green-dark); margin-bottom:8px;"></div>
+            <canvas id="chart-monthly-brand"></canvas>
+            <div class="table-scroll" style="max-height:none; margin-top:14px;">
+                <table class="data-table" id="brand-share-mini-table">
+                    <thead><tr id="brand-share-mini-table-head"></tr></thead>
+                    <tbody id="brand-share-mini-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Bảng doanh thu &amp; doanh số theo hãng theo tháng</h3>
+                <div class="chart-sub">Dùng chung bộ lọc với biểu đồ phía trên. Nhấp tiêu đề cột để sắp xếp. % trong mỗi ô là tỷ trọng hãng đó trong tháng tương ứng.</div>
+            </div>
+        </div>
+        <div class="table-box" style="margin-bottom:14px;">
+            <div class="table-box-title">Doanh thu theo hãng</div>
+            <div class="table-scroll" style="max-height:none;">
+                <table class="data-table" id="brand-month-table">
+                    <thead>
+                        <tr id="brand-month-table-head"></tr>
+                    </thead>
+                    <tbody id="brand-month-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="table-box">
+            <div class="table-box-title">Doanh số theo hãng (máy)</div>
+            <div class="table-scroll" style="max-height:none;">
+                <table class="data-table" id="brand-month-units-table">
+                    <thead>
+                        <tr id="brand-month-units-table-head"></tr>
+                    </thead>
+                    <tbody id="brand-month-units-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="chart-row">
+        <div class="chart-container chart-tall" style="grid-column: span 2;">
+            <div class="filter-bar">
+                <label>Tháng</label>
+                <div class="multiselect" id="ms-seg-month"></div>
+                <label>Sale/ASM</label>
+                <div class="multiselect" id="ms-seg-sale"></div>
+                <label>Size shop</label>
+                <div class="multiselect" id="ms-seg-sizeshop"></div>
+                <button class="reset-btn" id="seg-reset">Xóa lọc</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="chart-row chart-row-3">
+        <div class="chart-container chart-tall">
+            <h3>Tỉ trọng đóng góp từng phân khúc giá theo Số lượng (Toàn thị trường)</h3>
+            <div class="chart-sub">Cột 100% xếp chồng theo tháng, mỗi phần là % đóng góp của 1 phân khúc giá, tính trên toàn bộ thị trường (không riêng OPPO) — cho biết phân khúc nào đang bán được nhiều máy nhất.</div>
+            <canvas id="chart-segment-units"></canvas>
+        </div>
+        <div class="chart-container chart-tall">
+            <h3>Tỉ trọng từng hãng theo phân khúc giá</h3>
+            <div class="chart-sub">% doanh thu mỗi hãng chiếm trong từng phân khúc giá (100% stacked) — cho thấy OPPO mạnh/yếu ở phân khúc nào</div>
+            <div id="chart-segment-total" style="font-size:13px; font-weight:700; color:var(--oppo-green-dark); margin-bottom:8px;"></div>
+            <canvas id="chart-segment"></canvas>
+        </div>
+        <div class="chart-container chart-tall">
+            <h3>Tỉ trọng phân khúc giá theo từng hãng</h3>
+            <div class="chart-sub">% doanh thu của mỗi hãng nằm ở phân khúc nào (100% stacked, chuẩn hóa theo chính hãng đó) — cho thấy hãng đang bán tốt ở phân khúc nào</div>
+            <canvas id="chart-brand-segment"></canvas>
+        </div>
+    </section>
+
+    <section class="chart-row">
+        <div class="chart-container chart-tall" style="grid-column: span 2;">
+            <h3>Doanh số theo ngày</h3>
+            <div class="chart-sub">Mỗi ngày là 1 cột xếp chồng theo hãng — dùng để theo dõi khi nhập số liệu realtime. Bắt buộc chọn ít nhất 1 Tháng để xem biểu đồ. <b>Rê chuột vào từng phần cột</b> để xem chi tiết model bán ra ngày đó.</div>
+            <div class="filter-bar">
+                <label>Tháng <span style="color:var(--negative)">*</span></label>
+                <div class="multiselect" id="ms-daily-month"></div>
+                <label>Sale/ASM</label>
+                <div class="multiselect" id="ms-daily-sale"></div>
+                <label>Phân khúc giá</label>
+                <div class="multiselect" id="ms-daily-segment"></div>
+                <label>Size shop</label>
+                <div class="multiselect" id="ms-daily-sizeshop"></div>
+                <button class="reset-btn" id="daily-reset">Xóa lọc</button>
+            </div>
+            <div id="chart-daily-total" style="font-size:13px; font-weight:700; color:var(--oppo-green-dark); margin-bottom:8px;"></div>
+            <div id="daily-empty-state" style="padding:40px 0; text-align:center; color:var(--text-secondary); font-size:13px;">
+                Vui lòng chọn ít nhất 1 Tháng ở trên để xem biểu đồ doanh số theo ngày.
+            </div>
+            <canvas id="chart-daily" style="display:none;"></canvas>
+            <div class="mini-month-table-wrap" id="chart-daily-mini-table-wrap">
+                <table class="mini-month-table" id="chart-daily-mini-table"></table>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3 id="shop-table-title">Chi tiết shop — Doanh thu &amp; Doanh số theo 4 hãng chính</h3>
+                <div class="chart-sub">OPPO / Samsung / Xiaomi / Apple. Cột "Tổng" là tổng doanh thu/doanh số đầy đủ của shop (toàn bộ 11 hãng, không chỉ 4 hãng hiển thị). % trong mỗi ô là tỷ trọng hãng đó trên tổng đầy đủ này. Vạch <span style="color:var(--negative);font-weight:700;">đỏ</span> bên trái = shop có tỷ trọng OPPO thấp hơn thị phần OPPO trung bình toàn khu vực (theo bộ lọc đang chọn); còn lại là <span style="color:var(--positive);font-weight:700;">xanh</span>. Nhấp tiêu đề cột để sắp xếp.</div>
+            </div>
+            <div class="table-controls">
+                <input type="text" id="shop-search" placeholder="Tìm shop...">
+                <select id="filter-loaishop">
+                    <option value="all">Tất cả loại shop</option>
+                    <option value="Focus">Shop Focus</option>
+                    <option value="Normal">Shop Normal</option>
+                    <option value="Không xác định">Không xác định</option>
+                </select>
+                <select id="filter-size">
+                    <option value="all">Tất cả Size</option>
+                    <option value="S">Size S</option>
+                    <option value="A">Size A</option>
+                    <option value="B">Size B</option>
+                    <option value="C">Size C</option>
+                    <option value="D">Size D</option>
+                    <option value="Chưa xếp size">Chưa xếp size</option>
+                </select>
+                <select id="filter-tinh">
+                    <option value="all">Tất cả tỉnh</option>
+                    <option value="Tiền Giang">Tiền Giang</option>
+                    <option value="Bến Tre">Bến Tre</option>
+                </select>
+                <select id="filter-sale">
+                    <option value="all">Tất cả Sale/ASM</option>
+                </select>
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
+                <div class="multiselect" id="ms-shop-month"></div>
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Ngày (áp dụng cho các Tháng đang chọn ở trên, hoặc tất cả nếu chưa chọn tháng)</label>
+                <input type="number" id="filter-day-from" placeholder="Từ" min="1" max="31" style="width:64px; padding:7px 8px; border:1px solid #dde1e0; border-radius:6px; font-size:12.5px;">
+                <input type="number" id="filter-day-to" placeholder="Đến" min="1" max="31" style="width:64px; padding:7px 8px; border:1px solid #dde1e0; border-radius:6px; font-size:12.5px;">
+                <button class="reset-btn" id="filter-day-reset">Xóa lọc ngày</button>
+            </div>
+            <div id="day-filter-status" style="font-size:11.5px; color:var(--text-secondary); margin-top:6px;"></div>
+        </div>
+        <div class="table-box">
+            <div class="table-box-title">Doanh thu &amp; Doanh số theo hãng (mỗi shop 2 dòng — Doanh số trên, Doanh thu dưới)</div>
+            <div class="table-scroll">
+                <table class="data-table" id="shop-combined-table">
+                    <thead>
+                        <tr>
+                            <th data-field="shop">Shop</th>
+                            <th data-field="oppo_rev" class="num">OPPO</th>
+                            <th data-field="samsung_rev" class="num">Samsung</th>
+                            <th data-field="xiaomi_rev" class="num">Xiaomi</th>
+                            <th data-field="apple_rev" class="num">Apple</th>
+                            <th data-field="total_rev" class="num">Tổng</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shop-combined-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-section" style="background:linear-gradient(135deg, #fffbea, #fff); border:2px solid #f0c040;">
+        <div class="table-section-header">
+            <div>
+                <h3>🏆 Chương trình thi đua tháng</h3>
+                <div class="chart-sub">Theo dõi thưởng theo Shop trọng điểm (Size S &amp; A) và theo Sale phụ trách. Vạch <span style="color:var(--negative);font-weight:700;">đỏ</span> = %OPPO/Doanh thu bán lẻ (trừ Apple) dưới 25%; <span style="color:var(--positive);font-weight:700;">xanh</span> = trên 35%.</div>
+            </div>
+            <div class="table-controls">
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
+                <div class="multiselect" id="ms-thidua-month"></div>
+            </div>
+        </div>
+        <div id="target-warning-panel" style="display:none; background:#fff3e0; border:1px solid #ffcc80; border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:12px; color:#78350f;"></div>
+
+        <h4 style="margin:0 0 4px; font-size:14px;">1. Bonus Shop trọng điểm (Size S &amp; A) — Mốc tăng trưởng so với Target OPPO</h4>
+        <div class="chart-sub" style="margin-bottom:10px;">Mục tiêu 30% share. Target 1/2/3 = Target Center (Target 2026) nhân 110%/120%/130%. "Dự kiến hoàn thành cuối tháng" tính theo tốc độ bán trung bình/ngày hiện tại × số ngày trong tháng. Thưởng: đạt Target 1 → 0,1% doanh thu bán lẻ (trừ Apple); Target 2 → 0,2%; Target 3 → 0,3% (tính theo mốc cao nhất dự kiến đạt, không cộng dồn).</div>
+        <div class="table-scroll" style="max-height:none; margin-bottom:20px;">
+            <table class="data-table" id="thidua-size-table">
+                <thead>
+                    <tr>
+                        <th data-field="shop">Shop</th>
+                        <th data-field="size">Size shop</th>
+                        <th data-field="current_rev" class="num">Doanh thu hiện tại</th>
+                        <th data-field="projected_rev" class="num">Dự kiến cuối tháng</th>
+                        <th data-field="target1" class="num">Target 1</th>
+                        <th data-field="target2" class="num">Target 2</th>
+                        <th data-field="target3" class="num">Target 3</th>
+                        <th data-field="projected_bonus" class="num">Thưởng dự kiến</th>
+                    </tr>
+                </thead>
+                <tbody id="thidua-size-table-body"></tbody>
+            </table>
+        </div>
+
+        <h4 style="margin:0 0 4px; font-size:14px;">2. Bonus Sale Lộc &amp; Sale Khải — 1,2% Doanh thu OPPO</h4>
+        <div class="chart-sub" style="margin-bottom:10px;">Bấm vào tên Sale để xem chi tiết doanh thu từng shop phụ trách.</div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="thidua-sale-table">
+                <thead>
+                    <tr>
+                        <th data-field="sale">Sale</th>
+                        <th data-field="oppo_rev" class="num">Doanh thu OPPO</th>
+                        <th data-field="retail_rev" class="num">DT bán lẻ (trừ Apple)</th>
+                        <th data-field="oppo_share" class="num">% OPPO/DT bán lẻ</th>
+                        <th data-field="bonus_amount" class="num">Tiền thưởng (1,2%)</th>
+                    </tr>
+                </thead>
+                <tbody id="thidua-sale-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Chi tiết theo Sale / ASM — OPPO so với các hãng khác</h3>
+                <div class="chart-sub">Doanh thu &amp; doanh số OPPO của từng Sale so với các hãng khác, kèm % đóng góp. Vạch <span style="color:var(--positive);font-weight:700;">xanh</span> = %OPPO cao hơn trung bình đội; <span style="color:var(--negative);font-weight:700;">đỏ</span> = thấp hơn trung bình. Sắp xếp mặc định: Doanh thu OPPO giảm dần.</div>
+                <div class="legend-inline"><span><span class="legend-dot" style="background:var(--oppo-green)"></span>OPPO</span><span><span class="legend-dot" style="background:#cbd2d9"></span>Các hãng khác</span></div>
+            </div>
+            <div class="table-controls">
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
+                <div class="multiselect" id="ms-sale-month"></div>
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Size shop</label>
+                <div class="multiselect" id="ms-sale-sizeshop"></div>
+            </div>
+        </div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="sale-table">
+                <thead>
+                    <tr>
+                        <th data-field="sale">Sale / ASM</th>
+                        <th data-field="num_shops" class="num">Số shop phụ trách</th>
+                        <th data-field="oppo_revenue" class="num">Doanh thu OPPO</th>
+                        <th data-field="oppo_units" class="num">Doanh số OPPO (máy)</th>
+                        <th data-field="other_revenue" class="num">Doanh thu hãng khác</th>
+                        <th data-field="other_units" class="num">Doanh số hãng khác (máy)</th>
+                        <th data-field="pct_oppo_rev" class="num">% OPPO / Doanh thu</th>
+                        <th data-field="pct_oppo_units" class="num">% OPPO / Doanh số</th>
+                    </tr>
+                </thead>
+                <tbody id="sale-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="notes-section">
+        <h4>Lưu ý / rủi ro về dữ liệu (Strategic Notes)</h4>
+        <ul>
+            <li><b>Đã loại bỏ 5 shop chuyên Apple (chuỗi AAR)</b> khỏi toàn bộ số liệu trong dashboard này (KPI, biểu đồ, bảng) theo yêu cầu — các shop này không bán OPPO nên không phản ánh đúng hiệu suất kênh MWG.</li>
+            <li><b>Không có mục % hoàn thành chỉ tiêu</b> — file nguồn không có dữ liệu Target/Chỉ tiêu, dashboard này chỉ phản ánh kết quả thực tế (SO), không phải hiệu suất so với KPI.</li>
+            <li><b>Cột "Ngày xuất hàng" trong file gốc bị lỗi định dạng ngày/tháng</b> (lẫn giữa MM/DD và DD/MM) khiến ~37% số dòng lệch tháng so với "Tháng SO". Em đã dùng cặp "Tháng SO" + "Ngày" (đáng tin cậy hơn) để tính xu hướng tuần — số liệu tháng vẫn chính xác 100%.</li>
+            <li><b>Phân loại "Loại shop"</b>: dùng cột Focus/Normal theo yêu cầu; các dòng "#N/A" hoặc viết hoa/thường không đồng nhất đã được gộp vào nhóm "Không xác định" để không làm sai lệch số liệu.</li>
+        </ul>
+    </section>
+
+    <footer class="dashboard-footer">
+        Dữ liệu từ file So_MWG_T1_-_T7_2026.xlsx · Không có số liệu nào được tự tạo · Đã loại 5 shop AAR khỏi mọi tính toán
+    </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmfOzNub6Ao6jmdc6RsIu1P1162aYXfB_ib25RuVByIIWI-aqFoVvINWZMM5FAI15n/exec';
+const SHEET_NAME = 'DATA MWG'; // dùng cho checkpoint (đọc/lưu) — các lệnh tải dữ liệu thường không cần vì Apps Script mặc định đọc sheet này
+
+// Cột trong file nguồn "DATA MWG" (theo vị trí, không theo tên, vì cột "LOẠI SHOP" bị lặp tên trong file gốc)
+const COL = {
+    LOAI_SHOP: 0, MIEN: 2, TINH: 4, PHAN_KHUC: 5,
+    MA_SIEU_THI: 10, SIEU_THI_XUAT: 11, TEN_SAN_PHAM: 12, SO_LUONG: 13, NHA_SAN_XUAT: 15,
+    THANG_SO: 17, NGAY: 18, SALE: 19, DOANH_THU: 20,
+};
+// Danh sách phân Size shop do anh Thái cung cấp (khớp theo cột "Mã siêu thị xuất hàng" = PARTNER ID trong file gốc), cập nhật thủ công khi có danh sách mới
+const SHOP_SIZE_BY_STORE_ID = {"189": "S", "752": "S", "456": "S", "823": "S", "361": "S", "724": "S", "614": "S", "953": "S", "954": "S", "435": "S", "9390": "A", "716": "S", "303": "A", "1660": "B", "1840": "B", "155": "A", "552": "A", "1498": "A", "650": "A", "9257": "A", "1570": "B", "1051": "A", "863": "A", "1683": "B", "938": "A", "647": "B", "1457": "C", "6270": "B", "644": "C", "9105": "B", "5321": "C", "1348": "A", "1882": "B", "434": "B", "1050": "B", "3063": "C", "2342": "C", "1982": "C", "627": "D", "10510": "C", "6325": "D", "2410": "B", "7051": "C", "5248": "C", "3062": "C", "1166": "C", "1887": "C", "5499": "C", "13861": "C", "1503": "C", "2054": "D", "744": "C", "984": "B", "2413": "D", "1784": "C", "2245": "C", "7340": "C", "2870": "C", "12327": "C", "1581": "C", "9256": "C", "2244": "D", "2755": "C", "9189": "D", "8076": "C", "1922": "D", "1677": "D", "8742": "C", "2204": "C", "7803": "D", "2469": "D", "2881": "D", "7146": "C", "7095": "C", "6600": "D", "9236": "D", "5751": "D", "2740": "D", "6324": "D", "7825": "D", "9201": "D", "9987": "D", "7008": "D", "1397": "D", "10731": "D", "7610": "D", "9408": "D", "7826": "D", "6883": "D", "8983": "D", "7755": "D", "10177": "D", "6977": "D", "7094": "D", "7142": "D", "13900": "D", "10006": "D", "7125": "D", "6881": "D", "7620": "D", "7701": "D", "7611": "D", "7249": "D", "7693": "D", "7084": "D", "6929": "D", "7093": "D", "10344": "D", "8011": "D", "10471": "D", "7692": "D", "10544": "D", "10705": "D", "10479": "D", "6997": "D", "7318": "D", "7009": "D", "12061": "D", "7562": "D", "7092": "D", "9976": "D", "7702": "D", "7621": "D", "6909": "D"};
+// PARTNER ID (= Mã siêu thị xuất hàng trong DATA MWG) -> STORE ID thật (khớp với cột Store ID trong sheet Target 2026) — 2 mã khác nhau cho cùng 1 shop
+const PARTNER_TO_STORE_ID = {"189": "789", "752": "782", "456": "791", "823": "783", "361": "7742", "724": "790", "614": "11545", "953": "12325", "954": "12245", "435": "10169", "9390": "29770", "716": "531", "303": "6835", "1660": "17677", "1840": "18662", "155": "12888", "552": "11763", "1498": "16807", "650": "11759", "9257": "29695", "1570": "17019", "1051": "13561", "863": "792", "1683": "18290", "938": "12184", "647": "11947", "1457": "16504", "6270": "28260", "644": "11666", "9105": "29608", "5321": "24688", "1348": "14735", "1882": "19516", "434": "10170", "1050": "13560", "3063": "22454", "2342": "21369", "1982": "20426", "627": "11762", "10510": "30228", "6325": "28262", "2410": "21489", "7051": "28376", "5248": "24678", "3062": "22287", "1166": "14087", "1887": "19589", "5499": "28722", "13861": "31168", "1503": "16505", "2054": "20837", "744": "13162", "984": "14086", "2413": "21486", "1784": "18666", "2245": "21295", "7340": "28807", "2870": "22292", "12327": "30972", "1581": "17505", "9256": "29815", "2244": "21252", "2755": "22000", "9189": "29548", "8076": "29162", "1922": "20235", "1677": "18438", "8742": "29450", "2204": "20751", "7803": "28916", "2469": "21702", "2881": "22486", "7146": "28424", "7095": "28464", "6600": "28263", "9236": "29633", "5751": "24952", "2740": "22026", "6324": "28249", "7825": "28932", "9201": "29697", "9987": "30036", "7008": "28297", "1397": "16924", "10731": "30413", "7610": "28978", "9408": "29788", "7826": "28860", "6883": "28152", "8983": "29618", "7755": "28782", "10177": "30119", "6977": "28401", "7094": "28402", "7142": "28434", "13900": "31191", "10006": "30067", "7125": "28433", "6881": "28151", "7620": "28813", "7701": "28746", "7611": "28723", "7249": "28516", "7693": "28814", "7084": "28377", "6929": "28250", "7093": "28386", "10344": "30166", "8011": "29012", "10471": "30235", "7692": "28912", "10544": "30334", "10705": "30387", "10479": "30238", "6997": "28430", "7318": "28651", "7009": "28308", "12061": "30847", "7562": "28718", "7092": "28432", "9976": "29955", "7702": "28759", "7621": "28720", "6909": "28400"};
+const EXCLUDED_SHOPS = new Set([
+    'AAR_BTR_BAT - 21A1 Trần Hưng Đạo (Ba Tri)',
+    'AAR_TGI_GCO - 313 Nguyễn Huệ',
+    'AAR_BTR_BTR - 591B Đồng Khởi',
+    'AAR_TGI_CBE - Cái Bè',
+    'AAR_TGI_MTH - 49/2 Ấp Bắc',
+]);
+const TARGET_BRANDS_4 = ['Oppo', 'Samsung', 'Xiaomi', 'Apple'];
+const TOP_BRANDS_FIXED = ['Apple', 'Samsung', 'Oppo', 'Xiaomi', 'Vivo', 'Realme'];
+const SEGMENT_CANONICAL = ['<3M', '3-5M', '5-7M', '7-10M', '10-15M', '15-20M', '20-30M', '>20M', '>30M'];
+
+function parseMonthNum(s) {
+    if (!s) return null;
+    const m = /THÁNG\s*(\d+)/i.exec(String(s));
+    return m ? parseInt(m[1], 10) : null;
+}
+function num(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    const n = parseFloat(String(v).replace(/,/g, ''));
+    return isNaN(n) ? 0 : n;
+}
+// Chuẩn hóa chuỗi: bỏ khoảng trắng thừa đầu/cuối và gộp khoảng trắng liên tiếp bên trong
+// (tránh 1 shop/sale bị tách thành nhiều "bản sao ảo" chỉ vì lỗi gõ khoảng trắng khi nhập liệu)
+function normStr(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).trim().replace(/\s+/g, ' ');
+}
+
+// Tính toàn bộ dữ liệu dashboard từ danh sách dòng CSV thô (đã bỏ dòng header)
+function computeData(rows) {
+    const brandTotalRev = {}, brandTotalUnits = {};
+    const crosstabMap = new Map();
+    const shopMeta = {};
+    const shopSaleRev = {};
+    const shopBrand4Month = {};
+    const shopMonthTotal = {};
+    const shopDayData = {}; // shop -> "m-d" -> { oppo_rev, oppo_units, samsung_rev, samsung_units, xiaomi_rev, xiaomi_units, apple_rev, apple_units, total_rev, total_units } — dùng cho bộ lọc Ngày
+    const shopModelData = {}; // shop -> monthNum -> model -> { brand, rev, units } — dùng cho xem chi tiết sản phẩm theo shop, theo tháng
+    const monthsSet = new Set();
+    const segmentsSet = new Set();
+    const salesSet = new Set();
+    const brandsSet = new Set();
+    const saleOppoRev = {}, saleOppoUnits = {}, saleOtherRev = {}, saleOtherUnits = {};
+    const saleShops = {};
+    const dailyMap = new Map();
+
+    for (const row of rows) {
+        if (!row || row.length < 2) continue;
+        const mien = row[COL.MIEN];
+        if (!mien) continue;
+        const shop = normStr(row[COL.SIEU_THI_XUAT]);
+        if (!shop || EXCLUDED_SHOPS.has(shop)) continue;
+        const brand = normStr(row[COL.NHA_SAN_XUAT]);
+        const monthNum = parseMonthNum(row[COL.THANG_SO]);
+        if (!monthNum) continue;
+        const segment = normStr(row[COL.PHAN_KHUC]);
+        const revenue = num(row[COL.DOANH_THU]);
+        const qty = num(row[COL.SO_LUONG]);
+        const tinh = normStr(row[COL.TINH]);
+        const loaiShopRaw = row[COL.LOAI_SHOP];
+        const dayStr = row[COL.NGAY];
+        const sale = normStr(row[COL.SALE]) || '#N/A';
+        const storeCode = normStr(row[COL.MA_SIEU_THI]);
+        const rowShopSize = (storeCode && SHOP_SIZE_BY_STORE_ID[storeCode]) ? SHOP_SIZE_BY_STORE_ID[storeCode] : 'Chưa xếp size';
+        const model = normStr(row[COL.TEN_SAN_PHAM]) || '(Không rõ model)';
+
+        let loaiShop = 'Không xác định';
+        if (loaiShopRaw) {
+            const ls = String(loaiShopRaw).trim().toLowerCase();
+            if (ls === 'focus') loaiShop = 'Focus';
+            else if (ls === 'normal') loaiShop = 'Normal';
+        }
+
+        monthsSet.add(monthNum);
+        if (segment) segmentsSet.add(segment);
+        salesSet.add(sale);
+        if (brand) brandsSet.add(brand);
+
+        brandTotalRev[brand] = (brandTotalRev[brand] || 0) + revenue;
+        brandTotalUnits[brand] = (brandTotalUnits[brand] || 0) + qty;
+
+        const ctKey = monthNum + '|' + sale + '|' + segment + '|' + brand + '|' + rowShopSize;
+        let ctRec = crosstabMap.get(ctKey);
+        if (!ctRec) { ctRec = { m: monthNum, sale, seg: segment, brand, shopSize: rowShopSize, rev: 0, units: 0 }; crosstabMap.set(ctKey, ctRec); }
+        ctRec.rev += revenue; ctRec.units += qty;
+
+        const dayNum = parseInt(dayStr, 10);
+        if (!isNaN(dayNum)) {
+            const dKey = monthNum + '|' + dayNum + '|' + sale + '|' + segment + '|' + brand + '|' + rowShopSize + '|' + model;
+            let dRec = dailyMap.get(dKey);
+            if (!dRec) { dRec = { m: monthNum, d: dayNum, sale, seg: segment, brand, shopSize: rowShopSize, model, rev: 0, units: 0 }; dailyMap.set(dKey, dRec); }
+            dRec.rev += revenue; dRec.units += qty;
+        }
+
+        if (!shopMeta[shop]) shopMeta[shop] = { loai_shop: loaiShop, tinh, store_code: storeCode };
+        else if (shopMeta[shop].loai_shop === 'Không xác định' && loaiShop !== 'Không xác định') shopMeta[shop].loai_shop = loaiShop;
+        if (!shopMeta[shop].store_code && storeCode) shopMeta[shop].store_code = storeCode;
+
+        if (!shopSaleRev[shop]) shopSaleRev[shop] = {};
+        shopSaleRev[shop][sale] = (shopSaleRev[shop][sale] || 0) + revenue;
+
+        if (!shopMonthTotal[shop]) shopMonthTotal[shop] = {};
+        if (!shopMonthTotal[shop][monthNum]) shopMonthTotal[shop][monthNum] = { rev: 0, units: 0 };
+        shopMonthTotal[shop][monthNum].rev += revenue;
+        shopMonthTotal[shop][monthNum].units += qty;
+
+        if (TARGET_BRANDS_4.includes(brand)) {
+            if (!shopBrand4Month[shop]) shopBrand4Month[shop] = {};
+            if (!shopBrand4Month[shop][brand]) shopBrand4Month[shop][brand] = {};
+            if (!shopBrand4Month[shop][brand][monthNum]) shopBrand4Month[shop][brand][monthNum] = { rev: 0, units: 0 };
+            shopBrand4Month[shop][brand][monthNum].rev += revenue;
+            shopBrand4Month[shop][brand][monthNum].units += qty;
+        }
+
+        if (!isNaN(dayNum)) {
+            const dayKey = monthNum + '-' + dayNum;
+            if (!shopDayData[shop]) shopDayData[shop] = {};
+            if (!shopDayData[shop][dayKey]) shopDayData[shop][dayKey] = {
+                oppo_rev:0, oppo_units:0, samsung_rev:0, samsung_units:0,
+                xiaomi_rev:0, xiaomi_units:0, apple_rev:0, apple_units:0,
+                total_rev:0, total_units:0,
+            };
+            const dCell = shopDayData[shop][dayKey];
+            dCell.total_rev += revenue; dCell.total_units += qty;
+            if (brand === 'Oppo') { dCell.oppo_rev += revenue; dCell.oppo_units += qty; }
+            else if (brand === 'Samsung') { dCell.samsung_rev += revenue; dCell.samsung_units += qty; }
+            else if (brand === 'Xiaomi') { dCell.xiaomi_rev += revenue; dCell.xiaomi_units += qty; }
+            else if (brand === 'Apple') { dCell.apple_rev += revenue; dCell.apple_units += qty; }
+        }
+
+        if (!shopModelData[shop]) shopModelData[shop] = {};
+        if (!shopModelData[shop][monthNum]) shopModelData[shop][monthNum] = {};
+        if (!shopModelData[shop][monthNum][model]) shopModelData[shop][monthNum][model] = { brand, rev: 0, units: 0 };
+        shopModelData[shop][monthNum][model].rev += revenue;
+        shopModelData[shop][monthNum][model].units += qty;
+
+        if (!saleShops[sale]) saleShops[sale] = new Set();
+        saleShops[sale].add(shop);
+        if (brand === 'Oppo') {
+            saleOppoRev[sale] = (saleOppoRev[sale] || 0) + revenue;
+            saleOppoUnits[sale] = (saleOppoUnits[sale] || 0) + qty;
+        } else {
+            saleOtherRev[sale] = (saleOtherRev[sale] || 0) + revenue;
+            saleOtherUnits[sale] = (saleOtherUnits[sale] || 0) + qty;
+        }
+    }
+
+    const maxMonth = monthsSet.size ? Math.max(...monthsSet) : 0;
+    const monthLabels = [];
+    for (let i = 1; i <= maxMonth; i++) monthLabels.push('T' + i);
+
+    const totalRev = Object.values(brandTotalRev).reduce((a, b) => a + b, 0);
+    const totalUnits = Object.values(brandTotalUnits).reduce((a, b) => a + b, 0);
+    const oppoRev = brandTotalRev['Oppo'] || 0;
+    const oppoUnits = brandTotalUnits['Oppo'] || 0;
+
+    const shopRowsBrand4 = [];
+    const shopPrimarySale = {};
+    Object.keys(shopMeta).forEach(shop => {
+        const smap = shopSaleRev[shop] || {};
+        let best = null, bestVal = -1;
+        Object.entries(smap).forEach(([s, v]) => { if (v > bestVal) { bestVal = v; best = s; } });
+        shopPrimarySale[shop] = best || '#N/A';
+    });
+
+    let numShopsWithOppo = 0;
+    Object.keys(shopMeta).forEach(shop => {
+        const brandsObj = {};
+        TARGET_BRANDS_4.forEach(bn => {
+            const monthlyRev = [], monthlyUnits = [];
+            for (let m = 1; m <= maxMonth; m++) {
+                const cell = (shopBrand4Month[shop] && shopBrand4Month[shop][bn] && shopBrand4Month[shop][bn][m]) || { rev: 0, units: 0 };
+                monthlyRev.push(cell.rev); monthlyUnits.push(cell.units);
+            }
+            const totalRevB = monthlyRev.reduce((a, b) => a + b, 0);
+            const totalUnitsB = monthlyUnits.reduce((a, b) => a + b, 0);
+            brandsObj[bn] = { monthly_rev: monthlyRev, monthly_units: monthlyUnits, total_rev: totalRevB, total_units: totalUnitsB };
+        });
+        if (brandsObj['Oppo'].total_rev > 0) numShopsWithOppo++;
+
+        const monthlyTotalRev = [], monthlyTotalUnits = [];
+        for (let m = 1; m <= maxMonth; m++) {
+            const cell = (shopMonthTotal[shop] && shopMonthTotal[shop][m]) || { rev: 0, units: 0 };
+            monthlyTotalRev.push(cell.rev); monthlyTotalUnits.push(cell.units);
+        }
+
+        // Phân Size shop: dùng đúng bảng phân loại anh Thái cung cấp, khớp theo Mã siêu thị xuất hàng (store_code)
+        const storeCode = shopMeta[shop].store_code;
+        const shopSize = (storeCode && SHOP_SIZE_BY_STORE_ID[storeCode]) ? SHOP_SIZE_BY_STORE_ID[storeCode] : 'Chưa xếp size';
+
+        shopRowsBrand4.push({
+            shop, tinh: shopMeta[shop].tinh, loai_shop: shopMeta[shop].loai_shop,
+            sale: shopPrimarySale[shop], brands: brandsObj,
+            monthly_total_rev: monthlyTotalRev, monthly_total_units: monthlyTotalUnits,
+            shop_size: shopSize, store_code: storeCode,
+        });
+    });
+
+    const saleRows = [];
+    Array.from(salesSet).forEach(sale => {
+        const orev = saleOppoRev[sale] || 0, ounits = saleOppoUnits[sale] || 0;
+        const orrev = saleOtherRev[sale] || 0, orunits = saleOtherUnits[sale] || 0;
+        const totalRevS = orev + orrev, totalUnitsS = ounits + orunits;
+        saleRows.push({
+            sale, num_shops: (saleShops[sale] || new Set()).size,
+            oppo_revenue: orev, oppo_units: Math.round(ounits),
+            other_revenue: orrev, other_units: Math.round(orunits),
+            pct_oppo_rev: totalRevS ? +(orev / totalRevS * 100).toFixed(1) : 0,
+            pct_oppo_units: totalUnitsS ? +(ounits / totalUnitsS * 100).toFixed(1) : 0,
+        });
+    });
+    saleRows.sort((a, b) => b.oppo_revenue - a.oppo_revenue);
+
+    const segmentsList = SEGMENT_CANONICAL.filter(s => segmentsSet.has(s));
+    Array.from(segmentsSet).forEach(s => { if (!segmentsList.includes(s)) segmentsList.push(s); });
+    const salesList = Array.from(salesSet).sort();
+    const crosstab = Array.from(crosstabMap.values());
+
+    const dailySalesArr = salesList.slice();
+    const dailySegArr = segmentsList.slice();
+    const dailyBrandArr = Array.from(brandsSet).sort();
+    const dailySizeArr = ['S','A','B','C','D','Chưa xếp size'];
+    const dailyModelSet = new Set();
+    dailyMap.forEach(rec => dailyModelSet.add(rec.model));
+    const dailyModelArr = Array.from(dailyModelSet).sort();
+    const saleIdxMap = new Map(dailySalesArr.map((s, i) => [s, i]));
+    const segIdxMap = new Map(dailySegArr.map((s, i) => [s, i]));
+    const brandIdxMap = new Map(dailyBrandArr.map((s, i) => [s, i]));
+    const sizeIdxMap = new Map(dailySizeArr.map((s, i) => [s, i]));
+    const modelIdxMap = new Map(dailyModelArr.map((s, i) => [s, i]));
+    const dailyRows = [];
+    dailyMap.forEach(rec => {
+        const si = saleIdxMap.has(rec.sale) ? saleIdxMap.get(rec.sale) : -1;
+        const gi = segIdxMap.has(rec.seg) ? segIdxMap.get(rec.seg) : -1;
+        const bi = brandIdxMap.has(rec.brand) ? brandIdxMap.get(rec.brand) : -1;
+        const zi = sizeIdxMap.has(rec.shopSize) ? sizeIdxMap.get(rec.shopSize) : -1;
+        const mi = modelIdxMap.has(rec.model) ? modelIdxMap.get(rec.model) : -1;
+        if (si < 0 || gi < 0 || bi < 0 || zi < 0 || mi < 0) return;
+        dailyRows.push([rec.m, rec.d, si, gi, bi, Math.round(rec.rev), rec.units, zi, mi]);
+    });
+
+    const brandRanking = Object.entries(brandTotalRev).sort((a, b) => b[1] - a[1]).map(([brand, rev]) => ({
+        brand, revenue: rev, units: Math.round(brandTotalUnits[brand] || 0),
+        rev_share: totalRev ? +(rev / totalRev * 100).toFixed(1) : 0,
+        units_share: totalUnits ? +((brandTotalUnits[brand] || 0) / totalUnits * 100).toFixed(1) : 0,
+    }));
+
+    return {
+        kpi: {
+            total_rev: totalRev, total_units: Math.round(totalUnits),
+            oppo_rev: oppoRev, oppo_units: Math.round(oppoUnits),
+            oppo_rev_share: totalRev ? +(oppoRev / totalRev * 100).toFixed(1) : 0,
+            oppo_units_share: totalUnits ? +(oppoUnits / totalUnits * 100).toFixed(1) : 0,
+            num_shops: Object.keys(shopMeta).length,
+            num_shops_with_oppo: numShopsWithOppo,
+        },
+        brand_ranking: brandRanking,
+        month_labels: monthLabels,
+        segment_order: segmentsList,
+        segments_list: segmentsList,
+        sales_list: salesList,
+        size_shop_list: ['S','A','B','C','D','Chưa xếp size'],
+        top_brands: TOP_BRANDS_FIXED.filter(b => brandsSet.has(b)),
+        crosstab,
+        daily: { sales: dailySalesArr, segments: dailySegArr, brands: dailyBrandArr, sizes: dailySizeArr, models: dailyModelArr, rows: dailyRows },
+        shop_rows_brand4: shopRowsBrand4,
+        shop_day_data: shopDayData,
+        shop_model_data: shopModelData,
+        sale_rows: saleRows,
+    };
+}
+
+async function fetchJSON(url, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs || 60000);
+    try {
+        const resp = await fetch(url, { cache: 'no-store', signal: controller.signal });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return await resp.json();
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+const TARGET_SHEET_NAME = 'Target 2026';
+async function fetchMwgTargetMap(baseUrl) {
+    // Sheet Target 2026 nhỏ, không phân trang. Cấu trúc: cột B (index 1) = Store ID, cột C (index 2) = Target doanh thu
+    try {
+        const url = baseUrl + '?sheet=' + encodeURIComponent(TARGET_SHEET_NAME) + '&mode=data&start=1&count=5000';
+        const rows = await fetchJSON(url, 60000);
+        if (!Array.isArray(rows)) throw new Error('Sai định dạng dữ liệu Target');
+        rows.shift(); // bỏ header
+        const map = {};
+        rows.forEach(r => {
+            if (!r || r.length < 3) return;
+            const storeId = r[1] !== undefined && r[1] !== '' ? String(r[1]).trim() : '';
+            const target = num(r[2]);
+            if (storeId) map[storeId] = target;
+        });
+        return map;
+    } catch (err) {
+        console.warn('Không tải được sheet Target 2026 cho MWG (sẽ bỏ qua, Target hiện "-"):', err.message);
+        return {};
+    }
+}
+
+async function fetchRowsFromAppsScript(baseUrl, startRow) {
+    const msgEl = document.getElementById('loading-message');
+    const CHUNK_SIZE = 15000;
+    const MAX_CONCURRENT = 2; // giảm xuống 2 để bớt bị giới hạn tốc độ
+    const MAX_RETRIES = 3;
+    startRow = startRow || 1;
+
+    // Bước 1: hỏi tổng số dòng
+    if (msgEl) msgEl.textContent = 'Đang kiểm tra kích thước dữ liệu...';
+    let info;
+    try {
+        info = await fetchJSON(baseUrl + '?mode=info', 30000);
+    } catch (err) {
+        throw new Error('Không gọi được Apps Script (bước info): ' + err.message);
+    }
+    if (info && info.error) throw new Error('Apps Script báo lỗi: ' + info.error);
+    const lastRow = info.lastRow;
+    if (!lastRow || lastRow < 2) throw new Error('Sheet không có dữ liệu (lastRow=' + lastRow + ')');
+
+    if (startRow > lastRow) {
+        return { rows: [], lastRow }; // không có dòng mới nào kể từ checkpoint
+    }
+
+    // Bước 2: tính các phần cần tải (start/count)
+    const chunks = [];
+    for (let start = startRow; start <= lastRow; start += CHUNK_SIZE) {
+        const count = Math.min(CHUNK_SIZE, lastRow - start + 1);
+        chunks.push({ start, count });
+    }
+
+    let loadedCount = 0;
+    const results = new Array(chunks.length);
+    if (msgEl) msgEl.textContent = 'Đang tải dữ liệu (0/' + chunks.length + ' phần)...';
+
+    async function fetchOneChunkAttempt(ch, idx) {
+        const url = baseUrl + '?mode=data&start=' + ch.start + '&count=' + ch.count;
+        const part = await fetchJSON(url, 90000);
+        if (part && !Array.isArray(part) && part.error) {
+            throw new Error('Apps Script báo lỗi: ' + part.error);
+        }
+        if (!Array.isArray(part)) {
+            const preview = JSON.stringify(part).slice(0, 200);
+            throw new Error('sai định dạng (không phải mảng): ' + preview);
+        }
+        return part;
+    }
+
+    async function fetchOneChunk(ch, idx) {
+        let lastErr = null;
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                const part = await fetchOneChunkAttempt(ch, idx);
+                results[idx] = part;
+                loadedCount++;
+                if (msgEl) msgEl.textContent = 'Đang tải dữ liệu (' + loadedCount + '/' + chunks.length + ' phần)...';
+                return;
+            } catch (err) {
+                lastErr = err;
+                if (attempt < MAX_RETRIES) {
+                    if (msgEl) msgEl.textContent = 'Phần ' + (idx + 1) + '/' + chunks.length + ' lỗi, đang thử lại (lần ' + (attempt + 1) + ')...';
+                    await sleep(1500 * attempt); // chờ tăng dần trước khi thử lại
+                }
+            }
+        }
+        throw new Error('Lỗi tải phần ' + (idx + 1) + '/' + chunks.length + ' (dòng ' + ch.start + '-' + (ch.start + ch.count - 1) + ') sau ' + MAX_RETRIES + ' lần thử: ' + lastErr.message);
+    }
+
+    // Tải theo lô, mỗi lô tối đa MAX_CONCURRENT phần chạy song song, nghỉ ngắn giữa các lô
+    for (let i = 0; i < chunks.length; i += MAX_CONCURRENT) {
+        const batch = chunks.slice(i, i + MAX_CONCURRENT);
+        await Promise.all(batch.map((ch, j) => fetchOneChunk(ch, i + j)));
+        if (i + MAX_CONCURRENT < chunks.length) await sleep(400);
+    }
+
+    if (msgEl) msgEl.textContent = 'Đang xử lý dữ liệu...';
+    // Ghép tất cả các phần lại thành 1 mảng dòng duy nhất
+    const allRows = [];
+    for (const part of results) {
+        for (const row of part) allRows.push(row);
+    }
+    return { rows: allRows, lastRow };
+}
+
+// ================= Gộp dữ liệu checkpoint (đã tính sẵn) + dữ liệu mới (vừa tính) =================
+function mergeFinalData(a, b) {
+    // a, b: 2 object có CÙNG cấu trúc với output của computeData()
+    const finalMaxMonth = Math.max(a.month_labels.length, b.month_labels.length);
+    const month_labels = [];
+    for (let i = 1; i <= finalMaxMonth; i++) month_labels.push('T' + i);
+    const months_sorted = month_labels.map((_, i) => i + 1);
+
+    function padArr(arr) {
+        const out = arr.slice();
+        while (out.length < finalMaxMonth) out.push(0);
+        return out;
+    }
+    function sumArr(x, y) {
+        const out = [];
+        for (let i = 0; i < finalMaxMonth; i++) out.push((x[i]||0) + (y[i]||0));
+        return out;
+    }
+
+    // --- crosstab: nối trực tiếp (mỗi bản ghi độc lập, phần render sẽ tự cộng dồn khi lọc) ---
+    const crosstab = a.crosstab.concat(b.crosstab);
+
+    // --- daily: giải mã theo bảng tra cứu riêng của từng bên rồi mã hoá lại theo bảng tra cứu chung ---
+    const salesUnion = Array.from(new Set([...a.daily.sales, ...b.daily.sales])).sort();
+    const segsUnion = Array.from(new Set([...a.daily.segments, ...b.daily.segments])).sort();
+    const brandsUnion = Array.from(new Set([...a.daily.brands, ...b.daily.brands])).sort();
+    const sizesUnion = Array.from(new Set([...a.daily.sizes, ...b.daily.sizes]));
+    const modelsUnion = Array.from(new Set([...(a.daily.models||[]), ...(b.daily.models||[])])).sort();
+    const saleIdx = new Map(salesUnion.map((s,i)=>[s,i]));
+    const segIdx = new Map(segsUnion.map((s,i)=>[s,i]));
+    const brandIdx = new Map(brandsUnion.map((s,i)=>[s,i]));
+    const sizeIdx = new Map(sizesUnion.map((s,i)=>[s,i]));
+    const modelIdx = new Map(modelsUnion.map((s,i)=>[s,i]));
+    const UNKNOWN_MODEL_KEY = '(Không rõ model)';
+    function reencodeDaily(src) {
+        const hasModel = !!(src.daily.models && src.daily.models.length);
+        return src.daily.rows.map(row => {
+            const [m, d, si, gi, bi, rev, units, zi, mi] = row;
+            // Checkpoint cũ (trước khi có tính năng model) sẽ không có chiều model — gán "(Không rõ model)" để không vỡ cấu trúc
+            const modelName = hasModel && mi !== undefined ? src.daily.models[mi] : UNKNOWN_MODEL_KEY;
+            const newMi = modelIdx.has(modelName) ? modelIdx.get(modelName) : (modelIdx.has(UNKNOWN_MODEL_KEY) ? modelIdx.get(UNKNOWN_MODEL_KEY) : 0);
+            return [m, d, saleIdx.get(src.daily.sales[si]), segIdx.get(src.daily.segments[gi]), brandIdx.get(src.daily.brands[bi]), rev, units, sizeIdx.get(src.daily.sizes[zi]), newMi];
+        });
+    }
+    if (!modelsUnion.includes(UNKNOWN_MODEL_KEY)) modelsUnion.push(UNKNOWN_MODEL_KEY);
+    modelIdx.set(UNKNOWN_MODEL_KEY, modelsUnion.indexOf(UNKNOWN_MODEL_KEY));
+    const dailyRows = reencodeDaily(a).concat(reencodeDaily(b));
+
+    // --- shop_day_data: gộp theo shop rồi theo ngày (cộng dồn các cell trùng) ---
+    const shop_day_data = {};
+    function ingestShopDay(src) {
+        if (!src.shop_day_data) return;
+        Object.keys(src.shop_day_data).forEach(shop => {
+            if (!shop_day_data[shop]) shop_day_data[shop] = {};
+            Object.keys(src.shop_day_data[shop]).forEach(dayKey => {
+                const cell = src.shop_day_data[shop][dayKey];
+                if (!shop_day_data[shop][dayKey]) shop_day_data[shop][dayKey] = {
+                    oppo_rev:0, oppo_units:0, samsung_rev:0, samsung_units:0,
+                    xiaomi_rev:0, xiaomi_units:0, apple_rev:0, apple_units:0,
+                    total_rev:0, total_units:0,
+                };
+                const cur = shop_day_data[shop][dayKey];
+                cur.oppo_rev += cell.oppo_rev||0; cur.oppo_units += cell.oppo_units||0;
+                cur.samsung_rev += cell.samsung_rev||0; cur.samsung_units += cell.samsung_units||0;
+                cur.xiaomi_rev += cell.xiaomi_rev||0; cur.xiaomi_units += cell.xiaomi_units||0;
+                cur.apple_rev += cell.apple_rev||0; cur.apple_units += cell.apple_units||0;
+                cur.total_rev += cell.total_rev||0; cur.total_units += cell.total_units||0;
+            });
+        });
+    }
+    ingestShopDay(a);
+    ingestShopDay(b);
+
+    // --- shop_model_data: gộp theo shop rồi theo model ---
+    const shop_model_data = {};
+    function ingestShopModel(src) {
+        if (!src.shop_model_data) return;
+        Object.keys(src.shop_model_data).forEach(shop => {
+            if (!shop_model_data[shop]) shop_model_data[shop] = {};
+            Object.keys(src.shop_model_data[shop]).forEach(monthNum => {
+                if (!shop_model_data[shop][monthNum]) shop_model_data[shop][monthNum] = {};
+                Object.keys(src.shop_model_data[shop][monthNum]).forEach(model => {
+                    const cell = src.shop_model_data[shop][monthNum][model];
+                    if (!shop_model_data[shop][monthNum][model]) shop_model_data[shop][monthNum][model] = { brand: cell.brand, rev: 0, units: 0 };
+                    shop_model_data[shop][monthNum][model].rev += cell.rev || 0;
+                    shop_model_data[shop][monthNum][model].units += cell.units || 0;
+                });
+            });
+        });
+    }
+    ingestShopModel(a);
+    ingestShopModel(b);
+
+    // --- shop_rows_brand4: gộp theo tên shop ---
+    const shopMap = new Map();
+    function ingestShops(src) {
+        src.shop_rows_brand4.forEach(s => {
+            let cur = shopMap.get(s.shop);
+            if (!cur) {
+                cur = {
+                    shop: s.shop, tinh: s.tinh, loai_shop: s.loai_shop, sale: s.sale,
+                    shop_size: s.shop_size, store_code: s.store_code,
+                    brands: {}, monthly_total_rev: new Array(finalMaxMonth).fill(0), monthly_total_units: new Array(finalMaxMonth).fill(0),
+                };
+                Object.keys(s.brands).forEach(bn => {
+                    cur.brands[bn] = { monthly_rev: new Array(finalMaxMonth).fill(0), monthly_units: new Array(finalMaxMonth).fill(0), total_rev: 0, total_units: 0 };
+                });
+                shopMap.set(s.shop, cur);
+            }
+            // ưu tiên thuộc tính tĩnh mới nhất (từ phía có nhiều dữ liệu hơn / cập nhật sau)
+            cur.tinh = s.tinh || cur.tinh;
+            cur.loai_shop = (s.loai_shop && s.loai_shop !== 'Không xác định') ? s.loai_shop : cur.loai_shop;
+            cur.sale = s.sale || cur.sale;
+            cur.shop_size = s.shop_size || cur.shop_size;
+            cur.store_code = s.store_code || cur.store_code;
+
+            cur.monthly_total_rev = sumArr(cur.monthly_total_rev, padArr(s.monthly_total_rev));
+            cur.monthly_total_units = sumArr(cur.monthly_total_units, padArr(s.monthly_total_units));
+            Object.keys(s.brands).forEach(bn => {
+                if (!cur.brands[bn]) cur.brands[bn] = { monthly_rev: new Array(finalMaxMonth).fill(0), monthly_units: new Array(finalMaxMonth).fill(0), total_rev: 0, total_units: 0 };
+                cur.brands[bn].monthly_rev = sumArr(cur.brands[bn].monthly_rev, padArr(s.brands[bn].monthly_rev));
+                cur.brands[bn].monthly_units = sumArr(cur.brands[bn].monthly_units, padArr(s.brands[bn].monthly_units));
+            });
+        });
+    }
+    ingestShops(a);
+    ingestShops(b);
+    const shop_rows_brand4 = Array.from(shopMap.values()).map(s => {
+        Object.keys(s.brands).forEach(bn => {
+            s.brands[bn].total_rev = s.brands[bn].monthly_rev.reduce((x,y)=>x+y,0);
+            s.brands[bn].total_units = s.brands[bn].monthly_units.reduce((x,y)=>x+y,0);
+        });
+        return s;
+    });
+
+    // --- danh sách phân loại: hợp cả 2 bên ---
+    const channels_list = Array.from(new Set([...(a.channels_list||[]), ...(b.channels_list||[])]));
+    const series_list = Array.from(new Set([...(a.series_list||[]), ...(b.series_list||[])])).sort();
+    const segments_list = Array.from(new Set([...a.segments_list, ...b.segments_list]));
+    const models_list = Array.from(new Set([...(a.models_list||[]), ...(b.models_list||[])])).sort();
+    const sales_list = Array.from(new Set([...a.sales_list, ...b.sales_list])).sort();
+    const size_shop_list = a.size_shop_list && a.size_shop_list.length ? a.size_shop_list : b.size_shop_list;
+    const top_brands = a.top_brands && a.top_brands.length ? a.top_brands : b.top_brands;
+
+    // --- kpi: tính lại từ dữ liệu đã gộp cho chắc chắn đúng ---
+    let totalRev = 0, totalUnits = 0, oppoRev = 0, oppoUnits = 0;
+    const brandTotalsMerged = {};
+    crosstab.forEach(rec => {
+        totalRev += rec.rev; totalUnits += rec.units;
+        if (rec.brand === 'Oppo') { oppoRev += rec.rev; oppoUnits += rec.units; }
+        if (!brandTotalsMerged[rec.brand]) brandTotalsMerged[rec.brand] = { revenue: 0, units: 0 };
+        brandTotalsMerged[rec.brand].revenue += rec.rev;
+        brandTotalsMerged[rec.brand].units += rec.units;
+    });
+    const brand_ranking = Object.entries(brandTotalsMerged).sort((x,y)=>y[1].revenue-x[1].revenue).map(([brand,v]) => ({
+        brand, revenue: v.revenue, units: Math.round(v.units),
+        rev_share: totalRev ? +(v.revenue/totalRev*100).toFixed(1) : 0,
+        units_share: totalUnits ? +(v.units/totalUnits*100).toFixed(1) : 0,
+    }));
+    const numShopsWithOppo = shop_rows_brand4.filter(s => (s.brands['Oppo'] && s.brands['Oppo'].total_rev > 0)).length;
+
+    return {
+        kpi: {
+            total_rev: totalRev, total_units: Math.round(totalUnits),
+            oppo_rev: oppoRev, oppo_units: Math.round(oppoUnits),
+            oppo_rev_share: totalRev ? +(oppoRev/totalRev*100).toFixed(1) : 0,
+            oppo_units_share: totalUnits ? +(oppoUnits/totalUnits*100).toFixed(1) : 0,
+            num_shops: shop_rows_brand4.length,
+            num_shops_with_oppo: numShopsWithOppo,
+        },
+        brand_ranking,
+        month_labels, months_sorted,
+        segment_order: segments_list, segments_list,
+        sales_list, size_shop_list, top_brands,
+        channels_list, series_list, models_list,
+        crosstab,
+        daily: { sales: salesUnion, segments: segsUnion, brands: brandsUnion, sizes: sizesUnion, models: modelsUnion, rows: dailyRows },
+        shop_rows_brand4,
+        shop_day_data,
+        shop_model_data,
+    };
+}
+
+async function loadAndRender() {
+    const loadingEl = document.getElementById('loading-overlay');
+    const errorEl = document.getElementById('error-overlay');
+    const msgEl = document.getElementById('loading-message');
+    try {
+        // Bước 1: thử tải checkpoint đã chốt (nếu có)
+        if (msgEl) msgEl.textContent = 'Đang kiểm tra checkpoint đã lưu...';
+        let checkpoint = null;
+        try {
+            const cp = await fetchJSON(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME) + '&mode=checkpoint', 30000);
+            if (cp && cp.exists !== false && cp.data) checkpoint = cp;
+        } catch (err) {
+            console.warn('Không tải được checkpoint (sẽ tải toàn bộ dữ liệu):', err.message);
+        }
+
+        const startRow = checkpoint ? (checkpoint.lastProcessedRow + 1) : 1;
+        const fetchResult = await fetchRowsFromAppsScript(APPS_SCRIPT_URL, startRow);
+        let rows = fetchResult.rows;
+        if (!checkpoint) rows = rows.slice(1); // bỏ dòng header nếu tải từ đầu
+
+        let DATA;
+        let sourceNote;
+        if (checkpoint) {
+            const deltaData = rows.length ? computeData(rows) : null;
+            DATA = deltaData ? mergeFinalData(checkpoint.data, deltaData) : checkpoint.data;
+            sourceNote = 'Checkpoint (' + new Date(checkpoint.savedAt).toLocaleDateString('vi-VN') + ') + ' + rows.length.toLocaleString('vi-VN') + ' dòng mới';
+        } else {
+            DATA = computeData(rows);
+            sourceNote = rows.length.toLocaleString('vi-VN') + ' dòng (chưa có checkpoint)';
+        }
+
+        window.__lastFetchInfo = { checkpoint, latestLastRow: fetchResult.lastRow };
+
+        // Tải Target 2026 (dùng cho Chương trình thi đua tháng) — không ảnh hưởng checkpoint, luôn lấy mới
+        if (msgEl) msgEl.textContent = 'Đang tải Target 2026...';
+        DATA.mwg_target_map = await fetchMwgTargetMap(APPS_SCRIPT_URL);
+
+        if (loadingEl) loadingEl.style.display = 'none';
+        const updEl = document.getElementById('last-updated');
+        if (updEl) updEl.textContent = 'Dữ liệu tải lúc: ' + new Date().toLocaleString('vi-VN') + ' · ' + sourceNote;
+        initDashboard(DATA);
+    } catch (err) {
+        console.error('Lỗi tải/ tính dashboard:', err);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) {
+            errorEl.style.display = 'flex';
+            const msgElErr = document.getElementById('error-message');
+            if (msgElErr) msgElErr.textContent = 'Không tải được dữ liệu: ' + err.message;
+        }
+    }
+}
+
+// ================= Tạo checkpoint mới (chạy thủ công, ~mỗi 6 tháng) =================
+async function createCheckpoint() {
+    if (!confirm('Tạo checkpoint mới sẽ tải TOÀN BỘ dữ liệu hiện tại (chậm, vài phút) và lưu kết quả lên Drive để các lần mở sau nhanh hơn.\n\nChỉ nên làm khi đã sẵn sàng "chốt" 1 giai đoạn (ví dụ mỗi 6 tháng). Tiếp tục?')) return;
+    const btn = document.getElementById('create-checkpoint-btn');
+    const statusEl = document.getElementById('checkpoint-status');
+    if (btn) btn.disabled = true;
+    try {
+        if (statusEl) statusEl.textContent = 'Đang tải toàn bộ dữ liệu...';
+        const fetchResult = await fetchRowsFromAppsScript(APPS_SCRIPT_URL, 1);
+        const rows = fetchResult.rows.slice(1); // bỏ header
+        if (statusEl) statusEl.textContent = 'Đang tính toán...';
+        const DATA = computeData(rows);
+        if (statusEl) statusEl.textContent = 'Đang lưu checkpoint lên Drive...';
+        const resp = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'saveCheckpoint',
+                sheet: SHEET_NAME,
+                dataJson: JSON.stringify(DATA),
+                lastProcessedRow: fetchResult.lastRow,
+            }),
+        });
+        const result = await resp.json();
+        if (result.error) throw new Error(result.error);
+        if (statusEl) statusEl.textContent = '✅ Đã lưu checkpoint tại dòng ' + result.lastProcessedRow + '. Mở lại trang để dùng checkpoint mới.';
+    } catch (err) {
+        if (statusEl) statusEl.textContent = '❌ Lỗi: ' + err.message;
+        console.error(err);
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+loadAndRender();
+
+
+function initDashboard(DATA) {
+const BRAND_COLORS = {
+    'Apple': '#8e8e93', 'Samsung': '#1428A0', 'Oppo': '#1BB350',
+    'Xiaomi': '#FF6900', 'Vivo': '#4169E1', 'Realme': '#FFC800', 'Khác': '#b0b7bd'
+};
+
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fmtVND(v) {
+    if (Math.abs(v) >= 1e9) return (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}) + ' tỷ';
+    if (Math.abs(v) >= 1e6) return (v/1e6).toLocaleString('vi-VN', {maximumFractionDigits:1}) + ' tr';
+    return v.toLocaleString('vi-VN');
+}
+function fmtInt(v) { return Math.round(v).toLocaleString('vi-VN'); }
+function fmtPct(v) { return v.toFixed(1) + '%'; }
+// Tên hiển thị cho người dùng — luôn viết OPPO in hoa, không đụng đến key gốc 'Oppo' dùng để khớp dữ liệu
+function brandDisplay(b) { return b === 'Oppo' ? 'OPPO' : b; }
+
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', { display: false }); // opt-in per chart
+
+// ================= Plugin dùng chung: hiện TỔNG trên đầu mỗi cột (áp dụng cho mọi biểu đồ cột chồng) =================
+const totalLabelPlugin = {
+    id: 'totalLabel',
+    afterDatasetsDraw(chart, args, opts) {
+        if (!opts || !opts.enabled) return;
+        const { ctx } = chart;
+        const labels = chart.data.labels || [];
+        const formatter = opts.formatter || (v => Math.round(v).toLocaleString('vi-VN'));
+        labels.forEach((label, index) => {
+            let summedTotal = 0;
+            let topY = Infinity;
+            let x = null;
+            chart.data.datasets.forEach((ds, dsIndex) => {
+                if (!chart.isDatasetVisible(dsIndex)) return;
+                const val = ds.data[index] || 0;
+                summedTotal += val;
+                const meta = chart.getDatasetMeta(dsIndex);
+                const bar = meta.data[index];
+                if (bar) { x = bar.x; topY = Math.min(topY, bar.y); }
+            });
+            const displayTotal = (opts.totalsOverride && opts.totalsOverride[index] !== undefined) ? opts.totalsOverride[index] : summedTotal;
+            if (displayTotal > 0 && x !== null && isFinite(topY)) {
+                ctx.save();
+                ctx.font = '700 10.5px -apple-system, sans-serif';
+                ctx.fillStyle = '#1a1a1a';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(formatter(displayTotal), x, topY - 5);
+                ctx.restore();
+            }
+        });
+    }
+};
+Chart.register(totalLabelPlugin);
+
+// ---- KPI ----
+document.getElementById('kpi-total-rev').textContent = fmtVND(DATA.kpi.total_rev) + ' đ';
+document.getElementById('kpi-total-sub').textContent = DATA.month_labels[0] + '–' + DATA.month_labels[DATA.month_labels.length-1] + ' · ' + DATA.brand_ranking.length + ' hãng · ' + DATA.kpi.num_shops + ' shop';
+document.getElementById('shop-table-title').textContent = 'Chi tiết ' + DATA.kpi.num_shops + ' shop — Doanh thu & Doanh số theo 4 hãng chính';
+document.getElementById('kpi-oppo-rev').textContent = fmtVND(DATA.kpi.oppo_rev) + ' đ';
+document.getElementById('kpi-oppo-rev-share').textContent = DATA.kpi.oppo_rev_share + '% thị phần doanh thu';
+document.getElementById('kpi-oppo-units').textContent = fmtInt(DATA.kpi.oppo_units) + ' máy';
+document.getElementById('kpi-oppo-units-share').textContent = DATA.kpi.oppo_units_share + '% thị phần doanh số';
+document.getElementById('kpi-shops').textContent = DATA.kpi.num_shops_with_oppo + ' / ' + DATA.kpi.num_shops;
+document.getElementById('kpi-shops-sub').textContent = (DATA.kpi.num_shops_with_oppo/DATA.kpi.num_shops*100).toFixed(1) + '% tổng shop · ' + (DATA.kpi.num_shops - DATA.kpi.num_shops_with_oppo) + ' shop chưa bán OPPO';
+
+// ================= Chart 1 + Table: theo hãng theo tháng (filterable, multi-select) =================
+const ALL_BRANDS_ORDER = [...DATA.top_brands, 'Khác'];
+
+let f1Filters = { months: [], sales: [], segments: [], sizeShops: [] }; // empty array = "Tất cả"
+
+function buildMultiselect(containerId, options, store, filterKey, allLabel, onChange) {
+    onChange = onChange || refreshF1;
+    const container = document.getElementById(containerId);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'multiselect-btn';
+    const label = document.createElement('span');
+    label.textContent = allLabel;
+    btn.appendChild(label);
+    const panel = document.createElement('div');
+    panel.className = 'multiselect-panel hidden';
+
+    const allOpt = document.createElement('label');
+    allOpt.className = 'multiselect-option all-option';
+    allOpt.innerHTML = `<input type="checkbox" checked data-all="1"> ${allLabel}`;
+    panel.appendChild(allOpt);
+
+    const checkboxes = [];
+    options.forEach(opt => {
+        const row = document.createElement('label');
+        row.className = 'multiselect-option';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = opt.value;
+        row.appendChild(cb);
+        row.appendChild(document.createTextNode(' ' + opt.text));
+        panel.appendChild(row);
+        checkboxes.push(cb);
+    });
+
+    const allCb = allOpt.querySelector('input');
+
+    function updateLabel() {
+        const selected = store[filterKey];
+        if (selected.length === 0) { label.textContent = allLabel; }
+        else if (selected.length === 1) { label.textContent = options.find(o=>o.value===selected[0])?.text || selected[0]; }
+        else { label.textContent = selected.length + ' đã chọn'; }
+        btn.classList.toggle('active', selected.length > 0);
+    }
+
+    allCb.addEventListener('change', () => {
+        if (allCb.checked) {
+            checkboxes.forEach(cb => cb.checked = false);
+            store[filterKey] = [];
+            updateLabel();
+            onChange();
+        }
+    });
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            const anyChecked = checkboxes.some(c => c.checked);
+            allCb.checked = !anyChecked;
+            store[filterKey] = checkboxes.filter(c => c.checked).map(c => c.value);
+            updateLabel();
+            onChange();
+        });
+    });
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.multiselect-panel').forEach(p => { if (p !== panel) p.classList.add('hidden'); });
+        panel.classList.toggle('hidden');
+    });
+
+    container.appendChild(btn);
+    container.appendChild(panel);
+    container._reset = () => {
+        allCb.checked = true;
+        checkboxes.forEach(cb => cb.checked = false);
+        store[filterKey] = [];
+        updateLabel();
+    };
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.multiselect-panel').forEach(p => p.classList.add('hidden'));
+});
+
+buildMultiselect('ms-month', DATA.month_labels.map((lbl,i) => ({ value:String(i+1), text: lbl })), f1Filters, 'months', 'Tất cả');
+buildMultiselect('ms-sale', DATA.sales_list.map(s => ({ value:s, text:s })), f1Filters, 'sales', 'Tất cả');
+buildMultiselect('ms-segment', DATA.segments_list.map(s => ({ value:s, text:s })), f1Filters, 'segments', 'Tất cả');
+buildMultiselect('ms-sizeshop', DATA.size_shop_list.map(s => ({ value:s, text:s })), f1Filters, 'sizeShops', 'Tất cả');
+
+function computeFilteredMonthlyByBrand() {
+    const result = {};
+    ALL_BRANDS_ORDER.forEach(b => { result[b] = new Array(DATA.month_labels.length).fill(0); });
+    DATA.crosstab.forEach(rec => {
+        if (f1Filters.months.length && !f1Filters.months.includes(String(rec.m))) return;
+        if (f1Filters.sales.length && !f1Filters.sales.includes(rec.sale)) return;
+        if (f1Filters.segments.length && !f1Filters.segments.includes(rec.seg)) return;
+        if (f1Filters.sizeShops.length && !f1Filters.sizeShops.includes(rec.shopSize)) return;
+        const b = DATA.top_brands.includes(rec.brand) ? rec.brand : 'Khác';
+        result[b][rec.m - 1] += rec.rev;
+    });
+    return result;
+}
+function computeFilteredMonthlyUnitsByBrand() {
+    const result = {};
+    ALL_BRANDS_ORDER.forEach(b => { result[b] = new Array(DATA.month_labels.length).fill(0); });
+    DATA.crosstab.forEach(rec => {
+        if (f1Filters.months.length && !f1Filters.months.includes(String(rec.m))) return;
+        if (f1Filters.sales.length && !f1Filters.sales.includes(rec.sale)) return;
+        if (f1Filters.segments.length && !f1Filters.segments.includes(rec.seg)) return;
+        if (f1Filters.sizeShops.length && !f1Filters.sizeShops.includes(rec.shopSize)) return;
+        const b = DATA.top_brands.includes(rec.brand) ? rec.brand : 'Khác';
+        result[b][rec.m - 1] += rec.units;
+    });
+    return result;
+}
+// Chi tiết model bán ra theo THÁNG + Hãng (dùng cho tooltip biểu đồ "Doanh số theo hãng theo tháng"), tôn trọng bộ lọc Sale/Phân khúc/Size shop
+function computeMonthlyBrandModelUnits() {
+    const result = {}; // key: month(1-12) -> brand -> model -> units. key 0 dùng cho cột "2026" (tổng tất cả tháng thực)
+    if (!DATA.daily || !DATA.daily.rows) return result;
+    const saleSet = f1Filters.sales.length ? new Set(f1Filters.sales) : null;
+    const segSet = f1Filters.segments.length ? new Set(f1Filters.segments) : null;
+    const sizeSet = f1Filters.sizeShops.length ? new Set(f1Filters.sizeShops) : null;
+    DATA.daily.rows.forEach(row => {
+        const [m, d, saleI, segI, brandI, rev, units, sizeI, modelI] = row;
+        if (saleSet && !saleSet.has(DATA.daily.sales[saleI])) return;
+        if (segSet && !segSet.has(DATA.daily.segments[segI])) return;
+        if (sizeSet && !sizeSet.has(DATA.daily.sizes[sizeI])) return;
+        const brandName = DATA.daily.brands[brandI];
+        const b = DATA.top_brands.includes(brandName) ? brandName : 'Khác';
+        const modelName = (DATA.daily.models && modelI !== undefined) ? DATA.daily.models[modelI] : null;
+        if (!modelName) return;
+        if (!result[m]) result[m] = {};
+        if (!result[m][b]) result[m][b] = {};
+        result[m][b][modelName] = (result[m][b][modelName] || 0) + units;
+        if (!result[0]) result[0] = {}; // cột "2026" = gộp tất cả tháng
+        if (!result[0][b]) result[0][b] = {};
+        result[0][b][modelName] = (result[0][b][modelName] || 0) + units;
+    });
+    return result;
+}
+function getActiveMonths() {
+    if (f1Filters.months.length === 0) return Array.from({length: DATA.month_labels.length}, (_,i)=>i);
+    return f1Filters.months.map(m => parseInt(m)-1).sort((a,b)=>a-b);
+}
+// Riêng cho 2 bảng Doanh thu/Doanh số theo hãng: luôn hiện đủ 12 tháng (T1-T12) khi không lọc, các tháng chưa có dữ liệu sẽ là 0
+function getActiveMonths12() {
+    if (f1Filters.months.length === 0) return Array.from({length: 12}, (_,i)=>i);
+    return f1Filters.months.map(m => parseInt(m)-1).sort((a,b)=>a-b);
+}
+function monthLabel12(i) { return DATA.month_labels[i] || ('T' + (i+1)); }
+
+let monthlyBrandChart = null;
+function renderMonthlyBrandChart() {
+    const dataByBrand = computeFilteredMonthlyUnitsByBrand();
+    const activeMonths = getActiveMonths12();
+    const monthLabels = activeMonths.map(monthLabel12);
+    const latestRealMonthIdx = DATA.month_labels.length - 1;
+    const realMonths = Array.from({length: DATA.month_labels.length}, (_,i)=>i); // các tháng thực sự có dữ liệu, dùng để tính TB 2026
+
+    // Cột "2026" = trung bình cả năm, tính theo tổng gộp các tháng thực có dữ liệu (không tính tháng trống phía sau)
+    const avgTotalRaw = ALL_BRANDS_ORDER.reduce((s,b)=>s+realMonths.reduce((s2,i)=>s2+(dataByBrand[b][i]||0),0),0);
+    const labels = ['2026', ...monthLabels];
+
+    // Quy đổi từng tháng về % (100%-stacked thật sự), giữ số máy thô riêng để hiện trong tooltip
+    const monthTotalsRaw = activeMonths.map(i => ALL_BRANDS_ORDER.reduce((s,b)=>s+(dataByBrand[b][i]||0),0));
+    const datasets = ALL_BRANDS_ORDER.map(b => {
+        const brandAvgRaw = realMonths.reduce((s,i)=>s+(dataByBrand[b][i]||0),0);
+        return {
+            label: brandDisplay(b),
+            data: [avgTotalRaw ? brandAvgRaw/avgTotalRaw*100 : 0, ...activeMonths.map((i,idx) => monthTotalsRaw[idx] ? (dataByBrand[b][i]||0)/monthTotalsRaw[idx]*100 : 0)],
+            raw: [brandAvgRaw, ...activeMonths.map(i => dataByBrand[b][i]||0)],
+            backgroundColor: BRAND_COLORS[b],
+            stack: 'stack1'
+        };
+    });
+    const grandTotalUnits = ALL_BRANDS_ORDER.reduce((s,b) => s + activeMonths.reduce((s2,i)=>s2+(dataByBrand[b][i]||0),0), 0);
+    const oppoTotalUnits = activeMonths.reduce((s,i)=>s+(dataByBrand['Oppo']?(dataByBrand['Oppo'][i]||0):0),0);
+    const totalEl = document.getElementById('chart-monthly-brand-total');
+    if (totalEl) totalEl.textContent = 'Tổng: ' + fmtInt(grandTotalUnits) + ' máy (trong đó OPPO: ' + fmtInt(oppoTotalUnits) + ' máy, ' + (grandTotalUnits ? (oppoTotalUnits/grandTotalUnits*100).toFixed(1) : '0') + '%)';
+    const monthBrandModelUnits = computeMonthlyBrandModelUnits();
+    const chartMonthKeys = [0, ...activeMonths.map(i => i + 1)]; // 0 = cột "2026", còn lại là số tháng thật (1-12)
+    if (monthlyBrandChart) monthlyBrandChart.destroy();
+    const ctx = document.getElementById('chart-monthly-brand').getContext('2d');
+    monthlyBrandChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins: {
+                legend: { position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
+                tooltip: { callbacks: {
+                    label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '% (' + fmtInt(c.dataset.raw[c.dataIndex]) + ' máy)',
+                    afterBody: (items) => {
+                        if (!items.length) return [];
+                        const item = items[0];
+                        const brandRaw = ALL_BRANDS_ORDER[item.datasetIndex];
+                        const monthKey = chartMonthKeys[item.dataIndex];
+                        const modelMap = (monthBrandModelUnits[monthKey] && monthBrandModelUnits[monthKey][brandRaw]) || {};
+                        const entries = Object.entries(modelMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+                        if (!entries.length) return [];
+                        const lines = ['', 'Chi tiết model bán ra:'];
+                        entries.forEach(([model, u]) => lines.push('• ' + model + ': ' + fmtInt(u) + ' máy'));
+                        return lines;
+                    }
+                } },
+                datalabels: {
+                    display: true, color: '#fff', font: { size: 10, weight: '700' },
+                    formatter: (value) => value < 5 ? '' : value.toFixed(0) + '%'
+                }
+            },
+            scales: {
+                x: { stacked:true, grid:{display:false} },
+                y: { stacked:true, beginAtZero:true, max:100, display:false }
+            }
+        }
+    });
+    renderBrandShareMiniTable(activeMonths, monthLabels, dataByBrand, monthTotalsRaw, latestRealMonthIdx, avgTotalRaw, realMonths);
+}
+
+function renderBrandShareMiniTable(activeMonths, monthLabels, dataByBrand, monthTotalsRaw, latestRealMonthIdx, avgTotalRaw, realMonths) {
+    const head = document.getElementById('brand-share-mini-table-head');
+    let headHtml = '<th>Hãng (% thị phần)</th><th class="num" style="background:#eef2ef; font-weight:800;">2026 (TB)</th>';
+    monthLabels.forEach((lbl,i) => {
+        const isLatest = activeMonths[i] === latestRealMonthIdx;
+        headHtml += `<th class="num${isLatest?' latest-month-col':''}">${lbl}${isLatest?' ★':''}</th>`;
+    });
+    head.innerHTML = headHtml;
+
+    const body = document.getElementById('brand-share-mini-table-body');
+    let bodyHtml = ALL_BRANDS_ORDER.map(b => {
+        const brandAvgRaw = realMonths.reduce((s,i)=>s+(dataByBrand[b][i]||0),0);
+        const avgPct = avgTotalRaw ? brandAvgRaw/avgTotalRaw*100 : 0;
+        const pctByMonth = activeMonths.map((i,idx) => monthTotalsRaw[idx] ? (dataByBrand[b][i]||0)/monthTotalsRaw[idx]*100 : 0);
+        const cells = pctByMonth.map((pct,idx) => {
+            const isLatest = activeMonths[idx] === latestRealMonthIdx;
+            let colorStyle = '';
+            if (idx > 0 && pctByMonth[idx-1]) {
+                const g = pct - pctByMonth[idx-1];
+                colorStyle = g>0 ? 'color:var(--positive);' : (g<0 ? 'color:var(--negative);' : '');
+            }
+            return `<td class="num${isLatest?' latest-month-col':''}" style="${colorStyle}">${pct.toFixed(1)}%</td>`;
+        }).join('');
+        return `<tr><td>${brandDisplay(b)}</td><td class="num" style="background:#f7fbf8; font-weight:700;">${avgPct.toFixed(1)}%</td>${cells}</tr>`;
+    }).join('');
+    bodyHtml += `<tr class="total-row"><td>TỔNG</td><td class="num" style="background:#eef7f0;">100%</td>${activeMonths.map((i,idx)=>{
+        const isLatest = activeMonths[idx] === latestRealMonthIdx;
+        return `<td class="num${isLatest?' latest-month-col':''}">100%</td>`;
+    }).join('')}</tr>`;
+    body.innerHTML = bodyHtml;
+}
+
+
+let brandTableSort = { field:'total', dir:'desc' };
+// Sheet gốc trước đây lưu Doanh thu theo đơn vị TRIỆU đồng (T1-T7), từ T8 trở đi đổi sang đồng thô (VND).
+// Tự nhận diện thang đo theo độ lớn và quy đổi thống nhất về VND để hiển thị tỷ đồng cho đúng ở mọi tháng.
+function normalizeRevToVND(v) {
+    if (v > 0 && v < 1e6) return v * 1e6;
+    return v;
+}
+function renderBrandMonthTable() {
+    const revByBrand = computeFilteredMonthlyByBrand();
+    const activeMonths = getActiveMonths12();
+    const labels = activeMonths.map(monthLabel12);
+    const latestRealMonthIdx = DATA.month_labels.length - 1; // index tháng mới nhất có dữ liệu thật
+
+    // header
+    const headRow = document.getElementById('brand-month-table-head');
+    let headHtml = '<th data-field="brand">Hãng (tỷ đ)</th><th data-field="total" class="num">Tổng (%)</th>';
+    labels.forEach((lbl,i) => {
+        const activeMonthNum = activeMonths[i];
+        const isLatest = activeMonthNum === latestRealMonthIdx;
+        headHtml += `<th data-field="mo${i}" class="num${isLatest?' latest-month-col':''}">${lbl}${isLatest?' ★':''}</th>`;
+    });
+    headRow.innerHTML = headHtml;
+
+    let rows = ALL_BRANDS_ORDER.map(b => {
+        const monthRevs = activeMonths.map(i => normalizeRevToVND(revByBrand[b][i] || 0));
+        const totalRev = monthRevs.reduce((a,c)=>a+c,0);
+        return { brand:b, monthRevs, total: totalRev };
+    });
+    const grandTotal = rows.reduce((s,r)=>s+r.total,0);
+    rows.forEach(r => { r.pct = grandTotal ? (r.total/grandTotal*100) : 0; });
+
+    // month totals across brands, for per-cell %
+    const monthTotals = activeMonths.map((_,i) => rows.reduce((s,r)=>s+r.monthRevs[i],0));
+
+    rows.sort((a,b) => {
+        let av,bv;
+        if (brandTableSort.field === 'brand') { av=a.brand.toLowerCase(); bv=b.brand.toLowerCase(); }
+        else if (brandTableSort.field === 'total') { av=a.total; bv=b.total; }
+        else { const mi = parseInt(brandTableSort.field.replace('mo','')); av=a.monthRevs[mi]; bv=b.monthRevs[mi]; }
+        let cmp = av<bv?-1:av>bv?1:0;
+        return brandTableSort.dir==='asc'?cmp:-cmp;
+    });
+
+    const tbody = document.getElementById('brand-month-table-body');
+    let bodyHtml = rows.map(r => {
+        let cells = r.monthRevs.map((v,i) => {
+            const activeMonthNum = activeMonths[i];
+            const isLatest = activeMonthNum === latestRealMonthIdx;
+            const cellPct = monthTotals[i] ? (v/monthTotals[i]*100) : 0;
+            const valStr = (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1});
+            let colorStyle = '';
+            if (i > 0 && r.monthRevs[i-1]) {
+                const g = v - r.monthRevs[i-1];
+                colorStyle = g>0 ? 'color:var(--positive);' : (g<0 ? 'color:var(--negative);' : '');
+            }
+            return `<td class="num${isLatest?' latest-month-col':''}" style="${colorStyle}">${valStr}<span class="pct-sub">(${cellPct.toFixed(1)}%)</span></td>`;
+        }).join('');
+        return `<tr><td>${brandDisplay(r.brand)}</td><td class="num">${fmtVND(r.total)} (${fmtPct(r.pct)})</td>${cells}</tr>`;
+    }).join('');
+    const totalRowRevs = activeMonths.map((_,i) => rows.reduce((s,r)=>s+r.monthRevs[i],0));
+    let totalCells = totalRowRevs.map((v,i) => {
+        const activeMonthNum = activeMonths[i];
+        const isLatest = activeMonthNum === latestRealMonthIdx;
+        const valStr = (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1});
+        let colorStyle = '';
+        if (i > 0 && totalRowRevs[i-1]) {
+            const g = v - totalRowRevs[i-1];
+            colorStyle = g>0 ? 'color:var(--positive);' : (g<0 ? 'color:var(--negative);' : '');
+        }
+        return `<td class="num${isLatest?' latest-month-col':''}" style="${colorStyle}">${valStr} (100%)</td>`;
+    }).join('');
+    bodyHtml += `<tr class="total-row"><td>TỔNG</td><td class="num">${fmtVND(grandTotal)} (100%)</td>${totalCells}</tr>`;
+    tbody.innerHTML = bodyHtml;
+
+    document.querySelectorAll('#brand-month-table thead th').forEach(th => {
+        th.onclick = () => {
+            const field = th.dataset.field;
+            if (brandTableSort.field === field) { brandTableSort.dir = brandTableSort.dir==='asc'?'desc':'asc'; }
+            else { brandTableSort.field = field; brandTableSort.dir = 'desc'; }
+            renderBrandMonthTable();
+        };
+        const base = th.textContent.replace(/[▲▼]/g,'').trim();
+        th.textContent = base;
+        if (th.dataset.field === brandTableSort.field) {
+            th.textContent = base + (brandTableSort.dir==='asc'?' ▲':' ▼');
+        }
+    });
+}
+
+let brandUnitsTableSort = { field:'total', dir:'desc' };
+function renderBrandMonthUnitsTable() {
+    const unitsByBrand = computeFilteredMonthlyUnitsByBrand();
+    const activeMonths = getActiveMonths12();
+    const labels = activeMonths.map(monthLabel12);
+    const latestRealMonthIdx = DATA.month_labels.length - 1;
+
+    const headRow = document.getElementById('brand-month-units-table-head');
+    let headHtml = '<th data-field="brand">Hãng</th><th data-field="total" class="num">Tổng (%)</th>';
+    labels.forEach((lbl,i) => {
+        const activeMonthNum = activeMonths[i];
+        const isLatest = activeMonthNum === latestRealMonthIdx;
+        headHtml += `<th data-field="mo${i}" class="num${isLatest?' latest-month-col':''}">${lbl}${isLatest?' ★':''}</th>`;
+    });
+    headRow.innerHTML = headHtml;
+
+    let rows = ALL_BRANDS_ORDER.map(b => {
+        const monthUnits = activeMonths.map(i => unitsByBrand[b][i] || 0);
+        const totalUnits = monthUnits.reduce((a,c)=>a+c,0);
+        return { brand:b, monthUnits, total: totalUnits };
+    });
+    const grandTotal = rows.reduce((s,r)=>s+r.total,0);
+    rows.forEach(r => { r.pct = grandTotal ? (r.total/grandTotal*100) : 0; });
+
+    const monthTotals = activeMonths.map((_,i) => rows.reduce((s,r)=>s+r.monthUnits[i],0));
+
+    rows.sort((a,b) => {
+        let av,bv;
+        if (brandUnitsTableSort.field === 'brand') { av=a.brand.toLowerCase(); bv=b.brand.toLowerCase(); }
+        else if (brandUnitsTableSort.field === 'total') { av=a.total; bv=b.total; }
+        else { const mi = parseInt(brandUnitsTableSort.field.replace('mo','')); av=a.monthUnits[mi]; bv=b.monthUnits[mi]; }
+        let cmp = av<bv?-1:av>bv?1:0;
+        return brandUnitsTableSort.dir==='asc'?cmp:-cmp;
+    });
+
+    const tbody = document.getElementById('brand-month-units-table-body');
+    let bodyHtml = rows.map(r => {
+        let cells = r.monthUnits.map((v,i) => {
+            const activeMonthNum = activeMonths[i];
+            const isLatest = activeMonthNum === latestRealMonthIdx;
+            const cellPct = monthTotals[i] ? (v/monthTotals[i]*100) : 0;
+            let colorStyle = '';
+            if (i > 0 && r.monthUnits[i-1]) {
+                const g = v - r.monthUnits[i-1];
+                colorStyle = g>0 ? 'color:var(--positive);' : (g<0 ? 'color:var(--negative);' : '');
+            }
+            return `<td class="num${isLatest?' latest-month-col':''}" style="${colorStyle}">${fmtInt(v)}<span class="pct-sub">(${cellPct.toFixed(1)}%)</span></td>`;
+        }).join('');
+        return `<tr><td>${brandDisplay(r.brand)}</td><td class="num">${fmtInt(r.total)} (${fmtPct(r.pct)})</td>${cells}</tr>`;
+    }).join('');
+    const totalRowUnits = activeMonths.map((_,i) => rows.reduce((s,r)=>s+r.monthUnits[i],0));
+    let totalCellsUnits = totalRowUnits.map((v,i) => {
+        const activeMonthNum = activeMonths[i];
+        const isLatest = activeMonthNum === latestRealMonthIdx;
+        let colorStyle = '';
+        if (i > 0 && totalRowUnits[i-1]) {
+            const g = v - totalRowUnits[i-1];
+            colorStyle = g>0 ? 'color:var(--positive);' : (g<0 ? 'color:var(--negative);' : '');
+        }
+        return `<td class="num${isLatest?' latest-month-col':''}" style="${colorStyle}">${fmtInt(v)} (100%)</td>`;
+    }).join('');
+    bodyHtml += `<tr class="total-row"><td>TỔNG</td><td class="num">${fmtInt(grandTotal)} (100%)</td>${totalCellsUnits}</tr>`;
+    tbody.innerHTML = bodyHtml;
+
+    document.querySelectorAll('#brand-month-units-table thead th').forEach(th => {
+        th.onclick = () => {
+            const field = th.dataset.field;
+            if (brandUnitsTableSort.field === field) { brandUnitsTableSort.dir = brandUnitsTableSort.dir==='asc'?'desc':'asc'; }
+            else { brandUnitsTableSort.field = field; brandUnitsTableSort.dir = 'desc'; }
+            renderBrandMonthUnitsTable();
+        };
+        const base = th.textContent.replace(/[▲▼]/g,'').trim();
+        th.textContent = base;
+        if (th.dataset.field === brandUnitsTableSort.field) {
+            th.textContent = base + (brandUnitsTableSort.dir==='asc'?' ▲':' ▼');
+        }
+    });
+}
+
+function refreshF1() {
+    renderMonthlyBrandChart();
+    renderBrandMonthTable();
+    renderBrandMonthUnitsTable();
+}
+document.getElementById('f1-reset').addEventListener('click', () => {
+    document.querySelectorAll('#ms-month, #ms-sale, #ms-segment, #ms-sizeshop').forEach(el => { if (el._reset) el._reset(); });
+    refreshF1();
+});
+refreshF1();
+
+// ---- Charts: Segment x Brand (both directions), with Tháng/Sale/Size filters ----
+let segFilters = { months: [], sales: [], sizeShops: [] };
+
+buildMultiselect('ms-seg-month', DATA.month_labels.map((lbl,i) => ({ value:String(i+1), text: lbl })), segFilters, 'months', 'Tất cả', () => refreshSegCharts());
+buildMultiselect('ms-seg-sale', DATA.sales_list.map(s => ({ value:s, text:s })), segFilters, 'sales', 'Tất cả', () => refreshSegCharts());
+buildMultiselect('ms-seg-sizeshop', DATA.size_shop_list.map(s => ({ value:s, text:s })), segFilters, 'sizeShops', 'Tất cả', () => refreshSegCharts());
+document.getElementById('seg-reset').addEventListener('click', () => {
+    document.querySelectorAll('#ms-seg-month, #ms-seg-sale, #ms-seg-sizeshop').forEach(el => { if (el._reset) el._reset(); });
+    refreshSegCharts();
+});
+
+function computeSegBrandRevenue() {
+    // returns { segment: { brand: revenue } } respecting segFilters
+    const result = {};
+    DATA.segment_order.forEach(seg => { result[seg] = {}; ALL_BRANDS_ORDER.forEach(b => result[seg][b] = 0); });
+    DATA.crosstab.forEach(rec => {
+        if (segFilters.months.length && !segFilters.months.includes(String(rec.m))) return;
+        if (segFilters.sales.length && !segFilters.sales.includes(rec.sale)) return;
+        if (segFilters.sizeShops.length && !segFilters.sizeShops.includes(rec.shopSize)) return;
+        if (!result.hasOwnProperty(rec.seg)) return;
+        const b = DATA.top_brands.includes(rec.brand) ? rec.brand : 'Khác';
+        result[rec.seg][b] += rec.rev;
+    });
+    return result;
+}
+
+function computeSegmentUnitsByMonth() {
+    // trả về { month: { segment: units } } — TOÀN THỊ TRƯỜNG (mọi hãng), theo segFilters
+    const result = {};
+    DATA.crosstab.forEach(rec => {
+        if (segFilters.months.length && !segFilters.months.includes(String(rec.m))) return;
+        if (segFilters.sales.length && !segFilters.sales.includes(rec.sale)) return;
+        if (segFilters.sizeShops.length && !segFilters.sizeShops.includes(rec.shopSize)) return;
+        if (!result[rec.m]) result[rec.m] = {};
+        result[rec.m][rec.seg] = (result[rec.m][rec.seg] || 0) + rec.units;
+    });
+    return result;
+}
+
+let segmentChart = null;
+let brandSegmentChart = null;
+let segmentUnitsChart = null;
+
+function refreshSegCharts() {
+    const segBrandRev = computeSegBrandRevenue();
+    const segs = DATA.segment_order;
+
+    // Chart 1: per segment, % by brand (segment-normalized)
+    const segTotals = segs.map(seg => ALL_BRANDS_ORDER.reduce((s,b)=>s+segBrandRev[seg][b],0));
+    const datasets1 = ALL_BRANDS_ORDER.map(b => ({
+        label: brandDisplay(b),
+        data: segs.map((seg,i) => segTotals[i] ? (segBrandRev[seg][b]/segTotals[i]*100) : 0),
+        backgroundColor: BRAND_COLORS[b], stack:'s1'
+    }));
+    const grandTotalRev = segTotals.reduce((a,b)=>a+b,0);
+    const oppoTotalRev = segs.reduce((s,seg)=>s+(segBrandRev[seg]['Oppo']||0),0);
+    const segTotalEl = document.getElementById('chart-segment-total');
+    if (segTotalEl) segTotalEl.textContent = 'Tổng doanh thu: ' + fmtVND(grandTotalRev) + ' đ (trong đó OPPO: ' + fmtVND(oppoTotalRev) + ' đ, ' + (grandTotalRev ? (oppoTotalRev/grandTotalRev*100).toFixed(1) : '0') + '%)';
+    if (segmentChart) segmentChart.destroy();
+    segmentChart = new Chart(document.getElementById('chart-segment').getContext('2d'), {
+        type:'bar',
+        data: { labels: segs, datasets: datasets1 },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            layout: { padding: { top: 20 } },
+            plugins: {
+                legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
+                tooltip: { callbacks: { label: c => c.dataset.label+': '+c.parsed.y.toFixed(1)+'%' } },
+                datalabels: { display:true, color:'#fff', font:{size:10,weight:'700'}, formatter: v => v < 4 ? '' : v.toFixed(0)+'%' }
+            },
+            scales: {
+                x: { stacked:true, grid:{display:false}, title:{display:true,text:'Phân khúc giá'} },
+                y: { stacked:true, beginAtZero:true, max:100, display:false }
+            }
+        }
+    });
+
+    // Chart 2: per brand, % by segment (brand-normalized)
+    const brandTotals = {};
+    ALL_BRANDS_ORDER.forEach(b => { brandTotals[b] = segs.reduce((s,seg)=>s+segBrandRev[seg][b],0); });
+    const segColors = ['#8e8e93','#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#CCB974','#64B5CD'];
+    const datasets2 = segs.map((seg,i) => ({
+        label: seg,
+        data: ALL_BRANDS_ORDER.map(b => brandTotals[b] ? (segBrandRev[seg][b]/brandTotals[b]*100) : 0),
+        backgroundColor: segColors[i % segColors.length], stack:'s2'
+    }));
+    if (brandSegmentChart) brandSegmentChart.destroy();
+    brandSegmentChart = new Chart(document.getElementById('chart-brand-segment').getContext('2d'), {
+        type:'bar',
+        data: { labels: ALL_BRANDS_ORDER.map(brandDisplay), datasets: datasets2 },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            layout: { padding: { top: 20 } },
+            plugins: {
+                legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:10}} },
+                tooltip: { callbacks: { label: c => c.dataset.label+': '+c.parsed.y.toFixed(1)+'%' } },
+                datalabels: { display:true, color:'#fff', font:{size:10,weight:'700'}, formatter: v => v < 4 ? '' : v.toFixed(0)+'%' }
+            },
+            scales: {
+                x: { stacked:true, grid:{display:false}, title:{display:true,text:'Hãng'} },
+                y: { stacked:true, beginAtZero:true, max:100, display:false }
+            }
+        }
+    });
+
+    // Chart 3: tỉ trọng đóng góp từng phân khúc theo số lượng (units, 100% stacked), toàn thị trường, theo tháng
+    const unitsByMonth = computeSegmentUnitsByMonth();
+    const monthsWithData = segFilters.months.length
+        ? segFilters.months.map(m => parseInt(m,10)).sort((a,b)=>a-b)
+        : Array.from({length: DATA.month_labels.length}, (_,i)=>i+1);
+    const monthLabelsActive = monthsWithData.map(m => 'T'+m);
+    const SEG_COLORS = ['#8e8e93','#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#CCB974','#64B5CD','#c9a0dc'];
+    const monthTotalsUnits = monthsWithData.map(m => segs.reduce((s,seg)=>s+((unitsByMonth[m] && unitsByMonth[m][seg]) || 0),0));
+    const datasets3 = segs.map((seg,i) => ({
+        label: seg,
+        data: monthsWithData.map((m,mi) => {
+            const val = (unitsByMonth[m] && unitsByMonth[m][seg]) || 0;
+            return monthTotalsUnits[mi] ? (val/monthTotalsUnits[mi]*100) : 0;
+        }),
+        backgroundColor: SEG_COLORS[i % SEG_COLORS.length], stack:'s3'
+    }));
+    if (segmentUnitsChart) segmentUnitsChart.destroy();
+    segmentUnitsChart = new Chart(document.getElementById('chart-segment-units').getContext('2d'), {
+        type: 'bar',
+        data: { labels: monthLabelsActive, datasets: datasets3 },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins: {
+                legend: { position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%' } },
+                datalabels: {
+                    display: true, color:'#fff', font:{size:10,weight:'700'},
+                    formatter: v => v < 5 ? '' : v.toFixed(0)+'%'
+                }
+            },
+            scales: {
+                x: { stacked:true, grid:{display:false} },
+                y: { stacked:true, beginAtZero:true, max:100, display:false }
+            }
+        }
+    });
+}
+refreshSegCharts();
+
+// ---- Chart: Doanh số theo ngày (stacked bar theo hãng, bắt buộc chọn Tháng) ----
+let dailyFilters = { months: [], sales: [], segments: [], sizeShops: [] };
+
+buildMultiselect('ms-daily-month', DATA.month_labels.map((lbl,i) => ({ value:String(i+1), text: lbl })), dailyFilters, 'months', 'Chưa chọn', () => renderDailyChart());
+buildMultiselect('ms-daily-sale', DATA.daily.sales.map(s => ({ value:s, text:s })), dailyFilters, 'sales', 'Tất cả', () => renderDailyChart());
+buildMultiselect('ms-daily-segment', DATA.daily.segments.map(s => ({ value:s, text:s })), dailyFilters, 'segments', 'Tất cả', () => renderDailyChart());
+buildMultiselect('ms-daily-sizeshop', DATA.daily.sizes.map(s => ({ value:s, text:s })), dailyFilters, 'sizeShops', 'Tất cả', () => renderDailyChart());
+
+document.getElementById('daily-reset').addEventListener('click', () => {
+    document.querySelectorAll('#ms-daily-month, #ms-daily-sale, #ms-daily-segment, #ms-daily-sizeshop').forEach(el => { if (el._reset) el._reset(); });
+    renderDailyChart();
+});
+
+let dailyChart = null;
+function renderDailyChart() {
+    const emptyState = document.getElementById('daily-empty-state');
+    const canvas = document.getElementById('chart-daily');
+
+    if (dailyFilters.months.length === 0) {
+        emptyState.style.display = 'block';
+        canvas.style.display = 'none';
+        const totalElEmpty = document.getElementById('chart-daily-total');
+        if (totalElEmpty) totalElEmpty.textContent = '';
+        if (dailyChart) { dailyChart.destroy(); dailyChart = null; }
+        return;
+    }
+    emptyState.style.display = 'none';
+    canvas.style.display = 'block';
+
+    const monthSet = new Set(dailyFilters.months.map(m => parseInt(m)));
+    const saleSet = dailyFilters.sales.length ? new Set(dailyFilters.sales) : null;
+    const segSet = dailyFilters.segments.length ? new Set(dailyFilters.segments) : null;
+    const sizeSet = dailyFilters.sizeShops.length ? new Set(dailyFilters.sizeShops) : null;
+
+    // key: "m-d" -> brand -> units
+    const dayBrandUnits = {};
+    const dayBrandModelUnits = {}; // key -> brand -> model -> units (dùng cho tooltip chi tiết khi hover)
+    const dayKeysSeen = new Set();
+    let grandTotalUnits = 0, oppoTotalUnits = 0;
+
+    DATA.daily.rows.forEach(row => {
+        const [m, d, saleI, segI, brandI, rev, units, sizeI, modelI] = row;
+        if (!monthSet.has(m)) return;
+        if (saleSet && !saleSet.has(DATA.daily.sales[saleI])) return;
+        if (segSet && !segSet.has(DATA.daily.segments[segI])) return;
+        if (sizeSet && !sizeSet.has(DATA.daily.sizes[sizeI])) return;
+        const brandName = DATA.daily.brands[brandI];
+        const b = DATA.top_brands.includes(brandName) ? brandName : 'Khác';
+        const key = m + '-' + String(d).padStart(2,'0');
+        dayKeysSeen.add(key);
+        if (!dayBrandUnits[key]) dayBrandUnits[key] = {};
+        dayBrandUnits[key][b] = (dayBrandUnits[key][b] || 0) + units;
+        grandTotalUnits += units;
+        if (brandName === 'Oppo') oppoTotalUnits += units;
+
+        const modelName = (DATA.daily.models && modelI !== undefined) ? DATA.daily.models[modelI] : null;
+        if (modelName) {
+            if (!dayBrandModelUnits[key]) dayBrandModelUnits[key] = {};
+            if (!dayBrandModelUnits[key][b]) dayBrandModelUnits[key][b] = {};
+            dayBrandModelUnits[key][b][modelName] = (dayBrandModelUnits[key][b][modelName] || 0) + units;
+        }
+    });
+
+    const totalEl = document.getElementById('chart-daily-total');
+    if (totalEl) totalEl.textContent = 'Tổng: ' + fmtInt(grandTotalUnits) + ' máy (trong đó OPPO: ' + fmtInt(oppoTotalUnits) + ' máy, ' + (grandTotalUnits ? (oppoTotalUnits/grandTotalUnits*100).toFixed(1) : '0') + '%)';
+
+    // Luôn hiện ĐỦ số ngày thật của (các) tháng đang chọn (30/31/28/29 ngày...), không chỉ ngày đã có dữ liệu
+    const monthsSortedArr = Array.from(monthSet).sort((a,b)=>a-b);
+    const allDayKeys = [];
+    monthsSortedArr.forEach(m => {
+        const daysInThisMonth = new Date(2026, m, 0).getDate();
+        for (let d = 1; d <= daysInThisMonth; d++) allDayKeys.push(m + '-' + String(d).padStart(2,'0'));
+    });
+    const sortedDayKeys = allDayKeys;
+    const labels = sortedDayKeys.map(k => {
+        const [m,d] = k.split('-');
+        // Chỉ 1 tháng đang chọn -> hiện gọn số ngày. Nhiều tháng cùng lúc -> vẫn giữ tiền tố tháng để khỏi nhầm lẫn.
+        return monthsSortedArr.length > 1 ? `T${parseInt(m)}-${d}` : d;
+    });
+
+    const dayTotalsRaw = sortedDayKeys.map(k => ALL_BRANDS_ORDER.reduce((s,b)=>s+((dayBrandUnits[k]&&dayBrandUnits[k][b])||0),0));
+    const datasets = ALL_BRANDS_ORDER.map(b => ({
+        label: brandDisplay(b),
+        data: sortedDayKeys.map((k,idx) => dayTotalsRaw[idx] ? ((dayBrandUnits[k]&&dayBrandUnits[k][b])||0)/dayTotalsRaw[idx]*100 : 0),
+        raw: sortedDayKeys.map(k => (dayBrandUnits[k] && dayBrandUnits[k][b]) || 0),
+        backgroundColor: BRAND_COLORS[b],
+        stack: 'stack1'
+    }));
+
+    if (dailyChart) dailyChart.destroy();
+    const ctx = canvas.getContext('2d');
+    dailyChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            layout: { padding: { top: 20 } },
+            plugins: {
+                legend: { position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
+                tooltip: { callbacks: {
+                    label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '% (' + fmtInt(c.dataset.raw[c.dataIndex]) + ' máy)',
+                    afterBody: (items) => {
+                        if (!items.length) return [];
+                        const item = items[0];
+                        const brandRaw = ALL_BRANDS_ORDER[item.datasetIndex];
+                        const dayKey = sortedDayKeys[item.dataIndex];
+                        const modelMap = (dayBrandModelUnits[dayKey] && dayBrandModelUnits[dayKey][brandRaw]) || {};
+                        const entries = Object.entries(modelMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+                        if (!entries.length) return [];
+                        const lines = ['', 'Chi tiết model ngày đó:'];
+                        entries.forEach(([model, u]) => lines.push('• ' + model + ': ' + fmtInt(u) + ' máy'));
+                        return lines;
+                    }
+                } },
+                datalabels: {
+                    display: true,
+                    color: '#fff',
+                    font: { size: 9, weight: '700' },
+                    formatter: (value) => value < 6 ? '' : value.toFixed(0) + '%'
+                }
+            },
+            scales: {
+                x: { stacked:true, grid:{display:false}, ticks:{ maxRotation:60, minRotation:60, font:{size:9} } },
+                y: { stacked:true, beginAtZero:true, max:100, display:false }
+            }
+        }
+    });
+    renderDailyMiniTable(sortedDayKeys, labels, dayTotalsRaw);
+}
+
+function renderDailyMiniTable(sortedDayKeys, labels, dayTotalsRaw) {
+    const wrap = document.getElementById('chart-daily-mini-table-wrap');
+    if (!wrap) return;
+    let colgroup = '<colgroup><col style="width:60px;">' + labels.map(()=>'<col>').join('') + '</colgroup>';
+    let dayRow = '<tr class="mmt-month"><td class="mmt-label">Ngày</td>';
+    let valueRow = '<tr class="mmt-value"><td class="mmt-label">Tổng máy</td>';
+    labels.forEach((lbl,i) => {
+        dayRow += `<td>${lbl}</td>`;
+        valueRow += `<td>${fmtInt(dayTotalsRaw[i])}</td>`;
+    });
+    dayRow += '</tr>'; valueRow += '</tr>';
+    document.getElementById('chart-daily-mini-table').innerHTML = colgroup + dayRow + valueRow;
+}
+renderDailyChart();
+
+// ---- Shop Tables: Doanh thu & Doanh số (2 bảng song song, lọc theo tháng, vạch màu theo thị phần TB khu vực) ----
+let revSort = { field: 'oppo_rev', dir: 'desc' };
+let currentFilters = { search:'', loaishop:'all', size:'all', tinh:'all', sale:'all', months: [], dayFrom: null, dayTo: null };
+const DETAIL_BRAND_KEYS = { 'Oppo':'oppo', 'Samsung':'samsung', 'Xiaomi':'xiaomi', 'Apple':'apple' };
+
+(function(){
+    const sel = document.getElementById('filter-sale');
+    const sales = [...new Set(DATA.shop_rows_brand4.map(r => r.sale))].sort();
+    sales.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s; opt.textContent = s;
+        sel.appendChild(opt);
+    });
+})();
+buildMultiselect('ms-shop-month', DATA.month_labels.map((lbl,i) => ({ value:String(i+1), text: lbl })), currentFilters, 'months', 'Tất cả', () => renderShopTables());
+
+function computeShopMetricsForMonths(shopRaw, activeMonths) {
+    const out = { shop: shopRaw.shop, tinh: shopRaw.tinh, loai_shop: shopRaw.loai_shop, sale: shopRaw.sale, shop_size: shopRaw.shop_size };
+    Object.entries(DETAIL_BRAND_KEYS).forEach(([brandName, key]) => {
+        const b = shopRaw.brands[brandName];
+        let rev = 0, units = 0;
+        activeMonths.forEach(i => { rev += b.monthly_rev[i]; units += b.monthly_units[i]; });
+        out[key + '_rev'] = rev;
+        out[key + '_units'] = units;
+    });
+    // Tổng = toàn bộ 11 hãng trong shop (không chỉ 4 hãng hiển thị), đảm bảo số Tổng chính xác thực tế
+    let totalRev = 0, totalUnits = 0;
+    activeMonths.forEach(i => {
+        totalRev += shopRaw.monthly_total_rev[i];
+        totalUnits += shopRaw.monthly_total_units[i];
+    });
+    out.total_rev = totalRev;
+    out.total_units = totalUnits;
+    return out;
+}
+
+// Tính theo khoảng NGÀY cụ thể trong 1 tháng (dùng cho bộ lọc Ngày — soi ngày bất thường)
+function computeShopMetricsForDayRange(shopRaw, monthNums, dayFrom, dayTo) {
+    const out = { shop: shopRaw.shop, tinh: shopRaw.tinh, loai_shop: shopRaw.loai_shop, sale: shopRaw.sale, shop_size: shopRaw.shop_size,
+        oppo_rev:0, oppo_units:0, samsung_rev:0, samsung_units:0, xiaomi_rev:0, xiaomi_units:0, apple_rev:0, apple_units:0,
+        total_rev:0, total_units:0 };
+    const dayMap = (DATA.shop_day_data && DATA.shop_day_data[shopRaw.shop]) || {};
+    monthNums.forEach(monthNum => {
+        for (let d = dayFrom; d <= dayTo; d++) {
+            const cell = dayMap[monthNum + '-' + d];
+            if (!cell) continue;
+            out.oppo_rev += cell.oppo_rev; out.oppo_units += cell.oppo_units;
+            out.samsung_rev += cell.samsung_rev; out.samsung_units += cell.samsung_units;
+            out.xiaomi_rev += cell.xiaomi_rev; out.xiaomi_units += cell.xiaomi_units;
+            out.apple_rev += cell.apple_rev; out.apple_units += cell.apple_units;
+            out.total_rev += cell.total_rev; out.total_units += cell.total_units;
+        }
+    });
+    return out;
+}
+
+function computeShopMetrics(shopRaw) {
+    const activeMonths = currentFilters.months.length ? currentFilters.months.map(m=>parseInt(m)-1) : Array.from({length: DATA.month_labels.length}, (_,i)=>i);
+    return computeShopMetricsForMonths(shopRaw, activeMonths);
+}
+
+function isDayFilterActive() {
+    return !!(currentFilters.dayFrom || currentFilters.dayTo);
+}
+
+function getFilteredRows() {
+    const dayActive = isDayFilterActive();
+    // Nếu có chọn Tháng thì áp dụng khoảng ngày cho đúng các tháng đó; nếu không chọn Tháng nào thì áp dụng cho TẤT CẢ các tháng có dữ liệu
+    const activeMonthNums = dayActive
+        ? (currentFilters.months.length ? currentFilters.months.map(m => parseInt(m,10)) : Array.from({length: DATA.month_labels.length}, (_,i)=>i+1))
+        : null;
+    const dayFrom = dayActive ? (currentFilters.dayFrom || 1) : null;
+    const dayTo = dayActive ? (currentFilters.dayTo || 31) : null;
+
+    return DATA.shop_rows_brand4
+        .filter(r => {
+            if (currentFilters.search && !r.shop.toLowerCase().includes(currentFilters.search.toLowerCase())) return false;
+            if (currentFilters.loaishop !== 'all' && r.loai_shop !== currentFilters.loaishop) return false;
+            if (currentFilters.size !== 'all' && r.shop_size !== currentFilters.size) return false;
+            if (currentFilters.tinh !== 'all' && r.tinh !== currentFilters.tinh) return false;
+            if (currentFilters.sale !== 'all' && r.sale !== currentFilters.sale) return false;
+            return true;
+        })
+        .map(r => dayActive ? computeShopMetricsForDayRange(r, activeMonthNums, dayFrom, dayTo) : computeShopMetrics(r));
+}
+
+function sortRows(rows, sortState) {
+    const f = sortState.field;
+    return rows.slice().sort((a,b) => {
+        let av = a[f], bv = b[f];
+        if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+        let cmp = av < bv ? -1 : av > bv ? 1 : 0;
+        return sortState.dir === 'asc' ? cmp : -cmp;
+    });
+}
+
+// ================= Bung chi tiết sản phẩm khi bấm vào tên shop =================
+let expandedShops = new Set();
+
+function toggleShopExpand(shopName) {
+    if (expandedShops.has(shopName)) expandedShops.delete(shopName);
+    else expandedShops.add(shopName);
+    renderShopCombinedTable();
+}
+
+function shopNameCell(shopName) {
+    const arrow = expandedShops.has(shopName) ? '▾' : '▸';
+    return `<span class="shop-link" data-shop="${escapeHtml(shopName)}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${arrow} ${escapeHtml(shopName)}</span>`;
+}
+
+function productDetailRowHtml(shopName, colspan, shopRow) {
+    let inner;
+    if (currentFilters.months.length === 0) {
+        inner = '<div style="color:var(--text-secondary);">📅 Vui lòng chọn ít nhất 1 <b>Tháng</b> ở bộ lọc phía trên để xem Top 10 sản phẩm bán chạy của shop này.</div>';
+    } else {
+        const shopMonthly = (DATA.shop_model_data && DATA.shop_model_data[shopName]) || {};
+        const combined = {}; // model -> {brand, rev, units}
+        // Tổng cộng dồn TẤT CẢ model (không giới hạn top 10) theo từng hãng, để đối chiếu với dòng Tổng của shop
+        const brandCheckTotals = {}; // brand -> {rev, units}
+        currentFilters.months.forEach(m => {
+            const monthData = shopMonthly[m] || shopMonthly[String(m)];
+            if (!monthData) return;
+            Object.entries(monthData).forEach(([model, d]) => {
+                if (!combined[model]) combined[model] = { brand: d.brand, rev: 0, units: 0 };
+                combined[model].rev += d.rev;
+                combined[model].units += d.units;
+                if (!brandCheckTotals[d.brand]) brandCheckTotals[d.brand] = { rev: 0, units: 0 };
+                brandCheckTotals[d.brand].rev += d.rev;
+                brandCheckTotals[d.brand].units += d.units;
+            });
+        });
+        const entries = Object.entries(combined).sort((a,b) => b[1].units - a[1].units).slice(0, 10);
+        const monthsTxt = 'Tháng ' + currentFilters.months.join(', ');
+
+        let checkHtml = '';
+        if (shopRow) {
+            const c = brandCheckTotals;
+            const rows4 = [
+                ['Oppo', 'oppo_units', 'oppo_rev'],
+                ['Samsung', 'samsung_units', 'samsung_rev'],
+                ['Xiaomi', 'xiaomi_units', 'xiaomi_rev'],
+                ['Apple', 'apple_units', 'apple_rev'],
+            ];
+            checkHtml = '<div style="margin-top:10px; padding-top:8px; border-top:1px dashed #cbd2d9; font-size:11px; color:var(--text-secondary);">' +
+                '<b>Đối chiếu (cộng dồn TẤT CẢ model trong ' + monthsTxt + ', không chỉ Top 10) so với dòng Tổng của shop:</b><br>' +
+                rows4.map(([bn, uk, rk]) => {
+                    const fromModels = c[bn] || { units:0, rev:0 };
+                    const fromShopRow = { units: shopRow[uk] || 0, rev: shopRow[rk] || 0 };
+                    const match = Math.abs(fromModels.units - fromShopRow.units) < 0.5;
+                    return (match ? '✅' : '⚠️') + ' ' + brandDisplay(bn) + ': cộng từ model = ' + fmtInt(fromModels.units) + ' máy (' + fmtVND(fromModels.rev) + ' đ) — dòng Tổng shop = ' + fmtInt(fromShopRow.units) + ' máy (' + fmtVND(fromShopRow.rev) + ' đ)';
+                }).join('<br>') +
+                '</div>';
+        }
+
+        if (!entries.length) {
+            inner = '<div style="color:var(--text-secondary);">Không có dữ liệu sản phẩm cho shop này trong ' + monthsTxt + '.</div>' + checkHtml;
+        } else {
+            inner = '<div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;">Top 10 sản phẩm bán chạy — ' + escapeHtml(shopName) + ' (' + monthsTxt + ')</div>' +
+                entries.map(([model, d]) => `
+                    <div style="display:flex; justify-content:space-between; gap:12px; padding:4px 0; border-bottom:1px solid #e3e6e5; font-size:12.5px;">
+                        <span>${brandDisplay(d.brand)} — ${escapeHtml(model)}</span>
+                        <span style="font-weight:600; white-space:nowrap;">${fmtInt(d.units)} máy · ${fmtVND(d.rev)} đ</span>
+                    </div>`).join('') + checkHtml;
+        }
+    }
+    return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#f7fbf8; padding:12px 16px;">${inner}</td></tr>`;
+}
+
+function attachShopLinkHandlers(tbodyId) {
+    const tbody = document.getElementById(tbodyId);
+    tbody.querySelectorAll('.shop-link').forEach(el => {
+        el.addEventListener('click', () => toggleShopExpand(el.dataset.shop));
+    });
+}
+
+function renderShopCombinedTable() {
+    const baseRows = getFilteredRows();
+    const sumOppo = baseRows.reduce((s,r)=>s+r.oppo_rev,0);
+    const sumTotal = baseRows.reduce((s,r)=>s+r.total_rev,0);
+    const avgShare = sumTotal ? (sumOppo/sumTotal*100) : 0;
+    const rows = sortRows(baseRows, revSort);
+    const tbody = document.getElementById('shop-combined-table-body');
+
+    function twoRowsHtml(r, rowClass, boldTotal) {
+        const pctUnits = (v) => r.total_units ? (v/r.total_units*100).toFixed(1) : '0.0';
+        const pctRev = (v) => r.total_rev ? (v/r.total_rev*100).toFixed(1) : '0.0';
+        const totalUnitsCell = boldTotal ? `<b>${fmtInt(r.total_units)} máy</b>` : `${fmtInt(r.total_units)} máy`;
+        const totalRevCell = boldTotal ? `<b>${fmtVND(r.total_rev)} đ</b>` : `${fmtVND(r.total_rev)} đ`;
+        return `<tr class="${rowClass} row-units">
+            <td>${shopNameCell(r.shop)} <span class="metric-tag units">DS</span></td>
+            <td class="num">${fmtInt(r.oppo_units)} máy<span class="pct-sub">(${pctUnits(r.oppo_units)}%)</span></td>
+            <td class="num">${fmtInt(r.samsung_units)} máy<span class="pct-sub">(${pctUnits(r.samsung_units)}%)</span></td>
+            <td class="num">${fmtInt(r.xiaomi_units)} máy<span class="pct-sub">(${pctUnits(r.xiaomi_units)}%)</span></td>
+            <td class="num">${fmtInt(r.apple_units)} máy<span class="pct-sub">(${pctUnits(r.apple_units)}%)</span></td>
+            <td class="num">${totalUnitsCell}</td>
+        </tr>
+        <tr class="${rowClass} row-revenue">
+            <td><span class="metric-tag revenue">DT</span></td>
+            <td class="num">${fmtVND(r.oppo_rev)} đ<span class="pct-sub">(${pctRev(r.oppo_rev)}%)</span></td>
+            <td class="num">${fmtVND(r.samsung_rev)} đ<span class="pct-sub">(${pctRev(r.samsung_rev)}%)</span></td>
+            <td class="num">${fmtVND(r.xiaomi_rev)} đ<span class="pct-sub">(${pctRev(r.xiaomi_rev)}%)</span></td>
+            <td class="num">${fmtVND(r.apple_rev)} đ<span class="pct-sub">(${pctRev(r.apple_rev)}%)</span></td>
+            <td class="num">${totalRevCell}</td>
+        </tr>`;
+    }
+
+    let bodyHtml = rows.map(r => {
+        const oppoShare = r.total_rev ? (r.oppo_rev/r.total_rev*100) : 0;
+        const rowClass = r.total_rev === 0 ? 'row-neutral' : (oppoShare >= avgShare ? 'row-above-avg' : 'row-below-avg');
+        return twoRowsHtml(r, rowClass, false) + (expandedShops.has(r.shop) ? productDetailRowHtml(r.shop, 6, r) : '');
+    }).join('');
+
+    if (rows.length > 0) {
+        const totOppoRev = baseRows.reduce((s,r)=>s+r.oppo_rev,0);
+        const totSamsungRev = baseRows.reduce((s,r)=>s+r.samsung_rev,0);
+        const totXiaomiRev = baseRows.reduce((s,r)=>s+r.xiaomi_rev,0);
+        const totAppleRev = baseRows.reduce((s,r)=>s+r.apple_rev,0);
+        const totAllRev = baseRows.reduce((s,r)=>s+r.total_rev,0);
+        const totOppoUnits = baseRows.reduce((s,r)=>s+r.oppo_units,0);
+        const totSamsungUnits = baseRows.reduce((s,r)=>s+r.samsung_units,0);
+        const totXiaomiUnits = baseRows.reduce((s,r)=>s+r.xiaomi_units,0);
+        const totAppleUnits = baseRows.reduce((s,r)=>s+r.apple_units,0);
+        const totAllUnits = baseRows.reduce((s,r)=>s+r.total_units,0);
+        const pctTotRev = (v) => totAllRev ? (v/totAllRev*100).toFixed(1) : '0.0';
+        const pctTotUnits = (v) => totAllUnits ? (v/totAllUnits*100).toFixed(1) : '0.0';
+        const totalRowsHtml = `<tr class="total-row row-units">
+            <td>TỔNG (${rows.length} shop) <span class="metric-tag units">DS</span></td>
+            <td class="num">${fmtInt(totOppoUnits)} máy<span class="pct-sub">(${pctTotUnits(totOppoUnits)}%)</span></td>
+            <td class="num">${fmtInt(totSamsungUnits)} máy<span class="pct-sub">(${pctTotUnits(totSamsungUnits)}%)</span></td>
+            <td class="num">${fmtInt(totXiaomiUnits)} máy<span class="pct-sub">(${pctTotUnits(totXiaomiUnits)}%)</span></td>
+            <td class="num">${fmtInt(totAppleUnits)} máy<span class="pct-sub">(${pctTotUnits(totAppleUnits)}%)</span></td>
+            <td class="num"><b>${fmtInt(totAllUnits)} máy</b></td>
+        </tr>
+        <tr class="total-row row-revenue">
+            <td><span class="metric-tag revenue">DT</span></td>
+            <td class="num">${fmtVND(totOppoRev)} đ<span class="pct-sub">(${pctTotRev(totOppoRev)}%)</span></td>
+            <td class="num">${fmtVND(totSamsungRev)} đ<span class="pct-sub">(${pctTotRev(totSamsungRev)}%)</span></td>
+            <td class="num">${fmtVND(totXiaomiRev)} đ<span class="pct-sub">(${pctTotRev(totXiaomiRev)}%)</span></td>
+            <td class="num">${fmtVND(totAppleRev)} đ<span class="pct-sub">(${pctTotRev(totAppleRev)}%)</span></td>
+            <td class="num"><b>${fmtVND(totAllRev)} đ</b></td>
+        </tr>`;
+        bodyHtml = totalRowsHtml + bodyHtml;
+    }
+    tbody.innerHTML = bodyHtml;
+    attachShopLinkHandlers('shop-combined-table-body');
+    document.querySelectorAll('#shop-combined-table thead th').forEach(th => {
+        const base = th.textContent.replace(/[▲▼]/g,'').trim();
+        th.textContent = base;
+        if (th.dataset.field === revSort.field) th.textContent = base + (revSort.dir === 'asc' ? ' ▲' : ' ▼');
+    });
+}
+
+function renderShopTables() {
+    const statusEl = document.getElementById('day-filter-status');
+    if (statusEl) {
+        if (currentFilters.dayFrom || currentFilters.dayTo) {
+            const monthsTxt = currentFilters.months.length ? 'Tháng ' + currentFilters.months.join(', ') : 'tất cả các tháng';
+            statusEl.textContent = '📅 Đang lọc theo ngày: ' + monthsTxt + ', từ ngày ' + (currentFilters.dayFrom || 1) + ' đến ngày ' + (currentFilters.dayTo || 31) + '.';
+            statusEl.style.color = 'var(--oppo-green-dark)';
+        } else {
+            statusEl.textContent = '';
+        }
+    }
+    renderShopCombinedTable();
+}
+
+document.querySelectorAll('#shop-combined-table thead th').forEach(th => {
+    th.addEventListener('click', () => {
+        const field = th.dataset.field;
+        if (revSort.field === field) { revSort.dir = revSort.dir === 'asc' ? 'desc' : 'asc'; }
+        else { revSort.field = field; revSort.dir = 'desc'; }
+        renderShopCombinedTable();
+    });
+});
+document.getElementById('shop-search').addEventListener('input', e => { currentFilters.search = e.target.value; renderShopTables(); });
+document.getElementById('filter-loaishop').addEventListener('change', e => { currentFilters.loaishop = e.target.value; renderShopTables(); });
+document.getElementById('filter-size').addEventListener('change', e => { currentFilters.size = e.target.value; renderShopTables(); });
+document.getElementById('filter-tinh').addEventListener('change', e => { currentFilters.tinh = e.target.value; renderShopTables(); });
+document.getElementById('filter-sale').addEventListener('change', e => { currentFilters.sale = e.target.value; renderShopTables(); });
+document.getElementById('filter-day-from').addEventListener('input', e => { currentFilters.dayFrom = e.target.value ? parseInt(e.target.value,10) : null; renderShopTables(); });
+document.getElementById('filter-day-to').addEventListener('input', e => { currentFilters.dayTo = e.target.value ? parseInt(e.target.value,10) : null; renderShopTables(); });
+document.getElementById('filter-day-reset').addEventListener('click', () => {
+    currentFilters.dayFrom = null; currentFilters.dayTo = null;
+    document.getElementById('filter-day-from').value = '';
+    document.getElementById('filter-day-to').value = '';
+    renderShopTables();
+});
+
+renderShopTables();
+
+// ================= Chương trình thi đua tháng =================
+let thiDuaFilters = { months: [] };
+buildMultiselect('ms-thidua-month', DATA.month_labels.map((lbl,i) => ({ value:String(i+1), text: lbl })), thiDuaFilters, 'months', 'Chưa chọn', () => renderThiDua());
+
+const THIDUA_SALE_GROUPS = [
+    { label: 'Sale Lộc', keyword: 'LỘC' },
+    { label: 'Sale Khải', keyword: 'KHẢI' },
+];
+let expandedThiDuaSales = new Set();
+
+function thiDuaActiveMonthIdx() {
+    return thiDuaFilters.months.map(m => parseInt(m,10) - 1);
+}
+
+function sumShopMonths(shop, idxList) {
+    let oppoRev = 0, totalRev = 0, appleRev = 0;
+    idxList.forEach(i => {
+        oppoRev += (shop.brands['Oppo'] ? shop.brands['Oppo'].monthly_rev[i] : 0) || 0;
+        totalRev += shop.monthly_total_rev[i] || 0;
+        appleRev += (shop.brands['Apple'] ? shop.brands['Apple'].monthly_rev[i] : 0) || 0;
+    });
+    const retailRev = totalRev - appleRev;
+    const oppoShare = retailRev > 0 ? (oppoRev/retailRev*100) : 0;
+    return { oppoRev, totalRev, appleRev, retailRev, oppoShare };
+}
+
+function shareColorStyle(oppoShare) {
+    if (oppoShare < 25) return 'color:var(--negative);font-weight:700;';
+    if (oppoShare > 35) return 'color:var(--positive);font-weight:700;';
+    return '';
+}
+
+const DAYS_IN_MONTH_2026 = { 1:31, 2:28, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31 };
+
+// Tính "số ngày đã có dữ liệu" của 1 shop trong 1 tháng cụ thể, dựa vào shop_day_data (ngày lớn nhất từng ghi nhận có phát sinh)
+function daysElapsedForShopMonth(shop, monthNum) {
+    const dayMap = (DATA.shop_day_data && DATA.shop_day_data[shop.shop]) || {};
+    let maxDay = 0;
+    Object.keys(dayMap).forEach(key => {
+        const [m, d] = key.split('-').map(Number);
+        if (m === monthNum && d > maxDay) maxDay = d;
+    });
+    return maxDay;
+}
+
+function renderThiDuaSizeTable() {
+    const idxList = thiDuaActiveMonthIdx();
+    const tbody = document.getElementById('thidua-size-table-body');
+    const targetMap = DATA.mwg_target_map || {};
+    if (idxList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-secondary); padding:20px;">📅 Vui lòng chọn ít nhất 1 Tháng ở trên để xem chương trình thi đua.</td></tr>';
+        return;
+    }
+    // Dùng tháng CUỐI CÙNG trong danh sách đang chọn làm mốc "cuối tháng" để dự phóng (nếu chọn nhiều tháng, doanh thu vẫn cộng dồn cả các tháng đã chọn)
+    const selectedMonthNums = thiDuaFilters.months.map(m => parseInt(m,10)).sort((a,b)=>a-b);
+    const lastMonthNum = selectedMonthNums[selectedMonthNums.length - 1];
+    const daysInLastMonth = DAYS_IN_MONTH_2026[lastMonthNum] || 30;
+
+    const shops = DATA.shop_rows_brand4.filter(s => s.shop_size === 'S' || s.shop_size === 'A');
+    let unmatchedCount = 0;
+    const rows = shops.map(shop => {
+        const realStoreId = shop.store_code && PARTNER_TO_STORE_ID[shop.store_code] ? PARTNER_TO_STORE_ID[shop.store_code] : shop.store_code;
+        const target = realStoreId && targetMap[realStoreId] !== undefined ? targetMap[realStoreId] : 0;
+        if (!target) unmatchedCount++;
+        const { oppoRev, oppoShare } = sumShopMonths(shop, idxList);
+        const target1 = target * 1.10, target2 = target * 1.20, target3 = target * 1.30;
+
+        // Dự phóng cuối tháng theo tốc độ bán trung bình/ngày của tháng cuối cùng đang chọn (chỉ tính riêng OPPO)
+        const daysElapsed = daysElapsedForShopMonth(shop, lastMonthNum);
+        const projFactor = daysElapsed > 0 ? (daysInLastMonth / daysElapsed) : 1;
+        const projectedOppoRev = oppoRev * projFactor;
+
+        let moc = 0, rate = 0;
+        if (target > 0) {
+            if (projectedOppoRev >= target3) { moc = 3; rate = 0.3; }
+            else if (projectedOppoRev >= target2) { moc = 2; rate = 0.2; }
+            else if (projectedOppoRev >= target1) { moc = 1; rate = 0.1; }
+        }
+        const projectedBonus = projectedOppoRev * rate / 100;
+        return { shop: shop.shop, size: shop.shop_size, currentRev: oppoRev, target1, target2, target3, oppoShare, moc, rate, projectedOppoRev, projectedBonus };
+    });
+
+    const warnEl = document.getElementById('target-warning-panel');
+    if (warnEl) {
+        if (unmatchedCount > 0) {
+            const sampleStoreCodes = shops.slice(0, 6).map(s => {
+                const converted = s.store_code && PARTNER_TO_STORE_ID[s.store_code] ? PARTNER_TO_STORE_ID[s.store_code] : null;
+                return (s.store_code || '(trống)') + (converted ? ' → ' + converted : ' → (không có trong bảng ánh xạ)');
+            });
+            const sampleTargetIds = Object.keys(targetMap).slice(0, 6);
+            warnEl.style.display = 'block';
+            warnEl.innerHTML = '⚠️ Có ' + unmatchedCount + ' / ' + shops.length + ' shop Size S/A chưa khớp được Target từ sheet "Target 2026" (Target = 0, không tính được Target 1/2/3).<br>' +
+                '<b>Mẫu Mã siêu thị xuất hàng → Store ID sau quy đổi:</b> [' + sampleStoreCodes.join(' | ') + ']<br>' +
+                '<b>Mẫu Store ID (từ sheet Target 2026, tổng ' + Object.keys(targetMap).length + ' dòng đọc được):</b> [' + sampleTargetIds.join(', ') + ']<br>' +
+                'So sánh 2 dòng trên xem định dạng có khớp không (số/chữ, khoảng trắng thừa...).';
+        } else {
+            warnEl.style.display = 'none';
+        }
+    }
+
+    // Size S xếp trên, Size A xếp dưới; trong mỗi nhóm sắp theo thưởng dự kiến giảm dần
+    rows.sort((a,b) => {
+        if (a.size !== b.size) return a.size === 'S' ? -1 : 1;
+        return b.projectedBonus - a.projectedBonus;
+    });
+    const totalProjectedBonus = rows.reduce((s,r)=>s+r.projectedBonus,0);
+    let bodyHtml = rows.map(r => {
+        const mocLabel = r.moc > 0 ? (' (dự kiến đạt Mốc ' + r.moc + ', +' + r.rate.toFixed(1) + '%)') : ' (dự kiến chưa đạt mốc nào)';
+        const mocClass = r.moc >= 3 ? 'row-above-avg' : (r.moc === 0 ? 'row-below-avg' : 'row-neutral');
+        return `<tr class="${mocClass}">
+            <td style="${shareColorStyle(r.oppoShare)}">${escapeHtml(r.shop)}</td>
+            <td><span class="tag">${r.size}</span></td>
+            <td class="num">${fmtVND(r.currentRev)} đ</td>
+            <td class="num">${fmtVND(r.projectedOppoRev)} đ<span class="pct-sub">${mocLabel}</span></td>
+            <td class="num">${r.target1 > 0 ? fmtVND(r.target1) + ' đ' : '-'}</td>
+            <td class="num">${r.target2 > 0 ? fmtVND(r.target2) + ' đ' : '-'}</td>
+            <td class="num">${r.target3 > 0 ? fmtVND(r.target3) + ' đ' : '-'}</td>
+            <td class="num"><b>${fmtVND(r.projectedBonus)} đ</b></td>
+        </tr>`;
+    }).join('');
+    bodyHtml += `<tr class="total-row"><td colspan="7">TỔNG DỰ KIẾN THƯỞNG (${rows.length} shop Size S/A)</td><td class="num"><b>${fmtVND(totalProjectedBonus)} đ</b></td></tr>`;
+    tbody.innerHTML = bodyHtml;
+}
+
+function computeThiDuaSaleGroup(keyword) {
+    const idxList = thiDuaActiveMonthIdx();
+    const matchedSales = DATA.sales_list.filter(s => s.toUpperCase().includes(keyword));
+    const shops = DATA.shop_rows_brand4.filter(s => matchedSales.includes(s.sale));
+    let oppoRev = 0, retailRev = 0;
+    const shopDetails = shops.map(shop => {
+        const m = sumShopMonths(shop, idxList);
+        oppoRev += m.oppoRev; retailRev += m.retailRev;
+        return { shop: shop.shop, oppoRev: m.oppoRev, retailRev: m.retailRev, oppoShare: m.oppoShare };
+    }).filter(d => d.oppoRev > 0 || d.retailRev > 0);
+    shopDetails.sort((a,b) => b.oppoRev - a.oppoRev);
+    const oppoShare = retailRev > 0 ? (oppoRev/retailRev*100) : 0;
+    const bonusAmount = oppoRev * 1.2 / 100;
+    return { matchedSales, oppoRev, retailRev, oppoShare, bonusAmount, shopDetails };
+}
+
+function thiDuaSaleDetailRowHtml(groupLabel, shopDetails, colspan) {
+    if (!shopDetails.length) {
+        return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#f7fbf8; padding:12px 16px; color:var(--text-secondary);">Không có dữ liệu shop cho ${escapeHtml(groupLabel)} trong tháng đã chọn.</td></tr>`;
+    }
+    const rowsHtml = shopDetails.map(d => {
+        const shopBonus = d.oppoRev * 1.2 / 100;
+        return `
+        <div style="display:flex; justify-content:space-between; gap:12px; padding:4px 0; border-bottom:1px solid #e3e6e5; font-size:12.5px;">
+            <span style="${shareColorStyle(d.oppoShare)}">${escapeHtml(d.shop)}</span>
+            <span style="font-weight:600; white-space:nowrap;">${fmtVND(d.oppoRev)} đ OPPO · %OPPO/DT bán lẻ ${fmtPct(d.oppoShare)} · <span style="color:var(--oppo-green-dark);">Thưởng: ${fmtVND(shopBonus)} đ</span></span>
+        </div>`;
+    }).join('');
+    return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#f7fbf8; padding:12px 16px;">
+        <div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;">Chi tiết shop — ${escapeHtml(groupLabel)} (Thưởng = Doanh thu shop × 1,2%)</div>
+        ${rowsHtml}
+    </td></tr>`;
+}
+
+function renderThiDuaSaleTable() {
+    const idxList = thiDuaActiveMonthIdx();
+    const tbody = document.getElementById('thidua-sale-table-body');
+    if (idxList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary); padding:20px;">📅 Vui lòng chọn ít nhất 1 Tháng ở trên để xem chương trình thi đua.</td></tr>';
+        return;
+    }
+    let bodyHtml = '';
+    THIDUA_SALE_GROUPS.forEach(g => {
+        const d = computeThiDuaSaleGroup(g.keyword);
+        const arrow = expandedThiDuaSales.has(g.keyword) ? '▾' : '▸';
+        const matchNote = d.matchedSales.length ? ' (' + d.matchedSales.join(', ') + ')' : ' — ⚠️ không tìm thấy Sale khớp từ khóa "' + g.keyword + '"';
+        bodyHtml += `<tr>
+            <td><span class="shop-link" data-thidua-sale="${g.keyword}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${arrow} ${escapeHtml(g.label)}</span><br><span style="font-size:10.5px; color:var(--text-secondary);">${escapeHtml(matchNote)}</span></td>
+            <td class="num">${fmtVND(d.oppoRev)} đ</td>
+            <td class="num">${fmtVND(d.retailRev)} đ</td>
+            <td class="num" style="${shareColorStyle(d.oppoShare)}">${fmtPct(d.oppoShare)}</td>
+            <td class="num"><b>${fmtVND(d.bonusAmount)} đ</b></td>
+        </tr>`;
+        if (expandedThiDuaSales.has(g.keyword)) {
+            bodyHtml += thiDuaSaleDetailRowHtml(g.label, d.shopDetails, 5);
+        }
+    });
+    tbody.innerHTML = bodyHtml;
+    tbody.querySelectorAll('.shop-link').forEach(el => {
+        el.addEventListener('click', () => {
+            const key = el.dataset.thiduaSale;
+            if (expandedThiDuaSales.has(key)) expandedThiDuaSales.delete(key);
+            else expandedThiDuaSales.add(key);
+            renderThiDuaSaleTable();
+        });
+    });
+}
+
+function renderThiDua() {
+    renderThiDuaSizeTable();
+    renderThiDuaSaleTable();
+}
+renderThiDua();
+
+// ---- Sale/ASM Table ----
+let saleFilters = { months: [], sizeShops: [] };
+buildMultiselect('ms-sale-month', DATA.month_labels.map((lbl,i) => ({ value:String(i+1), text: lbl })), saleFilters, 'months', 'Tất cả', () => renderSaleTable());
+buildMultiselect('ms-sale-sizeshop', DATA.size_shop_list.map(s => ({ value:s, text:s })), saleFilters, 'sizeShops', 'Tất cả', () => renderSaleTable());
+
+function computeSaleTableRows() {
+    const bySale = {}; // sale -> {oppo_rev, oppo_units, other_rev, other_units}
+    DATA.crosstab.forEach(rec => {
+        if (saleFilters.months.length && !saleFilters.months.includes(String(rec.m))) return;
+        if (saleFilters.sizeShops.length && !saleFilters.sizeShops.includes(rec.shopSize)) return;
+        if (!bySale[rec.sale]) bySale[rec.sale] = { oppo_rev:0, oppo_units:0, other_rev:0, other_units:0 };
+        const o = bySale[rec.sale];
+        if (rec.brand === 'Oppo') { o.oppo_rev += rec.rev; o.oppo_units += rec.units; }
+        else { o.other_rev += rec.rev; o.other_units += rec.units; }
+    });
+    const shopCountBySale = {};
+    DATA.shop_rows_brand4.forEach(s => {
+        if (saleFilters.sizeShops.length && !saleFilters.sizeShops.includes(s.shop_size)) return;
+        shopCountBySale[s.sale] = (shopCountBySale[s.sale] || 0) + 1;
+    });
+    return Object.keys(bySale).map(sale => {
+        const o = bySale[sale];
+        const totalRev = o.oppo_rev + o.other_rev;
+        const totalUnits = o.oppo_units + o.other_units;
+        return {
+            sale, num_shops: shopCountBySale[sale] || 0,
+            oppo_revenue: o.oppo_rev, oppo_units: o.oppo_units,
+            other_revenue: o.other_rev, other_units: o.other_units,
+            pct_oppo_rev: totalRev ? +(o.oppo_rev/totalRev*100).toFixed(1) : 0,
+            pct_oppo_units: totalUnits ? +(o.oppo_units/totalUnits*100).toFixed(1) : 0,
+        };
+    });
+}
+
+let saleSort = { field: 'oppo_revenue', dir: 'desc' };
+function renderSaleTable() {
+    const allRows = computeSaleTableRows();
+    const rows = allRows.slice().sort((a,b) => {
+        let av = a[saleSort.field], bv = b[saleSort.field];
+        if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+        let cmp = av < bv ? -1 : av > bv ? 1 : 0;
+        return saleSort.dir === 'asc' ? cmp : -cmp;
+    });
+    const totalOppoRevAll = allRows.reduce((s,r)=>s+r.oppo_revenue,0);
+    const avgPctOppoRev = allRows.length ? allRows.reduce((s,r)=>s+r.pct_oppo_rev,0) / allRows.length : 0;
+    const tbody = document.getElementById('sale-table-body');
+    tbody.innerHTML = rows.map(r => {
+        const shareOfTeamOppo = totalOppoRevAll ? (r.oppo_revenue/totalOppoRevAll*100) : 0;
+        const rowClass = (r.oppo_revenue + r.other_revenue) === 0 ? 'row-neutral' : (r.pct_oppo_rev >= avgPctOppoRev ? 'row-above-avg' : 'row-below-avg');
+        return `<tr class="${rowClass}">
+            <td>${r.sale}</td>
+            <td class="num">${r.num_shops}</td>
+            <td class="num">${fmtVND(r.oppo_revenue)} đ <span style="color:var(--text-secondary)">(${shareOfTeamOppo.toFixed(1)}% toàn đội)</span></td>
+            <td class="num">${fmtInt(r.oppo_units)} máy</td>
+            <td class="num">${fmtVND(r.other_revenue)} đ</td>
+            <td class="num">${fmtInt(r.other_units)} máy</td>
+            <td class="num">${fmtPct(r.pct_oppo_rev)}</td>
+            <td class="num">${fmtPct(r.pct_oppo_units)}</td>
+        </tr>`;
+    }).join('');
+    document.querySelectorAll('#sale-table thead th').forEach(th => {
+        const base = th.textContent.replace(/[▲▼]/g,'').trim();
+        th.textContent = base;
+        if (th.dataset.field === saleSort.field) {
+            th.textContent = base + (saleSort.dir === 'asc' ? ' ▲' : ' ▼');
+        }
+    });
+}
+document.querySelectorAll('#sale-table thead th').forEach(th => {
+    th.addEventListener('click', () => {
+        const field = th.dataset.field;
+        if (saleSort.field === field) { saleSort.dir = saleSort.dir === 'asc' ? 'desc' : 'asc'; }
+        else { saleSort.field = field; saleSort.dir = 'desc'; }
+        renderSaleTable();
+    });
+});
+renderSaleTable();
+
+}
+</script>
+</body>
+</html>
