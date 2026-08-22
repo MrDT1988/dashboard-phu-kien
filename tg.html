@@ -1157,34 +1157,6 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             </div>
         </section>
 
-        <div style="margin:0 0 var(--gap);">
-    <section class="table-section">
-        <div class="table-section-header">
-            <div>
-                <h3>Hiệu suất theo Size Shop (MWG)</h3>
-                <div class="chart-sub">Size shop lấy từ dữ liệu Size Shop MWG (S/A/B/C/D). Bấm vào Size để xem chi tiết từng shop trong size đó.</div>
-            </div>
-        </div>
-        <div class="table-scroll" style="max-height:none;">
-            <table class="data-table" id="mwg-size-table">
-                <thead>
-                    <tr>
-                        <th data-field="size">Size</th>
-                        <th data-field="num_stores" class="num">Số shop</th>
-                        <th data-field="total_sellout" class="num">Tổng Sellout</th>
-                        <th data-field="avg_sellout" class="num">Sellout TB/shop</th>
-                        <th data-field="total_revenue" class="num">Tổng Doanh thu</th>
-                        <th data-field="avg_revenue" class="num">Doanh thu TB/shop</th>
-                    </tr>
-                </thead>
-                <tbody id="mwg-size-table-body"></tbody>
-            </table>
-        </div>
-    </section>
-
-        </div>
-        </div>
-
         <div class="cluster-wrap">
         <section class="table-section" id="mwg-sec-sale">
             <div class="table-section-header">
@@ -7169,73 +7141,6 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
         if (noteEl) noteEl.insertAdjacentHTML('afterend', '<div style="color:var(--negative); font-size:11.5px; margin-top:4px;">⚠️ Không tải được dữ liệu thị phần từ Sheet Share KA (' + escapeHtml(err.message) + ') — đang hiện bảng trống.</div>');
     });
 })();
-
-// ================= Hiệu suất theo Size Shop (MWG) =================
-const MWG_SIZE_ORDER = ['S','A','B','C','D','Chưa xác định'];
-let mwgSizeSort = { field:'size_order', dir:'asc' };
-let expandedMwgSize = new Set();
-function renderMwgSizeTable() {
-    const groups = {};
-    const storesBySize = {};
-    DATA.store_rows.forEach(r => {
-        if (r.channel !== 'MWG') return;
-        const size = (r.store_id && MWG_STORE_ID_TO_SIZE[r.store_id]) ? MWG_STORE_ID_TO_SIZE[r.store_id] : 'Chưa xác định';
-        if (!groups[size]) groups[size] = { size, num_stores: 0, total_sellout: 0, total_revenue: 0 };
-        if (!storesBySize[size]) storesBySize[size] = [];
-        storesBySize[size].push(r);
-        const g = groups[size];
-        g.num_stores++;
-        g.total_sellout += r.sellout;
-        g.total_revenue += r.revenue;
-    });
-    let rows = Object.values(groups).map(g => ({
-        size: g.size, size_order: MWG_SIZE_ORDER.indexOf(g.size),
-        num_stores: g.num_stores,
-        total_sellout: g.total_sellout, avg_sellout: g.num_stores ? g.total_sellout / g.num_stores : 0,
-        total_revenue: g.total_revenue, avg_revenue: g.num_stores ? g.total_revenue / g.num_stores : 0,
-    }));
-    rows.sort((a,b) => {
-        let av=a[mwgSizeSort.field], bv=b[mwgSizeSort.field];
-        if (typeof av === 'string') { av=av.toLowerCase(); bv=bv.toLowerCase(); }
-        let cmp = av<bv?-1:av>bv?1:0;
-        return mwgSizeSort.dir==='asc'?cmp:-cmp;
-    });
-    const tbody = document.getElementById('mwg-size-table-body');
-    tbody.innerHTML = rows.map(r => {
-        const arrow = expandedMwgSize.has(r.size) ? '▾' : '▸';
-        const rowHtml = `<tr>
-            <td><span class="shop-link" data-mwgsize="${escapeHtml(r.size)}" style="cursor:pointer;">${arrow} <span class="tag">Size ${escapeHtml(r.size)}</span></span></td>
-            <td class="num">${r.num_stores}</td>
-            <td class="num">${fmtInt(r.total_sellout)} máy</td>
-            <td class="num"><b>${fmtInt(r.avg_sellout)} máy</b></td>
-            <td class="num">${fmtVND(r.total_revenue)}</td>
-            <td class="num"><b>${fmtVND(r.avg_revenue)}</b></td>
-        </tr>`;
-        return rowHtml + (expandedMwgSize.has(r.size) ? shopListDetailHtml('Size ' + r.size, storesBySize[r.size] || [], 6) : '');
-    }).join('') + perfTotalRowHtml(rows, 'TỔNG (MWG)');
-    tbody.querySelectorAll('.shop-link').forEach(el => {
-        el.addEventListener('click', () => {
-            const key = el.dataset.mwgsize;
-            if (expandedMwgSize.has(key)) expandedMwgSize.delete(key);
-            else expandedMwgSize.add(key);
-            renderMwgSizeTable();
-        });
-    });
-    document.querySelectorAll('#mwg-size-table thead th').forEach(th => {
-        const base = th.textContent.replace(/[▲▼]/g,'').trim(); th.textContent = base;
-        if (th.dataset.field === mwgSizeSort.field || (th.dataset.field === 'size' && mwgSizeSort.field === 'size_order')) th.textContent = base + (mwgSizeSort.dir==='asc'?' ▲':' ▼');
-    });
-}
-document.querySelectorAll('#mwg-size-table thead th').forEach(th => {
-    th.addEventListener('click', () => {
-        let field = th.dataset.field;
-        if (field === 'size') field = 'size_order';
-        if (mwgSizeSort.field === field) mwgSizeSort.dir = mwgSizeSort.dir==='asc'?'desc':'asc';
-        else { mwgSizeSort.field = field; mwgSizeSort.dir = 'desc'; }
-        renderMwgSizeTable();
-    });
-});
-renderMwgSizeTable();
 
 } // end initDashboard
 
