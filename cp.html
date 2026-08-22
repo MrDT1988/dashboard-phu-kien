@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Chi phí — Quyết toán Partner 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root {
+    --bg: #f4f6f5;
+    --card-bg: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6c757d;
+    --border: #e6e9e8;
+    --oppo-green: #1E9E75;
+    --oppo-green-dark: #14646B;
+    --positive: #1BB350;
+    --negative: #dc3545;
+    --amber: #C98A1D;
+}
+* { box-sizing: border-box; }
+body {
+    margin:0; background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text-primary);
+}
+.header {
+    background: linear-gradient(135deg, var(--oppo-green-dark), var(--oppo-green));
+    color:#fff; padding: 22px 28px;
+}
+.header h1 { margin:0 0 4px 0; font-size:21px; font-weight:800; }
+.header .sub { font-size:12.5px; opacity:0.92; }
+.container { max-width: 1280px; margin: 0 auto; padding: 20px; }
+.month-filter-bar { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.month-filter-bar label { font-size:12.5px; font-weight:700; color:var(--text-secondary); }
+.month-filter-bar select {
+    padding:7px 12px; border-radius:8px; border:1px solid var(--border); background:#fff;
+    font-size:12.5px; font-weight:600; color:var(--text-primary); cursor:pointer;
+}
+.month-filter-bar select:focus { outline:none; border-color:var(--oppo-green); }
+.kpi-row { display:grid; grid-template-columns: repeat(5, 1fr); gap:14px; margin-bottom: 20px; }
+.kpi-card {
+    background: var(--card-bg); border-radius:10px; padding:16px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid var(--oppo-green);
+}
+.kpi-card.warn { border-left-color: var(--amber); }
+.kpi-label { font-size:11.5px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:6px; font-weight:700; }
+.kpi-value { font-size:22px; font-weight:800; color:var(--text-primary); margin-bottom:4px; }
+.kpi-sub { font-size:12px; color: var(--text-secondary); }
+.kpi-sub.positive { color: var(--positive); font-weight:600; }
+.kpi-sub.negative { color: var(--negative); font-weight:600; }
+
+.chart-row { display:grid; grid-template-columns: 1.3fr 1fr; gap:16px; margin-bottom:16px; }
+.chart-container {
+    background: var(--card-bg); border-radius:10px; padding:18px 18px 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.chart-container h3 { font-size:14.5px; font-weight:700; color: var(--text-primary); margin:0 0 4px 0; padding-left:11px; position:relative; }
+.chart-container h3::before { content:''; position:absolute; left:0; top:2px; bottom:2px; width:4px; border-radius:3px; background: var(--oppo-green); }
+.chart-container .chart-sub { font-size:12px; color:var(--text-secondary); margin-bottom:14px; }
+.chart-tall canvas { max-height: 320px; }
+.chart-canvas-wrap { position:relative; height:280px; margin-top:8px; }
+
+.table-section {
+    background: var(--card-bg); border-radius:10px; padding:18px; margin-bottom:16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.table-section h3 { font-size:14.5px; font-weight:700; margin:0 0 4px 0; padding-left:11px; position:relative; }
+.table-section h3::before { content:''; position:absolute; left:0; top:2px; bottom:2px; width:4px; border-radius:3px; background: var(--oppo-green); }
+.table-section .chart-sub { font-size:12px; color:var(--text-secondary); margin-bottom:12px; }
+
+.table-scroll { overflow-x:auto; }
+.data-table { width:100%; border-collapse:collapse; font-size:12.5px; white-space:nowrap; }
+.data-table th, .data-table td { padding:8px 10px; text-align:right; border-bottom:1px solid var(--border); }
+.data-table th:first-child, .data-table td:first-child { text-align:left; position:sticky; left:0; background:inherit; }
+.data-table thead th {
+    background:#F0F7F4; border-bottom:2px solid var(--oppo-green); color:var(--oppo-green-dark); font-weight:700; font-size:11px;
+    text-transform:uppercase; letter-spacing:0.3px;
+}
+.data-table tbody tr:hover { background:#FAFCFB; }
+.data-table tbody tr.row-total td { background:#EAF2F0; font-weight:800; color:var(--oppo-green-dark); border-top:2px solid var(--oppo-green); }
+.data-table tbody tr.row-sub td { color:var(--text-secondary); }
+.num { text-align:right; }
+
+.table-box-title { font-size:12.5px; font-weight:700; color:var(--oppo-green-dark); margin-bottom:8px; }
+.mini-ratio-table { font-size:11.5px; }
+.mini-ratio-table th, .mini-ratio-table td { padding:6px 8px; }
+.mini-ratio-table thead th { font-size:10px; }
+#profit-ratio-mini-table td, #profit-ratio-mini-table th { text-align:center; }
+#profit-ratio-mini-table th:first-child, #profit-ratio-mini-table td:first-child {
+    font-weight:700; color:var(--text-primary);
+}
+#profit-ratio-mini-table th:last-child, #profit-ratio-mini-table td:last-child {
+    background:#EAF2F0; color:var(--oppo-green-dark); font-weight:800; border-left:2px solid var(--oppo-green);
+}
+
+.month-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.month-tab {
+    padding:7px 16px; border-radius:20px; border:1px solid var(--border); background:#fff;
+    font-size:12.5px; font-weight:600; color:var(--text-secondary); cursor:pointer; user-select:none;
+}
+.month-tab.active { background: var(--oppo-green); border-color: var(--oppo-green); color:#fff; }
+.month-tab.empty { opacity:0.45; }
+.item-cat-group { margin-bottom:14px; }
+.item-cat-title {
+    font-size:12.5px; font-weight:700; color:var(--oppo-green-dark); background:#EAF2F0;
+    padding:6px 10px; border-radius:6px; margin-bottom:6px;
+}
+.item-row { display:flex; justify-content:space-between; padding:5px 10px; font-size:12.5px; border-bottom:1px dashed #eee; }
+.item-row .amt { font-weight:600; white-space:nowrap; margin-left:12px; }
+.item-cat-total { display:flex; justify-content:space-between; padding:5px 10px; font-size:12.5px; font-weight:700; color:var(--oppo-green-dark); }
+.empty-note { font-size:12.5px; color:var(--text-secondary); font-style:italic; padding:14px 4px; }
+
+.insight-box {
+    background:#FFF8EC; border:1px solid #F3E0B0; border-radius:10px; padding:14px 16px; margin-bottom:16px;
+    font-size:12.5px; color:#5c4a1a; line-height:1.6;
+}
+.insight-box b { color:#8a6a10; }
+
+.dashboard-footer { text-align:center; padding: 16px; font-size:11.5px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>Dashboard Chi phí — Quyết toán Partner 2026</h1>
+    <div class="sub">Doanh thu KPI · Cơ cấu chi phí · Lợi nhuận theo tháng — dữ liệu từ file "Quyết toán Partner" (Google Sheet)</div>
+</div>
+<div class="container">
+
+    <div class="month-filter-bar">
+        <label for="overview-month-filter">Xem tổng quan tháng:</label>
+        <select id="overview-month-filter"></select>
+    </div>
+
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="insight-box" id="insight-box"></div>
+
+    <div class="chart-container chart-tall" style="margin-bottom:16px;">
+        <h3>Doanh thu KPI · Chi phí · Lợi nhuận theo tháng</h3>
+        <div class="chart-canvas-wrap"><canvas id="chart-overview"></canvas></div>
+        <div class="table-scroll" style="margin-top:12px;">
+            <table class="data-table mini-ratio-table" id="profit-ratio-mini-table">
+                <thead><tr id="profit-ratio-mini-head"></tr></thead>
+                <tbody>
+                    <tr id="mini-row-revenue"></tr>
+                    <tr id="mini-row-cost"></tr>
+                    <tr id="mini-row-profit"></tr>
+                    <tr id="mini-row-pct"></tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top:16px;">
+            <div class="table-box-title">Quyết toán thuế 2026</div>
+            <div class="chart-sub" style="margin-bottom:8px;">Luỹ kế mới nhất tính đến Tháng 7.</div>
+            <div class="chart-row" style="margin-bottom:0;">
+                <div>
+                    <div class="table-scroll">
+                        <table class="data-table mini-ratio-table" id="tax-monthly-table">
+                            <thead><tr><th>Tháng</th><th>Nội dung ứng thuế</th><th class="num">Ứng thuế</th><th class="num">Số tiền (lương ảo)</th><th class="num">Chi phí (lương ảo)</th></tr></thead>
+                            <tbody id="tax-monthly-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <div class="table-scroll">
+                        <table class="data-table mini-ratio-table" id="tax-quarterly-table">
+                            <thead><tr><th>Quý</th><th class="num">Thuế TNDN tạm tính</th><th class="num">Thuế GTGT</th><th class="num">Thuế TNCN</th></tr></thead>
+                            <tbody id="tax-quarterly-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <h3>Bảng tổng hợp Quyết toán 2026 theo tháng</h3>
+        <div class="chart-sub">Nguồn: bảng "QUYẾT TOÁN 2026" trên Google Sheet. Các tháng chưa có dữ liệu hiển thị "–".</div>
+        <div class="table-scroll">
+            <table class="data-table" id="summary-table">
+                <thead><tr id="summary-table-head"></tr></thead>
+                <tbody id="summary-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <h3>Chi tiết khoản mục chi phí theo tháng</h3>
+        <div class="chart-sub">Bấm chọn tháng để xem từng khoản mục chi tiết (không gồm Lương &amp; tạm ứng NV — số này lấy nguyên từ hệ thống HR, không tách khoản mục trên sheet).</div>
+        <div class="month-tabs" id="item-month-tabs"></div>
+        <div id="item-detail-body"></div>
+    </div>
+
+    <div class="dashboard-footer" id="dashboard-footer-text"></div>
+</div>
+
+<script>
+const CHART_OK = (typeof Chart !== 'undefined');
+if (CHART_OK) {
+    Chart.register(ChartDataLabels);
+    Chart.defaults.set('plugins.datalabels', { display: false });
+}
+
+// ================= DATA (snapshot từ Google Sheet "Quyết toán Partner", tab 2026, đọc ngày 2026-08-15) =================
+const MONTH_LABELS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+
+const SUMMARY = [
+{"kpi_phone": 2527158680, "kpi_iot": 26344480, "cac_khoan_thuong": 381453902, "ck_hub": 16633000, "ck_sau_benco_wintel": 1089000, "total_kpi": 2952679062, "hr_code": 2038970293, "chi_phi_co_dinh": 23000000, "cac_ctbh": 37850000, "ho_tro_kd": 53500000, "thuong_nv_target": 74900000, "thue_cp_khac": 268761577, "total_chi_phi": 2496981870, "loi_nhuan": 455697192, "rsm": 182278877, "rm": 273418315, "loi_nhuan_dt_pct": 15.0, "du_kien_thue": 127595214},
+{"kpi_phone": 2555077923, "kpi_iot": 30697332, "cac_khoan_thuong": 148325000, "ck_hub": 12569195, "ck_sau_benco_wintel": 20520000, "total_kpi": 2767189450, "hr_code": 1979504901, "chi_phi_co_dinh": 23000000, "cac_ctbh": 42200000, "ho_tro_kd": 11337000, "thuong_nv_target": 35860000, "thue_cp_khac": 171000000, "total_chi_phi": 2262901901, "loi_nhuan": 504287549, "rsm": 201715020, "rm": 302572529, "loi_nhuan_dt_pct": 18.0, "du_kien_thue": 141200514},
+{"kpi_phone": 2038084000, "kpi_iot": 26624000, "cac_khoan_thuong": 93888000, "ck_hub": 7820000, "ck_sau_benco_wintel": 10810000, "total_kpi": 2177226000, "hr_code": 1637748066, "chi_phi_co_dinh": 25000000, "cac_ctbh": 59330000, "ho_tro_kd": 0, "thuong_nv_target": 0, "thue_cp_khac": 139000000, "total_chi_phi": 1713966676, "loi_nhuan": 463259324, "rsm": 185303730, "rm": 277955594, "loi_nhuan_dt_pct": 21.0, "du_kien_thue": 129712611},
+{"kpi_phone": 1850451320, "kpi_iot": 27612344, "cac_khoan_thuong": 76590500, "ck_hub": 11094336, "ck_sau_benco_wintel": 1300000, "total_kpi": 1967048500, "hr_code": 1469187214, "chi_phi_co_dinh": 25000000, "cac_ctbh": 56400000, "ho_tro_kd": 9700000, "thuong_nv_target": 12100000, "thue_cp_khac": 276320116, "total_chi_phi": 1848707330, "loi_nhuan": 118341170, "rsm": 23668234, "rm": 94672936, "loi_nhuan_dt_pct": 6.0, "du_kien_thue": 33135528},
+{"kpi_phone": 2239033640, "kpi_iot": 32943040, "cac_khoan_thuong": 197457000, "ck_hub": 16156188, "ck_sau_benco_wintel": 1080000, "total_kpi": 2486669868, "hr_code": 1815462246, "chi_phi_co_dinh": 25000000, "cac_ctbh": 86176900, "ho_tro_kd": 12075000, "thuong_nv_target": 14000000, "thue_cp_khac": 172000000, "total_chi_phi": 2124714146, "loi_nhuan": 361955722, "rsm": 72391144, "rm": 289564578, "loi_nhuan_dt_pct": 15.0, "du_kien_thue": 90488931},
+{"kpi_phone": 1726477600, "kpi_iot": 17019000, "cac_khoan_thuong": 140285000, "ck_hub": 11970464, "ck_sau_benco_wintel": 1080000, "total_kpi": 1896832064, "hr_code": 1502457780, "chi_phi_co_dinh": 25000000, "cac_ctbh": 82320000, "ho_tro_kd": 18000000, "thuong_nv_target": 23750000, "thue_cp_khac": 65000000, "total_chi_phi": 1716527780, "loi_nhuan": 180304284, "rsm": 36060857, "rm": 144243427, "loi_nhuan_dt_pct": 10.0, "du_kien_thue": 45076071},
+{"kpi_phone": 1763868560, "kpi_iot": 30299100, "cac_khoan_thuong": 124670000, "ck_hub": 11129536, "ck_sau_benco_wintel": 2308955, "total_kpi": 1932276151, "hr_code": 1513238326, "chi_phi_co_dinh": 25000000, "cac_ctbh": 31555820, "ho_tro_kd": 19000000, "thuong_nv_target": 15000000, "thue_cp_khac": 86000000, "total_chi_phi": 1689794146, "loi_nhuan": 242482005, "rsm": 48496401, "rm": 193985604, "loi_nhuan_dt_pct": 13.0, "du_kien_thue": 60620501}
+];
+
+const ITEMS = {"1": [{"content": "Thuê văn phòng", "amount": 13000000, "cat": "chi_phi_co_dinh"}, {"content": "Văn phòng phí", "amount": 5000000, "cat": "chi_phi_co_dinh"}, {"content": "Lương chị Thoa kế toán", "amount": 3000000, "cat": "chi_phi_co_dinh"}, {"content": "Tiền mua số ngày MWG", "amount": 2000000, "cat": "chi_phi_co_dinh"}, {"content": "Thi đua trên G family", "amount": 4000000, "cat": "cac_ctbh"}, {"content": "FPT no PGs ( 34 máy )", "amount": 2050000, "cat": "cac_ctbh"}, {"content": "Viettel thưởng số tổng ( 144 máy )", "amount": 4000000, "cat": "cac_ctbh"}, {"content": "ĐMCL No PGs ( 55 máy )", "amount": 3300000, "cat": "cac_ctbh"}, {"content": "ĐMX No PGs ( 418 )", "amount": 24500000, "cat": "cac_ctbh"}, {"content": "D.C No PGs", "amount": 0, "cat": "cac_ctbh"}, {"content": "Chương trình khác", "amount": 0, "cat": "cac_ctbh"}, {"content": "Chương trình khác", "amount": 0, "cat": "cac_ctbh"}, {"content": "Event mở bán MWG ( 4 shop )", "amount": 16500000, "cat": "ho_tro_kd"}, {"content": "Roadshow R15", "amount": 8000000, "cat": "ho_tro_kd"}, {"content": "POSM ( phướn , stadee led .. )", "amount": 29000000, "cat": "ho_tro_kd"}, {"content": "Thưởng bonus PGs hoàn thành target", "amount": 13480000, "cat": "thuong_nv_target"}, {"content": "Thưởng bonus sale team hoàn thành target", "amount": 61420000, "cat": "thuong_nv_target"}, {"content": "Tạm ứng thuế TNDN", "amount": 0, "cat": "thue_cp_khac"}, {"content": "Đóng thuế GTGT & TNCN Q4.25", "amount": 261911577, "cat": "thue_cp_khac"}, {"content": "Lương ảo cho NV T1.26 60M", "amount": 6850000, "cat": "thue_cp_khac"}, {"content": "Mua hoá đơn T1.26", "amount": 0, "cat": "thue_cp_khac"}], "2": [{"content": "Thuê văn phòng", "amount": 13000000, "cat": "chi_phi_co_dinh"}, {"content": "Văn phòng phí", "amount": 5000000, "cat": "chi_phi_co_dinh"}, {"content": "Lương chị Thoa kế toán", "amount": 3000000, "cat": "chi_phi_co_dinh"}, {"content": "Tiền mua số liệu ngày MWG", "amount": 2000000, "cat": "chi_phi_co_dinh"}, {"content": "Thi đua trên G family", "amount": 4000000, "cat": "cac_ctbh"}, {"content": "FPT no PGs ( 100 máy )", "amount": 5000000, "cat": "cac_ctbh"}, {"content": "Viettel thưởng số tổng ( 160 máy )", "amount": 3000000, "cat": "cac_ctbh"}, {"content": "ĐMCL No PGs ( 93 máy )", "amount": 4650000, "cat": "cac_ctbh"}, {"content": "ĐMX No PGs ( 478 )", "amount": 25550000, "cat": "cac_ctbh"}, {"content": "D.C No PGs", "amount": 0, "cat": "cac_ctbh"}, {"content": "Chương trình khác", "amount": 0, "cat": "cac_ctbh"}, {"content": "Chương trình khác", "amount": 0, "cat": "cac_ctbh"}, {"content": "Event  ( TGDĐ An Hữu , Trọng Nghĩa )", "amount": 7000000, "cat": "ho_tro_kd"}, {"content": "Roadshow R15", "amount": 0, "cat": "ho_tro_kd"}, {"content": "POSM ( phướn , stadee led .. )", "amount": 4337000, "cat": "ho_tro_kd"}, {"content": "Thưởng bonus PGs hoàn thành target", "amount": 35860000, "cat": "thuong_nv_target"}, {"content": "Thưởng bonus sale team hoàn thành target", "amount": 0, "cat": "thuong_nv_target"}, {"content": "Tạm ứng thuế TNDN", "amount": 150000000, "cat": "thue_cp_khac"}, {"content": "Đóng thuế GTGT & TNCN Q1.26", "amount": 0, "cat": "thue_cp_khac"}, {"content": "Lương ảo cho NV T2.26 210M", "amount": 21000000, "cat": "thue_cp_khac"}, {"content": "Mua hoá đơn T2.26", "amount": 0, "cat": "thue_cp_khac"}], "3": [{"content": "Thuê văn phòng", "amount": 15000000, "cat": "chi_phi_co_dinh"}, {"content": "Văn phòng phí", "amount": 5000000, "cat": "chi_phi_co_dinh"}, {"content": "Lương chị Thoa kế toán", "amount": 3000000, "cat": "chi_phi_co_dinh"}, {"content": "Tiền mua số liệu ngày MWG", "amount": 2000000, "cat": "chi_phi_co_dinh"}, {"content": "Thi đua trên G family", "amount": 4000000, "cat": "cac_ctbh"}, {"content": "FPT no PGs ( 160 máy )", "amount": 16000000, "cat": "cac_ctbh"}, {"content": "Viettel thưởng số tổng ( 160 máy )", "amount": 0, "cat": "cac_ctbh"}, {"content": "ĐMCL No PGs ( 182 máy )", "amount": 18200000, "cat": "cac_ctbh"}, {"content": "ĐMX No PGs PK 7 - 20M", "amount": 21130000, "cat": "cac_ctbh"}, {"content": "D.C No PGs", "amount": 0, "cat": "cac_ctbh"}, {"content": "Chương trình khác", "amount": 0, "cat": "cac_ctbh"}, {"content": "Chương trình khác", "amount": 0, "cat": "cac_ctbh"}, {"content": "Event", "amount": 0, "cat": "ho_tro_kd"}, {"content": "Roadshow R15", "amount": 0, "cat": "ho_tro_kd"}, {"content": "POSM ( phướn , stadee led .. )", "amount": 0, "cat": "ho_tro_kd"}, {"content": "Thưởng bonus PGs hoàn thành target", "amount": 0, "cat": "thuong_nv_target"}, {"content": "Thưởng bonus sale team hoàn thành target", "amount": 0, "cat": "thuong_nv_target"}, {"content": "Tạm ứng thuế TNDN", "amount": 120000000, "cat": "thue_cp_khac"}, {"content": "Đóng thuế GTGT & TNCN Q2.26", "amount": 0, "cat": "thue_cp_khac"}, {"content": "Lương ảo cho NV T3.26 190M", "amount": 19000000, "cat": "thue_cp_khac"}, {"content": "Mua hoá đơn T3.26", "amount": 0, "cat": "thue_cp_khac"}], "4": [{"content": "Thuê văn phòng", "amount": 15000000, "cat": "chi_phi_co_dinh"}, {"content": "Văn phòng phí", "amount": 5000000, "cat": "chi_phi_co_dinh"}, {"content": "Lương chị Thoa kế toán", "amount": 3000000, "cat": "chi_phi_co_dinh"}, {"content": "Tiền mua số liệu ngày MWG", "amount": 2000000, "cat": "chi_phi_co_dinh"}, {"content": "Thi đua trên G family", "amount": 4000000, "cat": "cac_ctbh"}, {"content": "FPT no PGs ( 126máy )", "amount": 12600000, "cat": "cac_ctbh"}, {"content": "Viettel thưởng số tổng ( 160 máy )", "amount": 0, "cat": "cac_ctbh"}, {"content": "ĐMCL No PGs ( 191 máy )", "amount": 19100000, "cat": "cac_ctbh"}, {"content": "ĐMX No PGs PK 7 - 20M", "amount": 20700000, "cat": "cac_ctbh"}, {"content": "D.C No PGs", "amount": 0, "cat": "cac_ctbh"}, {"content": "Chương trình khác", "amount": 0, "cat": "cac_ctbh"}, {"content": "Chương trình khác", "amount": 0, "cat": "cac_ctbh"}, {"content": "Event", "amount": 0, "cat": "ho_tro_kd"}, {"content": "Roadshow FindX9", "amount": 5200000, "cat": "ho_tro_kd"}, {"content": "POSM ( phướn , stadee led .. )", "amount": 4500000, "cat": "ho_tro_kd"}, {"content": "Thưởng bonus PGs hoàn thành target", "amount": 8100000, "cat": "thuong_nv_target"}, {"content": "Thưởng bonus sale team hoàn thành target", "amount": 4000000, "cat": "thuong_nv_target"}, {"content": "Tạm ứng thuế TNDN", "amount": 0, "cat": "thue_cp_khac"}, {"content": "Đóng thuế GTGT & TNCN Q1.26", "amount": 257320116, "cat": "thue_cp_khac"}, {"content": "Lương ảo cho NV T4.26 190M", "amount": 19000000, "cat": "thue_cp_khac"}, {"content": "Mua hoá đơn T4.26", "amount": 0, "cat": "thue_cp_khac"}], "5": [{"content": "Thuê văn phòng", "amount": 15000000, "cat": "chi_phi_co_dinh"}, {"content": "Văn phòng phí", "amount": 5000000, "cat": "chi_phi_co_dinh"}, {"content": "Lương chị Thoa kế toán", "amount": 3000000, "cat": "chi_phi_co_dinh"}, {"content": "Tiền mua số liệu ngày MWG", "amount": 2000000, "cat": "chi_phi_co_dinh"}, {"content": "Thi đua trên G family", "amount": 4000000, "cat": "cac_ctbh"}, {"content": "FPT no PGs ( 134máy )", "amount": 13400000, "cat": "cac_ctbh"}, {"content": "Viettel thưởng số tổng ( 124 máy )", "amount": 0, "cat": "cac_ctbh"}, {"content": "ĐMCL No PGs ( 96 máy )", "amount": 9600000, "cat": "cac_ctbh"}, {"content": "ĐMX No PGs PK 7 - 20M", "amount": 19176900, "cat": "cac_ctbh"}, {"content": "D.C No PGs", "amount": 0, "cat": "cac_ctbh"}, {"content": "Mua PMH MWG 20M", "amount": 20000000, "cat": "cac_ctbh"}, {"content": "Chạy CT Deal 200 R15 Long Hưng", "amount": 20000000, "cat": "cac_ctbh"}, {"content": "Event", "amount": 0, "cat": "ho_tro_kd"}, {"content": "Roadshow MWG theo miền", "amount": 3375000, "cat": "ho_tro_kd"}, {"content": "POSM ( phướn , stadee led .. )", "amount": 8700000, "cat": "ho_tro_kd"}, {"content": "Thưởng bonus PGs hoàn thành target", "amount": 9000000, "cat": "thuong_nv_target"}, {"content": "Thưởng bonus sale team hoàn thành target", "amount": 5000000, "cat": "thuong_nv_target"}, {"content": "Tạm ứng thuế TNDN", "amount": 150000000, "cat": "thue_cp_khac"}, {"content": "Đóng thuế GTGT & TNCN Q2.26", "amount": 0, "cat": "thue_cp_khac"}, {"content": "Lương ảo cho NV T5.26 220M", "amount": 22000000, "cat": "thue_cp_khac"}, {"content": "Mua hoá đơn T5.26", "amount": 0, "cat": "thue_cp_khac"}], "6": [{"content": "Thuê văn phòng", "amount": 15000000, "cat": "chi_phi_co_dinh"}, {"content": "Văn phòng phí", "amount": 5000000, "cat": "chi_phi_co_dinh"}, {"content": "Lương chị Thoa kế toán", "amount": 3000000, "cat": "chi_phi_co_dinh"}, {"content": "Tiền mua số liệu ngày MWG", "amount": 2000000, "cat": "chi_phi_co_dinh"}, {"content": "Thi đua trên G family", "amount": 4000000, "cat": "cac_ctbh"}, {"content": "FPT no PGs ( 144máy )", "amount": 14400000, "cat": "cac_ctbh"}, {"content": "Viettel thưởng số tổng ( 107 máy )", "amount": 0, "cat": "cac_ctbh"}, {"content": "ĐMCL No PGs ( 56 máy )", "amount": 5600000, "cat": "cac_ctbh"}, {"content": "ĐMX No PGs PK 7 - 20M", "amount": 14320000, "cat": "cac_ctbh"}, {"content": "D.C No PGs", "amount": 0, "cat": "cac_ctbh"}, {"content": "Hội nghị đại lý R16", "amount": 20000000, "cat": "cac_ctbh"}, {"content": "Bù lương sale IND", "amount": 24000000, "cat": "cac_ctbh"}, {"content": "Event", "amount": 0, "cat": "ho_tro_kd"}, {"content": "Roadshow R16", "amount": 6000000, "cat": "ho_tro_kd"}, {"content": "POSM ( phướn , stadee led .. )", "amount": 12000000, "cat": "ho_tro_kd"}, {"content": "Thưởng bonus PGs hoàn thành target FindX9", "amount": 23750000, "cat": "thuong_nv_target"}, {"content": "Thưởng bonus sale team hoàn thành target", "amount": 0, "cat": "thuong_nv_target"}, {"content": "Tạm ứng thuế TNDN", "amount": 50000000, "cat": "thue_cp_khac"}, {"content": "Đóng thuế GTGT & TNCN Q2.26", "amount": 0, "cat": "thue_cp_khac"}, {"content": "Lương ảo cho NV T5.26 155M", "amount": 15000000, "cat": "thue_cp_khac"}, {"content": "Mua hoá đơn T5.26", "amount": 0, "cat": "thue_cp_khac"}], "7": [{"content": "Thuê văn phòng", "amount": 15000000, "cat": "chi_phi_co_dinh"}, {"content": "Văn phòng phí", "amount": 5000000, "cat": "chi_phi_co_dinh"}, {"content": "Lương chị Thoa kế toán", "amount": 3000000, "cat": "chi_phi_co_dinh"}, {"content": "Tiền mua số liệu ngày MWG", "amount": 2000000, "cat": "chi_phi_co_dinh"}, {"content": "Thi đua trên G family", "amount": 4000000, "cat": "cac_ctbh"}, {"content": "FPT no PGs ( 65 máy )", "amount": 5900000, "cat": "cac_ctbh"}, {"content": "Viettel thưởng số tổng ( 107 máy )", "amount": 0, "cat": "cac_ctbh"}, {"content": "ĐMCL No PGs ( 56 máy )", "amount": 3650000, "cat": "cac_ctbh"}, {"content": "ĐMX No PGs PK 7 - 20M", "amount": 11860000, "cat": "cac_ctbh"}, {"content": "D.C No PGs", "amount": 0, "cat": "cac_ctbh"}, {"content": "Hội nghị đại lý R16", "amount": 0, "cat": "cac_ctbh"}, {"content": "Bù lương sale IND", "amount": 6145820, "cat": "cac_ctbh"}, {"content": "Quỹ miền nam", "amount": 5000000, "cat": "ho_tro_kd"}, {"content": "Roadshow R16", "amount": 6000000, "cat": "ho_tro_kd"}, {"content": "POSM ( phướn , stadee led .. )", "amount": 8000000, "cat": "ho_tro_kd"}, {"content": "Thưởng bonus PGs hoàn thành target R16", "amount": 15000000, "cat": "thuong_nv_target"}, {"content": "Thưởng bonus sale team hoàn thành target", "amount": 0, "cat": "thuong_nv_target"}, {"content": "Tạm ứng thuế TNDN", "amount": 70000000, "cat": "thue_cp_khac"}, {"content": "Đóng thuế GTGT & TNCN Q2.26", "amount": 0, "cat": "thue_cp_khac"}, {"content": "Lương ảo cho NV T5.26 162M", "amount": 16000000, "cat": "thue_cp_khac"}, {"content": "Mua hoá đơn T6.26", "amount": 0, "cat": "thue_cp_khac"}]};
+
+// Quyết toán thuế 2026 — bảng ứng thuế + lương ảo NV theo tháng, và bảng thuế phải đóng theo quý (số mới nhất, lấy từ khối T6/2026 — bảng này là số luỹ kế nên tháng sau luôn có bản đầy đủ nhất)
+const TAX_MONTHLY = [{"m": 1, "ung_thue_note": "Thuế TNDN & Thuế TNCN Q4.25", "ung_thue": 261911577, "luong_ao_so_tien": 60000000, "luong_ao_chi_phi": 6850000}, {"m": 2, "ung_thue_note": "Thuế TNDN tạm tính", "ung_thue": 150000000, "luong_ao_so_tien": 210000000, "luong_ao_chi_phi": 21000000}, {"m": 3, "ung_thue_note": "Thuế TNDN tạm tính", "ung_thue": 120000000, "luong_ao_so_tien": 190000000, "luong_ao_chi_phi": 19000000}, {"m": 4, "ung_thue_note": "Thuế TNDN & Thuế TNCN Q1.26", "ung_thue": 257320116, "luong_ao_so_tien": 190000000, "luong_ao_chi_phi": 19000000}, {"m": 5, "ung_thue_note": "Thuế TNDN tạm tính", "ung_thue": 150000000, "luong_ao_so_tien": 220000000, "luong_ao_chi_phi": 22000000}, {"m": 6, "ung_thue_note": "Thuế TNDN tạm tính", "ung_thue": 50000000, "luong_ao_so_tien": 154000000, "luong_ao_chi_phi": 15000000}, {"m": 7, "ung_thue_note": "Thuế TNDN tạm tính", "ung_thue": 70000000, "luong_ao_so_tien": 162000000, "luong_ao_chi_phi": 16000000}];
+const TAX_MONTHLY_TOTAL = {"ung_thue": 797320116, "luong_ao_so_tien": 1186000000, "luong_ao_chi_phi": 118850000};
+const TAX_QUARTERLY = [{"q": "Q1.26", "tndn": 340945558, "tndn_da_chi": 270000000, "gtgt": 235569383, "gtgt_da_chi": 235569383, "tncn": 21750733, "tncn_da_chi": 21750733}, {"q": "Q2.26", "tndn": 270000000, "tndn_da_chi": 270000000, "gtgt": null, "gtgt_da_chi": null, "tncn": null, "tncn_da_chi": null}, {"q": "Q3.26", "tndn": null, "tndn_da_chi": null, "gtgt": null, "gtgt_da_chi": null, "tncn": null, "tncn_da_chi": null}, {"q": "Q4.26", "tndn": null, "tndn_da_chi": null, "gtgt": null, "gtgt_da_chi": null, "tncn": null, "tncn_da_chi": null}];
+const TAX_QUARTERLY_TOTAL = {"so_tien": 868265674, "da_chi": 797320116, "con_lai": -70945558};
+
+const CAT_LABELS = {
+    hr_code: 'Lương & tạm ứng NV (HR CODE)',
+    chi_phi_co_dinh: 'Chi phí cố định',
+    cac_ctbh: 'Các chương trình bán hàng',
+    ho_tro_kd: 'Hỗ trợ kinh doanh',
+    thuong_nv_target: 'Thưởng NV hoàn thành target',
+    thue_cp_khac: 'Thuế & chi phí khác'
+};
+const CAT_COLORS = {
+    hr_code: '#14646B',
+    chi_phi_co_dinh: '#8a9a97',
+    cac_ctbh: '#1E9E75',
+    ho_tro_kd: '#4FBF8B',
+    thuong_nv_target: '#C98A1D',
+    thue_cp_khac: '#dc3545'
+};
+const CAT_ORDER = ['hr_code','chi_phi_co_dinh','cac_ctbh','ho_tro_kd','thuong_nv_target','thue_cp_khac'];
+
+function fmtVND(v) {
+    if (v === null || v === undefined) return '–';
+    const sign = v < 0 ? '-' : '';
+    const av = Math.abs(v);
+    if (av >= 1e9) return sign + (av/1e9).toLocaleString('vi-VN', {maximumFractionDigits:2}) + 'B';
+    if (av >= 1e6) return sign + (av/1e6).toLocaleString('vi-VN', {maximumFractionDigits:1}) + 'M';
+    return sign + av.toLocaleString('vi-VN') + ' đ';
+}
+function fmtFull(v) { return Math.round(v).toLocaleString('vi-VN') + ' đ'; }
+function fmtPct(v) { return v.toFixed(1) + '%'; }
+
+// ================= Số tháng có dữ liệu thật (loại các tháng toàn số 0 do sheet chưa nhập) =================
+const activeMonthIdx = SUMMARY.map((r,i) => i).filter(i => SUMMARY[i].total_kpi > 0);
+const latestIdx = activeMonthIdx[activeMonthIdx.length - 1];
+const prevIdx = activeMonthIdx.length > 1 ? activeMonthIdx[activeMonthIdx.length - 2] : null;
+// Đủ 12 tháng — dùng cho chart/bảng để hiện luôn cả các tháng chưa có số liệu (để trống), thay vì ẩn hẳn cột đó đi
+const ALL_MONTH_IDX = Array.from({length:12}, (_,i)=>i);
+function monthVal(i, key) { return (i < SUMMARY.length) ? SUMMARY[i][key] : null; }
+
+function pctChange(cur, prev) {
+    if (prev === null || prev === undefined || prev === 0) return null;
+    return (cur - prev) / prev * 100;
+}
+function trendHtml(cur, prev, label, higherIsBetter) {
+    const d = pctChange(cur, prev);
+    if (d === null) return `<div class="kpi-sub">${label}</div>`;
+    const good = higherIsBetter ? d >= 0 : d <= 0;
+    const cls = good ? 'positive' : 'negative';
+    const arrow = d >= 0 ? '▲' : '▼';
+    return `<div class="kpi-sub ${cls}">${arrow} ${Math.abs(d).toFixed(1)}% so với ${label}</div>`;
+}
+
+// ================= Bộ lọc tháng cho phần Tổng quan =================
+let selectedOverviewMonth = latestIdx; // 0-based index, mặc định tháng mới nhất có dữ liệu
+function renderMonthFilter() {
+    const el = document.getElementById('overview-month-filter');
+    el.innerHTML = ALL_MONTH_IDX.map(i => {
+        const has = i < SUMMARY.length;
+        return `<option value="${i}" ${!has ? 'disabled' : ''} ${i===selectedOverviewMonth?'selected':''}>${MONTH_LABELS[i]}${has?'':' (chưa có dữ liệu)'}</option>`;
+    }).join('');
+    el.onchange = () => {
+        selectedOverviewMonth = Number(el.value);
+        renderKpiCards();
+    };
+}
+
+// ================= KPI cards =================
+function renderKpiCards() {
+    const idx = selectedOverviewMonth;
+    const cur = SUMMARY[idx];
+    const prevIdxForCard = idx > 0 && idx - 1 < SUMMARY.length ? idx - 1 : null;
+    const prev = prevIdxForCard !== null ? SUMMARY[prevIdxForCard] : null;
+    const prevLabel = prevIdxForCard !== null ? MONTH_LABELS[prevIdxForCard] : '';
+    // Luỹ kế TÍNH TỪ ĐẦU NĂM ĐẾN đúng tháng đang chọn (không phải luôn luôn tất cả các tháng có dữ liệu)
+    const cumIdx = activeMonthIdx.filter(i => i <= idx);
+    const ytdKpi = cumIdx.reduce((s,i)=>s+SUMMARY[i].total_kpi,0);
+    const ytdLn = cumIdx.reduce((s,i)=>s+SUMMARY[i].loi_nhuan,0);
+    const ytdMargin = ytdKpi > 0 ? ytdLn/ytdKpi*100 : 0;
+
+    const cards = [
+        { label: `Doanh thu KPI — ${MONTH_LABELS[idx]}`, value: fmtVND(cur.total_kpi), sub: trendHtml(cur.total_kpi, prev?prev.total_kpi:null, prevLabel, true), warn:false },
+        { label: `Tổng chi phí — ${MONTH_LABELS[idx]}`, value: fmtVND(cur.total_chi_phi), sub: trendHtml(cur.total_chi_phi, prev?prev.total_chi_phi:null, prevLabel, false), warn:false },
+        { label: `Lợi nhuận — ${MONTH_LABELS[idx]}`, value: fmtVND(cur.loi_nhuan), sub: trendHtml(cur.loi_nhuan, prev?prev.loi_nhuan:null, prevLabel, true), warn:false },
+        { label: `% Lợi nhuận / DT — ${MONTH_LABELS[idx]}`, value: fmtPct(cur.loi_nhuan_dt_pct), sub: `<div class="kpi-sub">Dự kiến thuế: ${fmtVND(cur.du_kien_thue)}</div>`, warn: cur.loi_nhuan_dt_pct < 10 },
+        { label: `Luỹ kế đến ${MONTH_LABELS[idx]}`, value: fmtVND(ytdLn), sub: `<div class="kpi-sub">Lợi nhuận / ${fmtVND(ytdKpi)} DT (${ytdMargin.toFixed(1)}%)</div>`, warn:false },
+    ];
+    document.getElementById('kpi-row').innerHTML = cards.map(c => `
+        <div class="kpi-card${c.warn?' warn':''}">
+            <div class="kpi-label">${c.label}</div>
+            <div class="kpi-value">${c.value}</div>
+            ${c.sub}
+        </div>
+    `).join('');
+
+    // Insight: tỷ trọng lương/tổng chi phí — nhóm chi phí lớn nhất, đây là điểm cần quản trị viên chú ý
+    const hrShare = cur.hr_code / cur.total_chi_phi * 100;
+    document.getElementById('insight-box').innerHTML =
+        `<b>Nhận định nhanh (${MONTH_LABELS[idx]}):</b> Lương &amp; tạm ứng NV (HR CODE) chiếm <b>${hrShare.toFixed(1)}%</b> tổng chi phí (${fmtVND(cur.hr_code)} / ${fmtVND(cur.total_chi_phi)}) — đây luôn là khoản lớn nhất, biến động của nó quyết định phần lớn biến động lợi nhuận. `
+        + `Phần chi phí "quản trị được" (chương trình bán hàng + hỗ trợ kinh doanh + thưởng NV, không tính lương &amp; thuế) tháng này là <b>${fmtVND(cur.cac_ctbh + cur.ho_tro_kd + cur.thuong_nv_target)}</b>, chiếm ${((cur.cac_ctbh+cur.ho_tro_kd+cur.thuong_nv_target)/cur.total_chi_phi*100).toFixed(1)}% tổng chi phí — đây là phần có thể tối ưu ngân sách chủ động theo tháng.`;
+}
+
+// ================= Chart 1: Overview (KPI, Chi phí, Lợi nhuận) =================
+let chartOverview = null;
+function renderOverviewChart() {
+    const labels = ALL_MONTH_IDX.map(i => MONTH_LABELS[i]);
+    const kpiData = ALL_MONTH_IDX.map(i => monthVal(i,'total_kpi'));
+    const cpData = ALL_MONTH_IDX.map(i => monthVal(i,'total_chi_phi'));
+    const lnData = ALL_MONTH_IDX.map(i => monthVal(i,'loi_nhuan'));
+    if (chartOverview) chartOverview.destroy();
+    chartOverview = new Chart(document.getElementById('chart-overview').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { type:'bar', label:'Doanh thu KPI', data: kpiData, backgroundColor:'#1E9E75', borderRadius:4, order:2,
+                  datalabels: { display:true, color:'#fff', anchor:'end', align:'bottom', offset:6, font:{size:9, weight:'700'}, formatter: v => v===null ? null : fmtVND(v) } },
+                { type:'bar', label:'Tổng chi phí', data: cpData, backgroundColor:'#9aa5a2', borderRadius:4, order:2,
+                  datalabels: { display:true, color:'#495057', anchor:'end', align:'top', offset:-4, font:{size:9, weight:'700'}, formatter: v => v===null ? null : fmtVND(v) } },
+                { type:'line', label:'Lợi nhuận sau chi phí', data: lnData, borderColor:'#dc3545', backgroundColor:'#dc3545', borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#dc3545', tension:0.3, order:1,
+                  datalabels: { display:true, align:'top', offset:8, color:'#dc3545', font:{size:10, weight:'700'}, formatter: v => v===null ? null : fmtVND(v) } },
+            ]
+        },
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            layout: { padding: { top:24 } },
+            plugins: {
+                legend: { display:true, position:'bottom', labels: { boxWidth:12, boxHeight:12, padding:16, usePointStyle:false, font:{size:11.5, weight:'600'}, color:'#495057' } },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmtFull(c.parsed.y) } },
+            },
+            scales: {
+                x: { display:false, grid:{display:false} },
+                y: { display:false, beginAtZero:true, grid:{display:false} },
+            },
+        }
+    });
+}
+
+// ================= Bảng mini tỉ lệ lợi nhuận (dưới chart-overview) =================
+function renderProfitRatioMiniTable() {
+    const head = document.getElementById('profit-ratio-mini-head');
+    head.innerHTML = '<th>Chỉ tiêu</th>' + ALL_MONTH_IDX.map(i => `<th>${MONTH_LABELS[i]}</th>`).join('') + '<th>Tổng 2026</th>';
+
+    const sumKpi = activeMonthIdx.reduce((s,i)=>s+SUMMARY[i].total_kpi,0);
+    const sumLn = activeMonthIdx.reduce((s,i)=>s+SUMMARY[i].loi_nhuan,0);
+    const rows = [
+        { id:'mini-row-revenue', label:'Doanh thu', key:'total_kpi', fmt:fmtVND,
+          total: () => fmtVND(activeMonthIdx.reduce((s,i)=>s+SUMMARY[i].total_kpi,0)) },
+        { id:'mini-row-cost', label:'Chi Phí', key:'total_chi_phi', fmt:fmtVND,
+          total: () => fmtVND(activeMonthIdx.reduce((s,i)=>s+SUMMARY[i].total_chi_phi,0)) },
+        { id:'mini-row-profit', label:'Lợi nhuận', key:'loi_nhuan', fmt:fmtVND,
+          total: () => fmtVND(sumLn) },
+        { id:'mini-row-pct', label:'% LN / DT', key:'loi_nhuan_dt_pct', fmt:fmtPct,
+          total: () => fmtPct(sumKpi > 0 ? (sumLn / sumKpi * 100) : 0) },
+    ];
+    rows.forEach(row => {
+        const el = document.getElementById(row.id);
+        const cells = ALL_MONTH_IDX.map(i => {
+            const v = monthVal(i, row.key);
+            return `<td>${v===null ? '–' : row.fmt(v)}</td>`;
+        }).join('');
+        el.innerHTML = `<td>${row.label}</td>${cells}<td>${row.total()}</td>`;
+    });
+}
+
+// ================= Bảng tổng hợp =================
+const SUMMARY_ROWS = [
+    { key:'total_kpi', label:'Doanh thu KPI (KPI Phone + IOT + thưởng + CK)', type:'total' },
+    { key:'kpi_phone', label:'— trong đó: KPI Phone', type:'sub' },
+    { key:'kpi_iot', label:'— trong đó: KPI IOT', type:'sub' },
+    { key:'hr_code', label:'Lương & tạm ứng NV (HR CODE)', type:'normal' },
+    { key:'chi_phi_co_dinh', label:'Chi phí cố định', type:'normal' },
+    { key:'cac_ctbh', label:'Các chương trình bán hàng', type:'normal' },
+    { key:'ho_tro_kd', label:'Hỗ trợ kinh doanh', type:'normal' },
+    { key:'thuong_nv_target', label:'Thưởng NV hoàn thành target', type:'normal' },
+    { key:'thue_cp_khac', label:'Thuế & chi phí khác', type:'normal' },
+    { key:'total_chi_phi', label:'TỔNG CHI PHÍ', type:'total' },
+    { key:'loi_nhuan', label:'LỢI NHUẬN SAU CHI PHÍ', type:'total' },
+    { key:'loi_nhuan_dt_pct', label:'% Lợi nhuận / Doanh thu', type:'pct' },
+    { key:'rsm', label:'— chia RSM', type:'sub' },
+    { key:'rm', label:'— chia RM', type:'sub' },
+    { key:'du_kien_thue', label:'Dự kiến thuế hàng tháng', type:'normal' },
+];
+function renderSummaryTable() {
+    const head = document.getElementById('summary-table-head');
+    head.innerHTML = '<th>Nội dung</th>' + ALL_MONTH_IDX.map(i => `<th class="num">${MONTH_LABELS[i]}</th>`).join('') + `<th class="num">Tổng ${activeMonthIdx.length} tháng</th>`;
+    const body = document.getElementById('summary-table-body');
+    body.innerHTML = SUMMARY_ROWS.map(row => {
+        const cells = ALL_MONTH_IDX.map(i => {
+            const v = monthVal(i, row.key);
+            if (v === null || v === undefined) return `<td class="num">–</td>`;
+            return `<td class="num">${row.type === 'pct' ? fmtPct(v) : fmtVND(v)}</td>`;
+        }).join('');
+        let totalCell = '<td class="num">–</td>';
+        if (row.type !== 'pct') {
+            const sum = activeMonthIdx.reduce((s,i)=>s+SUMMARY[i][row.key],0);
+            totalCell = `<td class="num">${fmtVND(sum)}</td>`;
+        } else {
+            const avgKpi = activeMonthIdx.reduce((s,i)=>s+SUMMARY[i].total_kpi,0);
+            const avgLn = activeMonthIdx.reduce((s,i)=>s+SUMMARY[i].loi_nhuan,0);
+            totalCell = `<td class="num">${fmtPct(avgKpi>0?avgLn/avgKpi*100:0)}</td>`;
+        }
+        const rowClass = row.type === 'total' ? 'row-total' : (row.type === 'sub' ? 'row-sub' : '');
+        return `<tr class="${rowClass}"><td>${row.label}</td>${cells}${totalCell}</tr>`;
+    }).join('');
+}
+
+// ================= Chi tiết khoản mục theo tháng (tabs) =================
+let selectedItemMonth = null;
+function renderItemMonthTabs() {
+    const container = document.getElementById('item-month-tabs');
+    const monthsWithItems = Object.keys(ITEMS).map(Number).sort((a,b)=>a-b);
+    if (selectedItemMonth === null) selectedItemMonth = monthsWithItems[monthsWithItems.length-1];
+    container.innerHTML = Array.from({length:12}, (_,i)=>i+1).map(m => {
+        const has = ITEMS[m];
+        const active = m === selectedItemMonth;
+        return `<div class="month-tab ${active?'active':''} ${has?'':'empty'}" data-month="${m}">Tháng ${m}${has?'':' (chưa có)'}</div>`;
+    }).join('');
+    container.querySelectorAll('.month-tab').forEach(el => {
+        el.addEventListener('click', () => {
+            const m = Number(el.dataset.month);
+            if (!ITEMS[m]) return;
+            selectedItemMonth = m;
+            renderItemMonthTabs();
+            renderItemDetail();
+        });
+    });
+}
+function renderItemDetail() {
+    const body = document.getElementById('item-detail-body');
+    const items = ITEMS[selectedItemMonth];
+    if (!items) {
+        body.innerHTML = `<div class="empty-note">Tháng ${selectedItemMonth} chưa có dữ liệu chi tiết từng khoản mục trên sheet — chỉ có số tổng ở bảng phía trên.</div>`;
+        return;
+    }
+    const byCat = {};
+    items.forEach(it => { (byCat[it.cat] = byCat[it.cat] || []).push(it); });
+    body.innerHTML = CAT_ORDER.filter(c => c !== 'hr_code' && byCat[c]).map(cat => {
+        const list = byCat[cat];
+        const total = list.reduce((s,it)=>s+it.amount,0);
+        const rows = list.filter(it=>it.amount>0).map(it => `<div class="item-row"><span>${it.content}</span><span class="amt">${fmtFull(it.amount)}</span></div>`).join('');
+        return `<div class="item-cat-group">
+            <div class="item-cat-title">${CAT_LABELS[cat]}</div>
+            ${rows || '<div class="item-row"><span>Không phát sinh</span><span class="amt">0 đ</span></div>'}
+            <div class="item-cat-total"><span>Tổng ${CAT_LABELS[cat]}</span><span>${fmtFull(total)}</span></div>
+        </div>`;
+    }).join('');
+}
+
+// ================= Quyết toán thuế 2026 =================
+function renderTaxTables() {
+    const mBody = document.getElementById('tax-monthly-table-body');
+    mBody.innerHTML = TAX_MONTHLY.map(row => `
+        <tr>
+            <td>Tháng ${row.m}</td>
+            <td>${row.ung_thue_note}</td>
+            <td class="num">${fmtVND(row.ung_thue)}</td>
+            <td class="num">${fmtVND(row.luong_ao_so_tien)}</td>
+            <td class="num">${fmtVND(row.luong_ao_chi_phi)}</td>
+        </tr>
+    `).join('') + `
+        <tr class="row-total">
+            <td colspan="2">Tổng</td>
+            <td class="num">${fmtVND(TAX_MONTHLY_TOTAL.ung_thue)}</td>
+            <td class="num">${fmtVND(TAX_MONTHLY_TOTAL.luong_ao_so_tien)}</td>
+            <td class="num">${fmtVND(TAX_MONTHLY_TOTAL.luong_ao_chi_phi)}</td>
+        </tr>
+    `;
+
+    const qBody = document.getElementById('tax-quarterly-table-body');
+    const fmtQ = v => v === null || v === undefined ? '–' : fmtVND(v);
+    qBody.innerHTML = TAX_QUARTERLY.map(row => `
+        <tr>
+            <td>${row.q}</td>
+            <td class="num">${fmtQ(row.tndn)}${row.tndn !== null ? ` <span style="color:var(--text-secondary); font-size:11px;">(đã chi ${fmtVND(row.tndn_da_chi)})</span>` : ''}</td>
+            <td class="num">${fmtQ(row.gtgt)}${row.gtgt !== null ? ` <span style="color:var(--text-secondary); font-size:11px;">(đã chi ${fmtVND(row.gtgt_da_chi)})</span>` : ''}</td>
+            <td class="num">${fmtQ(row.tncn)}${row.tncn !== null ? ` <span style="color:var(--text-secondary); font-size:11px;">(đã chi ${fmtVND(row.tncn_da_chi)})</span>` : ''}</td>
+        </tr>
+    `).join('') + `
+        <tr class="row-total">
+            <td>TỔNG</td>
+            <td class="num" colspan="3">${fmtVND(TAX_QUARTERLY_TOTAL.so_tien)} — đã chi ${fmtVND(TAX_QUARTERLY_TOTAL.da_chi)} — còn lại <span style="color:${TAX_QUARTERLY_TOTAL.con_lai<0?'var(--negative)':'var(--positive)'}">${fmtVND(TAX_QUARTERLY_TOTAL.con_lai)}</span></td>
+        </tr>
+    `;
+}
+
+// ================= Footer =================
+function renderFooter() {
+    const first = MONTH_LABELS[activeMonthIdx[0]];
+    const last = MONTH_LABELS[activeMonthIdx[activeMonthIdx.length-1]];
+    document.getElementById('dashboard-footer-text').textContent =
+        `Dữ liệu hiển thị: ${first}–${last} 2026 · Snapshot đọc từ Google Sheet "Quyết toán Partner" (tab QT 2026) ngày 15/08/2026 · Không tự tạo số liệu · Đã có chi tiết khoản mục cho tất cả các tháng có dữ liệu`;
+}
+
+// ================= Init =================
+// Các phần bảng/số liệu KHÔNG phụ thuộc Chart.js — luôn chạy trước, đảm bảo hiện số liệu dù CDN Chart.js
+// bị chặn (offline, firewall công ty, ad-blocker...). Lỗi ở phần chart (nếu có) không được làm hỏng phần này.
+renderMonthFilter();
+renderKpiCards();
+renderProfitRatioMiniTable();
+renderSummaryTable();
+renderItemMonthTabs();
+renderItemDetail();
+renderTaxTables();
+renderFooter();
+
+// Các chart cần Chart.js — bọc try/catch riêng từng chart, 1 chart lỗi không kéo sập các chart khác.
+function safeRenderChart(fn, canvasId) {
+    try {
+        if (!CHART_OK) throw new Error('Chart.js chưa tải được (không có mạng hoặc CDN bị chặn)');
+        fn();
+    } catch (e) {
+        const el = document.getElementById(canvasId);
+        if (el && el.parentElement) {
+            el.parentElement.innerHTML += `<div style="padding:20px; text-align:center; font-size:12.5px; color:var(--text-secondary);">⚠️ Không tải được biểu đồ (Chart.js không load — kiểm tra kết nối mạng). Số liệu bảng phía dưới vẫn đầy đủ.</div>`;
+        }
+        console.error('Lỗi render chart', canvasId, e);
+    }
+}
+safeRenderChart(renderOverviewChart, 'chart-overview');
+</script>
+</body>
+</html>
