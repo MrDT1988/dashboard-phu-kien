@@ -204,9 +204,14 @@ body{
   border-radius:50%;animation:spin 0.8s linear infinite;
 }
 .loading-overlay .loading-text{font-size:14px;max-width:420px;text-align:center;padding:0 20px;}
-.loading-overlay.loading-error .spinner{border-top-color:var(--red);animation:none;}
-.loading-overlay.loading-error{background:rgba(90,20,20,0.92);}
 @keyframes spin{to{transform:rotate(360deg);}}
+
+.data-source-banner{
+  border-radius:10px;padding:10px 16px;margin-bottom:14px;font-size:12.5px;
+  display:flex;gap:10px;align-items:center;
+}
+.data-source-banner.warn{background:#FBE9E9;color:#8a2020;border:1px solid #F3B9B9;}
+.data-source-banner .dsb-icon{font-weight:800;}
 
 .data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
 .data-table thead th{
@@ -264,6 +269,7 @@ body{
     </div>
   </header>
 
+  <div id="dataSourceBanner"></div>
   <section class="kpi-row" id="kpiRow"></section>
 
   <div class="section-title">Phụ kiện (PK) so với Cường lực (CL) — theo dõi riêng</div>
@@ -4998,27 +5004,38 @@ function runDashboard(){
   renderSkuMonthlyAllTable();
 }
 
-function setLoadingState(msg, isError){
+function setLoadingState(msg){
   const el = document.getElementById('loadingOverlay');
   if(!el) return;
   if(msg === null){ el.style.display = 'none'; return; }
   el.style.display = 'flex';
   el.querySelector('.loading-text').textContent = msg;
-  el.classList.toggle('loading-error', !!isError);
+}
+
+function showDataSourceBanner(kind, text){
+  const el = document.getElementById('dataSourceBanner');
+  if(!el) return;
+  if(kind === null){ el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="data-source-banner ${kind}"><span class="dsb-icon">!</span><span>${text}</span></div>`;
 }
 
 function startDashboard(){
-  setLoadingState('Đang tải dữ liệu trực tiếp từ Google Sheets...', false);
-  loadLiveDashboardData().then(liveData => {
+  setLoadingState('Đang tải dữ liệu trực tiếp từ Google Sheets...');
+  const timeoutMs = 12000;
+  const withTimeout = Promise.race([
+    loadLiveDashboardData(),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Quá thời gian chờ (12s)')), timeoutMs)),
+  ]);
+  withTimeout.then(liveData => {
     DATA = liveData;
     setLoadingState(null);
     runDashboard();
   }).catch(err => {
     console.error('Live data load failed, falling back to cached snapshot:', err);
-    setLoadingState('Không tải được dữ liệu trực tiếp — đang dùng bản lưu gần nhất. (' + err.message + ')', true);
     DATA = DATA_STATIC_FALLBACK;
+    setLoadingState(null);
     runDashboard();
-    setTimeout(() => setLoadingState(null), 4000);
+    showDataSourceBanner('warn', 'Không tải được dữ liệu trực tiếp từ Google Sheets (Sheet có thể chưa mở quyền xem, hoặc mất kết nối) — đang hiển thị bản lưu gần nhất.');
   });
 }
 
