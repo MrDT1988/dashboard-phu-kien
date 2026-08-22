@@ -371,6 +371,17 @@ body{
     </div>
   </section>
 
+  <section class="chart-row" style="grid-template-columns:1fr;">
+    <div class="chart-container">
+      <h3>Lợi nhuận theo tháng — 2026</h3>
+      <div class="chart-note">Lợi nhuận = SL bán × (HUB S.I − Giá FOB tháng đó) · T8–T12.26 chưa có dữ liệu (chưa có giá FOB) · CL tô cam</div>
+      <div class="chart-canvas-wrap"><canvas id="chartProfitMonth"></canvas></div>
+      <div class="mini-table-wrap">
+        <table class="mini-table" id="profitMiniTable"></table>
+      </div>
+    </div>
+  </section>
+
   <div class="section-title">Khu vực</div>
   <section class="chart-row equal">
     <div class="chart-container tall">
@@ -4394,6 +4405,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   const monthlyPk = new Array(8).fill(0), monthlyCl = new Array(8).fill(0);
   const groupMonthlyVol = {}; GROUP_ORDER.forEach(g => groupMonthlyVol[g] = new Array(8).fill(0));
   const monthlyRevPk = new Array(8).fill(0), monthlyRevCl = new Array(8).fill(0);
+  const monthlyProfitPk7 = new Array(7).fill(0), monthlyProfitCl7 = new Array(7).fill(0);
   const skuMonthlyPk = [], skuMonthlyAll = [];
   const skuMonthlyRevPk = [], skuMonthlyRevCl = [];
 
@@ -4405,6 +4417,10 @@ function buildDashboardData(skus, regionsRaw, theoThang){
       if(isCl){ monthlyCl[i] += v; monthlyRevCl[i] += rev; }
       else { monthlyPk[i] += v; monthlyRevPk[i] += rev; }
       if(groupMonthlyVol[d.group]) groupMonthlyVol[d.group][i] += v;
+    }
+    for(let i=0;i<7;i++){
+      const p = d.profitMonths7[i] || 0;
+      if(isCl) monthlyProfitCl7[i] += p; else monthlyProfitPk7[i] += p;
     }
     const total8 = d.months8.reduce((s,x)=>s+x,0);
     const revMonths8 = d.months8.map(v => Math.round(v * d.hubSI));
@@ -4478,6 +4494,10 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   const monthlyRevPk14 = [nat1125Pk, nat1225Pk].concat(monthlyRevPk).concat([null,null,null,null]);
   const monthlyRevCl14 = [null, nat1225Cl].concat(monthlyRevCl).concat([null,null,null,null]);
 
+  const profitMonthLabels12 = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26','T9.26','T10.26','T11.26','T12.26'];
+  const monthlyProfitPk12 = monthlyProfitPk7.concat([null,null,null,null,null]);
+  const monthlyProfitCl12 = monthlyProfitCl7.concat([null,null,null,null,null]);
+
   function getRate(rev){
     if(rev > 150000000) return 0.04;
     if(rev > 100000000) return 0.03;
@@ -4540,6 +4560,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     regionMonthly, region2025,
     monthlyLabels9, monthlyPk9, monthlyCl9,
     revMonthLabels14, monthlyRevPk14, monthlyRevCl14,
+    profitMonthLabels12, monthlyProfitPk12, monthlyProfitCl12,
     bonusMatrix,
   };
 }
@@ -4769,6 +4790,57 @@ function renderChartProfit(){
       scales:{ x:{ grid:{display:false}, ticks:{font:{size:10.5}} }, y:{ grid:{color:GRID}, ticks:{ callback:v=>fmtMoneyShort(v) } } }
     }
   });
+}
+
+function renderChartProfitMonth(){
+  const ctx = document.getElementById('chartProfitMonth');
+  if(!ctx || !DATA.profitMonthLabels12) return;
+  charts.profitMonth = new Chart(ctx.getContext('2d'), {
+    type:'bar',
+    data:{
+      labels: DATA.profitMonthLabels12,
+      datasets:[
+        { label:'Phụ kiện (PK)', data: DATA.monthlyProfitPk12, backgroundColor: NAVY, borderRadius:4, stack:'profit' },
+        { label:'Cường lực (CL)', data: DATA.monthlyProfitCl12, backgroundColor: ORANGE, borderRadius:4, stack:'profit' },
+      ]
+    },
+    options:{
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } },
+        tooltip:{ callbacks:{ label: c => c.raw==null ? 'Chưa có dữ liệu' : `${c.dataset.label}: ${fmtMoneyFull(c.raw)}` } }
+      },
+      scales:{
+        x:{ stacked:true, grid:{ display:false } },
+        y:{ stacked:true, grid:{ color:GRID }, ticks:{ callback:v=>fmtMoneyShort(v) } }
+      }
+    }
+  });
+}
+
+function renderProfitMiniTable(){
+  const table = document.getElementById('profitMiniTable');
+  if(!table || !DATA.profitMonthLabels12) return;
+  let totalPk=0, totalCl=0;
+  const rowMonth = ['Tháng'], rowPk = ['PK'], rowCl = ['CL'], rowTotal = ['Tổng'];
+  DATA.profitMonthLabels12.forEach((label, i) => {
+    rowMonth.push(label);
+    const pk = DATA.monthlyProfitPk12[i], cl = DATA.monthlyProfitCl12[i];
+    if(pk != null || cl != null){
+      totalPk += pk || 0; totalCl += cl || 0;
+      rowPk.push(pk != null ? fmtMoneyShort(pk) : '–');
+      rowCl.push(cl != null ? fmtMoneyShort(cl) : '–');
+      rowTotal.push(fmtMoneyShort((pk||0)+(cl||0)));
+    } else {
+      rowPk.push('–'); rowCl.push('–'); rowTotal.push('–');
+    }
+  });
+  rowMonth.push('LŨY KẾ');
+  rowPk.push(fmtMoneyShort(totalPk));
+  rowCl.push(fmtMoneyShort(totalCl));
+  rowTotal.push(fmtMoneyShort(totalPk+totalCl));
+
+  const rows = [rowMonth, rowPk, rowCl, rowTotal];
+  table.innerHTML = rows.map(r => `<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
 }
 
 function renderChartInvValue(){
@@ -5107,6 +5179,8 @@ function runDashboard(){
   setupGroupPicker();
   renderChartGroupMonthly();
   renderChartProfit();
+  renderChartProfitMonth();
+  renderProfitMiniTable();
   renderChartInvValue();
   renderChartRegions();
   setupMienFilter();
