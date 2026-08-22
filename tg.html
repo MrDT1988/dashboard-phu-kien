@@ -4968,16 +4968,8 @@ function computeIndSaleMomTrend(saleName, months, series, metric, latestInfo) {
 // phải. Tách thành 2 bảng trên/dưới nhưng dùng CHUNG bộ lọc chỉ số (indSaleChartMetric) + bộ lọc Sale/Shop
 // chung (indFilters) - đúng dữ liệu nguồn computeIndSaleChartSeries(), chỉ khác nhóm Sale nào được vẽ.
 function indSaleHeatRowHtml(saleName, months, series, meta, trendArr, isGroupStart, isTotal) {
-    const cells = series[saleName][indSaleChartMetric].map((v, i) => {
-        const prev = i > 0 ? series[saleName][indSaleChartMetric][i - 1] : null;
-        let pctHtml = '';
-        if (prev != null && prev > 0) {
-            const g = (v - prev) / prev * 100;
-            const cls = g > 0.05 ? 'color:var(--positive);' : (g < -0.05 ? 'color:var(--negative);' : '');
-            const sign = g >= 0 ? '+' : '';
-            pctHtml = ` <span style="font-size:0.82em;${cls}">(${sign}${g.toFixed(1)}%)</span>`;
-        }
-        const text = v > 0 ? meta.axisFmt(v) + pctHtml : '<span style="color:var(--text-secondary);">-</span>';
+    const cells = series[saleName][indSaleChartMetric].map((v) => {
+        const text = v > 0 ? meta.axisFmt(v) : '<span style="color:var(--text-secondary);">-</span>';
         return `<td>${text}</td>`;
     }).join('');
     const trStyle = isGroupStart ? ' style="border-top:2px solid rgba(255,255,255,0.15);"' : '';
@@ -8785,16 +8777,8 @@ const BRAND_HEAT_METRIC_META = {
 // trong dashboard - đồng bộ giao diện, đỡ rối mắt hơn tô nền theo cường độ.
 function brandHeatRowHtml(label, arr, meta, isTotal, pctArr, yearVal, yearPct) {
     const cells = arr.map((v, i) => {
-        const prev = i > 0 ? arr[i-1] : null;
-        let growthHtml = '';
-        if (prev != null && prev > 0) {
-            const g = (v - prev) / prev * 100;
-            const cls = g > 0.05 ? 'color:var(--positive);' : (g < -0.05 ? 'color:var(--negative);' : '');
-            const sign = g >= 0 ? '+' : '';
-            growthHtml = ` <span style="font-size:0.78em;${cls}">(${sign}${g.toFixed(1)}%)</span>`;
-        }
         const pctSuffix = (pctArr && v > 0) ? `<br><span class="bht-pct">(${Math.round(pctArr[i])}%)</span>` : '';
-        const text = v > 0 ? meta.fmt(v) + growthHtml + pctSuffix : '<span style="color:var(--text-secondary);">-</span>';
+        const text = v > 0 ? meta.fmt(v) + pctSuffix : '<span style="color:var(--text-secondary);">-</span>';
         return `<td>${text}</td>`;
     }).join('');
     const nameCls = isTotal ? 'bht-name bht-total' : 'bht-name';
@@ -9063,12 +9047,21 @@ function sizePerfShopListForSize(size) {
         return true;
     }).map(s => {
         const b = s.brands['Oppo'];
-        let units = 0, rev = 0;
-        if (b) {
-            const idxs = monthIdxs || b.monthly_units.map((_,i)=>i);
-            idxs.forEach(i => { units += b.monthly_units[i] || 0; rev += b.monthly_rev[i] || 0; });
-        }
-        return { shop: s.shop, sale: s.sale, units, rev };
+        const ap = s.brands['Apple'];
+        const idxs = monthIdxs || (s.monthly_total_units || []).map((_,i)=>i);
+        let units = 0, rev = 0, unitsAll = 0, revAll = 0, appleRev = 0;
+        if (b) idxs.forEach(i => { units += b.monthly_units[i] || 0; rev += b.monthly_rev[i] || 0; });
+        idxs.forEach(i => {
+            unitsAll += (s.monthly_total_units && s.monthly_total_units[i]) || 0;
+            revAll += (s.monthly_total_rev && s.monthly_total_rev[i]) || 0;
+        });
+        if (ap) idxs.forEach(i => { appleRev += ap.monthly_rev[i] || 0; });
+        const retailRevAll = revAll - appleRev;
+        return {
+            shop: s.shop, sale: s.sale, units, rev,
+            pctSO: unitsAll > 0 ? (units / unitsAll * 100) : null,
+            pctDT: retailRevAll > 0 ? (rev / retailRevAll * 100) : null,
+        };
     }).sort((a,b) => b.rev - a.rev);
 }
 
@@ -9082,11 +9075,13 @@ function sizePerfDetailRowHtml(size) {
             <td>${escapeHtml(x.shop)}</td>
             <td>${escapeHtml(x.sale || '-')}</td>
             <td class="num">${fmtInt(x.units)} máy</td>
+            <td class="num" style="${x.pctSO === null ? '' : shareColorStyle(x.pctSO)}">${x.pctSO === null ? '-' : x.pctSO.toFixed(1) + '%'}</td>
             <td class="num">${fmtVND(x.rev)}</td>
+            <td class="num" style="${x.pctDT === null ? '' : shareColorStyle(x.pctDT)}">${x.pctDT === null ? '-' : x.pctDT.toFixed(1) + '%'}</td>
         </tr>`).join('');
         inner = `<div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:8px; text-transform:uppercase;">Danh sách shop — Size ${escapeHtml(size)} (${list.length} shop)</div>
         <table class="data-table" style="width:100%;">
-            <thead><tr><th>Shop</th><th>Sale/ASM</th><th class="num">S.O OPPO</th><th class="num">D.thu OPPO</th></tr></thead>
+            <thead><tr><th>Shop</th><th>Sale/ASM</th><th class="num">S.O OPPO</th><th class="num">% S.O</th><th class="num">D.thu OPPO</th><th class="num">% DT</th></tr></thead>
             <tbody>${rowsHtml}</tbody>
         </table>`;
     }
