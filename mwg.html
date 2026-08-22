@@ -324,7 +324,10 @@ thead th.latest-month-col { background: rgba(255,193,7,0.28) !important; }
 #shop-combined-table thead th { z-index: 3; background: #57687e; }
 /* Cột Shop/Size/Sale: canh giữa + font to hơn 1 tí để nổi bật, gộp 1 ô duy nhất (rowspan 3 dòng DS/DT/ĐG) nên tự
    động nằm ngay giữa khối — trùng với hàng "DT" ở giữa. */
-#shop-combined-table td.shop-name-cell, #shop-combined-table td.shop-size-cell, #shop-combined-table td.shop-sale-cell,
+#shop-combined-table td.shop-name-cell {
+    text-align: left; vertical-align: middle; font-size: 11px;
+}
+#shop-combined-table td.shop-size-cell, #shop-combined-table td.shop-sale-cell,
 #shop-combined-table td.shop-total-label-cell {
     text-align: center; vertical-align: middle; font-size: 11px;
 }
@@ -685,7 +688,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                     <table class="data-table" id="shop-combined-table">
                         <thead>
                             <tr>
-                                <th data-field="shop" style="text-align:center;">Shop</th>
+                                <th data-field="shop" style="text-align:left;">Shop</th>
                                 <th data-field="shop_size" style="text-align:center;">Size</th>
                                 <th data-field="sale" style="text-align:center;">Sale/ASM</th>
                                 <th data-field="metric_tag" style="text-align:center; min-width:44px;">DS/DT</th>
@@ -784,6 +787,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <div class="filter-bar">
                 <label>Tháng <span style="color:var(--negative)">*</span></label>
                 <div class="multiselect" id="ms-daily-month"></div>
+                <label>Ngày</label>
+                <div class="multiselect" id="ms-daily-day"></div>
                 <label>Sale/ASM</label>
                 <div class="multiselect" id="ms-daily-sale"></div>
                 <label>Phân khúc giá</label>
@@ -2866,16 +2871,17 @@ function refreshSegCharts() {
 refreshSegCharts();
 
 // ---- Chart: Doanh số & Doanh thu theo ngày (dùng CHUNG 1 bộ lọc — bắt buộc chọn Tháng) ----
-let dailyFilters = { months: [], sales: [], segments: [], sizeShops: [] };
+let dailyFilters = { months: [], days: [], sales: [], segments: [], sizeShops: [] };
 function renderDailyBoth() { renderDailyChart(); renderDailyRevenueChart(); }
 
 buildMultiselect('ms-daily-month', DATA.month_labels.map((lbl,i) => ({ value:String(i+1), text: lbl })), dailyFilters, 'months', 'Chưa chọn', () => renderDailyBoth());
+buildMultiselect('ms-daily-day', Array.from({length:31}, (_,i) => ({ value:String(i+1), text:'Ngày '+(i+1) })), dailyFilters, 'days', 'Tất cả', () => renderDailyBoth());
 buildMultiselect('ms-daily-sale', DATA.daily.sales.map(s => ({ value:s, text:s })), dailyFilters, 'sales', 'Tất cả', () => renderDailyBoth());
 buildMultiselect('ms-daily-segment', DATA.daily.segments.map(s => ({ value:s, text:s })), dailyFilters, 'segments', 'Tất cả', () => renderDailyBoth());
 buildMultiselect('ms-daily-sizeshop', DATA.daily.sizes.map(s => ({ value:s, text:s })), dailyFilters, 'sizeShops', 'Tất cả', () => renderDailyBoth());
 
 document.getElementById('daily-reset').addEventListener('click', () => {
-    document.querySelectorAll('#ms-daily-month, #ms-daily-sale, #ms-daily-segment, #ms-daily-sizeshop').forEach(el => { if (el._reset) el._reset(); });
+    document.querySelectorAll('#ms-daily-month, #ms-daily-day, #ms-daily-sale, #ms-daily-segment, #ms-daily-sizeshop').forEach(el => { if (el._reset) el._reset(); });
     renderDailyBoth();
 });
 
@@ -3096,6 +3102,7 @@ function renderDailyChart() {
     canvas.style.display = 'block';
 
     const monthSet = new Set(dailyFilters.months.map(m => parseInt(m)));
+    const daySet = dailyFilters.days.length ? new Set(dailyFilters.days.map(d => parseInt(d))) : null;
     const saleSet = dailyFilters.sales.length ? new Set(dailyFilters.sales) : null;
     const segSet = dailyFilters.segments.length ? new Set(dailyFilters.segments) : null;
     const sizeSet = dailyFilters.sizeShops.length ? new Set(dailyFilters.sizeShops) : null;
@@ -3110,6 +3117,7 @@ function renderDailyChart() {
     DATA.daily.rows.forEach(row => {
         const [m, d, saleI, segI, brandI, rev, units, sizeI, modelI] = row;
         if (!monthSet.has(m)) return;
+        if (daySet && !daySet.has(d)) return;
         if (saleSet && !saleSet.has(DATA.daily.sales[saleI])) return;
         if (segSet && !segSet.has(DATA.daily.segments[segI])) return;
         if (sizeSet && !sizeSet.has(DATA.daily.sizes[sizeI])) return;
@@ -3407,6 +3415,7 @@ function renderDailyRevenueChart() {
     canvas.style.display = 'block';
 
     const monthSet = new Set(dailyFilters.months.map(m => parseInt(m)));
+    const daySet = dailyFilters.days.length ? new Set(dailyFilters.days.map(d => parseInt(d))) : null;
     const saleSet = dailyFilters.sales.length ? new Set(dailyFilters.sales) : null;
     const segSet = dailyFilters.segments.length ? new Set(dailyFilters.segments) : null;
     const sizeSet = dailyFilters.sizeShops.length ? new Set(dailyFilters.sizeShops) : null;
@@ -3420,6 +3429,7 @@ function renderDailyRevenueChart() {
     DATA.daily.rows.forEach(row => {
         const [m, d, saleI, segI, brandI, rev, units, sizeI, modelI] = row;
         if (!monthSet.has(m)) return;
+        if (daySet && !daySet.has(d)) return;
         if (saleSet && !saleSet.has(DATA.daily.sales[saleI])) return;
         if (segSet && !segSet.has(DATA.daily.segments[segI])) return;
         if (sizeSet && !sizeSet.has(DATA.daily.sizes[sizeI])) return;
@@ -5094,9 +5104,8 @@ function renderSaleTable() {
     tbody.innerHTML = rows.map(r => {
         const hasUnits = r.total_units > 0, hasRev = r.total_revenue > 0, hasPk = r.pk1020_total_units > 0;
         const isExpanded = expandedSaleShops.has(r.sale);
-        const arrow = isExpanded ? '▾' : '▸';
         const rowHtml = `<tr>
-            <td><span class="shop-link" data-sale-name="${escapeHtml(r.sale)}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${arrow} ${escapeHtml(r.sale)}</span></td>
+            <td style="color:var(--text-primary); font-weight:600;">${escapeHtml(r.sale)}</td>
             <td class="num">${r.num_shops}</td>
             <td class="num">${r.oppo_avg_price > 0 ? fmtVND(r.oppo_avg_price) : '-'}</td>
             <td class="num khung-so khung-divider">${fmtInt(r.oppo_units)}</td>
@@ -5148,9 +5157,6 @@ function renderSaleTable() {
         }
     });
 
-    tbody.querySelectorAll('.shop-link[data-sale-name]').forEach(el => {
-        el.addEventListener('click', () => toggleSaleExpand(el.dataset.saleName));
-    });
     tbody.querySelectorAll('.shop-link[data-shop-jump]').forEach(el => {
         el.addEventListener('click', () => jumpToShopDetail(el.dataset.shopJump));
     });
