@@ -1,0 +1,4227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Phụ Kiện 2026 — Nam Phong</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+:root{
+  --navy:#1E2761;
+  --navy-dark:#141A45;
+  --ice:#CADCFC;
+  --ice-bg:#F1F4FC;
+  --orange:#FF6B35;
+  --red:#D64545;
+  --green:#1E8E5A;
+  --text-primary:#2A2E3D;
+  --text-secondary:#6B7280;
+  --bg-page:#F5F6FA;
+  --bg-card:#FFFFFF;
+  --line:#E3E7F0;
+  --radius:14px;
+  --gap:18px;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg-page);
+  color:var(--text-primary);
+}
+.dashboard-container{max-width:1440px;margin:0 auto;padding:22px;}
+
+.dashboard-header{
+  background:linear-gradient(120deg,var(--navy-dark),var(--navy));
+  color:#fff;
+  padding:26px 30px;
+  border-radius:var(--radius);
+  margin-bottom:var(--gap);
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  gap:16px;
+  position:relative;
+  overflow:hidden;
+}
+.dashboard-header::after{
+  content:"";
+  position:absolute;
+  right:-60px; top:-90px;
+  width:220px;height:220px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.06);
+}
+.dashboard-header .htxt{position:relative;z-index:1;}
+.dashboard-header .tag{
+  font-size:11px;letter-spacing:1.5px;font-weight:700;color:var(--ice);
+  text-transform:uppercase;margin-bottom:6px;
+}
+.dashboard-header h1{margin:0;font-size:24px;font-weight:700;}
+.dashboard-header .sub{margin-top:6px;font-size:13px;color:#B9C4EA;}
+.filters{display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:relative;z-index:1;}
+.filter-group{display:flex;flex-direction:column;gap:4px;}
+.filter-group label{font-size:11px;color:#B9C4EA;text-transform:uppercase;letter-spacing:.5px;}
+.filter-group select, .filter-group input[type="text"]{
+  padding:8px 12px;border:1px solid rgba(255,255,255,0.25);border-radius:8px;
+  background:rgba(255,255,255,0.1);color:#fff;font-size:13px;min-width:170px;
+}
+.filter-group select option{background:var(--navy-dark);color:#fff;}
+.filter-group input::placeholder{color:#B9C4EA;}
+
+.kpi-row{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:var(--gap);
+  margin-bottom:var(--gap);
+}
+.kpi-card{
+  background:var(--bg-card);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  box-shadow:0 1px 3px rgba(20,26,69,0.08);
+  border-top:4px solid var(--navy);
+  position:relative;
+}
+.kpi-card.c-red{border-top-color:var(--red);}
+.kpi-card.c-green{border-top-color:var(--green);}
+.kpi-card.c-orange{border-top-color:var(--orange);}
+.kpi-label{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-weight:600;}
+.kpi-value{font-size:24px;font-weight:800;color:var(--navy-dark);margin-bottom:4px;}
+.kpi-card.c-red .kpi-value{color:var(--red);}
+.kpi-card.c-green .kpi-value{color:var(--green);}
+.kpi-card.c-orange .kpi-value{color:var(--orange);}
+.kpi-sub{font-size:11.5px;color:var(--text-secondary);}
+
+.section-title{
+  font-size:12px;font-weight:700;color:var(--navy-dark);
+  text-transform:uppercase;letter-spacing:.8px;margin:26px 2px 10px;
+}
+.chart-row{
+  display:grid;
+  grid-template-columns:1.3fr 1fr;
+  gap:var(--gap);
+  margin-bottom:var(--gap);
+}
+.chart-row.equal{grid-template-columns:1fr 1fr;}
+.chart-container{
+  background:var(--bg-card);
+  border-radius:var(--radius);
+  padding:20px 22px;
+  box-shadow:0 1px 3px rgba(20,26,69,0.08);
+}
+.chart-container h3{font-size:14px;font-weight:700;color:var(--navy-dark);margin:0 0 4px;}
+.chart-container .chart-note{font-size:11.5px;color:var(--text-secondary);margin-bottom:14px;}
+.chart-canvas-wrap{position:relative;height:280px;width:100%;}
+.chart-canvas-wrap canvas{width:100% !important;height:100% !important;}
+.chart-container.tall .chart-canvas-wrap{height:340px;}
+.chart-container.short .chart-canvas-wrap{height:220px;}
+
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);margin-bottom:var(--gap);}
+.compare-card{background:var(--bg-card);border-radius:var(--radius);padding:20px 22px;box-shadow:0 1px 3px rgba(20,26,69,0.08);border-top:4px solid var(--navy);}
+.compare-card.cl{border-top-color:var(--orange);}
+.compare-card .compare-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.compare-card .compare-head h3{font-size:15px;font-weight:800;color:var(--navy-dark);margin:0;}
+.compare-card .compare-head span{font-size:11px;color:var(--text-secondary);}
+.compare-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.compare-stat-label{font-size:10.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+.compare-stat-value{font-size:18px;font-weight:800;color:var(--navy-dark);}
+.compare-card.cl .compare-stat-value{color:var(--orange);}
+
+.insight-box{
+  background:var(--ice-bg);
+  border-radius:10px;
+  padding:12px 16px;
+  font-size:12.5px;
+  color:var(--text-primary);
+  margin-top:14px;
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+}
+.insight-box .dot{width:9px;height:9px;border-radius:50%;background:var(--orange);margin-top:4px;flex-shrink:0;}
+.insight-box b{color:var(--navy-dark);}
+
+.table-section{
+  background:var(--bg-card);
+  border-radius:var(--radius);
+  padding:20px 22px;
+  box-shadow:0 1px 3px rgba(20,26,69,0.08);
+  margin-bottom:var(--gap);
+  overflow-x:auto;
+}
+.table-section .table-head{
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;
+}
+.table-section h3{font-size:14px;font-weight:700;color:var(--navy-dark);margin:0;}
+.table-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.table-controls select, .table-controls input[type="text"]{
+  padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--text-primary);
+}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge.good{background:#E4F5EC;color:var(--green);}
+.badge.warn{background:#FFEFE6;color:var(--orange);}
+.badge.bad{background:#FBE9E9;color:var(--red);}
+
+.alert-banner{
+  background:#FBE9E9;border:1px solid #F3B9B9;border-radius:10px;
+  padding:12px 16px;margin-bottom:14px;display:flex;gap:12px;align-items:flex-start;
+}
+.alert-banner .alert-icon{
+  width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;
+}
+.alert-banner b{color:var(--red);}
+.alert-banner.ok{background:#E4F5EC;border-color:#B7E3CB;}
+.alert-banner.ok .alert-icon{background:var(--green);}
+.alert-banner.ok b{color:var(--green);}
+
+.group-picker{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.group-card{
+  padding:10px 16px;border-radius:10px;border:1.5px solid var(--line);background:var(--ice-bg);
+  cursor:pointer;font-size:12.5px;font-weight:700;color:var(--text-secondary);transition:all .15s ease;
+  user-select:none;
+}
+.group-card:hover{border-color:var(--navy);color:var(--navy-dark);}
+.group-card.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.group-card .gc-sub{display:block;font-size:10.5px;font-weight:500;margin-top:2px;opacity:.8;}
+
+.mini-table-wrap{margin-top:16px;overflow-x:auto;}
+.mini-table{width:100%;border-collapse:collapse;font-size:11.5px;white-space:nowrap;}
+.mini-table td{padding:7px 10px;border-bottom:1px solid #f0f1f5;border-right:1px solid #f5f6fa;text-align:right;}
+.mini-table td:first-child{text-align:left;font-weight:700;color:var(--text-secondary);text-transform:uppercase;font-size:10.5px;letter-spacing:.4px;background:var(--ice-bg);position:sticky;left:0;}
+.mini-table tr:last-child td{font-weight:800;color:var(--navy-dark);background:#fafbfe;}
+.mini-table tr:last-child td:first-child{background:var(--ice-bg);}
+
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table thead th{
+  text-align:left;padding:9px 10px;border-bottom:2px solid var(--line);
+  color:var(--text-secondary);font-weight:700;font-size:11px;text-transform:uppercase;
+  letter-spacing:.4px;white-space:nowrap;cursor:pointer;user-select:none;
+}
+.data-table thead th:hover{color:var(--navy-dark);background:#f8f9fc;}
+.data-table thead th.sorted-asc::after{content:" ▲";font-size:9px;}
+.data-table thead th.sorted-desc::after{content:" ▼";font-size:9px;}
+.data-table tbody td{padding:9px 10px;border-bottom:1px solid #f0f1f5;white-space:nowrap;}
+.data-table tbody tr:hover{background:#f8f9fc;}
+.data-table tbody td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.data-table td.cen, .data-table th.cen{text-align:center !important;}
+
+/* Region table — 3 color clusters */
+#regionTable th:nth-child(-n+4), #regionTable td:nth-child(-n+4){ background:#EBF1FC; }
+#regionTable th:nth-child(n+5):nth-child(-n+18), #regionTable td:nth-child(n+5):nth-child(-n+18){ background:#FFF2E8; }
+#regionTable th:nth-child(n+19), #regionTable td:nth-child(n+19){ background:#E9F7F0; }
+#regionTable tbody tr:hover td{ filter:brightness(0.97); }
+.table-pagination{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--text-secondary);}
+.table-pagination button{
+  border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;margin-left:6px;
+}
+.table-pagination button:disabled{opacity:.4;cursor:not-allowed;}
+
+.dashboard-footer{
+  text-align:center;font-size:11.5px;color:var(--text-secondary);padding:16px 0 4px;
+}
+
+@media (max-width:1100px){
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .chart-row, .chart-row.equal{grid-template-columns:1fr;}
+}
+@media print{
+  body{background:#fff;}
+  .filters{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+
+  <header class="dashboard-header">
+    <div class="htxt">
+      <div class="tag">Nam Phong 2026</div>
+      <h1>Dashboard Tổng Quan Nhóm Hàng Phụ Kiện</h1>
+      <div class="sub">Lũy kế T1 – T7.2026 · Mô hình phân phối phụ kiện giá rẻ toàn quốc</div>
+    </div>
+  </header>
+
+  <section class="kpi-row" id="kpiRow"></section>
+
+  <div class="section-title">Phụ kiện (PK) so với Cường lực (CL) — theo dõi riêng</div>
+  <section class="compare-row" id="compareRow"></section>
+  <section class="chart-row">
+    <div class="chart-container">
+      <h3>Xu hướng bán hàng theo tháng — PK vs CL</h3>
+      <div class="chart-note">T1.2026 – T7.2026 (*T7 tạm tính)</div>
+      <div class="chart-canvas-wrap"><canvas id="chartMonthly"></canvas></div>
+    </div>
+    <div class="chart-container">
+      <h3>Tỷ trọng sản lượng &amp; lợi nhuận: PK vs CL</h3>
+      <div class="chart-note">% trên tổng toàn ngành, lũy kế 2026</div>
+      <div class="chart-canvas-wrap"><canvas id="chartPkClShare"></canvas></div>
+    </div>
+  </section>
+
+  <section class="chart-row" style="grid-template-columns:1fr;">
+    <div class="chart-container">
+      <h3>Doanh thu theo tháng — 2026</h3>
+      <div class="chart-note">Doanh thu = SL bán × (FOB + Lợi nhuận/sp) · Di chuột vào cột để xem chi tiết theo từng model · T8–T12.26 chưa có dữ liệu</div>
+      <div class="chart-canvas-wrap"><canvas id="chartRevMonth"></canvas></div>
+      <div class="mini-table-wrap">
+        <table class="mini-table" id="revMiniTable"></table>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-title">Chi tiết nhóm Phụ kiện (không gồm Cường lực)</div>
+  <section class="chart-row equal">
+    <div class="chart-container">
+      <h3>Nhập hàng vs Bán hàng theo nhóm PK</h3>
+      <div class="chart-note">Sản lượng lũy kế 2026 (sản phẩm)</div>
+      <div class="chart-canvas-wrap"><canvas id="chartNhapBan"></canvas></div>
+    </div>
+    <div class="chart-container">
+      <h3>Tỷ trọng sản lượng bán trong nhóm PK</h3>
+      <div class="chart-note">% trên tổng sản lượng PK (không gồm CL)</div>
+      <div class="chart-canvas-wrap"><canvas id="chartVolShare"></canvas></div>
+    </div>
+  </section>
+
+  <section class="chart-row" style="grid-template-columns:1fr;">
+    <div class="chart-container">
+      <h3>Bán hàng theo tháng theo từng nhóm hàng (PK)</h3>
+      <div class="chart-note">Chọn 1 nhóm để xem xu hướng bán theo tháng · Di chuột vào cột để xem chi tiết sản phẩm · T8–T12.26 chưa có dữ liệu</div>
+      <div class="group-picker" id="groupPicker"></div>
+      <div class="chart-canvas-wrap"><canvas id="chartGroupMonthly"></canvas></div>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-head">
+      <h3>Chi tiết sản lượng theo sản phẩm theo tháng (PK &amp; CL)</h3>
+      <div class="table-controls" id="skuMonthlyAllInfo"></div>
+    </div>
+    <div class="group-picker" id="skuMonthlyAllPicker"></div>
+    <div style="overflow-x:auto;">
+    <table class="data-table" id="skuMonthlyAllTable">
+      <thead>
+        <tr>
+          <th data-key="group">Nhóm</th>
+          <th data-key="sku">Mã sản phẩm</th>
+          <th data-key="m0" class="num">T1.26</th>
+          <th data-key="m1" class="num">T2.26</th>
+          <th data-key="m2" class="num">T3.26</th>
+          <th data-key="m3" class="num">T4.26</th>
+          <th data-key="m4" class="num">T5.26</th>
+          <th data-key="m5" class="num">T6.26</th>
+          <th data-key="m6" class="num">T7.26*</th>
+          <th data-key="m7" class="num">T8.26</th>
+          <th data-key="m8" class="num">T9.26</th>
+          <th data-key="m9" class="num">T10.26</th>
+          <th data-key="m10" class="num">T11.26</th>
+          <th data-key="m11" class="num">T12.26</th>
+          <th data-key="total" class="num">Tổng</th>
+          <th data-key="avgMonth" class="num">TB tháng</th>
+          <th data-key="tonKho" class="num">Tồn kho</th>
+          <th data-key="dos" class="num">DOS (ngày)</th>
+          <th data-key="status">Cảnh báo</th>
+        </tr>
+      </thead>
+      <tbody id="skuMonthlyAllBody"></tbody>
+    </table>
+    </div>
+  </section>
+
+  <div class="section-title">Lợi nhuận theo nhóm (toàn ngành, gồm cả PK &amp; CL)</div>
+  <section class="chart-row equal">
+    <div class="chart-container">
+      <h3>Lợi nhuận thực tế theo nhóm</h3>
+      <div class="chart-note">Lợi nhuận lũy kế, tính trên sản lượng đã bán (đ) — CL tô cam</div>
+      <div class="chart-canvas-wrap"><canvas id="chartProfit"></canvas></div>
+    </div>
+    <div class="chart-container">
+      <h3>Giá trị tồn kho theo nhóm (FOB)</h3>
+      <div class="chart-note">Vốn hàng hoá đang tồn tại kho (đ)</div>
+      <div class="chart-canvas-wrap"><canvas id="chartInvValue"></canvas></div>
+    </div>
+  </section>
+
+  <div class="section-title">Khu vực</div>
+  <section class="chart-row equal">
+    <div class="chart-container tall">
+      <h3>Top 10 tỉnh hoàn thành target tốt nhất</h3>
+      <div class="chart-note">% hoàn thành target doanh thu Sell-in năm</div>
+      <div class="chart-canvas-wrap"><canvas id="chartRegionTop"></canvas></div>
+    </div>
+    <div class="chart-container tall">
+      <h3>Bottom 10 tỉnh cần cải thiện</h3>
+      <div class="chart-note">% hoàn thành target doanh thu Sell-in năm</div>
+      <div class="chart-canvas-wrap"><canvas id="chartRegionBottom"></canvas></div>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-head">
+      <h3>Chi tiết theo khu vực (tỉnh/thành)</h3>
+      <div class="table-controls">
+        <select id="mienFilter"><option value="all">Tất cả miền</option></select>
+        <span style="color:var(--text-secondary);font-size:11.5px;">Doanh thu Sell-in theo tháng · T7–T12.26 chưa có dữ liệu</span>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+    <table class="data-table" id="regionTable">
+      <thead>
+        <tr>
+          <th data-key="name">Khu vực</th>
+          <th data-key="shops" class="num cen">SL Shop</th>
+          <th data-key="do_phu_pk" class="num cen">Độ phủ PK</th>
+          <th data-key="do_phu_cl" class="num cen">Độ phủ CL</th>
+          <th data-key="rev2025" class="num cen">2025</th>
+          <th data-key="m0" class="num cen">T1.26</th>
+          <th data-key="m1" class="num cen">T2.26</th>
+          <th data-key="m2" class="num cen">T3.26</th>
+          <th data-key="m3" class="num cen">T4.26</th>
+          <th data-key="m4" class="num cen">T5.26</th>
+          <th data-key="m5" class="num cen">T6.26</th>
+          <th data-key="m6" class="num cen">T7.26</th>
+          <th data-key="m7" class="num cen">T8.26</th>
+          <th data-key="m8" class="num cen">T9.26</th>
+          <th data-key="m9" class="num cen">T10.26</th>
+          <th data-key="m10" class="num cen">T11.26</th>
+          <th data-key="m11" class="num cen">T12.26</th>
+          <th data-key="total" class="num cen">Tổng</th>
+          <th data-key="target_nam" class="num cen">Target</th>
+          <th data-key="tien_do" class="num cen">%HT</th>
+        </tr>
+      </thead>
+      <tbody id="regionTableBody"></tbody>
+    </table>
+    </div>
+  </section>
+
+  <footer class="dashboard-footer">
+    Dữ liệu: Nam Phong — Nhập &amp; bán hàng · Chi tiết bán hàng khu vực · Lũy kế T1–T7.2026 &nbsp;|&nbsp; Dashboard tạo bởi AI Chief of Staff
+  </footer>
+
+</div>
+
+<script id="dashboard-data" type="application/json">
+{
+  "total": {
+    "nhap2026": 328814,
+    "ban2026": 244402,
+    "tonKho": 377136,
+    "invValue": 5513940364,
+    "profitCum": 1254156422,
+    "doanhThuSI": 6162827000,
+    "targetNam": 27120000000,
+    "pctTarget": 22.7
+  },
+  "groups": [
+    {
+      "name": "Cable",
+      "skus": 5,
+      "nhap2026": 9510,
+      "ban2026": 15646,
+      "pctVol": 6.4,
+      "profitCum": 179388553,
+      "pctProfit": 14.3,
+      "tonKho": 14376,
+      "invValue": 499337563,
+      "dos": 193.0,
+      "profitPerUnit": 6376
+    },
+    {
+      "name": "Adapter",
+      "skus": 5,
+      "nhap2026": 4000,
+      "ban2026": 11637,
+      "pctVol": 4.8,
+      "profitCum": 197421097,
+      "pctProfit": 15.7,
+      "tonKho": 11367,
+      "invValue": 555984097,
+      "dos": 205.1,
+      "profitPerUnit": 10056
+    },
+    {
+      "name": "Bộ sạc",
+      "skus": 1,
+      "nhap2026": 0,
+      "ban2026": 3059,
+      "pctVol": 1.3,
+      "profitCum": 72880752,
+      "pctProfit": 5.8,
+      "tonKho": 1792,
+      "invValue": 150538752,
+      "dos": 123.0,
+      "profitPerUnit": 13994
+    },
+    {
+      "name": "Tai nghe",
+      "skus": 4,
+      "nhap2026": 26030,
+      "ban2026": 13447,
+      "pctVol": 5.5,
+      "profitCum": 200215574,
+      "pctProfit": 16.0,
+      "tonKho": 26626,
+      "invValue": 1746223954,
+      "dos": 415.8,
+      "profitPerUnit": 12183
+    },
+    {
+      "name": "Powerbank (SDP)",
+      "skus": 3,
+      "nhap2026": 8024,
+      "ban2026": 4613,
+      "pctVol": 1.9,
+      "profitCum": 124263446,
+      "pctProfit": 9.9,
+      "tonKho": 10415,
+      "invValue": 1405383998,
+      "dos": 474.1,
+      "profitPerUnit": 22154
+    },
+    {
+      "name": "Cường lực (Dán MH)",
+      "skus": 23,
+      "nhap2026": 281250,
+      "ban2026": 196000,
+      "pctVol": 80.2,
+      "profitCum": 479987000,
+      "pctProfit": 38.3,
+      "tonKho": 312560,
+      "invValue": 1156472000,
+      "dos": 334.9,
+      "profitPerUnit": 2300
+    }
+  ],
+  "monthlyLabels": [
+    "T1.26",
+    "T2.26",
+    "T3.26",
+    "T4.26",
+    "T5.26",
+    "T6.26",
+    "T7.26*"
+  ],
+  "monthlySales": [
+    53765.0,
+    42846.0,
+    46877.0,
+    47404.0,
+    20307.0,
+    19691.0,
+    13512.0
+  ],
+  "skus": [
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-175a )",
+      "fob": 30588.0,
+      "profitUnit": 4412.0,
+      "nhap2026": 0,
+      "ban2026": 1553,
+      "tonKho": 3103,
+      "dos": 419.6,
+      "profitCum": 17193564
+    },
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-C010 )",
+      "fob": 22715.0,
+      "profitUnit": 5285.0,
+      "nhap2026": 0,
+      "ban2026": 2580,
+      "tonKho": 2594,
+      "dos": 211.1,
+      "profitCum": 28570710
+    },
+    {
+      "group": "Cable",
+      "sku": "30W - ( CB16 )",
+      "fob": 32751.0,
+      "profitUnit": 7249.0,
+      "nhap2026": 9510,
+      "ban2026": 9468,
+      "tonKho": 3403,
+      "dos": 75.5,
+      "profitCum": 102261643
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "fob": 44361.0,
+      "profitUnit": 6639.0,
+      "nhap2026": 0,
+      "ban2026": 1197,
+      "tonKho": 2718,
+      "dos": 476.8,
+      "profitCum": 15150198
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "fob": 44361.0,
+      "profitUnit": 6639.0,
+      "nhap2026": 0,
+      "ban2026": 848,
+      "tonKho": 2558,
+      "dos": 633.5,
+      "profitCum": 16212438
+    },
+    {
+      "group": "Adapter",
+      "sku": "10W - ( RP - U196 )",
+      "fob": 26805.0,
+      "profitUnit": 5195.0,
+      "nhap2026": 0,
+      "ban2026": 636,
+      "tonKho": 3365,
+      "dos": 1111.1,
+      "profitCum": 8493825
+    },
+    {
+      "group": "Adapter",
+      "sku": "20W - ( CA 08 )",
+      "fob": 40431.0,
+      "profitUnit": 10569.0,
+      "nhap2026": 4000,
+      "ban2026": 4869,
+      "tonKho": 2938,
+      "dos": 126.7,
+      "profitCum": 85207278
+    },
+    {
+      "group": "Adapter",
+      "sku": "33W -  ( U187 )",
+      "fob": 78059.0,
+      "profitUnit": 14941.0,
+      "nhap2026": 0,
+      "ban2026": 809,
+      "tonKho": 2896,
+      "dos": 751.7,
+      "profitCum": 31435864
+    },
+    {
+      "group": "Adapter",
+      "sku": "18W ( U119)",
+      "fob": 42662.0,
+      "profitUnit": 8338.0,
+      "nhap2026": 0,
+      "ban2026": 3402,
+      "tonKho": 1089,
+      "dos": 67.2,
+      "profitCum": 49285918
+    },
+    {
+      "group": "Adapter",
+      "sku": "30W ( U120 )",
+      "fob": 69028.0,
+      "profitUnit": 11972.0,
+      "nhap2026": 0,
+      "ban2026": 1921,
+      "tonKho": 1079,
+      "dos": 118.0,
+      "profitCum": 22998212
+    },
+    {
+      "group": "Bộ sạc",
+      "sku": "30W ( RP - U71 )",
+      "fob": 84006.0,
+      "profitUnit": 13994.0,
+      "nhap2026": 0,
+      "ban2026": 3059,
+      "tonKho": 1792,
+      "dos": 123.0,
+      "profitCum": 72880752
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT560",
+      "fob": 119969.0,
+      "profitUnit": 20031.0,
+      "nhap2026": 8000,
+      "ban2026": 3874,
+      "tonKho": 6131,
+      "dos": 332.3,
+      "profitCum": 117561939
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT260",
+      "fob": 98685.0,
+      "profitUnit": 16315.0,
+      "nhap2026": 8000,
+      "ban2026": 3005,
+      "tonKho": 6995,
+      "dos": 488.8,
+      "profitCum": 49026575
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20S",
+      "fob": 18309.0,
+      "profitUnit": 4691.0,
+      "nhap2026": 5015,
+      "ban2026": 4139,
+      "tonKho": 5895,
+      "dos": 299.1,
+      "profitCum": 21742785
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20C",
+      "fob": 27937.0,
+      "profitUnit": 4063.0,
+      "nhap2026": 5015,
+      "ban2026": 2429,
+      "tonKho": 7605,
+      "dos": 657.5,
+      "profitCum": 11884275
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "22.5 W - ( P200 )",
+      "fob": 127898.0,
+      "profitUnit": 22102.0,
+      "nhap2026": 8024,
+      "ban2026": 755,
+      "tonKho": 7273,
+      "dos": 2023.0,
+      "profitCum": 38700602
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "10.000Mah - ( RPP 10 )",
+      "fob": 101335.0,
+      "profitUnit": 18665.0,
+      "nhap2026": 0,
+      "ban2026": 2457,
+      "tonKho": 543,
+      "dos": 46.4,
+      "profitCum": 45859905
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "20.000Mah - ( RPP 11 )",
+      "fob": 161661.0,
+      "profitUnit": 28339.0,
+      "nhap2026": 0,
+      "ban2026": 1401,
+      "tonKho": 2599,
+      "dos": 389.6,
+      "profitCum": 39702939
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "A11X",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 0,
+      "ban2026": 35170,
+      "tonKho": 63480,
+      "dos": 379.0,
+      "profitCum": 83996000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "OP A6T 2025",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 25000,
+      "ban2026": 11290,
+      "tonKho": 13710,
+      "dos": 255.0,
+      "profitCum": 25967000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "IP 17 Promax",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 20000,
+      "ban2026": 3420,
+      "tonKho": 16580,
+      "dos": 1018.1,
+      "profitCum": 7866000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15Promax",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 15000,
+      "ban2026": 10240,
+      "tonKho": 14040,
+      "dos": 287.9,
+      "profitCum": 25208000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone16Promax",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 3000,
+      "ban2026": 7630,
+      "tonKho": 5370,
+      "dos": 147.8,
+      "profitCum": 17549000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone14Promax",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 15000,
+      "ban2026": 10340,
+      "tonKho": 13740,
+      "dos": 279.1,
+      "profitCum": 25898000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone12",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 5000,
+      "ban2026": 7450,
+      "tonKho": 6830,
+      "dos": 192.5,
+      "profitCum": 18791000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone12Promax",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 18000,
+      "ban2026": 13840,
+      "tonKho": 12890,
+      "dos": 195.6,
+      "profitCum": 34753000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone13Promax",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 10800,
+      "ban2026": 8660,
+      "tonKho": 11740,
+      "dos": 284.7,
+      "profitCum": 20838000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "畅玩30Plus",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 14800,
+      "ban2026": 14970,
+      "tonKho": 9630,
+      "dos": 135.1,
+      "profitCum": 34891000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneX",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 7000,
+      "ban2026": 7520,
+      "tonKho": 8930,
+      "dos": 249.4,
+      "profitCum": 18561000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneXR",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 5000,
+      "ban2026": 7130,
+      "tonKho": 7320,
+      "dos": 215.6,
+      "profitCum": 17664000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneXsmax",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 11000,
+      "ban2026": 12370,
+      "tonKho": 7660,
+      "dos": 130.0,
+      "profitCum": 30682000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone7Plus",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 0,
+      "ban2026": 4130,
+      "tonKho": 8870,
+      "dos": 451.0,
+      "profitCum": 9499000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 20000,
+      "ban2026": 3080,
+      "tonKho": 19300,
+      "dos": 1315.9,
+      "profitCum": 8510000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15Pro",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 20000,
+      "ban2026": 3140,
+      "tonKho": 19140,
+      "dos": 1280.1,
+      "profitCum": 8878000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone16Pro",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 20050,
+      "ban2026": 2940,
+      "tonKho": 19140,
+      "dos": 1367.1,
+      "profitCum": 8993000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone13",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 20000,
+      "ban2026": 4170,
+      "tonKho": 18330,
+      "dos": 923.1,
+      "profitCum": 10741000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone14Pro",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 7200,
+      "ban2026": 3400,
+      "tonKho": 6380,
+      "dos": 394.1,
+      "profitCum": 8786000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "Reno5",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 9000,
+      "ban2026": 5350,
+      "tonKho": 6300,
+      "dos": 247.3,
+      "profitCum": 13110000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "荣耀50se/iQOO9",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 5400,
+      "ban2026": 4000,
+      "tonKho": 4400,
+      "dos": 231,
+      "profitCum": 9200000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "OPPO A1 5G",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 15000,
+      "ban2026": 10000,
+      "tonKho": 7500,
+      "dos": 157.5,
+      "profitCum": 24150000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "FindX8/Reno14F/A6Pro",
+      "fob": 3700.0,
+      "profitUnit": 2300.0,
+      "nhap2026": 15000,
+      "ban2026": 5760,
+      "tonKho": 11280,
+      "dos": 411.2,
+      "profitCum": 15456000
+    }
+  ],
+  "regions": [
+    {
+      "name": "HA NOI",
+      "shops": 203.0,
+      "si_pk": 2484.0,
+      "dt_pk": 118066000,
+      "shop_si_pk": 27.0,
+      "do_phu_pk": 0.13,
+      "si_cl": 8310.0,
+      "dt_cl": 49860000,
+      "shop_si_cl": 38.0,
+      "do_phu_cl": 0.19,
+      "si_hub_total": 167926000,
+      "target_thang": 120000000,
+      "target_nam": 1440000000,
+      "tien_do": 12.0,
+      "mien": "Miền Bắc"
+    },
+    {
+      "name": "LAO CAI",
+      "shops": 121.0,
+      "si_pk": 823.0,
+      "dt_pk": 50631000,
+      "shop_si_pk": 7.0,
+      "do_phu_pk": 0.06,
+      "si_cl": 950.0,
+      "dt_cl": 5700000,
+      "shop_si_cl": 11.0,
+      "do_phu_cl": 0.09,
+      "si_hub_total": 56331000,
+      "target_thang": 120000000,
+      "target_nam": 1440000000,
+      "tien_do": 4.0,
+      "mien": "Miền Bắc"
+    },
+    {
+      "name": "QUANG NINH",
+      "shops": 170.0,
+      "si_pk": 3031.0,
+      "dt_pk": 140748000,
+      "shop_si_pk": 40.0,
+      "do_phu_pk": 0.24,
+      "si_cl": 10300.0,
+      "dt_cl": 61800000,
+      "shop_si_cl": 61.0,
+      "do_phu_cl": 0.36,
+      "si_hub_total": 202548000,
+      "target_thang": 50000000,
+      "target_nam": 600000000,
+      "tien_do": 34.0,
+      "mien": "Miền Bắc"
+    },
+    {
+      "name": "VIET TRI",
+      "shops": 232.0,
+      "si_pk": 3093.0,
+      "dt_pk": 173023000,
+      "shop_si_pk": 28.0,
+      "do_phu_pk": 0.12,
+      "si_cl": 12130.0,
+      "dt_cl": 72780000,
+      "shop_si_cl": 33.0,
+      "do_phu_cl": 0.14,
+      "si_hub_total": 245803000,
+      "target_thang": 80000000,
+      "target_nam": 960000000,
+      "tien_do": 26.0,
+      "mien": "Miền Bắc"
+    },
+    {
+      "name": "BAC NINH",
+      "shops": 70.0,
+      "si_pk": 692.0,
+      "dt_pk": 41160000,
+      "shop_si_pk": 29.0,
+      "do_phu_pk": 0.41,
+      "si_cl": 3390.0,
+      "dt_cl": 20340000,
+      "shop_si_cl": 35.0,
+      "do_phu_cl": 0.5,
+      "si_hub_total": 61500000,
+      "target_thang": 80000000,
+      "target_nam": 960000000,
+      "tien_do": 6.0,
+      "mien": "Miền Bắc"
+    },
+    {
+      "name": "THANH HOA",
+      "shops": 306.0,
+      "si_pk": 5473.0,
+      "dt_pk": 301080000,
+      "shop_si_pk": 117.0,
+      "do_phu_pk": 0.3824,
+      "si_cl": 24240.0,
+      "dt_cl": 145440000,
+      "shop_si_cl": 139.0,
+      "do_phu_cl": 0.4542,
+      "si_hub_total": 446520000,
+      "target_thang": 200000000,
+      "target_nam": 2400000000,
+      "tien_do": 18.6,
+      "mien": "Miền Bắc"
+    },
+    {
+      "name": "VINH",
+      "shops": 213.0,
+      "si_pk": 3028.0,
+      "dt_pk": 263293000,
+      "shop_si_pk": 56.0,
+      "do_phu_pk": 0.26,
+      "si_cl": 10240.0,
+      "dt_cl": 61440000,
+      "shop_si_cl": 37.0,
+      "do_phu_cl": 0.17,
+      "si_hub_total": 324733000,
+      "target_thang": 120000000,
+      "target_nam": 1440000000,
+      "tien_do": 23.0,
+      "mien": "Miền Bắc"
+    },
+    {
+      "name": "HUE",
+      "shops": 78.0,
+      "si_pk": 2269.0,
+      "dt_pk": 166230000,
+      "shop_si_pk": 46.0,
+      "do_phu_pk": 0.59,
+      "si_cl": 3400.0,
+      "dt_cl": 20400000,
+      "shop_si_cl": 21.0,
+      "do_phu_cl": 0.27,
+      "si_hub_total": 186630000,
+      "target_thang": 80000000,
+      "target_nam": 960000000,
+      "tien_do": 19.0,
+      "mien": "Miền Trung"
+    },
+    {
+      "name": "DA NANG",
+      "shops": 62.0,
+      "si_pk": 3828.0,
+      "dt_pk": 238189000,
+      "shop_si_pk": 56.0,
+      "do_phu_pk": 0.9,
+      "si_cl": 6310.0,
+      "dt_cl": 37860000,
+      "shop_si_cl": 33.0,
+      "do_phu_cl": 0.53,
+      "si_hub_total": 276049000,
+      "target_thang": 80000000,
+      "target_nam": 960000000,
+      "tien_do": 29.0,
+      "mien": "Miền Trung"
+    },
+    {
+      "name": "BINH DINH",
+      "shops": 228.0,
+      "si_pk": 10544.0,
+      "dt_pk": 759771000,
+      "shop_si_pk": 162.0,
+      "do_phu_pk": 0.71,
+      "si_cl": 22880.0,
+      "dt_cl": 137280000,
+      "shop_si_cl": 105.0,
+      "do_phu_cl": 0.46,
+      "si_hub_total": 897051000,
+      "target_thang": 120000000,
+      "target_nam": 1440000000,
+      "tien_do": 62.0,
+      "mien": "Miền Trung"
+    },
+    {
+      "name": "NHA TRANG",
+      "shops": 90.0,
+      "si_pk": 1995.0,
+      "dt_pk": 144064000,
+      "shop_si_pk": 36.0,
+      "do_phu_pk": 0.4,
+      "si_cl": 2170.0,
+      "dt_cl": 13020000,
+      "shop_si_cl": 10.0,
+      "do_phu_cl": 0.11,
+      "si_hub_total": 157084000,
+      "target_thang": 50000000,
+      "target_nam": 600000000,
+      "tien_do": 26.0,
+      "mien": "Miền Trung"
+    },
+    {
+      "name": "TAY NGUYEN",
+      "shops": 355.0,
+      "si_pk": 4649.0,
+      "dt_pk": 275853000,
+      "shop_si_pk": 89.0,
+      "do_phu_pk": 0.25,
+      "si_cl": 10820.0,
+      "dt_cl": 64920000,
+      "shop_si_cl": 54.0,
+      "do_phu_cl": 0.15,
+      "si_hub_total": 340773000,
+      "target_thang": 120000000,
+      "target_nam": 1440000000,
+      "tien_do": 24.0,
+      "mien": "Miền Trung"
+    },
+    {
+      "name": "VUNG TAU",
+      "shops": 127.0,
+      "si_pk": 2996.0,
+      "dt_pk": 223536000,
+      "shop_si_pk": 35.0,
+      "do_phu_pk": 0.28,
+      "si_cl": 11290.0,
+      "dt_cl": 67740000,
+      "shop_si_cl": 35.0,
+      "do_phu_cl": 0.28,
+      "si_hub_total": 291276000,
+      "target_thang": 50000000,
+      "target_nam": 600000000,
+      "tien_do": 49.0,
+      "mien": "Miền Trung"
+    },
+    {
+      "name": "DONG NAI",
+      "shops": 51.0,
+      "si_pk": 1190.0,
+      "dt_pk": 74155000,
+      "shop_si_pk": 13.0,
+      "do_phu_pk": 0.25,
+      "si_cl": 4340.0,
+      "dt_cl": 26040000,
+      "shop_si_cl": 15.0,
+      "do_phu_cl": 0.29,
+      "si_hub_total": 100195000,
+      "target_thang": 50000000,
+      "target_nam": 600000000,
+      "tien_do": 17.0,
+      "mien": "Miền Nam"
+    },
+    {
+      "name": "TIEN GIANG",
+      "shops": 218.0,
+      "si_pk": 9935.0,
+      "dt_pk": 759780000,
+      "shop_si_pk": 152.0,
+      "do_phu_pk": 0.6972,
+      "si_cl": 28240.0,
+      "dt_cl": 169440000,
+      "shop_si_cl": 139.0,
+      "do_phu_cl": 0.6376,
+      "si_hub_total": 929220000,
+      "target_thang": 170000000,
+      "target_nam": 2040000000,
+      "tien_do": 45.6,
+      "mien": "Miền Nam"
+    },
+    {
+      "name": "VINH LONG",
+      "shops": 92.0,
+      "si_pk": 2859.0,
+      "dt_pk": 120355000,
+      "shop_si_pk": 57.0,
+      "do_phu_pk": 0.62,
+      "si_cl": 12800.0,
+      "dt_cl": 76800000,
+      "shop_si_cl": 68.0,
+      "do_phu_cl": 0.74,
+      "si_hub_total": 197155000,
+      "target_thang": 80000000,
+      "target_nam": 960000000,
+      "tien_do": 21.0,
+      "mien": "Miền Nam"
+    },
+    {
+      "name": "CA MAU",
+      "shops": 185.0,
+      "si_pk": 1375.0,
+      "dt_pk": 88354000,
+      "shop_si_pk": 3.0,
+      "do_phu_pk": 0.02,
+      "si_cl": 5610.0,
+      "dt_cl": 33660000,
+      "shop_si_cl": 1.0,
+      "do_phu_cl": 0.01,
+      "si_hub_total": 122014000,
+      "target_thang": 120000000,
+      "target_nam": 1440000000,
+      "tien_do": 8.0,
+      "mien": "Miền Nam"
+    },
+    {
+      "name": "BINH PHUOC",
+      "shops": 104.0,
+      "si_pk": 3374.0,
+      "dt_pk": 227211000,
+      "shop_si_pk": 51.0,
+      "do_phu_pk": 0.49,
+      "si_cl": 5160.0,
+      "dt_cl": 30960000,
+      "shop_si_cl": 37.0,
+      "do_phu_cl": 0.36,
+      "si_hub_total": 258171000,
+      "target_thang": 80000000,
+      "target_nam": 960000000,
+      "tien_do": 27.0,
+      "mien": "Miền Nam"
+    },
+    {
+      "name": "CAN THO",
+      "shops": 49.0,
+      "si_pk": 714.0,
+      "dt_pk": 23910000,
+      "shop_si_pk": 5.0,
+      "do_phu_pk": 0.1,
+      "si_cl": 3310.0,
+      "dt_cl": 19860000,
+      "shop_si_cl": 3.0,
+      "do_phu_cl": 0.06,
+      "si_hub_total": 43770000,
+      "target_thang": 80000000,
+      "target_nam": 960000000,
+      "tien_do": 5.0,
+      "mien": "Miền Nam"
+    },
+    {
+      "name": "AN GIANG",
+      "shops": 145.0,
+      "si_pk": 4643.0,
+      "dt_pk": 271192000,
+      "shop_si_pk": 58.0,
+      "do_phu_pk": 0.4,
+      "si_cl": 5490.0,
+      "dt_cl": 32940000,
+      "shop_si_cl": 39.0,
+      "do_phu_cl": 0.27,
+      "si_hub_total": 304132000,
+      "target_thang": 80000000,
+      "target_nam": 960000000,
+      "tien_do": 32.0,
+      "mien": "Miền Nam"
+    },
+    {
+      "name": "KIEN GIANG",
+      "shops": 113.0,
+      "si_pk": 712.0,
+      "dt_pk": 33580000,
+      "shop_si_pk": 21.0,
+      "do_phu_pk": 0.19,
+      "si_cl": 3400.0,
+      "dt_cl": 20400000,
+      "shop_si_cl": 43.0,
+      "do_phu_cl": 0.38,
+      "si_hub_total": 53980000,
+      "target_thang": 80000000,
+      "target_nam": 960000000,
+      "tien_do": 6.0,
+      "mien": "Miền Nam"
+    },
+    {
+      "name": "DONG THAP",
+      "shops": 49.0,
+      "si_pk": 1059.0,
+      "dt_pk": 70935000,
+      "shop_si_pk": 21.0,
+      "do_phu_pk": 0.43,
+      "si_cl": 950.0,
+      "dt_cl": 5700000,
+      "shop_si_cl": 11.0,
+      "do_phu_cl": 0.22,
+      "si_hub_total": 76635000,
+      "target_thang": 50000000,
+      "target_nam": 600000000,
+      "tien_do": 13.0,
+      "mien": "Miền Nam"
+    },
+    {
+      "name": "HO CHI MINH",
+      "shops": 100.0,
+      "si_pk": 4252.0,
+      "dt_pk": 345571000,
+      "shop_si_pk": 51.0,
+      "do_phu_pk": 0.51,
+      "si_cl": 12960.0,
+      "dt_cl": 77760000,
+      "shop_si_cl": 33.0,
+      "do_phu_cl": 0.33,
+      "si_hub_total": 423331000,
+      "target_thang": 200000000,
+      "target_nam": 2400000000,
+      "tien_do": 17.6,
+      "mien": "Miền Nam"
+    }
+  ],
+  "mien": [
+    {
+      "name": "Miền Bắc",
+      "shops": 1315.0,
+      "si_pk": 18624.0,
+      "dt_pk": 1088001000,
+      "shop_si_pk": 304.0,
+      "do_phu_pk": 0.23,
+      "si_cl": 69560.0,
+      "dt_cl": 417360000,
+      "shop_si_cl": 354.0,
+      "do_phu_cl": 0.27,
+      "si_hub_total": 1505361000,
+      "target_thang": 770000000,
+      "target_nam": 9240000000,
+      "tien_do": 16.0
+    },
+    {
+      "name": "Miền Trung",
+      "shops": 940.0,
+      "si_pk": 26281.0,
+      "dt_pk": 1807643000,
+      "shop_si_pk": 424.0,
+      "do_phu_pk": 0.45,
+      "si_cl": 56870.0,
+      "dt_cl": 341220000,
+      "shop_si_cl": 258.0,
+      "do_phu_cl": 0.27,
+      "si_hub_total": 2148863000,
+      "target_thang": 500000000,
+      "target_nam": 6000000000,
+      "tien_do": 36.0
+    },
+    {
+      "name": "Miền Nam",
+      "shops": 1106.0,
+      "si_pk": 30113.0,
+      "dt_pk": 2015043000,
+      "shop_si_pk": 432.0,
+      "do_phu_pk": 0.39,
+      "si_cl": 82260.0,
+      "dt_cl": 493560000,
+      "shop_si_cl": 389.0,
+      "do_phu_cl": 0.35,
+      "si_hub_total": 2508603000,
+      "target_thang": 990000000,
+      "target_nam": 11880000000,
+      "tien_do": 21.0
+    }
+  ],
+  "monthlyPk": [
+    2135.0,
+    7296.0,
+    14447.0,
+    6124.0,
+    3697.0,
+    10691.0,
+    4012.0
+  ],
+  "monthlyCl": [
+    51630.0,
+    35550.0,
+    32430.0,
+    41280.0,
+    16610.0,
+    9000.0,
+    9500.0
+  ],
+  "monthLabels7": [
+    "T1.26",
+    "T2.26",
+    "T3.26",
+    "T4.26",
+    "T5.26",
+    "T6.26",
+    "T7.26"
+  ],
+  "monthlyRevPk": [
+    105545000.0,
+    603591000.0,
+    933642000.0,
+    392216000.0,
+    248780000.0,
+    707453000.0,
+    326316000.0
+  ],
+  "monthlyRevCl": [
+    309780000.0,
+    213300000.0,
+    194580000.0,
+    247680000.0,
+    99660000.0,
+    54000000.0,
+    57000000.0
+  ],
+  "monthlyRevTotal": [
+    415325000.0,
+    816891000.0,
+    1128222000.0,
+    639896000.0,
+    348440000.0,
+    761453000.0,
+    383316000.0
+  ],
+  "groupMonthlyRev": {
+    "Cable": [
+      52718000.0,
+      55335000.0,
+      139498000.0,
+      56910000.0,
+      18028000.0,
+      233623000.0,
+      53498000.0
+    ],
+    "Adapter": [
+      32737000.0,
+      89662000.0,
+      227439000.0,
+      126249000.0,
+      83141000.0,
+      71695000.0,
+      42088000.0
+    ],
+    "Bộ sạc": [
+      20090000.0,
+      25970000.0,
+      87612000.0,
+      94472000.0,
+      18718000.0,
+      30380000.0,
+      22540000.0
+    ],
+    "Tai nghe": [
+      0.0,
+      292584000.0,
+      306543000.0,
+      39805000.0,
+      25543000.0,
+      295775000.0,
+      100610000.0
+    ],
+    "Powerbank (SDP)": [
+      0.0,
+      140040000.0,
+      172550000.0,
+      74780000.0,
+      103350000.0,
+      75980000.0,
+      107580000.0
+    ],
+    "Cường lực (Dán MH)": [
+      309780000.0,
+      213300000.0,
+      194580000.0,
+      247680000.0,
+      99660000.0,
+      54000000.0,
+      57000000.0
+    ]
+  },
+  "skuMonthlyPk": [
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-175a )",
+      "months": [
+        130.0,
+        300.0,
+        367.0,
+        305.0,
+        100.0,
+        120.0,
+        231.0
+      ],
+      "total": 1553.0
+    },
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-C010 )",
+      "months": [
+        270.0,
+        220.0,
+        630.0,
+        746.0,
+        191.0,
+        340.0,
+        183.0
+      ],
+      "total": 2580.0
+    },
+    {
+      "group": "Cable",
+      "sku": "30W - ( CB16 )",
+      "months": [
+        699.0,
+        680.0,
+        1982.0,
+        0,
+        0,
+        5226.0,
+        881.0
+      ],
+      "total": 9468.0
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "months": [
+        198.0,
+        90.0,
+        355.0,
+        267.0,
+        110.0,
+        128.0,
+        49.0
+      ],
+      "total": 1197.0
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "months": [
+        50.0,
+        135.0,
+        228.0,
+        230.0,
+        70.0,
+        85.0,
+        50.0
+      ],
+      "total": 848.0
+    },
+    {
+      "group": "Adapter",
+      "sku": "10W - ( RP - U196 )",
+      "months": [
+        74.0,
+        110.0,
+        312.0,
+        45.0,
+        25.0,
+        20.0,
+        50.0
+      ],
+      "total": 636.0
+    },
+    {
+      "group": "Adapter",
+      "sku": "20W - ( CA 08 )",
+      "months": [
+        214.0,
+        542.0,
+        1741.0,
+        728.0,
+        491.0,
+        845.0,
+        308.0
+      ],
+      "total": 4869.0
+    },
+    {
+      "group": "Adapter",
+      "sku": "33W -  ( U187 )",
+      "months": [
+        105.0,
+        50.0,
+        407.0,
+        47.0,
+        145.0,
+        20.0,
+        35.0
+      ],
+      "total": 809.0
+    },
+    {
+      "group": "Adapter",
+      "sku": "18W ( U119)",
+      "months": [
+        190.0,
+        500.0,
+        923.0,
+        1030.0,
+        335.0,
+        183.0,
+        241.0
+      ],
+      "total": 3402.0
+    },
+    {
+      "group": "Adapter",
+      "sku": "30W ( U120 )",
+      "months": [
+        0,
+        350.0,
+        540.0,
+        380.0,
+        330.0,
+        207.0,
+        114.0
+      ],
+      "total": 1921.0
+    },
+    {
+      "group": "Bộ sạc",
+      "sku": "30W ( RP - U71 )",
+      "months": [
+        205.0,
+        265.0,
+        894.0,
+        964.0,
+        191.0,
+        310.0,
+        230.0
+      ],
+      "total": 3059.0
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT560",
+      "months": [
+        0,
+        1218.0,
+        782.0,
+        0,
+        0,
+        1424.0,
+        450.0
+      ],
+      "total": 3874.0
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT260",
+      "months": [
+        0,
+        810.0,
+        1000.0,
+        190.0,
+        0,
+        723.0,
+        282.0
+      ],
+      "total": 3005.0
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20S",
+      "months": [
+        0,
+        638.0,
+        1865.0,
+        405.0,
+        721.0,
+        410.0,
+        100.0
+      ],
+      "total": 4139.0
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20C",
+      "months": [
+        0,
+        445.0,
+        1224.0,
+        270.0,
+        280.0,
+        120.0,
+        90.0
+      ],
+      "total": 2429.0
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "22.5 W - ( P200 )",
+      "months": [
+        0,
+        0,
+        0,
+        0,
+        60.0,
+        219.0,
+        476.0
+      ],
+      "total": 755.0
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "10.000Mah - ( RPP 10 )",
+      "months": [
+        0,
+        559.0,
+        784.0,
+        335.0,
+        411.0,
+        228.0,
+        140.0
+      ],
+      "total": 2457.0
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "20.000Mah - ( RPP 11 )",
+      "months": [
+        0,
+        384.0,
+        413.0,
+        182.0,
+        237.0,
+        83.0,
+        102.0
+      ],
+      "total": 1401.0
+    }
+  ],
+  "invTable": [
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-175a )",
+      "tonKho": 3103,
+      "siPerDay": 7.4,
+      "dos": 419.6,
+      "needReorder": false
+    },
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-C010 )",
+      "tonKho": 2594,
+      "siPerDay": 12.29,
+      "dos": 211.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cable",
+      "sku": "30W - ( CB16 )",
+      "tonKho": 3403,
+      "siPerDay": 45.09,
+      "dos": 75.5,
+      "needReorder": false
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "tonKho": 2718,
+      "siPerDay": 5.7,
+      "dos": 476.8,
+      "needReorder": false
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "tonKho": 2558,
+      "siPerDay": 4.04,
+      "dos": 633.5,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "10W - ( RP - U196 )",
+      "tonKho": 3365,
+      "siPerDay": 3.03,
+      "dos": 1111.1,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "20W - ( CA 08 )",
+      "tonKho": 2938,
+      "siPerDay": 23.19,
+      "dos": 126.7,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "33W -  ( U187 )",
+      "tonKho": 2896,
+      "siPerDay": 3.85,
+      "dos": 751.7,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "18W ( U119)",
+      "tonKho": 1089,
+      "siPerDay": 16.2,
+      "dos": 67.2,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "30W ( U120 )",
+      "tonKho": 1079,
+      "siPerDay": 9.15,
+      "dos": 118.0,
+      "needReorder": false
+    },
+    {
+      "group": "Bộ sạc",
+      "sku": "30W ( RP - U71 )",
+      "tonKho": 1792,
+      "siPerDay": 14.57,
+      "dos": 123.0,
+      "needReorder": false
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT560",
+      "tonKho": 6131,
+      "siPerDay": 18.45,
+      "dos": 332.3,
+      "needReorder": false
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT260",
+      "tonKho": 6995,
+      "siPerDay": 14.31,
+      "dos": 488.8,
+      "needReorder": false
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20S",
+      "tonKho": 5895,
+      "siPerDay": 19.71,
+      "dos": 299.1,
+      "needReorder": false
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20C",
+      "tonKho": 7605,
+      "siPerDay": 11.57,
+      "dos": 657.5,
+      "needReorder": false
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "22.5 W - ( P200 )",
+      "tonKho": 7273,
+      "siPerDay": 3.6,
+      "dos": 2023.0,
+      "needReorder": false
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "10.000Mah - ( RPP 10 )",
+      "tonKho": 543,
+      "siPerDay": 11.7,
+      "dos": 46.4,
+      "needReorder": true
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "20.000Mah - ( RPP 11 )",
+      "tonKho": 2599,
+      "siPerDay": 6.67,
+      "dos": 389.6,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "A11X",
+      "tonKho": 63480,
+      "siPerDay": 167.48,
+      "dos": 379.0,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "OP A6T 2025",
+      "tonKho": 13710,
+      "siPerDay": 53.76,
+      "dos": 255.0,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "IP 17 Promax",
+      "tonKho": 16580,
+      "siPerDay": 16.29,
+      "dos": 1018.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15Promax",
+      "tonKho": 14040,
+      "siPerDay": 48.76,
+      "dos": 287.9,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone16Promax",
+      "tonKho": 5370,
+      "siPerDay": 36.33,
+      "dos": 147.8,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone14Promax",
+      "tonKho": 13740,
+      "siPerDay": 49.24,
+      "dos": 279.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone12",
+      "tonKho": 6830,
+      "siPerDay": 35.48,
+      "dos": 192.5,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone12Promax",
+      "tonKho": 12890,
+      "siPerDay": 65.9,
+      "dos": 195.6,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone13Promax",
+      "tonKho": 11740,
+      "siPerDay": 41.24,
+      "dos": 284.7,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "畅玩30Plus",
+      "tonKho": 9630,
+      "siPerDay": 71.29,
+      "dos": 135.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneX",
+      "tonKho": 8930,
+      "siPerDay": 35.81,
+      "dos": 249.4,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneXR",
+      "tonKho": 7320,
+      "siPerDay": 33.95,
+      "dos": 215.6,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneXsmax",
+      "tonKho": 7660,
+      "siPerDay": 58.9,
+      "dos": 130.0,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone7Plus",
+      "tonKho": 8870,
+      "siPerDay": 19.67,
+      "dos": 451.0,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15",
+      "tonKho": 19300,
+      "siPerDay": 14.67,
+      "dos": 1315.9,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15Pro",
+      "tonKho": 19140,
+      "siPerDay": 14.95,
+      "dos": 1280.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone16Pro",
+      "tonKho": 19140,
+      "siPerDay": 14,
+      "dos": 1367.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone13",
+      "tonKho": 18330,
+      "siPerDay": 19.86,
+      "dos": 923.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone14Pro",
+      "tonKho": 6380,
+      "siPerDay": 16.19,
+      "dos": 394.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "Reno5",
+      "tonKho": 6300,
+      "siPerDay": 25.48,
+      "dos": 247.3,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "荣耀50se/iQOO9",
+      "tonKho": 4400,
+      "siPerDay": 19.05,
+      "dos": 231,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "OPPO A1 5G",
+      "tonKho": 7500,
+      "siPerDay": 47.62,
+      "dos": 157.5,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "FindX8/Reno14F/A6Pro",
+      "tonKho": 11280,
+      "siPerDay": 27.43,
+      "dos": 411.2,
+      "needReorder": false
+    }
+  ],
+  "groupMonthlyVol": {
+    "Cable": [
+      1347.0,
+      1425.0,
+      3562.0,
+      1548.0,
+      471.0,
+      5899.0,
+      1394.0
+    ],
+    "Adapter": [
+      583.0,
+      1552.0,
+      3923.0,
+      2230.0,
+      1326.0,
+      1275.0,
+      748.0
+    ],
+    "Bộ sạc": [
+      205.0,
+      265.0,
+      894.0,
+      964.0,
+      191.0,
+      310.0,
+      230.0
+    ],
+    "Tai nghe": [
+      0,
+      3111.0,
+      4871.0,
+      865.0,
+      1001.0,
+      2677.0,
+      922.0
+    ],
+    "Powerbank (SDP)": [
+      0,
+      943.0,
+      1197.0,
+      517.0,
+      708.0,
+      530.0,
+      718.0
+    ],
+    "Cường lực (Dán MH)": [
+      51630.0,
+      35550.0,
+      32430.0,
+      41280.0,
+      16610.0,
+      9000.0,
+      9500.0
+    ]
+  },
+  "skuMonthlyRevPk": [
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-175a )",
+      "months": [
+        4550000,
+        10500000,
+        12845000,
+        10675000,
+        3500000,
+        4200000,
+        8085000
+      ],
+      "total": 54355000
+    },
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-C010 )",
+      "months": [
+        7560000,
+        6160000,
+        17640000,
+        20888000,
+        5348000,
+        9520000,
+        5124000
+      ],
+      "total": 72240000
+    },
+    {
+      "group": "Cable",
+      "sku": "30W - ( CB16 )",
+      "months": [
+        27960000,
+        27200000,
+        79280000,
+        0,
+        0,
+        209040000,
+        35240000
+      ],
+      "total": 378720000
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "months": [
+        10098000,
+        4590000,
+        18105000,
+        13617000,
+        5610000,
+        6528000,
+        2499000
+      ],
+      "total": 61047000
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "months": [
+        2550000,
+        6885000,
+        11628000,
+        11730000,
+        3570000,
+        4335000,
+        2550000
+      ],
+      "total": 43248000
+    },
+    {
+      "group": "Adapter",
+      "sku": "10W - ( RP - U196 )",
+      "months": [
+        2368000,
+        3520000,
+        9984000,
+        1440000,
+        800000,
+        640000,
+        1600000
+      ],
+      "total": 20352000
+    },
+    {
+      "group": "Adapter",
+      "sku": "20W - ( CA 08 )",
+      "months": [
+        10914000,
+        27642000,
+        88791000,
+        37128000,
+        25041000,
+        43095000,
+        15708000
+      ],
+      "total": 248319000
+    },
+    {
+      "group": "Adapter",
+      "sku": "33W -  ( U187 )",
+      "months": [
+        9765000,
+        4650000,
+        37851000,
+        4371000,
+        13485000,
+        1860000,
+        3255000
+      ],
+      "total": 75237000
+    },
+    {
+      "group": "Adapter",
+      "sku": "18W ( U119)",
+      "months": [
+        9690000,
+        25500000,
+        47073000,
+        52530000,
+        17085000,
+        9333000,
+        12291000
+      ],
+      "total": 173502000
+    },
+    {
+      "group": "Adapter",
+      "sku": "30W ( U120 )",
+      "months": [
+        0,
+        28350000,
+        43740000,
+        30780000,
+        26730000,
+        16767000,
+        9234000
+      ],
+      "total": 155601000
+    },
+    {
+      "group": "Bộ sạc",
+      "sku": "30W ( RP - U71 )",
+      "months": [
+        20090000,
+        25970000,
+        87612000,
+        94472000,
+        18718000,
+        30380000,
+        22540000
+      ],
+      "total": 299782000
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT560",
+      "months": [
+        0,
+        170520000,
+        109480000,
+        0,
+        0,
+        199360000,
+        63000000
+      ],
+      "total": 542360000
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT260",
+      "months": [
+        0,
+        93150000,
+        115000000,
+        21850000,
+        0,
+        83145000,
+        32430000
+      ],
+      "total": 345575000
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20S",
+      "months": [
+        0,
+        14674000,
+        42895000,
+        9315000,
+        16583000,
+        9430000,
+        2300000
+      ],
+      "total": 95197000
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20C",
+      "months": [
+        0,
+        14240000,
+        39168000,
+        8640000,
+        8960000,
+        3840000,
+        2880000
+      ],
+      "total": 77728000
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "22.5 W - ( P200 )",
+      "months": [
+        0,
+        0,
+        0,
+        0,
+        9000000,
+        32850000,
+        71400000
+      ],
+      "total": 113250000
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "10.000Mah - ( RPP 10 )",
+      "months": [
+        0,
+        67080000,
+        94080000,
+        40200000,
+        49320000,
+        27360000,
+        16800000
+      ],
+      "total": 294840000
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "20.000Mah - ( RPP 11 )",
+      "months": [
+        0,
+        72960000,
+        78470000,
+        34580000,
+        45030000,
+        15770000,
+        19380000
+      ],
+      "total": 266190000
+    }
+  ],
+  "skuMonthlyRevCl": [
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "A11X",
+      "months": [
+        31080000,
+        50640000,
+        52920000,
+        23880000,
+        27780000,
+        12900000,
+        11820000
+      ],
+      "total": 211020000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "OP A6T 2025",
+      "months": [
+        0,
+        0,
+        0,
+        60000000,
+        0,
+        3660000,
+        4080000
+      ],
+      "total": 67740000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "IP 17 Promax",
+      "months": [
+        0,
+        0,
+        2700000,
+        13800000,
+        480000,
+        1860000,
+        1680000
+      ],
+      "total": 20520000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15Promax",
+      "months": [
+        28680000,
+        7080000,
+        15840000,
+        4080000,
+        0,
+        3000000,
+        2760000
+      ],
+      "total": 61440000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone16Promax",
+      "months": [
+        0,
+        18540000,
+        14460000,
+        8100000,
+        300000,
+        1800000,
+        2580000
+      ],
+      "total": 45780000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone14Promax",
+      "months": [
+        39600000,
+        14760000,
+        120000,
+        0,
+        0,
+        4560000,
+        3000000
+      ],
+      "total": 62040000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone12",
+      "months": [
+        14520000,
+        8760000,
+        12480000,
+        3540000,
+        2700000,
+        900000,
+        1800000
+      ],
+      "total": 44700000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone12Promax",
+      "months": [
+        42000000,
+        10380000,
+        0,
+        15960000,
+        6300000,
+        6300000,
+        2100000
+      ],
+      "total": 83040000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone13Promax",
+      "months": [
+        18240000,
+        13680000,
+        9480000,
+        6420000,
+        2100000,
+        420000,
+        1620000
+      ],
+      "total": 51960000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "畅玩30Plus",
+      "months": [
+        12600000,
+        21480000,
+        20820000,
+        18480000,
+        10560000,
+        1680000,
+        4200000
+      ],
+      "total": 89820000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneX",
+      "months": [
+        13020000,
+        10140000,
+        9660000,
+        7920000,
+        1140000,
+        900000,
+        2340000
+      ],
+      "total": 45120000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneXR",
+      "months": [
+        9780000,
+        6420000,
+        13320000,
+        6360000,
+        3900000,
+        1680000,
+        1320000
+      ],
+      "total": 42780000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneXsmax",
+      "months": [
+        23940000,
+        15600000,
+        14640000,
+        6840000,
+        6900000,
+        3300000,
+        3000000
+      ],
+      "total": 74220000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone7Plus",
+      "months": [
+        2040000,
+        7200000,
+        9240000,
+        4020000,
+        1860000,
+        0,
+        420000
+      ],
+      "total": 24780000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15",
+      "months": [
+        8760000,
+        2040000,
+        3240000,
+        2520000,
+        600000,
+        720000,
+        600000
+      ],
+      "total": 18480000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15Pro",
+      "months": [
+        10500000,
+        3180000,
+        300000,
+        4080000,
+        480000,
+        120000,
+        180000
+      ],
+      "total": 18840000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone16Pro",
+      "months": [
+        10200000,
+        1980000,
+        0,
+        3720000,
+        0,
+        960000,
+        780000
+      ],
+      "total": 17640000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone13",
+      "months": [
+        10620000,
+        3600000,
+        780000,
+        5520000,
+        1740000,
+        1080000,
+        1680000
+      ],
+      "total": 25020000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone14Pro",
+      "months": [
+        6480000,
+        0,
+        5580000,
+        5820000,
+        300000,
+        840000,
+        1380000
+      ],
+      "total": 20400000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "Reno5",
+      "months": [
+        4380000,
+        4920000,
+        6600000,
+        6300000,
+        6900000,
+        900000,
+        2100000
+      ],
+      "total": 32100000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "荣耀50se/iQOO9",
+      "months": [
+        2820000,
+        6180000,
+        2400000,
+        8460000,
+        2100000,
+        300000,
+        1740000
+      ],
+      "total": 24000000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "OPPO A1 5G",
+      "months": [
+        12300000,
+        2700000,
+        0,
+        20640000,
+        19020000,
+        2520000,
+        2820000
+      ],
+      "total": 60000000
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "FindX8/Reno14F/A6Pro",
+      "months": [
+        8220000,
+        4020000,
+        0,
+        11220000,
+        4500000,
+        3600000,
+        3000000
+      ],
+      "total": 34560000
+    }
+  ],
+  "skuMonthlyAll": [
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-175a )",
+      "months": [
+        130.0,
+        300.0,
+        367.0,
+        305.0,
+        100.0,
+        120.0,
+        231.0
+      ],
+      "total": 1553.0,
+      "avgMonth": 221.9,
+      "tonKho": 3103,
+      "dos": 419.6,
+      "needReorder": false
+    },
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-C010 )",
+      "months": [
+        270.0,
+        220.0,
+        630.0,
+        746.0,
+        191.0,
+        340.0,
+        183.0
+      ],
+      "total": 2580.0,
+      "avgMonth": 368.6,
+      "tonKho": 2594,
+      "dos": 211.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cable",
+      "sku": "30W - ( CB16 )",
+      "months": [
+        699.0,
+        680.0,
+        1982.0,
+        0,
+        0,
+        5226.0,
+        881.0
+      ],
+      "total": 9468.0,
+      "avgMonth": 1352.6,
+      "tonKho": 3403,
+      "dos": 75.5,
+      "needReorder": false
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "months": [
+        198.0,
+        90.0,
+        355.0,
+        267.0,
+        110.0,
+        128.0,
+        49.0
+      ],
+      "total": 1197.0,
+      "avgMonth": 171.0,
+      "tonKho": 2718,
+      "dos": 476.8,
+      "needReorder": false
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 )",
+      "months": [
+        50.0,
+        135.0,
+        228.0,
+        230.0,
+        70.0,
+        85.0,
+        50.0
+      ],
+      "total": 848.0,
+      "avgMonth": 121.1,
+      "tonKho": 2558,
+      "dos": 633.5,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "10W - ( RP - U196 )",
+      "months": [
+        74.0,
+        110.0,
+        312.0,
+        45.0,
+        25.0,
+        20.0,
+        50.0
+      ],
+      "total": 636.0,
+      "avgMonth": 90.9,
+      "tonKho": 3365,
+      "dos": 1111.1,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "20W - ( CA 08 )",
+      "months": [
+        214.0,
+        542.0,
+        1741.0,
+        728.0,
+        491.0,
+        845.0,
+        308.0
+      ],
+      "total": 4869.0,
+      "avgMonth": 695.6,
+      "tonKho": 2938,
+      "dos": 126.7,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "33W -  ( U187 )",
+      "months": [
+        105.0,
+        50.0,
+        407.0,
+        47.0,
+        145.0,
+        20.0,
+        35.0
+      ],
+      "total": 809.0,
+      "avgMonth": 115.6,
+      "tonKho": 2896,
+      "dos": 751.7,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "18W ( U119)",
+      "months": [
+        190.0,
+        500.0,
+        923.0,
+        1030.0,
+        335.0,
+        183.0,
+        241.0
+      ],
+      "total": 3402.0,
+      "avgMonth": 486.0,
+      "tonKho": 1089,
+      "dos": 67.2,
+      "needReorder": false
+    },
+    {
+      "group": "Adapter",
+      "sku": "30W ( U120 )",
+      "months": [
+        0,
+        350.0,
+        540.0,
+        380.0,
+        330.0,
+        207.0,
+        114.0
+      ],
+      "total": 1921.0,
+      "avgMonth": 274.4,
+      "tonKho": 1079,
+      "dos": 118.0,
+      "needReorder": false
+    },
+    {
+      "group": "Bộ sạc",
+      "sku": "30W ( RP - U71 )",
+      "months": [
+        205.0,
+        265.0,
+        894.0,
+        964.0,
+        191.0,
+        310.0,
+        230.0
+      ],
+      "total": 3059.0,
+      "avgMonth": 437.0,
+      "tonKho": 1792,
+      "dos": 123.0,
+      "needReorder": false
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT560",
+      "months": [
+        0,
+        1218.0,
+        782.0,
+        0,
+        0,
+        1424.0,
+        450.0
+      ],
+      "total": 3874.0,
+      "avgMonth": 553.4,
+      "tonKho": 6131,
+      "dos": 332.3,
+      "needReorder": false
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT260",
+      "months": [
+        0,
+        810.0,
+        1000.0,
+        190.0,
+        0,
+        723.0,
+        282.0
+      ],
+      "total": 3005.0,
+      "avgMonth": 429.3,
+      "tonKho": 6995,
+      "dos": 488.8,
+      "needReorder": false
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20S",
+      "months": [
+        0,
+        638.0,
+        1865.0,
+        405.0,
+        721.0,
+        410.0,
+        100.0
+      ],
+      "total": 4139.0,
+      "avgMonth": 591.3,
+      "tonKho": 5895,
+      "dos": 299.1,
+      "needReorder": false
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20C",
+      "months": [
+        0,
+        445.0,
+        1224.0,
+        270.0,
+        280.0,
+        120.0,
+        90.0
+      ],
+      "total": 2429.0,
+      "avgMonth": 347.0,
+      "tonKho": 7605,
+      "dos": 657.5,
+      "needReorder": false
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "22.5 W - ( P200 )",
+      "months": [
+        0,
+        0,
+        0,
+        0,
+        60.0,
+        219.0,
+        476.0
+      ],
+      "total": 755.0,
+      "avgMonth": 107.9,
+      "tonKho": 7273,
+      "dos": 2023.0,
+      "needReorder": false
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "10.000Mah - ( RPP 10 )",
+      "months": [
+        0,
+        559.0,
+        784.0,
+        335.0,
+        411.0,
+        228.0,
+        140.0
+      ],
+      "total": 2457.0,
+      "avgMonth": 351.0,
+      "tonKho": 543,
+      "dos": 46.4,
+      "needReorder": true
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "20.000Mah - ( RPP 11 )",
+      "months": [
+        0,
+        384.0,
+        413.0,
+        182.0,
+        237.0,
+        83.0,
+        102.0
+      ],
+      "total": 1401.0,
+      "avgMonth": 200.1,
+      "tonKho": 2599,
+      "dos": 389.6,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "A11X",
+      "months": [
+        5180.0,
+        8440.0,
+        8820.0,
+        3980.0,
+        4630.0,
+        2150.0,
+        1970.0
+      ],
+      "total": 35170.0,
+      "avgMonth": 5024.3,
+      "tonKho": 63480,
+      "dos": 379.0,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "OP A6T 2025",
+      "months": [
+        0,
+        0,
+        0,
+        10000.0,
+        0,
+        610.0,
+        680.0
+      ],
+      "total": 11290.0,
+      "avgMonth": 1612.9,
+      "tonKho": 13710,
+      "dos": 255.0,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "IP 17 Promax",
+      "months": [
+        0,
+        0,
+        450.0,
+        2300.0,
+        80.0,
+        310.0,
+        280.0
+      ],
+      "total": 3420.0,
+      "avgMonth": 488.6,
+      "tonKho": 16580,
+      "dos": 1018.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15Promax",
+      "months": [
+        4780.0,
+        1180.0,
+        2640.0,
+        680.0,
+        0,
+        500.0,
+        460.0
+      ],
+      "total": 10240.0,
+      "avgMonth": 1462.9,
+      "tonKho": 14040,
+      "dos": 287.9,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone16Promax",
+      "months": [
+        0,
+        3090.0,
+        2410.0,
+        1350.0,
+        50.0,
+        300.0,
+        430.0
+      ],
+      "total": 7630.0,
+      "avgMonth": 1090.0,
+      "tonKho": 5370,
+      "dos": 147.8,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone14Promax",
+      "months": [
+        6600.0,
+        2460.0,
+        20.0,
+        0,
+        0,
+        760.0,
+        500.0
+      ],
+      "total": 10340.0,
+      "avgMonth": 1477.1,
+      "tonKho": 13740,
+      "dos": 279.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone12",
+      "months": [
+        2420.0,
+        1460.0,
+        2080.0,
+        590.0,
+        450.0,
+        150.0,
+        300.0
+      ],
+      "total": 7450.0,
+      "avgMonth": 1064.3,
+      "tonKho": 6830,
+      "dos": 192.5,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone12Promax",
+      "months": [
+        7000.0,
+        1730.0,
+        0,
+        2660.0,
+        1050.0,
+        1050.0,
+        350.0
+      ],
+      "total": 13840.0,
+      "avgMonth": 1977.1,
+      "tonKho": 12890,
+      "dos": 195.6,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone13Promax",
+      "months": [
+        3040.0,
+        2280.0,
+        1580.0,
+        1070.0,
+        350.0,
+        70.0,
+        270.0
+      ],
+      "total": 8660.0,
+      "avgMonth": 1237.1,
+      "tonKho": 11740,
+      "dos": 284.7,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "畅玩30Plus",
+      "months": [
+        2100.0,
+        3580.0,
+        3470.0,
+        3080.0,
+        1760.0,
+        280.0,
+        700.0
+      ],
+      "total": 14970.0,
+      "avgMonth": 2138.6,
+      "tonKho": 9630,
+      "dos": 135.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneX",
+      "months": [
+        2170.0,
+        1690.0,
+        1610.0,
+        1320.0,
+        190.0,
+        150.0,
+        390.0
+      ],
+      "total": 7520.0,
+      "avgMonth": 1074.3,
+      "tonKho": 8930,
+      "dos": 249.4,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneXR",
+      "months": [
+        1630.0,
+        1070.0,
+        2220.0,
+        1060.0,
+        650.0,
+        280.0,
+        220.0
+      ],
+      "total": 7130.0,
+      "avgMonth": 1018.6,
+      "tonKho": 7320,
+      "dos": 215.6,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhoneXsmax",
+      "months": [
+        3990.0,
+        2600.0,
+        2440.0,
+        1140.0,
+        1150.0,
+        550.0,
+        500.0
+      ],
+      "total": 12370.0,
+      "avgMonth": 1767.1,
+      "tonKho": 7660,
+      "dos": 130.0,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone7Plus",
+      "months": [
+        340.0,
+        1200.0,
+        1540.0,
+        670.0,
+        310.0,
+        0,
+        70.0
+      ],
+      "total": 4130.0,
+      "avgMonth": 590.0,
+      "tonKho": 8870,
+      "dos": 451.0,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15",
+      "months": [
+        1460.0,
+        340.0,
+        540.0,
+        420.0,
+        100.0,
+        120.0,
+        100.0
+      ],
+      "total": 3080.0,
+      "avgMonth": 440.0,
+      "tonKho": 19300,
+      "dos": 1315.9,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone15Pro",
+      "months": [
+        1750.0,
+        530.0,
+        50.0,
+        680.0,
+        80.0,
+        20.0,
+        30.0
+      ],
+      "total": 3140.0,
+      "avgMonth": 448.6,
+      "tonKho": 19140,
+      "dos": 1280.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone16Pro",
+      "months": [
+        1700.0,
+        330.0,
+        0,
+        620.0,
+        0,
+        160.0,
+        130.0
+      ],
+      "total": 2940.0,
+      "avgMonth": 420.0,
+      "tonKho": 19140,
+      "dos": 1367.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone13",
+      "months": [
+        1770.0,
+        600.0,
+        130.0,
+        920.0,
+        290.0,
+        180.0,
+        280.0
+      ],
+      "total": 4170.0,
+      "avgMonth": 595.7,
+      "tonKho": 18330,
+      "dos": 923.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "iPhone14Pro",
+      "months": [
+        1080.0,
+        0,
+        930.0,
+        970.0,
+        50.0,
+        140.0,
+        230.0
+      ],
+      "total": 3400.0,
+      "avgMonth": 485.7,
+      "tonKho": 6380,
+      "dos": 394.1,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "Reno5",
+      "months": [
+        730.0,
+        820.0,
+        1100.0,
+        1050.0,
+        1150.0,
+        150.0,
+        350.0
+      ],
+      "total": 5350.0,
+      "avgMonth": 764.3,
+      "tonKho": 6300,
+      "dos": 247.3,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "荣耀50se/iQOO9",
+      "months": [
+        470.0,
+        1030.0,
+        400.0,
+        1410.0,
+        350.0,
+        50.0,
+        290.0
+      ],
+      "total": 4000.0,
+      "avgMonth": 571.4,
+      "tonKho": 4400,
+      "dos": 231,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "OPPO A1 5G",
+      "months": [
+        2050.0,
+        450.0,
+        0,
+        3440.0,
+        3170.0,
+        420.0,
+        470.0
+      ],
+      "total": 10000.0,
+      "avgMonth": 1428.6,
+      "tonKho": 7500,
+      "dos": 157.5,
+      "needReorder": false
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "FindX8/Reno14F/A6Pro",
+      "months": [
+        1370.0,
+        670.0,
+        0,
+        1870.0,
+        750.0,
+        600.0,
+        500.0
+      ],
+      "total": 5760.0,
+      "avgMonth": 822.9,
+      "tonKho": 11280,
+      "dos": 411.2,
+      "needReorder": false
+    }
+  ],
+  "regionMonthly": {
+    "KIEN GIANG": [
+      0,
+      10000000.0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "THANH HOA": [
+      23400000.0,
+      40790000.0,
+      98660000.0,
+      115501000.0,
+      41430000.0,
+      0
+    ],
+    "VIET TRI": [
+      40620000.0,
+      40260000.0,
+      20290000.0,
+      10200000.0,
+      10056000.0,
+      0
+    ],
+    "CA MAU": [
+      25200000.0,
+      0,
+      96814000.0,
+      0,
+      0,
+      0
+    ],
+    "VINH": [
+      10020000.0,
+      51400000.0,
+      29895000.0,
+      51100000.0,
+      25135000.0,
+      0
+    ],
+    "HO CHI MINH": [
+      20120000.0,
+      51650000.0,
+      56380000.0,
+      24938000.0,
+      16970000.0,
+      0
+    ],
+    "DONG NAI": [
+      10020000.0,
+      27700000.0,
+      6905000.0,
+      10580000.0,
+      20545000.0,
+      0
+    ],
+    "HUE": [
+      10200000.0,
+      0,
+      55090000.0,
+      11080000.0,
+      0,
+      0
+    ],
+    "TIEN GIANG": [
+      52005000.0,
+      162470000.0,
+      110195000.0,
+      51030000.0,
+      100680000.0,
+      0
+    ],
+    "BINH DINH": [
+      22060000.0,
+      100890000.0,
+      244871000.0,
+      106803000.0,
+      25552000.0,
+      0
+    ],
+    "BAC NINH": [
+      10920000.0,
+      5320000.0,
+      13085000.0,
+      15000000.0,
+      0,
+      0
+    ],
+    "DA NANG": [
+      0,
+      50009000.0,
+      0,
+      40900000.0,
+      10200000.0,
+      0
+    ],
+    "QUANG NINH": [
+      10530000.0,
+      10512000.0,
+      38972000.0,
+      6510000.0,
+      24463000.0,
+      0
+    ],
+    "HA NOI": [
+      47362000.0,
+      14280000.0,
+      0,
+      59484000.0,
+      10280000.0,
+      0
+    ],
+    "AN GIANG": [
+      0,
+      13120000.0,
+      102345000.0,
+      49215000.0,
+      10004000.0,
+      0
+    ],
+    "NHA TRANG": [
+      24420000.0,
+      26600000.0,
+      0,
+      18460000.0,
+      0,
+      0
+    ],
+    "DONG THAP": [
+      9605000.0,
+      14520000.0,
+      24525000.0,
+      10540000.0,
+      0,
+      0
+    ],
+    "BINH PHUOC": [
+      21818000.0,
+      47860000.0,
+      13880000.0,
+      19025000.0,
+      13965000.0,
+      0
+    ],
+    "LAO CAI": [
+      10845000.0,
+      6720000.0,
+      10005000.0,
+      0,
+      0,
+      0
+    ],
+    "VUNG TAU": [
+      0,
+      100590000.0,
+      21335000.0,
+      20130000.0,
+      0,
+      0
+    ],
+    "VINH LONG": [
+      41100000.0,
+      21290000.0,
+      19550000.0,
+      0,
+      26540000.0,
+      0
+    ],
+    "TAY NGUYEN": [
+      25080000.0,
+      10530000.0,
+      154675000.0,
+      9380000.0,
+      0,
+      0
+    ],
+    "CAN THO": [
+      0,
+      10380000.0,
+      10750000.0,
+      10020000.0,
+      12620000.0,
+      0
+    ]
+  },
+  "regionMonthLabels6": [
+    "T1.26",
+    "T2.26",
+    "T3.26",
+    "T4.26",
+    "T5.26",
+    "T6.26"
+  ],
+  "region2025": {
+    "HA NOI": 0,
+    "LAO CAI": 28761000.0,
+    "QUANG NINH": 60056000.0,
+    "VIET TRI": 124377000.0,
+    "BAC NINH": 0,
+    "THANH HOA": 80604000.0,
+    "VINH": 92868000.0,
+    "HUE": 64090000.0,
+    "DA NANG": 139570000.0,
+    "BINH DINH": 205815000.0,
+    "NHA TRANG": 65104000.0,
+    "TAY NGUYEN": 121208000.0,
+    "VUNG TAU": 52220000.0,
+    "DONG NAI": 0,
+    "TIEN GIANG": 302645000.0,
+    "VINH LONG": 76515000.0,
+    "CA MAU": 0,
+    "BINH PHUOC": 86188000.0,
+    "CAN THO": 0,
+    "AN GIANG": 33790000.0,
+    "KIEN GIANG": 21470000.0,
+    "DONG THAP": 17445000.0,
+    "HO CHI MINH": 96558000.0
+  }
+}
+</script>
+
+<script>
+const DATA = JSON.parse(document.getElementById('dashboard-data').textContent);
+
+const NAVY = "#1E2761";
+const ORANGE = "#FF6B35";
+const RED = "#D64545";
+const GREEN = "#1E8E5A";
+const ICE = "#8FA6D9";
+const GRID = "#E3E7F0";
+
+Chart.defaults.font.family = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+Chart.defaults.color = "#6B7280";
+Chart.defaults.maintainAspectRatio = false;
+Chart.defaults.responsive = true;
+
+const PK_GROUPS = DATA.groups.filter(g => g.name !== "Cường lực (Dán MH)");
+const CL_GROUP = DATA.groups.find(g => g.name === "Cường lực (Dán MH)");
+const PK_TOTAL = {
+  nhap2026: PK_GROUPS.reduce((s,g)=>s+g.nhap2026,0),
+  ban2026: PK_GROUPS.reduce((s,g)=>s+g.ban2026,0),
+  tonKho: PK_GROUPS.reduce((s,g)=>s+g.tonKho,0),
+  invValue: PK_GROUPS.reduce((s,g)=>s+g.invValue,0),
+  profitCum: PK_GROUPS.reduce((s,g)=>s+g.profitCum,0),
+  skus: PK_GROUPS.reduce((s,g)=>s+g.skus,0),
+};
+
+function fmtInt(n){ return Math.round(n).toLocaleString('vi-VN'); }
+function fmtMoneyShort(n){
+  if(Math.abs(n) >= 1e9) return (n/1e9).toFixed(2) + " tỷ";
+  if(Math.abs(n) >= 1e6) return (n/1e6).toFixed(0) + " tr";
+  return fmtInt(n) + "đ";
+}
+function fmtMoneyFull(n){ return fmtInt(n) + "đ"; }
+function dosBadgeClass(dos){
+  if(dos <= 60) return "good";
+  if(dos <= 150) return "warn";
+  return "bad";
+}
+function tienDoBadgeClass(p){
+  if(p >= 30) return "good";
+  if(p >= 15) return "warn";
+  return "bad";
+}
+
+// ===================== KPI ROW =====================
+function renderKPIs(){
+  const t = DATA.total;
+  const cards = [
+    { label:"Tổng bán ra 2026", value: fmtInt(t.ban2026), sub:"sản phẩm", cls:"" },
+    { label:"Tổng nhập hàng 2026", value: fmtInt(t.nhap2026), sub:"sản phẩm", cls:"" },
+    { label:"Tồn kho hiện tại", value: fmtInt(t.tonKho)+" sp", sub: fmtMoneyShort(t.invValue) + " vốn FOB", cls:"c-red" },
+    { label:"Lợi nhuận lũy kế", value: fmtMoneyShort(t.profitCum), sub:"tính trên SL đã bán", cls:"c-green" },
+    { label:"Hoàn thành target năm", value: t.pctTarget+"%", sub: fmtMoneyShort(t.doanhThuSI)+" / "+fmtMoneyShort(t.targetNam), cls:"c-orange" },
+  ];
+  const row = document.getElementById('kpiRow');
+  row.innerHTML = cards.map(c => `
+    <div class="kpi-card ${c.cls}">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-sub">${c.sub}</div>
+    </div>
+  `).join('');
+}
+
+// ===================== PK vs CL COMPARE =====================
+function renderCompare(){
+  const row = document.getElementById('compareRow');
+  const pkPctVol = (PK_TOTAL.ban2026/(PK_TOTAL.ban2026+CL_GROUP.ban2026)*100).toFixed(1);
+  const clPctVol = (100 - pkPctVol).toFixed(1);
+  row.innerHTML = `
+    <div class="compare-card">
+      <div class="compare-head"><h3>Phụ kiện (PK)</h3><span>${PK_TOTAL.skus} mã · ${pkPctVol}% sản lượng</span></div>
+      <div class="compare-stats">
+        <div><div class="compare-stat-label">Bán 2026</div><div class="compare-stat-value">${fmtInt(PK_TOTAL.ban2026)}</div></div>
+        <div><div class="compare-stat-label">Nhập 2026</div><div class="compare-stat-value">${fmtInt(PK_TOTAL.nhap2026)}</div></div>
+        <div><div class="compare-stat-label">Tồn kho</div><div class="compare-stat-value">${fmtInt(PK_TOTAL.tonKho)}</div></div>
+        <div><div class="compare-stat-label">Lợi nhuận lũy kế</div><div class="compare-stat-value">${fmtMoneyShort(PK_TOTAL.profitCum)}</div></div>
+      </div>
+    </div>
+    <div class="compare-card cl">
+      <div class="compare-head"><h3>Cường lực (CL)</h3><span>${CL_GROUP.skus} mã · ${clPctVol}% sản lượng</span></div>
+      <div class="compare-stats">
+        <div><div class="compare-stat-label">Bán 2026</div><div class="compare-stat-value">${fmtInt(CL_GROUP.ban2026)}</div></div>
+        <div><div class="compare-stat-label">Nhập 2026</div><div class="compare-stat-value">${fmtInt(CL_GROUP.nhap2026)}</div></div>
+        <div><div class="compare-stat-label">Tồn kho</div><div class="compare-stat-value">${fmtInt(CL_GROUP.tonKho)}</div></div>
+        <div><div class="compare-stat-label">Lợi nhuận lũy kế</div><div class="compare-stat-value">${fmtMoneyShort(CL_GROUP.profitCum)}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderChartPkClShare(){
+  const ctx = document.getElementById('chartPkClShare').getContext('2d');
+  const totalVol = PK_TOTAL.ban2026 + CL_GROUP.ban2026;
+  const totalProfit = PK_TOTAL.profitCum + CL_GROUP.profitCum;
+  charts.pkClShare = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['% Sản lượng', '% Lợi nhuận'],
+      datasets: [
+        { label:'Phụ kiện (PK)', data:[PK_TOTAL.ban2026/totalVol*100, PK_TOTAL.profitCum/totalProfit*100], backgroundColor: NAVY, borderRadius:5 },
+        { label:'Cường lực (CL)', data:[CL_GROUP.ban2026/totalVol*100, CL_GROUP.profitCum/totalProfit*100], backgroundColor: ORANGE, borderRadius:5 },
+      ]
+    },
+    options: {
+      indexAxis:'y',
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } }, tooltip:{ callbacks:{ label: c => `${c.dataset.label}: ${c.raw.toFixed(1)}%` } } },
+      scales:{
+        x:{ stacked:false, grid:{ color:GRID }, ticks:{ callback:v=>v+"%" }, max:100 },
+        y:{ stacked:false, grid:{ display:false } }
+      }
+    }
+  });
+}
+
+// ===================== CHARTS =====================
+let charts = {};
+
+function renderChartNhapBan(){
+  const ctx = document.getElementById('chartNhapBan').getContext('2d');
+  const sorted = [...PK_GROUPS].sort((a,b) => b.nhap2026 - a.nhap2026);
+  charts.nhapBan = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(g => g.name),
+      datasets: [
+        { label:'Nhập hàng 2026', data: sorted.map(g=>g.nhap2026), backgroundColor: NAVY, borderRadius:4 },
+        { label:'Bán hàng 2026', data: sorted.map(g=>g.ban2026), backgroundColor: ORANGE, borderRadius:4 },
+      ]
+    },
+    options: {
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } }, tooltip:{ callbacks:{ label: c => `${c.dataset.label}: ${fmtInt(c.raw)} sp` } } },
+      scales:{
+        x:{ grid:{ display:false }, ticks:{ font:{size:10.5} } },
+        y:{ grid:{ color:GRID }, ticks:{ callback:v=>fmtInt(v) } }
+      }
+    }
+  });
+}
+
+function renderChartMonthly(){
+  const ctx = document.getElementById('chartMonthly').getContext('2d');
+  charts.monthly = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: DATA.monthlyLabels,
+      datasets:[
+        {
+          label:'Phụ kiện (PK)', data: DATA.monthlyPk,
+          borderColor: NAVY, backgroundColor: NAVY+"20", fill:false, tension:.3,
+          borderWidth:3, pointRadius:4, pointBackgroundColor: NAVY, pointHoverRadius:6,
+        },
+        {
+          label:'Cường lực (CL)', data: DATA.monthlyCl,
+          borderColor: ORANGE, backgroundColor: ORANGE+"20", fill:false, tension:.3,
+          borderWidth:3, pointRadius:4, pointBackgroundColor: ORANGE, pointHoverRadius:6,
+        }
+      ]
+    },
+    options:{
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } }, tooltip:{ callbacks:{ label: c => `${c.dataset.label}: ${fmtInt(c.raw)} sp` } } },
+      scales:{
+        x:{ grid:{ display:false } },
+        y:{ grid:{ color:GRID }, beginAtZero:true, ticks:{ callback:v=>fmtInt(v) } }
+      }
+    }
+  });
+}
+
+function renderChartVolShare(){
+  const ctx = document.getElementById('chartVolShare').getContext('2d');
+  const pkTotalVol = PK_TOTAL.ban2026;
+  const sorted = [...PK_GROUPS].sort((a,b)=>b.ban2026-a.ban2026);
+  charts.volShare = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: sorted.map(g=>g.name),
+      datasets:[{ label:'% sản lượng (trong PK)', data: sorted.map(g=>+(g.ban2026/pkTotalVol*100).toFixed(1)), backgroundColor: NAVY, borderRadius:5 }]
+    },
+    options:{
+      indexAxis:'y',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => c.raw+"%" } } },
+      scales:{ x:{ grid:{display:false}, ticks:{ callback:v=>v+"%" } }, y:{ grid:{display:false} } }
+    }
+  });
+}
+
+function renderChartProfit(){
+  const ctx = document.getElementById('chartProfit').getContext('2d');
+  const sorted = [...DATA.groups].sort((a,b)=>b.profitCum-a.profitCum);
+  charts.profit = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: sorted.map(g=>g.name),
+      datasets:[{ label:'Lợi nhuận lũy kế', data: sorted.map(g=>g.profitCum), backgroundColor: sorted.map(g => g.name.includes("Cường lực") ? ORANGE : NAVY), borderRadius:5 }]
+    },
+    options:{
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => fmtMoneyFull(c.raw) } } },
+      scales:{ x:{ grid:{display:false}, ticks:{font:{size:10.5}} }, y:{ grid:{color:GRID}, ticks:{ callback:v=>fmtMoneyShort(v) } } }
+    }
+  });
+}
+
+function renderChartInvValue(){
+  const ctx = document.getElementById('chartInvValue').getContext('2d');
+  const sorted = [...DATA.groups].sort((a,b)=>b.invValue-a.invValue);
+  const pkShades = [NAVY, "#3B4A9E", "#5B6BAE", "#8FA6D9", "#C9CFE8"];
+  let shadeIdx = 0;
+  charts.inv = new Chart(ctx, {
+    type:'doughnut',
+    data:{
+      labels: sorted.map(g=>g.name),
+      datasets:[{ data: sorted.map(g=>g.invValue), backgroundColor: sorted.map(g => g.name.includes("Cường lực") ? ORANGE : pkShades[shadeIdx++ % pkShades.length]) }]
+    },
+    options:{
+      plugins:{ legend:{ position:'right', labels:{ boxWidth:10, font:{size:10.5} } }, tooltip:{ callbacks:{ label: c => `${c.label}: ${fmtMoneyFull(c.raw)}` } } }
+    }
+  });
+}
+
+function renderChartRegions(){
+  const sortedDesc = [...DATA.regions].sort((a,b)=>b.tien_do - a.tien_do);
+  const top10 = sortedDesc.slice(0,10);
+  const bottom10 = sortedDesc.slice(-10).reverse();
+
+  charts.regionTop = new Chart(document.getElementById('chartRegionTop').getContext('2d'), {
+    type:'bar',
+    data:{ labels: top10.map(r=>r.name), datasets:[{ data: top10.map(r=>r.tien_do), backgroundColor: GREEN, borderRadius:5 }] },
+    options:{
+      indexAxis:'y',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => c.raw+"%" } } },
+      scales:{ x:{ grid:{color:GRID}, ticks:{ callback:v=>v+"%" } }, y:{ grid:{display:false} } }
+    }
+  });
+  charts.regionBottom = new Chart(document.getElementById('chartRegionBottom').getContext('2d'), {
+    type:'bar',
+    data:{ labels: bottom10.map(r=>r.name), datasets:[{ data: bottom10.map(r=>r.tien_do), backgroundColor: RED, borderRadius:5 }] },
+    options:{
+      indexAxis:'y',
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => c.raw+"%" } } },
+      scales:{ x:{ grid:{color:GRID}, ticks:{ callback:v=>v+"%" } }, y:{ grid:{display:false} } }
+    }
+  });
+}
+
+// ===================== SKU TABLE =====================
+
+
+// ===================== REGION TABLE =====================
+let mienFilterState = 'all';
+function setupMienFilter(){
+  const sel = document.getElementById('mienFilter');
+  const miens = [...new Set(DATA.regions.map(r=>r.mien))];
+  miens.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m; opt.textContent = m;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => { mienFilterState = sel.value; renderRegionTable(); });
+}
+
+function renderRegionTable(){
+  let rows = [...DATA.regions];
+  if(mienFilterState !== 'all') rows = rows.filter(r=>r.mien===mienFilterState);
+  rows.sort((a,b)=>b.tien_do-a.tien_do);
+  document.getElementById('regionTableBody').innerHTML = rows.map(r => {
+    const monthly = DATA.regionMonthly[r.name] || [0,0,0,0,0,0];
+    const rev2025 = DATA.region2025[r.name] || 0;
+    const monthCells = [];
+    for(let i=0;i<12;i++){
+      const v = i < 6 ? monthly[i] : null;
+      monthCells.push(`<td class="num cen">${v ? fmtMoneyShort(v) : '<span style="color:var(--text-secondary)">–</span>'}</td>`);
+    }
+    const totalMonths = monthly.reduce((s,x)=>s+x,0);
+    const total = rev2025 + totalMonths;
+    return `
+    <tr>
+      <td>${r.name}</td>
+      <td class="num cen">${fmtInt(r.shops)}</td>
+      <td class="num cen">${Math.round((r.do_phu_pk||0)*100)}%</td>
+      <td class="num cen">${Math.round((r.do_phu_cl||0)*100)}%</td>
+      <td class="num cen">${fmtMoneyShort(rev2025)}</td>
+      ${monthCells.join('')}
+      <td class="num cen"><b>${fmtMoneyShort(total)}</b></td>
+      <td class="num cen">${fmtMoneyShort(r.target_nam)}</td>
+      <td class="num cen"><span class="badge ${tienDoBadgeClass(r.tien_do)}">${r.tien_do}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ===================== REVENUE BY MONTH CHART (12 months) =====================
+const ALL_12_MONTHS = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*','T8.26','T9.26','T10.26','T11.26','T12.26'];
+
+function pad12(arr7){
+  const out = arr7.slice();
+  while(out.length < 12) out.push(null);
+  return out;
+}
+
+function renderChartRevMonth(){
+  const ctx = document.getElementById('chartRevMonth').getContext('2d');
+  charts.revMonth = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: ALL_12_MONTHS,
+      datasets:[
+        { label:'Phụ kiện (PK)', data: pad12(DATA.monthlyRevPk), backgroundColor: NAVY, borderRadius:4, stack:'rev' },
+        { label:'Cường lực (CL)', data: pad12(DATA.monthlyRevCl), backgroundColor: ORANGE, borderRadius:4, stack:'rev' },
+      ]
+    },
+    options:{
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } },
+        tooltip:{
+          callbacks:{
+            label: c => c.raw==null ? 'Chưa có dữ liệu' : `${c.dataset.label}: ${fmtMoneyFull(c.raw)}`,
+            afterLabel: c => {
+              if(c.raw==null) return [];
+              const monthIdx = c.dataIndex;
+              if(monthIdx > 6) return [];
+              const isPk = c.datasetIndex === 0;
+              const list = isPk ? DATA.skuMonthlyRevPk : DATA.skuMonthlyRevCl;
+              const withVal = list.map(s => ({ sku:s.sku, val:s.months[monthIdx] })).filter(s=>s.val>0);
+              withVal.sort((a,b)=>b.val-a.val);
+              const top = withVal.slice(0,8);
+              const lines = ['', 'Chi tiết theo model:'];
+              top.forEach(s => lines.push(`  ${s.sku}: ${fmtMoneyFull(s.val)}`));
+              if(withVal.length > 8) lines.push(`  +${withVal.length-8} model khác`);
+              return lines;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{ stacked:true, grid:{ display:false } },
+        y:{ stacked:true, grid:{ color:GRID }, ticks:{ callback:v=>fmtMoneyShort(v) } }
+      }
+    }
+  });
+}
+
+function renderRevMiniTable(){
+  const table = document.getElementById('revMiniTable');
+  let totalPk=0, totalCl=0;
+  const rowMonth = ['Tháng'], rowPk = ['PK'], rowCl = ['CL'], rowTotal = ['Tổng'];
+  for(let i=0;i<12;i++){
+    rowMonth.push(ALL_12_MONTHS[i]);
+    if(i < 7){
+      const pk = DATA.monthlyRevPk[i], cl = DATA.monthlyRevCl[i];
+      totalPk += pk; totalCl += cl;
+      rowPk.push(fmtMoneyShort(pk));
+      rowCl.push(fmtMoneyShort(cl));
+      rowTotal.push(fmtMoneyShort(pk+cl));
+    } else {
+      rowPk.push('–'); rowCl.push('–'); rowTotal.push('–');
+    }
+  }
+  rowMonth.push('LŨY KẾ');
+  rowPk.push(fmtMoneyShort(totalPk));
+  rowCl.push(fmtMoneyShort(totalCl));
+  rowTotal.push(fmtMoneyShort(totalPk+totalCl));
+
+  const rows = [rowMonth, rowPk, rowCl, rowTotal];
+  table.innerHTML = rows.map(r => `<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+}
+
+// ===================== GROUP MONTHLY SALES (card picker) =====================
+let groupMonthlyState = null;
+function setupGroupPicker(){
+  const picker = document.getElementById('groupPicker');
+  const pkGroupNames = PK_GROUPS.map(g=>g.name).sort((a,b)=> {
+    const va = DATA.groupMonthlyVol[a].reduce((s,x)=>s+x,0);
+    const vb = DATA.groupMonthlyVol[b].reduce((s,x)=>s+x,0);
+    return vb - va;
+  });
+  const allTotal = DATA.monthlyPk.reduce((s,x)=>s+x,0);
+  let html = `<div class="group-card active" data-group="__ALL__">Tất cả<span class="gc-sub">${fmtInt(allTotal)} sp lũy kế</span></div>`;
+  html += pkGroupNames.map(name => {
+    const total = DATA.groupMonthlyVol[name].reduce((s,x)=>s+x,0);
+    return `<div class="group-card" data-group="${name}">${name}<span class="gc-sub">${fmtInt(total)} sp lũy kế</span></div>`;
+  }).join('');
+  picker.innerHTML = html;
+  groupMonthlyState = '__ALL__';
+
+  picker.querySelectorAll('.group-card').forEach(card => {
+    card.addEventListener('click', () => {
+      picker.querySelectorAll('.group-card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');
+      groupMonthlyState = card.dataset.group;
+      updateChartGroupMonthly();
+    });
+  });
+}
+
+function getGroupMonthlyData(){
+  return groupMonthlyState === '__ALL__' ? DATA.monthlyPk : DATA.groupMonthlyVol[groupMonthlyState];
+}
+function getGroupMonthlyLabel(){
+  return groupMonthlyState === '__ALL__' ? 'Tất cả nhóm PK' : groupMonthlyState;
+}
+
+function renderChartGroupMonthly(){
+  const ctx = document.getElementById('chartGroupMonthly').getContext('2d');
+  charts.groupMonthly = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: ALL_12_MONTHS,
+      datasets:[{ label: getGroupMonthlyLabel(), data: pad12(getGroupMonthlyData()), backgroundColor: ORANGE, borderRadius:5 }]
+    },
+    options:{
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          callbacks:{
+            label: c => c.raw==null ? 'Chưa có dữ liệu' : `${fmtInt(c.raw)} sp`,
+            afterLabel: c => {
+              if(c.raw==null) return [];
+              const monthIdx = c.dataIndex;
+              if(monthIdx > 6) return [];
+              const scope = groupMonthlyState === '__ALL__' ? DATA.skuMonthlyPk : DATA.skuMonthlyPk.filter(s=>s.group===groupMonthlyState);
+              const withVal = scope.map(s => ({ sku:s.sku, group:s.group, val:s.months[monthIdx] })).filter(s=>s.val>0);
+              withVal.sort((a,b)=>b.val-a.val);
+              const top = withVal.slice(0,8);
+              const lines = ['', 'Chi tiết sản phẩm:'];
+              top.forEach(s => lines.push(`  ${s.sku}${groupMonthlyState==='__ALL__' ? ' ('+s.group+')' : ''}: ${fmtInt(s.val)} sp`));
+              if(withVal.length > 8) lines.push(`  +${withVal.length-8} model khác`);
+              return lines;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{ grid:{ display:false } },
+        y:{ grid:{ color:GRID }, beginAtZero:true, ticks:{ callback:v=>fmtInt(v) } }
+      }
+    }
+  });
+}
+
+function updateChartGroupMonthly(){
+  const chart = charts.groupMonthly;
+  chart.data.datasets[0].label = getGroupMonthlyLabel();
+  chart.data.datasets[0].data = pad12(getGroupMonthlyData());
+  chart.update();
+}
+
+// ===================== SKU MONTHLY ALL TABLE (card picker, PK & CL) =====================
+const ALL_GROUP_NAMES = DATA.groups.map(g=>g.name);
+let skuMonthlyAllState = null;
+
+function setupSkuMonthlyAllPicker(){
+  const picker = document.getElementById('skuMonthlyAllPicker');
+  picker.innerHTML = ALL_GROUP_NAMES.map(name => {
+    const grp = DATA.groups.find(g=>g.name===name);
+    return `<div class="group-card" data-group="${name}">${name}<span class="gc-sub">${grp.skus} mã · ${fmtInt(grp.ban2026)} sp</span></div>`;
+  }).join('');
+
+  picker.querySelectorAll('.group-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const isActive = card.classList.contains('active');
+      picker.querySelectorAll('.group-card').forEach(c=>c.classList.remove('active'));
+      if(isActive){
+        skuMonthlyAllState = null;
+      } else {
+        card.classList.add('active');
+        skuMonthlyAllState = card.dataset.group;
+      }
+      renderSkuMonthlyAllTable();
+    });
+  });
+}
+
+function renderSkuMonthlyAllTable(){
+  const tbody = document.getElementById('skuMonthlyAllBody');
+  const info = document.getElementById('skuMonthlyAllInfo');
+  if(!skuMonthlyAllState){
+    tbody.innerHTML = `<tr><td colspan="19" style="text-align:center;color:var(--text-secondary);padding:24px;">Chọn 1 thẻ nhóm hàng phía trên để xem bảng chi tiết sản lượng theo tháng</td></tr>`;
+    info.textContent = '';
+    return;
+  }
+  const rows = [...DATA.skuMonthlyAll].filter(r=>r.group===skuMonthlyAllState).sort((a,b)=>b.total-a.total);
+  info.textContent = `${rows.length} mã sản phẩm — ${skuMonthlyAllState}`;
+  tbody.innerHTML = rows.map(r => {
+    const statusBadge = r.needReorder
+      ? '<span class="badge bad">CẦN NHẬP GẤP</span>'
+      : (r.dos > 150 ? '<span class="badge warn">Tồn cao</span>' : '<span class="badge good">Ổn định</span>');
+    return `
+    <tr>
+      <td>${r.group}</td>
+      <td>${r.sku}</td>
+      ${r.months.map(v => `<td class="num">${v ? fmtInt(v) : '<span style="color:var(--text-secondary)">–</span>'}</td>`).join('')}
+      ${[0,0,0,0,0].map(()=>`<td class="num"><span style="color:var(--text-secondary)">–</span></td>`).join('')}
+      <td class="num"><b>${fmtInt(r.total)}</b></td>
+      <td class="num">${fmtInt(r.avgMonth)}</td>
+      <td class="num">${fmtInt(r.tonKho)}</td>
+      <td class="num">${r.dos}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+
+
+// ===================== INIT =====================
+renderKPIs();
+renderCompare();
+renderChartMonthly();
+renderChartPkClShare();
+renderChartRevMonth();
+renderRevMiniTable();
+renderChartNhapBan();
+renderChartVolShare();
+setupGroupPicker();
+renderChartGroupMonthly();
+renderChartProfit();
+renderChartInvValue();
+renderChartRegions();
+setupMienFilter();
+renderRegionTable();
+setupSkuMonthlyAllPicker();
+renderSkuMonthlyAllTable();
+
+</script>
+</body>
+</html>
