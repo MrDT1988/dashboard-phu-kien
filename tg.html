@@ -837,8 +837,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             </div>
         </div>
         <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; align-items:start;">
-            <div>
-                <div class="chart-container" style="padding:12px 12px 4px; margin-bottom:14px; height:190px;">
+            <div style="min-width:0;">
+                <div class="chart-container" style="padding:12px 12px 4px; margin-bottom:14px; height:190px; min-width:0;">
                     <canvas id="chart-renofind-month"></canvas>
                 </div>
                 <div class="table-scroll" style="max-height:none;">
@@ -852,7 +852,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                     <table class="mini-week-table" id="renofind-mini-table"></table>
                 </div>
             </div>
-            <div>
+            <div style="min-width:0;">
                 <div class="table-scroll" style="max-height:none;">
                     <table class="data-table" id="renofind-share-table"></table>
                 </div>
