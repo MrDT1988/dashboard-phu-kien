@@ -3927,6 +3927,13 @@ function renderShopWorstAlerts() {
 }
 
 function renderShopCombinedTable() {
+    const tbody0 = document.getElementById('shop-combined-table-body');
+    const hasActiveFilter = currentFilters.search || currentFilters.loaishop !== 'all' || currentFilters.size !== 'all'
+        || currentFilters.tinh !== 'all' || currentFilters.sale !== 'all' || currentFilters.months.length > 0 || currentFilters.onlyWorst;
+    if (!hasActiveFilter) {
+        tbody0.innerHTML = '<tr><td colspan="11" style="text-align:center; color:var(--text-secondary); padding:20px;">👆 Chọn ít nhất 1 bộ lọc ở trên (Loại shop / Size / Tỉnh / Sale / Tháng / Tìm shop / Chỉ shop tệ nhất) để xem chi tiết từng shop.</td></tr>';
+        return;
+    }
     const baseRows = getFilteredRows();
     const sumOppo = baseRows.reduce((s,r)=>s+r.oppo_rev,0);
     const sumTotal = baseRows.reduce((s,r)=>s+r.total_rev,0);
