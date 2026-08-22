@@ -75,7 +75,7 @@ body {
     font-size:10.5px; font-weight:800; color:#fff; background:var(--oppo-green);
     padding:2px 7px; border-radius:10px; letter-spacing:0.3px;
 }
-.mc-kpi-oppo-val { font-size:17px; font-weight:800; color:var(--oppo-green); }
+.mc-kpi-oppo-val { font-size:17px; font-weight:800; color:var(--text-primary); }
 .mc-kpi-oppo-sub { font-size:11.5px; color:var(--text-secondary); }
 .mc-kpi-oppo-sub.positive { color:var(--positive); font-weight:700; }
 .mc-kpi-oppo-sub.negative { color:var(--negative); font-weight:700; }
@@ -122,12 +122,12 @@ body {
 .filter-bar label { font-size:11.5px; color:var(--text-secondary); font-weight:600; margin-right:2px; }
 .filter-bar select, .filter-bar input { padding:7px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:12.5px; background:var(--bg-input); color:var(--text-primary); }
 .filter-bar .reset-btn { padding:7px 12px; border:1px solid var(--border-color); border-radius:6px; font-size:12px; background:var(--bg-input); color:var(--text-secondary); cursor:pointer; font-weight:600; transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
-.filter-bar .reset-btn:hover { background:var(--bg-card-hover); border-color:rgba(34,229,160,0.35); color:var(--oppo-green); }
+.filter-bar .reset-btn:hover { background:var(--bg-card-hover); border-color:rgba(34,229,160,0.35); color:var(--text-primary); }
 
 .multiselect { position:relative; display:inline-block; }
 .multiselect-btn { padding:7px 12px; border:1px solid var(--border-color); border-radius:6px; font-size:12.5px; background:var(--bg-input); color:var(--text-primary); cursor:pointer; min-width:110px; text-align:left; display:flex; justify-content:space-between; align-items:center; gap:8px; }
 .multiselect-btn:after { content:'▾'; color:var(--text-secondary); font-size:10px; }
-.multiselect-btn.active { border-color: var(--oppo-green); }
+.multiselect-btn.active { border-color:var(--text-primary); }
 .multiselect-panel { position:absolute; top:calc(100% + 4px); left:0; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.5), var(--glow-soft); padding:8px; z-index:20; min-width:170px; max-height:260px; overflow-y:auto; }
 .multiselect-panel.hidden { display:none; }
 .multiselect-option { display:flex; align-items:center; gap:8px; padding:5px 6px; font-size:12.5px; border-radius:4px; cursor:pointer; color:var(--text-primary); }
@@ -146,11 +146,11 @@ body {
     background: linear-gradient(180deg, rgba(34,229,160,0.08) 0%, var(--bg-card) 180px);
     box-shadow: 0 2px 10px rgba(27,179,80,0.18);
 }
-.mwg-unified-section > .table-section-header h3 { color: var(--oppo-green); }
+.mwg-unified-section > .table-section-header h3 { color:var(--text-primary); }
 .mwg-subsection { padding-top:18px; margin-top:18px; border-top:1px dashed rgba(34,229,160,0.25); }
 .mwg-subsection:first-of-type { padding-top:2px; margin-top:2px; border-top:none; }
 .mwg-subsection-title {
-    font-size:14px; font-weight:800; color:var(--oppo-green);
+    font-size:14px; font-weight:800; color:var(--text-primary);
     margin-bottom:10px; display:flex; align-items:center; gap:9px; flex-wrap:wrap;
 }
 .mwg-subsection-badge {
@@ -164,7 +164,7 @@ body {
 .data-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 .data-table thead th {
     position: sticky; top:0; background: #57687e; text-align:left; padding:11px 12px;
-    border-bottom:2px solid var(--oppo-green); color:var(--oppo-green); font-weight:700; font-size:11px;
+    border-bottom:2px solid var(--oppo-green); color:var(--text-primary); font-weight:700; font-size:11px;
     text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; cursor:pointer; user-select:none; z-index:1;
 }
 .data-table thead th:hover { color:#fff; background:var(--oppo-green); }
@@ -181,7 +181,7 @@ body {
 #area-table tbody tr:hover td.khung-dt { background:rgba(34,229,160,0.16); }
 #area-table tbody tr:hover td.khung-pk { background:rgba(255,176,58,0.16); }
 .seg-tab-btn { background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-primary); }
-.seg-tab-btn.active { background: var(--oppo-green); color:#fff; border-color: var(--oppo-green); }
+.seg-tab-btn.active { background: var(--oppo-green); color:#fff; border-color:var(--text-primary); }
 .channel-nav { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:var(--gap); }
 .channel-nav a { flex:1; min-width:140px; text-align:center; background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.35); text-decoration:none; color:var(--text-primary); font-weight:700; font-size:13px; border-left:4px solid var(--oppo-green); transition:box-shadow .2s, border-color .2s; }
 .channel-nav a:hover { box-shadow:0 4px 14px rgba(0,0,0,0.45); border-color:rgba(34,229,160,0.35); }
@@ -203,7 +203,7 @@ body {
 .mini-month-table-wrap { overflow-x:auto; margin-top:10px; background:#48566a; border-radius:8px; }
 .mini-month-table { border-collapse:collapse; width:100%; font-size:9px; table-layout:fixed; }
 .mini-month-table td { padding:3px 5px; text-align:center; border:1px solid var(--border-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text-primary); }
-.mini-month-table tr.mmt-month td { background:#57687e; font-weight:700; color:var(--oppo-green); }
+.mini-month-table tr.mmt-month td { background:#57687e; font-weight:700; color:var(--text-primary); }
 .mini-month-table tr.mmt-value td { font-weight:600; }
 .mini-month-table tr.mmt-growth td.mmt-up { color:var(--positive); font-weight:700; }
 .mini-month-table tr.mmt-growth td.mmt-down { color:var(--negative); font-weight:700; }
@@ -215,7 +215,7 @@ body {
 .product-detail-row td { background:#101a15; }
 
 #loading-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; gap:14px; }
-.spinner { width:36px; height:36px; border:4px solid var(--border-color); border-top-color:var(--oppo-green); border-radius:50%; animation:spin 0.8s linear infinite; }
+.spinner { width:36px; height:36px; border:4px solid var(--border-color); border-top-color:var(--text-primary); border-radius:50%; animation:spin 0.8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 #error-screen { display:none; background:rgba(255,92,114,0.12); border:1px solid rgba(255,92,114,0.35); border-radius:10px; padding:20px; color:#ff8fa3; margin:20px; }
 
@@ -258,7 +258,7 @@ body {
         <h1>📊 BÁO CÁO SELLOUT OPPO — MIỀN TRUNG</h1>
         <p>6 Khu vực · 17 Tỉnh · Đa kênh (MWG / IND / KA) — cập nhật theo dữ liệu sống từ Google Sheets</p>
         <span class="badge" id="header-badge">Đang tải...</span>
-        <button id="checkpoint-btn" style="display:none; margin-left:10px; background:#fff; color:var(--oppo-green-dark); border:none; padding:5px 14px; border-radius:20px; font-size:11px; font-weight:700; cursor:pointer;">🔄 Chốt kỳ ngay</button>
+        <button id="checkpoint-btn" style="display:none; margin-left:10px; background:#fff; color:#10151d; border:none; padding:5px 14px; border-radius:20px; font-size:11px; font-weight:700; cursor:pointer;">🔄 Chốt kỳ ngay</button>
         <div id="provisional-note" style="display:none; margin-top:8px; background:rgba(255,197,66,0.15); color:#ffd166; border-radius:8px; padding:6px 12px; font-size:11.5px; font-weight:600;"></div>
     </div>
 
@@ -271,7 +271,7 @@ body {
     </nav>
 
     <!-- ============ 1. TỔNG QUAN — ALL KÊNH ============ -->
-    <h2 id="sec-overview" class="section-anchor" style="margin-bottom:10px; color:var(--oppo-green-dark);">1. Tổng quan — Toàn bộ Kênh (MWG + IND + KA)</h2>
+    <h2 id="sec-overview" class="section-anchor" style="margin-bottom:10px; color:var(--text-primary);">1. Tổng quan — Toàn bộ Kênh (MWG + IND + KA)</h2>
 
     <div class="kpi-row" id="kpi-row"></div>
 
@@ -337,7 +337,7 @@ body {
     </section>
 
     <!-- ============ 2. KÊNH MWG — DEEP DIVE ============ -->
-    <h2 id="sec-mwg" class="section-anchor" style="margin:28px 0 10px; color:var(--oppo-green-dark);">2. Chi tiết Kênh MWG</h2>
+    <h2 id="sec-mwg" class="section-anchor" style="margin:28px 0 10px; color:var(--text-primary);">2. Chi tiết Kênh MWG</h2>
 
     <section class="table-section">
         <div class="table-section-header">
@@ -506,7 +506,7 @@ body {
                 <div class="multiselect" id="ms-mt-mc-sizeshop"></div>
                 <button class="reset-btn" id="mt-mc-reset">Xóa lọc</button>
             </div>
-            <div id="mt-mc-period-label" style="font-size:12.5px; font-weight:600; color:var(--oppo-green-dark); margin-bottom:14px;"></div>
+            <div id="mt-mc-period-label" style="font-size:12.5px; font-weight:600; color:var(--text-primary); margin-bottom:14px;"></div>
             <div class="kpi-row" id="mt-mc-kpi-row">
                 <div class="kpi-card">
                     <div class="kpi-label">S.O (Số lượng)</div>
@@ -571,14 +571,14 @@ body {
             <div style="margin-top:4px;">
                 <div class="chart-sub" style="font-weight:700;margin-bottom:2px;">Số bán (Sellout) theo ngày</div>
                 <div class="chart-sub" style="margin-bottom:6px;">Mỗi ngày là 1 cột xếp chồng 100% theo hãng. Rê chuột vào từng phần cột để xem số máy cụ thể.</div>
-                <div id="mwg-daily-units-total" style="font-size:13px;font-weight:700;color:var(--oppo-green-dark);margin-bottom:8px;"></div>
+                <div id="mwg-daily-units-total" style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;"></div>
                 <canvas id="chart-mwg-daily-units" style="max-height:340px;"></canvas>
                 <div class="mini-month-table-wrap"><table class="mini-month-table" id="mwg-daily-units-mini-table"></table></div>
             </div>
 
             <div style="margin-top:26px;">
                 <div class="chart-sub" style="font-weight:700;margin-bottom:6px;">Doanh thu theo ngày</div>
-                <div id="mwg-daily-revenue-total" style="font-size:13px;font-weight:700;color:var(--oppo-green-dark);margin-bottom:8px;"></div>
+                <div id="mwg-daily-revenue-total" style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;"></div>
                 <canvas id="chart-mwg-daily-revenue" style="max-height:340px;"></canvas>
                 <div class="mini-month-table-wrap"><table class="mini-month-table" id="mwg-daily-revenue-mini-table"></table></div>
             </div>
@@ -586,7 +586,7 @@ body {
     </section>
 
     <!-- ============ 3. KÊNH KA ============ -->
-    <h2 id="sec-ka" class="section-anchor" style="margin:28px 0 10px; color:var(--oppo-green-dark);">3. Chi tiết Kênh KA</h2>
+    <h2 id="sec-ka" class="section-anchor" style="margin:28px 0 10px; color:var(--text-primary);">3. Chi tiết Kênh KA</h2>
 
     <section class="table-section">
         <div class="table-section-header">
@@ -626,7 +626,7 @@ body {
     </section>
 
     <!-- ============ 4. KÊNH IND ============ -->
-    <h2 id="sec-ind" class="section-anchor" style="margin:28px 0 10px; color:var(--oppo-green-dark);">4. Chi tiết Kênh IND (OPPO Club)</h2>
+    <h2 id="sec-ind" class="section-anchor" style="margin:28px 0 10px; color:var(--text-primary);">4. Chi tiết Kênh IND (OPPO Club)</h2>
 
     <div class="ind-data-warning" id="ind-store-month-warning">⚠️ Chưa có dữ liệu chi tiết Shop/Tháng cho kênh IND (checkpoint đang dùng bản Apps Script cũ). Các phần bên dưới — 4 thẻ KPI, O.C/Normal theo tháng, Target theo Shop O.C, Chương trình tháng thưởng — sẽ trống cho tới khi anh cập nhật code AppsScript_MienTrung_backend_v4.gs mới rồi bấm "Chốt kỳ ngay".</div>
 
@@ -842,7 +842,7 @@ body {
     </section>
 
     <!-- ============ 5. CẢNH BÁO & ĐỀ XUẤT ============ -->
-    <h2 id="sec-insight" class="section-anchor" style="margin:28px 0 10px; color:var(--oppo-green-dark);">5. Cảnh báo &amp; Nhận xét &amp; Đề xuất</h2>
+    <h2 id="sec-insight" class="section-anchor" style="margin:28px 0 10px; color:var(--text-primary);">5. Cảnh báo &amp; Nhận xét &amp; Đề xuất</h2>
 
     <section class="table-section">
         <div class="table-section-header">
@@ -1191,7 +1191,7 @@ function renderPgMonthTable() {
             <td class="num"><b>${avgSales.toFixed(1)}</b></td>
         </tr>
         <tr>
-            <td><span class="tag" style="background:rgba(34,229,160,0.15);color:var(--oppo-green-dark);">PG</span></td>
+            <td><span class="tag" style="background:rgba(34,229,160,0.15);color:var(--text-primary);">PG</span></td>
             ${pgsByMonth.map(v=>`<td class="num">${fmtInt(v)}</td>`).join('')}
             <td class="num"><b>${avgPgs.toFixed(1)}</b></td>
         </tr>`;
@@ -1354,7 +1354,7 @@ function channelMonthAreaDetailHtml(channel, months, colspan) {
             <span style="text-align:center;font-weight:700;">${fmtInt(r.totalSellout)}</span>
         </div>
         <div style="display:grid; grid-template-columns: 1.3fr repeat(${months.length}, 1fr) 1fr; gap:6px; padding:4px 0 8px; border-bottom:1px solid var(--border-color); font-size:11.5px; align-items:center;">
-            <span><span class="tag" style="background:rgba(34,229,160,0.15);color:var(--oppo-green-dark);">DT</span></span>
+            <span><span class="tag" style="background:rgba(34,229,160,0.15);color:var(--text-primary);">DT</span></span>
             ${r.revByMonth.map(v=>`<span style="text-align:center;">${v?fmtVND(v):'-'}</span>`).join('')}
             <span style="text-align:center;font-weight:700;">${fmtVND(r.totalRev)}</span>
         </div>`).join('');
@@ -2445,7 +2445,7 @@ function areaSizeDetailRowHtml(areaName, sizeRows, colspan, benchmarks) {
         const isSizeExpanded = expandedAreaSizeRows.has(areaSizeExpandKey(areaName, s.size));
         const sizeArrow = isSizeExpanded ? '▾' : '▸';
         const mainRow = `<tr>
-            <td><span class="shop-link" data-area-name="${escapeHtml(areaName)}" data-size="${escapeHtml(s.size)}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${sizeArrow} <span class="tag">Size ${escapeHtml(s.size)}</span></span> <span style="color:var(--text-secondary);font-size:11px;">(${s.num_shops} shop)</span></td>
+            <td><span class="shop-link" data-area-name="${escapeHtml(areaName)}" data-size="${escapeHtml(s.size)}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${sizeArrow} <span class="tag">Size ${escapeHtml(s.size)}</span></span> <span style="color:var(--text-secondary);font-size:11px;">(${s.num_shops} shop)</span></td>
             <td class="num khung-so khung-divider">${fmtInt(s.oppoUnits)}</td>
             <td class="num khung-so">${fmtInt(s.totalUnits)}</td>
             <td class="num khung-so" style="${colorFor(s.pctUnits, benchmarks.avgPctUnits, hasUnits)}">${fmtPct(s.pctUnits)}</td>
@@ -2565,7 +2565,7 @@ function renderAreaTable() {
         const isExpanded = expandedAreaTableRows.has(r.area);
         const arrow = isExpanded ? '▾' : '▸';
         const rowHtml = `<tr>
-            <td><span class="shop-link" data-area-name="${escapeHtml(r.area)}" style="cursor:pointer; color:var(--oppo-green-dark); font-weight:600;">${arrow} ${escapeHtml(areaLabel(r.area))}</span></td>
+            <td><span class="shop-link" data-area-name="${escapeHtml(r.area)}" style="cursor:pointer; color:var(--text-primary); font-weight:600;">${arrow} ${escapeHtml(areaLabel(r.area))}</span></td>
             <td class="num">${r.num_shops}</td>
             <td class="num khung-so khung-divider">${fmtInt(r.oppo_units)}</td>
             <td class="num khung-so">${fmtInt(r.total_units)}</td>
