@@ -189,13 +189,14 @@ body {
 .ka-market-share-grid { display:grid; grid-template-columns: 1fr 1fr; gap: var(--gap); align-items:start; }
 .ka-market-share-grid > div { min-width:0; }
 @media (max-width: 900px) { .ka-market-share-grid { grid-template-columns: 1fr; } }
-.ka-market-share-table { font-size: 8px; }
-.ka-market-share-table th { padding: 4px 2px; font-size: 7.5px; text-align:center; }
-.ka-market-share-table td { padding: 3px 2px; text-align:center; }
+.ka-market-share-table { font-size: 7.5px; }
+.ka-market-share-table th { padding: 3px 2px; font-size: 7px; text-align:center; }
+.ka-market-share-table td { padding: 2.5px 1.5px; text-align:center; }
 .ka-market-share-table td:first-child { text-align:left; font-weight:700; }
-.ka-market-share-table td div { font-size: 7px !important; }
-.ka-market-share-grid .ind-sale-metric-switch { gap:4px; }
-.ka-market-share-grid .ind-sale-metric-btn { padding:4px 7px; font-size:9px; white-space:nowrap; }
+.ka-market-share-table td div { font-size: 6.5px !important; }
+.ka-market-share-grid .ind-sale-metric-switch { gap:3px; }
+.ka-market-share-grid .ind-sale-metric-btn { padding:3px 6px; font-size:8.5px; white-space:nowrap; }
+.ka-market-share-shop-filter .multiselect-btn { padding:3px 8px; font-size:8.5px; min-width:80px; }
 /* Chi tiết KA - bảng "Doanh thu chi tiết theo Shop": dòng tiêu đề nhóm Kênh phụ (Viettel/ĐMCL/CPS/FPT). */
 #ka-shop-revenue-table { font-size: 10.5px; table-layout: fixed; width:100%; }
 #ka-shop-revenue-table th { padding: 7px 5px; font-size: 9.5px; }
@@ -1593,11 +1594,14 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
         <div class="ka-market-share-grid">
             <div>
-                <div class="ind-sale-metric-switch" style="margin-bottom:10px;">
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn active" data-sub="FPT" data-metric="ds">DS</button>
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="b1015">10-15M</button>
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="b1520">15-20M</button>
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="b1020">10-20M</button>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                    <div class="ind-sale-metric-switch" style="margin:0;">
+                        <button class="ind-sale-metric-btn ka-market-share-metric-btn active" data-sub="FPT" data-metric="ds">DS</button>
+                        <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="b1015">10-15M</button>
+                        <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="b1520">15-20M</button>
+                        <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="FPT" data-metric="b1020">10-20M</button>
+                    </div>
+                    <div id="ka-market-share-shop-filter-fpt" class="ka-market-share-shop-filter"></div>
                 </div>
                 <div class="table-scroll">
                     <table class="data-table ka-market-share-table">
@@ -1607,11 +1611,14 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                 </div>
             </div>
             <div>
-                <div class="ind-sale-metric-switch" style="margin-bottom:10px;">
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn active" data-sub="VIETTEL" data-metric="ds">DS</button>
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="b1015">10-15M</button>
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="b1520">15-20M</button>
-                    <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="b1020">10-20M</button>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                    <div class="ind-sale-metric-switch" style="margin:0;">
+                        <button class="ind-sale-metric-btn ka-market-share-metric-btn active" data-sub="VIETTEL" data-metric="ds">DS</button>
+                        <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="b1015">10-15M</button>
+                        <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="b1520">15-20M</button>
+                        <button class="ind-sale-metric-btn ka-market-share-metric-btn" data-sub="VIETTEL" data-metric="b1020">10-20M</button>
+                    </div>
+                    <div id="ka-market-share-shop-filter-viettel" class="ka-market-share-shop-filter"></div>
                 </div>
                 <div class="table-scroll">
                     <table class="data-table ka-market-share-table">
@@ -6988,6 +6995,8 @@ function shareKaAddEntry(sub, brand, month, qty, bucket) {
     if (bucket === '10m-15m') cell.b1015 += qty;
     else if (bucket === '15m-20m') cell.b1520 += qty;
 }
+const SHARE_KA_RAW_ROWS = { FPT: [], VIETTEL: [] };
+let kaMarketShareShopFilter = { FPT: [], VIETTEL: [] };
 function loadShareKaMarketShare() {
     return fetch(shareKaGvizUrl()).then(res => {
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -6999,10 +7008,9 @@ function loadShareKaMarketShare() {
             if (rows[i][0] === 'Ngày' || rows[i][1] === 'Mã Shop') { headerRow = i; break; }
         }
         const dataStart = headerRow >= 0 ? headerRow + 1 : 2;
-        const fptData = {}, viettelData = {};
-        KA_MARKET_SHARE_BRANDS.forEach(b => { fptData[b] = {}; viettelData[b] = {}; });
+        SHARE_KA_RAW_ROWS.FPT = [];
+        SHARE_KA_RAW_ROWS.VIETTEL = [];
 
-        let fptRows = 0, viettelRows = 0;
         for (let i = dataStart; i < rows.length; i++) {
             const r = rows[i];
             if (!r) continue;
@@ -7012,7 +7020,8 @@ function loadShareKaMarketShare() {
                     const month = shareKaParseFptMonth(r[0]);
                     const qty = parseInt(String(r[4] || '0').replace(/[^0-9\-]/g, ''), 10) || 0;
                     const bucket = shareKaNormalizeBucket(r[5]);
-                    if (month) { shareKaAddEntryInto(fptData, brand, month, qty, bucket); fptRows++; }
+                    const shop = String(r[1] || '').trim();
+                    if (month) SHARE_KA_RAW_ROWS.FPT.push({ shop, brand, month, qty, bucket });
                 }
             }
             if (r[15] !== undefined && String(r[15]).trim() !== '') {
@@ -7021,14 +7030,31 @@ function loadShareKaMarketShare() {
                     const month = shareKaParseViettelMonth(r[18]);
                     const qty = parseInt(String(r[16] || '0').replace(/[^0-9\-]/g, ''), 10) || 0;
                     const bucket = shareKaNormalizeBucket(r[17]);
-                    if (month) { shareKaAddEntryInto(viettelData, brand, month, qty, bucket); viettelRows++; }
+                    const shop = String(r[12] || '').trim();
+                    if (month) SHARE_KA_RAW_ROWS.VIETTEL.push({ shop, brand, month, qty, bucket });
                 }
             }
         }
-        if (fptRows < 5 && viettelRows < 5) throw new Error('Đọc được quá ít dòng dữ liệu, có thể sheet đổi cấu trúc');
-        KA_MARKET_SHARE_DATA.FPT = fptData;
-        KA_MARKET_SHARE_DATA.VIETTEL = viettelData;
+        if (SHARE_KA_RAW_ROWS.FPT.length < 5 && SHARE_KA_RAW_ROWS.VIETTEL.length < 5) throw new Error('Đọc được quá ít dòng dữ liệu, có thể sheet đổi cấu trúc');
+        shareKaRebuildData('FPT');
+        shareKaRebuildData('VIETTEL');
     });
+}
+// Dựng lại KA_MARKET_SHARE_DATA[sub] từ dữ liệu thô, áp dụng bộ lọc Shop đang chọn (nếu có).
+function shareKaRebuildData(sub) {
+    const target = {};
+    KA_MARKET_SHARE_BRANDS.forEach(b => { target[b] = {}; });
+    const selectedShops = kaMarketShareShopFilter[sub] || [];
+    const rows = SHARE_KA_RAW_ROWS[sub] || [];
+    rows.forEach(row => {
+        if (selectedShops.length && !selectedShops.includes(row.shop)) return;
+        shareKaAddEntryInto(target, row.brand, row.month, row.qty, row.bucket);
+    });
+    KA_MARKET_SHARE_DATA[sub] = target;
+}
+function shareKaShopOptions(sub) {
+    const set = new Set(SHARE_KA_RAW_ROWS[sub].map(r => r.shop).filter(Boolean));
+    return Array.from(set).sort().map(s => ({ value: s, text: s }));
 }
 function shareKaAddEntryInto(target, brand, month, qty, bucket) {
     if (!target[brand]) target[brand] = {};
@@ -7087,6 +7113,14 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
     loadShareKaMarketShare().then(() => {
         renderKaMarketShareTable('FPT', 'ka-market-share-fpt-body');
         renderKaMarketShareTable('VIETTEL', 'ka-market-share-viettel-body');
+        buildMultiselect('ka-market-share-shop-filter-fpt', shareKaShopOptions('FPT'), kaMarketShareShopFilter, 'FPT', 'Tất cả Shop', () => {
+            shareKaRebuildData('FPT');
+            renderKaMarketShareTable('FPT', 'ka-market-share-fpt-body');
+        });
+        buildMultiselect('ka-market-share-shop-filter-viettel', shareKaShopOptions('VIETTEL'), kaMarketShareShopFilter, 'VIETTEL', 'Tất cả Shop', () => {
+            shareKaRebuildData('VIETTEL');
+            renderKaMarketShareTable('VIETTEL', 'ka-market-share-viettel-body');
+        });
     }).catch(err => {
         console.error('Không tải được dữ liệu Thị phần (Share KA):', err);
         if (noteEl) noteEl.insertAdjacentHTML('afterend', '<div style="color:var(--negative); font-size:11.5px; margin-top:4px;">⚠️ Không tải được dữ liệu thị phần từ Sheet Share KA (' + escapeHtml(err.message) + ') — đang hiện bảng trống.</div>');
