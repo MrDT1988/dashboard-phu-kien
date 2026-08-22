@@ -832,6 +832,34 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
     <section class="table-section">
         <div class="table-section-header">
             <div>
+                <h3>Sell Out Reno &amp; Find so với các model còn lại</h3>
+                <div class="chart-sub">Dùng chung bộ lọc với bảng phía trên. Bên trái: Sellout gộp Reno + Find theo tháng (cả năm) và chi tiết theo từng Kênh. Bên phải: tỉ trọng Reno &amp; Find so với các model khác, theo từng Kênh.</div>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; align-items:start;">
+            <div>
+                <div class="table-scroll" style="max-height:none;">
+                    <table class="data-table" id="renofind-month-table">
+                        <thead><tr id="renofind-month-table-head"></tr></thead>
+                        <tbody id="renofind-month-table-body"></tbody>
+                    </table>
+                </div>
+                <div style="font-size:10.5px; font-weight:700; color:var(--text-secondary); margin:14px 0 6px; text-transform:uppercase;">Chi tiết theo Kênh</div>
+                <div class="table-scroll" style="max-height:none;">
+                    <table class="mini-week-table" id="renofind-mini-table"></table>
+                </div>
+            </div>
+            <div>
+                <div class="table-scroll" style="max-height:none;">
+                    <table class="data-table" id="renofind-share-table"></table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
                 <h3>Cụm biểu đồ Reno / Phân khúc giá / Tỉ trọng Kênh</h3>
                 <div class="chart-sub">Lọc riêng theo Sale và Tháng, áp dụng chung cho cả 3 biểu đồ bên dưới.</div>
             </div>
@@ -3492,9 +3520,100 @@ function renderWeeklyRevenueChart() {
     }
 }
 
+// ================= Sell Out Reno & Find so với các model còn lại =================
+function crosstabPassesFilterNoMonth(rec) {
+    if (chFilters.channels.length && !chFilters.channels.includes(rec.channel)) return false;
+    if (chFilters.sales.length && !chFilters.sales.includes(rec.sales)) return false;
+    if (chFilters.stores.length && !chFilters.stores.includes(rec.store)) return false;
+    if (chFilters.productSearch && !rec.model.toLowerCase().includes(chFilters.productSearch.toLowerCase())) return false;
+    return true;
+}
+function isRenoOrFindSeries(series) {
+    const s = String(series || '').toLowerCase();
+    return s.indexOf('reno') !== -1 || s.indexOf('find') !== -1;
+}
+function computeRenoFindData() {
+    const byChannelMonth = {};
+    const totalByMonth = {};
+    DATA.channels_list.forEach(c => { byChannelMonth[c] = {}; ALL_12_MONTHS.forEach(m => byChannelMonth[c][m] = 0); });
+    ALL_12_MONTHS.forEach(m => totalByMonth[m] = 0);
+    const channelTotal = {}, channelRenoFind = {};
+    DATA.channels_list.forEach(c => { channelTotal[c] = 0; channelRenoFind[c] = 0; });
+
+    DATA.crosstab.forEach(rec => {
+        if (!crosstabPassesFilterNoMonth(rec)) return;
+        const isRF = isRenoOrFindSeries(rec.series);
+        if (isRF) {
+            if (byChannelMonth[rec.channel]) byChannelMonth[rec.channel][rec.m] = (byChannelMonth[rec.channel][rec.m] || 0) + rec.sellout;
+            totalByMonth[rec.m] = (totalByMonth[rec.m] || 0) + rec.sellout;
+        }
+        if (channelTotal[rec.channel] !== undefined) {
+            channelTotal[rec.channel] += rec.sellout;
+            if (isRF) channelRenoFind[rec.channel] += rec.sellout;
+        }
+    });
+    return { byChannelMonth, totalByMonth, channelTotal, channelRenoFind };
+}
+function renderRenoFindSection() {
+    const { byChannelMonth, totalByMonth, channelTotal, channelRenoFind } = computeRenoFindData();
+    const labels = ALL_12_MONTHS.map(m => 'T' + m);
+    const channels = DATA.channels_list;
+
+    function growthCell(arr, i, fmt) {
+        const cur = arr[i];
+        if (i === 0) return `${fmt(cur)}`;
+        const prev = arr[i - 1];
+        if (!prev) return `${fmt(cur)}`;
+        const g = (cur - prev) / prev * 100;
+        const cls = g > 0.05 ? 'style="color:var(--positive);"' : (g < -0.05 ? 'style="color:var(--negative);"' : '');
+        const sign = g >= 0 ? '+' : '';
+        return `${fmt(cur)} <span ${cls}>(${sign}${g.toFixed(1)}%)</span>`;
+    }
+
+    const totalArr = ALL_12_MONTHS.map(m => totalByMonth[m] || 0);
+    const grandTotal = totalArr.reduce((a, b) => a + b, 0);
+
+    const head = document.getElementById('renofind-month-table-head');
+    if (head) {
+        let h = '<th style="text-align:left;">Chỉ tiêu</th>';
+        labels.forEach(l => h += `<th class="num">${l}</th>`);
+        h += '<th class="num">Tổng</th>';
+        head.innerHTML = h;
+    }
+    const body = document.getElementById('renofind-month-table-body');
+    if (body) {
+        body.innerHTML = `<tr>
+            <td><b>Sellout Reno &amp; Find</b></td>
+            ${totalArr.map((v, i) => `<td class="num">${growthCell(totalArr, i, x => fmtInt(x) + ' máy')}</td>`).join('')}
+            <td class="num"><b>${fmtInt(grandTotal)} máy</b></td>
+        </tr>`;
+    }
+
+    const miniTbl = document.getElementById('renofind-mini-table');
+    if (miniTbl) {
+        const headRow = '<tr class="mwt-week"><td class="mwt-label">Kênh</td>' + labels.map(l => `<td>${l}</td>`).join('') + '<td>Tổng</td></tr>';
+        const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + `<td><b>${fmtInt(arr.reduce((a, b) => a + b, 0))}</b></td></tr>`;
+        const bodyRows = channels.map(c => rowHtml(c, ALL_12_MONTHS.map(m => byChannelMonth[c][m] || 0))).join('');
+        miniTbl.innerHTML = headRow + bodyRows;
+    }
+
+    const shareTbl = document.getElementById('renofind-share-table');
+    if (shareTbl) {
+        const otherByC = channels.map(c => Math.max(0, (channelTotal[c] || 0) - (channelRenoFind[c] || 0)));
+        const pctByC = channels.map(c => channelTotal[c] ? (channelRenoFind[c] / channelTotal[c] * 100) : 0);
+        let h = '<tr><th style="text-align:left;">Chỉ tiêu</th>' + channels.map(c => `<th class="num">${escapeHtml(c)}</th>`).join('') + '</tr>';
+        h += `<tr><td>Reno &amp; Find (máy)</td>${channels.map(c => `<td class="num">${fmtInt(channelRenoFind[c] || 0)}</td>`).join('')}</tr>`;
+        h += `<tr><td>Model khác (máy)</td>${otherByC.map(v => `<td class="num">${fmtInt(v)}</td>`).join('')}</tr>`;
+        h += `<tr style="border-top:1px solid rgba(255,255,255,0.10);"><td><b>Tổng (máy)</b></td>${channels.map(c => `<td class="num"><b>${fmtInt(channelTotal[c] || 0)}</b></td>`).join('')}</tr>`;
+        h += `<tr><td><b>% Reno &amp; Find</b></td>${pctByC.map(p => `<td class="num"><b>${fmtPct(p)}</b></td>`).join('')}</tr>`;
+        shareTbl.innerHTML = h;
+    }
+}
+
 function refreshChannelCharts() {
     renderChannelMonthChart();
     renderChannelMonthTable();
+    renderRenoFindSection();
 }
 refreshChannelCharts();
 renderWeeklyRevenueChart();
