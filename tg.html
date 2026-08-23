@@ -700,6 +700,11 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 @media print {
     body { background:white; color:#1a1a1a; }
     .table-scroll { max-height:none; overflow:visible; }
+    html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .db-tg-tabnav, #export-pdf-btn, details, button, .filter-bar, .multiselect, .reset-btn, .sale-card-group { display: none !important; }
+    .db-tg-panel[hidden] { display: block !important; } /* ép hiện đủ 4 tab khi in, dù đang set hidden */
+    .db-tg-panel { page-break-before: always; break-before: page; }
+    .db-tg-panel#panel-overview { page-break-before: avoid; break-before: avoid; }
 }
 </style>
 
@@ -738,6 +743,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <button class="db-tg-tab" data-panel="panel-mwg" type="button">🟡 Chi tiết MWG</button>
             <button class="db-tg-tab" data-panel="panel-ka" type="button">🔵 Chi tiết KA</button>
             <button class="db-tg-tab" data-panel="panel-ind" type="button">🟢 Chi tiết IND</button>
+            <button id="export-pdf-btn" type="button" title="Xuất toàn bộ 4 tab (Tổng quan + MWG + KA + IND) ra file PDF" style="margin-left:auto; padding:9px 16px; border-radius:8px; border:1px solid var(--oppo-green-dark); background:transparent; color:var(--oppo-green); cursor:pointer; font-weight:700; font-size:13px; white-space:nowrap;">⬇️ Xuất PDF</button>
         </nav>
     </header>
 
@@ -7235,6 +7241,42 @@ loadAndRender();
         t.addEventListener('click', function () { activate(t.dataset.panel); });
     });
     activate('panel-overview');
+
+    // ================= Xuất PDF (toàn bộ 4 tab: Tổng quan + MWG + KA + IND) =================
+    // In ấn chỉ chụp được đúng tab đang hiện (do 3 tab kia đang set "hidden"), nên trước khi gọi
+    // print() phải tạm hiện đủ cả 4 tab, đợi biểu đồ Chart.js vẽ lại (chúng bị 0x0 lúc đang ẩn),
+    // rồi mới in - xong lại phục hồi đúng tab đang xem trước đó qua sự kiện "afterprint".
+    var exportBtn = document.getElementById('export-pdf-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function () {
+            var activeTab = document.querySelector('.db-tg-tab.active');
+            var previousPanel = activeTab ? activeTab.dataset.panel : 'panel-overview';
+
+            panels.forEach(function (p) { p.hidden = false; });
+            window.dispatchEvent(new Event('resize'));
+
+            var restored = false;
+            function restore() {
+                if (restored) return;
+                restored = true;
+                activate(previousPanel);
+                window.removeEventListener('afterprint', restore);
+            }
+            window.addEventListener('afterprint', restore);
+
+            // Chart.js cần vài trăm ms để tính lại kích thước + vẽ lại sau khi panel chuyển từ ẩn
+            // sang hiện; đợi 1 nhịp resize nữa rồi mới mở hộp thoại in, để biểu đồ không bị trống.
+            setTimeout(function () {
+                window.dispatchEvent(new Event('resize'));
+                setTimeout(function () {
+                    window.print();
+                    // Một số trình duyệt (đặc biệt trên máy tính) không bắn "afterprint" đáng tin cậy
+                    // khi người dùng bấm "Hủy" - phục hồi lại tab sau 1 khoảng thời gian dự phòng.
+                    setTimeout(restore, 2000);
+                }, 250);
+            }, 150);
+        });
+    }
 })();
 </script>
 
