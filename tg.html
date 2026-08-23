@@ -4637,9 +4637,9 @@ function renderIndGroupMonthlyTable() {
         pkArr: sumArr(ocArrs.pkArr, normalArrs.pkArr),
     };
 
-    body.innerHTML = groupBlock('O.C', ocArrs, 'rgba(224,178,77,0.16)', '#e0b24d', true, '')
-        + groupBlock('Normal', normalArrs, 'rgba(91,143,214,0.16)', '#5b8fd6', true, '')
-        + groupBlock('TỔNG', totalArrs, 'rgba(34,229,160,0.16)', 'var(--oppo-green)', false, 'total-row');
+    body.innerHTML = groupBlock('O.C', ocArrs, 'transparent', '#e0b24d', true, '')
+        + groupBlock('Normal', normalArrs, 'transparent', '#5b8fd6', true, '')
+        + groupBlock('TỔNG', totalArrs, 'transparent', 'var(--oppo-green)', false, 'total-row');
 
     body.querySelectorAll('.shop-link[data-indgroup]').forEach(el => {
         el.addEventListener('click', () => {
