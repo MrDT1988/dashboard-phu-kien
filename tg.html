@@ -7315,10 +7315,16 @@ loadAndRender();
                     }
 
                     var exportedAt = new Date().toLocaleString('vi-VN');
+                    // initDashboard(DATA) tự nó KHÔNG ẩn màn hình loading - việc đó vốn nằm trong
+                    // loadAndRender() (hàm đang bị bỏ qua ở đây) nên phải tự ẩn thủ công 2 overlay loading
+                    // (trang chính + panel MWG) ngay trước khi gọi initDashboard, nếu không dashboard sẽ bị
+                    // overlay "Đang tải..." che mất mãi dù dữ liệu đã có sẵn.
+                    var hideMainLoading = "document.getElementById('loading-overlay') && (document.getElementById('loading-overlay').style.display='none');";
+                    var hideMwgLoading = "document.getElementById('mwg-loading-overlay') && (document.getElementById('mwg-loading-overlay').style.display='none');";
                     var newHtml = parts[0]
-                        + 'initDashboard(' + JSON.stringify(dataFirst) + ');'
+                        + hideMainLoading + 'initDashboard(' + JSON.stringify(dataFirst) + ');'
                         + parts[1]
-                        + 'initDashboard(' + JSON.stringify(dataSecond) + ');'
+                        + hideMwgLoading + 'initDashboard(' + JSON.stringify(dataSecond) + ');'
                         + parts[2];
 
                     // Ẩn nút "Xuất HTML" trong bản xuất - nút này cần fetch(location.href) để lấy lại mã
