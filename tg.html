@@ -1747,6 +1747,27 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
     </section>
 
+    <section class="table-section" style="margin-top:var(--gap);" id="ka-no-pg-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Chương trình Shop chưa có PG — Thưởng 1% Doanh thu</h3>
+                <div class="chart-sub">Danh sách shop KA <b>chưa có PG</b> (cột PG = ✗ ở bảng trên), áp dụng chương trình thưởng <b style="color:var(--oppo-green);">1% Doanh thu</b> tháng đang chọn. Chọn Tháng để xem doanh thu &amp; thưởng dự kiến.</div>
+            </div>
+            <div class="table-controls">
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
+                <select id="ka-no-pg-month-select"><option value="">Chọn tháng...</option></select>
+            </div>
+        </div>
+        <div class="table-scroll" style="max-height:480px;">
+            <table class="data-table" id="ka-no-pg-table">
+                <thead>
+                    <tr><th>Shop</th><th>Kênh phụ</th><th class="num">Doanh thu</th><th class="num">Thưởng dự kiến (1%)</th></tr>
+                </thead>
+                <tbody id="ka-no-pg-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
 </div>
 <div class="db-tg-panel" id="panel-ind" hidden>
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Chi tiết Kênh IND (OPPO Club)</h2>
@@ -7005,7 +7026,7 @@ const KA_SHOP_REVENUE_GROUP_ORDER = ['VIETTEL', 'ĐIỆN MÁY CHỢ LỚN', 'CEL
 // có PG nên không cần khớp từ khóa, đánh dấu true toàn bộ.
 const KA_SHOP_PG_KEYWORDS = {
     'FPT': ['365 Quốc Lộ 1A', '152 Lý Thường Kiệt', '298A-299 Đồng Khởi'],
-    'ĐIỆN MÁY CHỢ LỚN': ['KA Bến Tre'],
+    'ĐIỆN MÁY CHỢ LỚN': ['KA Bến Tre', 'KA Tiền Giang - Gò Công'],
     'VIETTEL': ['3/58 KP2 Phường 1, Cai Lậy', '02C Thủ Khoa Huân, Mỹ Tho', 'Mỏ Cày Nam 02, Mỏ Cày'],
 };
 function kaShopHasPg(sub, storeName) {
@@ -7061,6 +7082,58 @@ function renderKaShopRevenueTable() {
     tbody.innerHTML = html || '<tr><td colspan="15" style="text-align:center; color:var(--text-secondary);">Chưa có dữ liệu</td></tr>';
 }
 renderKaShopRevenueTable();
+
+// ---- "Chương trình Shop chưa có PG — Thưởng 1% Doanh thu" ----
+// Dùng lại đúng logic kaShopHasPg()/kaStoreSubchannelByName() ở bảng trên để đảm bảo nhất quán: shop nào
+// bảng trên đánh dấu ✗ (chưa có PG) thì sẽ xuất hiện ở đây. Bắt buộc chọn Tháng mới tính thưởng, vì
+// thưởng 1% Doanh thu áp dụng theo TỪNG THÁNG, không phải lũy kế cả năm.
+let kaNoPgMonth = null;
+function renderKaNoPgTable() {
+    const tbody = document.getElementById('ka-no-pg-table-body');
+    if (!tbody) return;
+    if (!kaNoPgMonth) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:20px;">📅 Vui lòng chọn Tháng ở trên để xem danh sách &amp; thưởng dự kiến.</td></tr>';
+        return;
+    }
+    const subByStore = kaStoreSubchannelByName();
+    const revByStore = {};
+    DATA.crosstab.forEach(rec => {
+        if (rec.channel !== 'KA' || rec.m !== kaNoPgMonth) return;
+        const sub = subByStore[rec.store] || '(Chưa xác định)';
+        if (sub === '(Chưa xác định)') return;
+        revByStore[rec.store] = (revByStore[rec.store] || 0) + rec.rev;
+    });
+    const rows = Object.keys(revByStore).map(store => {
+        const sub = subByStore[store];
+        return { store, sub, rev: revByStore[store] };
+    }).filter(r => r.sub && !kaShopHasPg(r.sub, r.store)).sort((a, b) => b.rev - a.rev);
+
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:20px;">Không có shop nào chưa PG phát sinh doanh thu trong tháng này.</td></tr>';
+        return;
+    }
+    let totalRev = 0, totalBonus = 0;
+    const bodyHtml = rows.map(r => {
+        const bonus = r.rev * 0.01;
+        totalRev += r.rev; totalBonus += bonus;
+        return `<tr><td>${escapeHtml(r.store)}</td><td>${escapeHtml(r.sub)}</td><td class="num">${fmtVND(r.rev)}</td><td class="num" style="color:var(--oppo-green); font-weight:700;">${fmtVND(bonus)}</td></tr>`;
+    }).join('');
+    tbody.innerHTML = bodyHtml + `<tr class="total-row"><td colspan="2">TỔNG (${rows.length} shop)</td><td class="num">${fmtVND(totalRev)}</td><td class="num" style="color:var(--oppo-green);">${fmtVND(totalBonus)}</td></tr>`;
+}
+const kaNoPgMonthSelect = document.getElementById('ka-no-pg-month-select');
+if (kaNoPgMonthSelect) {
+    ALL_12_MONTHS.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = String(m);
+        opt.textContent = 'T' + m;
+        kaNoPgMonthSelect.appendChild(opt);
+    });
+    kaNoPgMonthSelect.addEventListener('change', () => {
+        kaNoPgMonth = kaNoPgMonthSelect.value ? parseInt(kaNoPgMonthSelect.value, 10) : null;
+        renderKaNoPgTable();
+    });
+}
+renderKaNoPgTable();
 
 // ---- 2 bảng thị phần 12 tháng theo Kênh phụ FPT/Viettel ----
 const KA_MARKET_SHARE_BRANDS = ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'Honor', 'Khác'];
