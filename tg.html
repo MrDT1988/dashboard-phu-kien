@@ -1750,8 +1750,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
     <section class="table-section" style="margin-top:var(--gap);" id="ka-no-pg-section">
         <div class="table-section-header">
             <div>
-                <h3>Chương trình Shop chưa có PG — Thưởng 1% Doanh thu</h3>
-                <div class="chart-sub">Danh sách shop KA <b>chưa có PG</b> (cột PG = ✗ ở bảng trên), áp dụng chương trình thưởng <b style="color:var(--oppo-green);">1% Doanh thu</b> tháng đang chọn. Chọn Tháng để xem doanh thu &amp; thưởng dự kiến.</div>
+                <h3>Chương trình Shop chưa có PG — Ngân sách Hỗ trợ &amp; KPI Sale</h3>
+                <div class="chart-sub">Danh sách shop KA <b>chưa có PG</b> (cột PG = ✗ ở bảng trên). Gồm 2 khoản: <b style="color:var(--oppo-green);">Hỗ trợ</b> theo bậc doanh thu tháng (&lt;1 tỷ: 0,8% · 1-2 tỷ: 1,2% · &gt;2 tỷ: 1,5% — đạt mốc nào thưởng mốc đó, không cộng dồn) và <b style="color:var(--oppo-green);">KPI Sale</b> cố định 1% Doanh thu. Tổng Ngân sách = 2 khoản cộng lại. Chọn Tháng để xem chi tiết.</div>
             </div>
             <div class="table-controls">
                 <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
@@ -1761,7 +1761,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-scroll" style="max-height:480px;">
             <table class="data-table" id="ka-no-pg-table">
                 <thead>
-                    <tr><th>Shop</th><th>Kênh phụ</th><th class="num">Doanh thu</th><th class="num">Thưởng dự kiến (1%)</th></tr>
+                    <tr><th>Shop</th><th>Kênh phụ</th><th class="num">Doanh thu</th><th class="num">Hỗ trợ</th><th class="num">KPI Sale (1%)</th><th class="num">Tổng Ngân sách</th></tr>
                 </thead>
                 <tbody id="ka-no-pg-table-body"></tbody>
             </table>
@@ -7092,7 +7092,7 @@ function renderKaNoPgTable() {
     const tbody = document.getElementById('ka-no-pg-table-body');
     if (!tbody) return;
     if (!kaNoPgMonth) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:20px;">📅 Vui lòng chọn Tháng ở trên để xem danh sách &amp; thưởng dự kiến.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:20px;">📅 Vui lòng chọn Tháng ở trên để xem danh sách &amp; ngân sách dự kiến.</td></tr>';
         return;
     }
     const subByStore = kaStoreSubchannelByName();
@@ -7109,16 +7109,25 @@ function renderKaNoPgTable() {
     }).filter(r => r.sub && !kaShopHasPg(r.sub, r.store)).sort((a, b) => b.rev - a.rev);
 
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:20px;">Không có shop nào chưa PG phát sinh doanh thu trong tháng này.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:20px;">Không có shop nào chưa PG phát sinh doanh thu trong tháng này.</td></tr>';
         return;
     }
-    let totalRev = 0, totalBonus = 0;
+    // Hỗ trợ tính theo BẬC doanh thu tháng - đạt mốc nào thưởng đúng % của mốc đó (không cộng dồn/không
+    // tính lũy tiến từng phần như thuế): <1 tỷ = 0,8% · 1-2 tỷ = 1,2% · >2 tỷ = 1,5%.
+    function hoTroRate(rev) {
+        if (rev > 2_000_000_000) return 0.015;
+        if (rev >= 1_000_000_000) return 0.012;
+        return 0.008;
+    }
+    let totalRev = 0, totalHoTro = 0, totalKpi = 0, totalBudget = 0;
     const bodyHtml = rows.map(r => {
-        const bonus = r.rev * 0.01;
-        totalRev += r.rev; totalBonus += bonus;
-        return `<tr><td>${escapeHtml(r.store)}</td><td>${escapeHtml(r.sub)}</td><td class="num">${fmtVND(r.rev)}</td><td class="num" style="color:var(--oppo-green); font-weight:700;">${fmtVND(bonus)}</td></tr>`;
+        const hoTro = r.rev * hoTroRate(r.rev);
+        const kpiSale = r.rev * 0.01;
+        const budget = hoTro + kpiSale;
+        totalRev += r.rev; totalHoTro += hoTro; totalKpi += kpiSale; totalBudget += budget;
+        return `<tr><td>${escapeHtml(r.store)}</td><td>${escapeHtml(r.sub)}</td><td class="num">${fmtVND(r.rev)}</td><td class="num">${fmtVND(hoTro)}</td><td class="num">${fmtVND(kpiSale)}</td><td class="num" style="color:var(--oppo-green); font-weight:700;">${fmtVND(budget)}</td></tr>`;
     }).join('');
-    tbody.innerHTML = bodyHtml + `<tr class="total-row"><td colspan="2">TỔNG (${rows.length} shop)</td><td class="num">${fmtVND(totalRev)}</td><td class="num" style="color:var(--oppo-green);">${fmtVND(totalBonus)}</td></tr>`;
+    tbody.innerHTML = bodyHtml + `<tr class="total-row"><td colspan="2">TỔNG (${rows.length} shop)</td><td class="num">${fmtVND(totalRev)}</td><td class="num">${fmtVND(totalHoTro)}</td><td class="num">${fmtVND(totalKpi)}</td><td class="num" style="color:var(--oppo-green);">${fmtVND(totalBudget)}</td></tr>`;
 }
 const kaNoPgMonthSelect = document.getElementById('ka-no-pg-month-select');
 if (kaNoPgMonthSelect) {
