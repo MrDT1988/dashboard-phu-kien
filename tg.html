@@ -744,6 +744,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <button class="db-tg-tab" data-panel="panel-ka" type="button">🔵 Chi tiết KA</button>
             <button class="db-tg-tab" data-panel="panel-ind" type="button">🟢 Chi tiết IND</button>
             <button id="export-pdf-btn" type="button" title="Xuất toàn bộ 4 tab (Tổng quan + MWG + KA + IND) ra file PDF" style="margin-left:auto; padding:9px 16px; border-radius:8px; border:1px solid var(--oppo-green-dark); background:transparent; color:var(--oppo-green); cursor:pointer; font-weight:700; font-size:13px; white-space:nowrap;">⬇️ Xuất PDF</button>
+            <button id="export-html-btn" type="button" title="Xuất file HTML độc lập, mở offline vẫn dùng đủ bộ lọc/tương tác như bản web (số liệu đóng băng tại lúc xuất)" style="padding:9px 16px; border-radius:8px; border:1px solid var(--oppo-green-dark); background:transparent; color:var(--oppo-green); cursor:pointer; font-weight:700; font-size:13px; white-space:nowrap;">💾 Xuất HTML</button>
+            <div id="export-html-status" style="font-size:11.5px; color:var(--text-secondary); align-self:center;"></div>
         </nav>
     </header>
 
@@ -2581,6 +2583,7 @@ async function loadAndRender() {
 
 // ================= Khởi tạo giao diện sau khi có DATA =================
 function initDashboard(DATA) {
+window.__exportDataMwg = DATA; // lưu lại để nút "Xuất HTML" dùng, không ảnh hưởng logic gốc
 
 // Cố định sẵn khung 12 tháng cho mọi bảng/biểu đồ theo tháng — tháng nào chưa có dữ liệu sẽ tự hiện 0, khi có dữ liệu mới sẽ tự điền vào đúng cột, không cần đổi bố cục
 const ALL_12_MONTHS = Array.from({length: 12}, (_, i) => i + 1);
@@ -7278,6 +7281,80 @@ loadAndRender();
             }, 150);
         });
     }
+
+    // ================= Xuất HTML (file offline độc lập, giữ đủ tương tác/bộ lọc) =================
+    // Cách làm: tải lại đúng mã nguồn HTML gốc của chính trang này (fetch chính URL đang mở), rồi thay
+    // 2 lệnh khởi động dashboard (vốn gọi Apps Script mỗi lần mở) bằng "initDashboard(DATA)" với DATA đã
+    // tính sẵn ngay lúc bấm nút - nhờ vậy file xuất ra mở lên là có số liệu luôn, không cần mạng, không
+    // cần Apps Script, nhưng vẫn giữ NGUYÊN toàn bộ code lọc/sắp xếp/mở rộng nên tương tác y hệt bản gốc.
+    var exportHtmlBtn = document.getElementById('export-html-btn');
+    var exportHtmlStatus = document.getElementById('export-html-status');
+    if (exportHtmlBtn) {
+        exportHtmlBtn.addEventListener('click', function () {
+            (async function () {
+                exportHtmlBtn.disabled = true;
+                exportHtmlStatus.textContent = 'Đang chuẩn bị file...';
+                try {
+                    var dataFirst = window.__exportDataMwg;   // DATA của loadAndRender() thứ NHẤT trong file
+                    var dataSecond = window.__exportDataMain; // DATA của loadAndRender() thứ HAI trong file
+                    if (!dataFirst || !dataSecond) {
+                        exportHtmlStatus.textContent = 'Dữ liệu chưa tải xong, đợi vài giây rồi bấm lại.';
+                        exportHtmlBtn.disabled = false;
+                        return;
+                    }
+
+                    var resp = await fetch(location.href, { cache: 'no-store' });
+                    var html = await resp.text();
+
+                    // Ghép chuỗi thay vì viết liền 1 chuỗi để chính đoạn code này (khi bị fetch lại) không
+                    // vô tình tự khớp với chính nó, làm split() ra nhiều hơn 2 điểm thật sự cần thay.
+                    var loadCallMarker = 'loadAndRender' + '();';
+                    var parts = html.split(loadCallMarker);
+                    if (parts.length !== 3) {
+                        throw new Error('Cấu trúc trang đã đổi (tìm thấy ' + (parts.length - 1) + ' điểm khởi động thay vì 2) - cần cập nhật lại tính năng Xuất HTML.');
+                    }
+
+                    var exportedAt = new Date().toLocaleString('vi-VN');
+                    var newHtml = parts[0]
+                        + 'initDashboard(' + JSON.stringify(dataFirst) + ');'
+                        + parts[1]
+                        + 'initDashboard(' + JSON.stringify(dataSecond) + ');'
+                        + parts[2];
+
+                    // Ẩn nút "Xuất HTML" trong bản xuất - nút này cần fetch(location.href) để lấy lại mã
+                    // nguồn, nhưng file offline mở qua file:// nên không gọi lại được, giữ sẽ chỉ gây lỗi.
+                    // Nút "Xuất PDF" vẫn giữ nguyên vì window.print() vẫn hoạt động bình thường khi offline.
+                    newHtml = newHtml.replace(
+                        '<button id="export-html-btn"',
+                        '<button id="export-html-btn" style="display:none" disabled'
+                    );
+                    // Gắn dòng ghi chú rõ đây là bản xuất tĩnh, đóng băng số liệu tại thời điểm xuất
+                    newHtml = newHtml.replace(
+                        '<p id="last-updated" style="margin-top:4px; font-size:11.5px;"></p>',
+                        '<p id="last-updated" style="margin-top:4px; font-size:11.5px; color:#ffc266; font-weight:700;">📦 Bản xuất OFFLINE — số liệu đóng băng lúc ' + exportedAt + '. Không tự cập nhật số liệu mới, nhưng mọi bộ lọc/sắp xếp/mở rộng vẫn dùng bình thường.</p>'
+                    );
+
+                    var blob = new Blob([newHtml], { type: 'text/html;charset=utf-8' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    var stamp = new Date().toISOString().slice(0, 10);
+                    a.href = url;
+                    a.download = 'Report_TienGiang_offline_' + stamp + '.html';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+
+                    exportHtmlStatus.textContent = '✓ Đã tải file HTML offline (' + (blob.size / 1024 / 1024).toFixed(1) + ' MB).';
+                } catch (err) {
+                    exportHtmlStatus.textContent = 'Lỗi: ' + err.message;
+                    console.error('Xuất HTML lỗi:', err);
+                } finally {
+                    exportHtmlBtn.disabled = false;
+                }
+            })();
+        });
+    }
 })();
 </script>
 
@@ -8200,6 +8277,7 @@ loadAndRender();
 
 
 function initDashboard(DATA) {
+window.__exportDataMain = DATA; // lưu lại để nút "Xuất HTML" dùng, không ảnh hưởng logic gốc
 // Màu biểu đồ theo hãng: IP (Apple) xám đậm, hãng nhỏ/khác xám nhạt, 5 hãng lớn (Oppo/Samsung/Xiaomi/Vivo/Realme) dùng đúng màu thương hiệu thật của hãng đó.
 const BRAND_COLORS = {
     'Apple': '#A1A1A6', 'Samsung': '#5C7CFA', 'Oppo': '#2ee673',
