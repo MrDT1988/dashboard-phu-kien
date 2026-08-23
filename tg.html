@@ -1761,7 +1761,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-scroll" style="max-height:480px;">
             <table class="data-table" id="ka-no-pg-table">
                 <thead>
-                    <tr><th>Shop</th><th>Kênh phụ</th><th class="num">Doanh thu</th><th class="num">Hỗ trợ</th><th class="num">KPI Sale (1%)</th><th class="num">Tổng Ngân sách</th></tr>
+                    <tr><th>Shop</th><th>Kênh phụ</th><th class="num">Số lượng</th><th class="num">Đơn giá TB</th><th class="num">Doanh thu</th><th class="num">Hỗ trợ</th><th class="num">KPI Sale (1%)</th><th class="num">Tổng Ngân sách</th></tr>
                 </thead>
                 <tbody id="ka-no-pg-table-body"></tbody>
             </table>
@@ -7092,24 +7092,26 @@ function renderKaNoPgTable() {
     const tbody = document.getElementById('ka-no-pg-table-body');
     if (!tbody) return;
     if (!kaNoPgMonth) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:20px;">📅 Vui lòng chọn Tháng ở trên để xem danh sách &amp; ngân sách dự kiến.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-secondary); padding:20px;">📅 Vui lòng chọn Tháng ở trên để xem danh sách &amp; ngân sách dự kiến.</td></tr>';
         return;
     }
     const subByStore = kaStoreSubchannelByName();
-    const revByStore = {};
+    const dataByStore = {};
     DATA.crosstab.forEach(rec => {
         if (rec.channel !== 'KA' || rec.m !== kaNoPgMonth) return;
         const sub = subByStore[rec.store] || '(Chưa xác định)';
         if (sub === '(Chưa xác định)') return;
-        revByStore[rec.store] = (revByStore[rec.store] || 0) + rec.rev;
+        if (!dataByStore[rec.store]) dataByStore[rec.store] = { rev: 0, units: 0 };
+        dataByStore[rec.store].rev += rec.rev;
+        dataByStore[rec.store].units += (rec.sellout || 0);
     });
-    const rows = Object.keys(revByStore).map(store => {
+    const rows = Object.keys(dataByStore).map(store => {
         const sub = subByStore[store];
-        return { store, sub, rev: revByStore[store] };
+        return { store, sub, rev: dataByStore[store].rev, units: dataByStore[store].units };
     }).filter(r => r.sub && !kaShopHasPg(r.sub, r.store)).sort((a, b) => b.rev - a.rev);
 
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:20px;">Không có shop nào chưa PG phát sinh doanh thu trong tháng này.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-secondary); padding:20px;">Không có shop nào chưa PG phát sinh doanh thu trong tháng này.</td></tr>';
         return;
     }
     // Hỗ trợ tính theo BẬC TỔNG DOANH THU của TẤT CẢ shop chưa PG cộng lại trong tháng - không phải tính
@@ -7122,16 +7124,18 @@ function renderKaNoPgTable() {
     }
     const groupTotalRev = rows.reduce((s, r) => s + r.rev, 0);
     const groupRate = hoTroRate(groupTotalRev);
-    let totalRev = 0, totalHoTro = 0, totalKpi = 0, totalBudget = 0;
+    let totalRev = 0, totalUnits = 0, totalHoTro = 0, totalKpi = 0, totalBudget = 0;
     const bodyHtml = rows.map(r => {
         const hoTro = r.rev * groupRate;
         const kpiSale = r.rev * 0.01;
         const budget = hoTro + kpiSale;
-        totalRev += r.rev; totalHoTro += hoTro; totalKpi += kpiSale; totalBudget += budget;
-        return `<tr><td>${escapeHtml(r.store)}</td><td>${escapeHtml(r.sub)}</td><td class="num">${fmtVND(r.rev)}</td><td class="num">${fmtVND(hoTro)}</td><td class="num">${fmtVND(kpiSale)}</td><td class="num" style="color:var(--oppo-green); font-weight:700;">${fmtVND(budget)}</td></tr>`;
+        const asp = r.units > 0 ? r.rev / r.units : 0;
+        totalRev += r.rev; totalUnits += r.units; totalHoTro += hoTro; totalKpi += kpiSale; totalBudget += budget;
+        return `<tr><td>${escapeHtml(r.store)}</td><td>${escapeHtml(r.sub)}</td><td class="num">${fmtInt(r.units)}</td><td class="num">${r.units > 0 ? fmtVND(asp) : '-'}</td><td class="num">${fmtVND(r.rev)}</td><td class="num">${fmtVND(hoTro)}</td><td class="num">${fmtVND(kpiSale)}</td><td class="num" style="color:var(--oppo-green); font-weight:700;">${fmtVND(budget)}</td></tr>`;
     }).join('');
     const groupRatePct = (groupRate * 100).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
-    tbody.innerHTML = bodyHtml + `<tr class="total-row"><td colspan="2">TỔNG (${rows.length} shop) — mức Hỗ trợ ${groupRatePct}%</td><td class="num">${fmtVND(totalRev)}</td><td class="num">${fmtVND(totalHoTro)}</td><td class="num">${fmtVND(totalKpi)}</td><td class="num" style="color:var(--oppo-green);">${fmtVND(totalBudget)}</td></tr>`;
+    const totalAsp = totalUnits > 0 ? totalRev / totalUnits : 0;
+    tbody.innerHTML = bodyHtml + `<tr class="total-row"><td colspan="2">TỔNG (${rows.length} shop) — mức Hỗ trợ ${groupRatePct}%</td><td class="num">${fmtInt(totalUnits)}</td><td class="num">${totalUnits > 0 ? fmtVND(totalAsp) : '-'}</td><td class="num">${fmtVND(totalRev)}</td><td class="num">${fmtVND(totalHoTro)}</td><td class="num">${fmtVND(totalKpi)}</td><td class="num" style="color:var(--oppo-green);">${fmtVND(totalBudget)}</td></tr>`;
 }
 const kaNoPgMonthSelect = document.getElementById('ka-no-pg-month-select');
 if (kaNoPgMonthSelect) {
