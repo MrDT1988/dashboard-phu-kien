@@ -167,6 +167,8 @@ body {
 @media (max-width: 760px) {
     .db-tg-tabnav { flex-wrap:wrap; }
     .db-tg-tab { flex:1 1 45%; }
+    #channel-strategy-section > div[style*="grid-template-columns:repeat(3"],
+    #hr-policy-section > div[style*="grid-template-columns:repeat(2"] { grid-template-columns:1fr !important; }
 }
 /* Bảng Sellout & Doanh thu theo kênh theo tháng: nhiều cột (nhãn DS/DT/ĐG + 12 tháng + Tổng) nên
    thu nhỏ font/padding riêng cho bảng này để vừa khung dashboard, không tràn ngang. */
@@ -917,14 +919,6 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 
     <h2 class="part-title" style="margin:4px 0 14px; padding-left:15px; position:relative;"><span style="position:absolute; left:0; top:0; bottom:0; width:5px; border-radius:3px; background:var(--oppo-green); box-shadow:0 0 6px rgba(34,229,160,0.6);"></span>Phần 2 — Chiến lược 4 tháng cuối năm<span class="part-sub">Theo dõi Target &amp; hiệu suất Shop/Đối tác để định hướng hành động Q4</span></h2>
 
-    <section class="chart-row">
-        <div class="chart-container chart-tall" style="grid-column: span 2;">
-            <h3>Xu hướng % Hoàn thành Target theo tháng</h3>
-            <div class="chart-sub">%HT Doanh thu của từng kênh qua các tháng (đường 100% = đạt target) — cho biết đang cải thiện hay tụt lùi, thay vì chỉ nhìn 1 tháng gần nhất.</div>
-            <canvas id="chart-target-trend"></canvas>
-        </div>
-    </section>
-
     <section class="table-section">
         <div class="table-section-header">
             <div>
@@ -957,6 +951,14 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
     </section>
 
+    <section class="chart-row">
+        <div class="chart-container chart-tall" style="grid-column: span 2;">
+            <h3>Xu hướng % Hoàn thành Target theo tháng</h3>
+            <div class="chart-sub">%HT Doanh thu của từng kênh qua các tháng (đường 100% = đạt target) — cho biết đang cải thiện hay tụt lùi, thay vì chỉ nhìn 1 tháng gần nhất.</div>
+            <canvas id="chart-target-trend"></canvas>
+        </div>
+    </section>
+
     <section class="table-section">
         <div class="table-section-header">
             <div>
@@ -986,6 +988,65 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                 </thead>
                 <tbody id="store-table-body"></tbody>
             </table>
+        </div>
+    </section>
+
+    <section class="table-section" id="channel-strategy-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Chiến lược Kênh</h3>
+                <div class="chart-sub">Định hướng trọng tâm riêng cho từng kênh trong 4 tháng cuối năm — nội dung sẽ được cập nhật/bổ sung dần theo thời gian.</div>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--gap);">
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #FFC800; border-radius:var(--radius); padding:16px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <span style="width:10px; height:10px; border-radius:50%; background:#FFC800; display:inline-block;"></span>
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">MWG</h4>
+                </div>
+                <div style="font-size:12.5px; font-weight:700; color:#FFC800; margin-bottom:6px;">Chiến lược Shop tập trung</div>
+                <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.5;">Tập trung nguồn lực vào nhóm shop <b style="color:var(--text-primary);">Size S, A, B</b> — nhóm hiệu suất cao nhất, ưu tiên trưng bày, chăm sóc và đầu tư trước các nhóm shop còn lại.</div>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #B0B7BD; border-radius:var(--radius); padding:16px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <span style="width:10px; height:10px; border-radius:50%; background:#B0B7BD; display:inline-block;"></span>
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">KA</h4>
+                </div>
+                <div style="font-size:12.5px; font-weight:700; color:#B0B7BD; margin-bottom:6px;">Bổ sung &amp; duy trì nhân sự</div>
+                <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.5;">Tăng quân số từ <b style="color:var(--text-primary);">8 lên 12 nhân sự</b> — vừa bổ sung nhân sự mới, vừa duy trì/giữ chân đội ngũ hiện có.</div>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #2ee673; border-radius:var(--radius); padding:16px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <span style="width:10px; height:10px; border-radius:50%; background:#2ee673; display:inline-block;"></span>
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">IND</h4>
+                </div>
+                <div style="font-size:12.5px; font-weight:700; color:#2ee673; margin-bottom:6px;">Xây dựng hệ thống Shop-in-Shop</div>
+                <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.5;">Triển khai mô hình <b style="color:var(--text-primary);">Shop-in-Shop</b> cho nhóm đối tác O.C — hiện diện thương hiệu riêng ngay trong shop đối tác.</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="table-section" id="hr-policy-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Chính sách cho Nhân sự</h3>
+                <div class="chart-sub">Chính sách thưởng &amp; đãi ngộ áp dụng cho 4 tháng cuối năm — nội dung sẽ được cập nhật/bổ sung dần theo thời gian.</div>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:var(--gap);">
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;">
+                <div style="font-size:13px; font-weight:700; color:var(--oppo-green); margin-bottom:8px;">PG MWG &amp; KA — Thưởng Reno/Find</div>
+                <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.6; margin-bottom:10px;">Thưởng bonus thêm cho sản phẩm <b style="color:var(--text-primary);">Reno &amp; Find</b> khi hoàn thành Target, theo 3 mốc tăng dần:</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <span style="background:rgba(34,229,160,0.12); border:1px solid rgba(34,229,160,0.35); border-radius:20px; padding:5px 14px; font-size:12px; font-weight:700; color:var(--oppo-green);">Mốc 1: 0,5%</span>
+                    <span style="background:rgba(34,229,160,0.18); border:1px solid rgba(34,229,160,0.5); border-radius:20px; padding:5px 14px; font-size:12px; font-weight:700; color:var(--oppo-green);">Mốc 2: 1%</span>
+                    <span style="background:rgba(34,229,160,0.26); border:1px solid var(--oppo-green); border-radius:20px; padding:5px 14px; font-size:12px; font-weight:700; color:var(--oppo-green);">Mốc 3: 1,5%</span>
+                </div>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;">
+                <div style="font-size:13px; font-weight:700; color:var(--oppo-green); margin-bottom:8px;">Sale — Chính sách 5 sao</div>
+                <div style="font-size:12.5px; color:var(--text-secondary); line-height:1.6;">Áp dụng chính sách <b style="color:var(--text-primary);">Sale 5 sao</b> mới cho đội ngũ Sale — chi tiết tiêu chí &amp; mức thưởng sẽ được cập nhật bổ sung.</div>
+            </div>
         </div>
     </section>
 
