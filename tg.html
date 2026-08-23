@@ -4583,9 +4583,10 @@ function renderIndGroupMonthlyTable() {
         const prev = arr[i-1];
         if (i === 0 || !prev) return fmt(cur);
         const g = (cur - prev) / prev * 100;
-        // Bỏ chữ % tăng giảm cho đỡ rối - chỉ gạch chân màu ngay dưới số (xanh = tăng, đỏ = giảm)
-        const lineColor = g > 0.05 ? 'var(--positive)' : (g < -0.05 ? 'var(--negative)' : 'transparent');
-        return `<span style="border-bottom:2px solid ${lineColor}; padding-bottom:1px;">${fmt(cur)}</span>`;
+        // Bỏ chữ % tăng giảm cho đỡ rối - tô màu trực tiếp lên số (xanh = tăng, đỏ = giảm so với
+        // tháng trước liền kề), giống quy ước màu xanh/đỏ ở các bảng khác trong dashboard.
+        const color = g > 0.05 ? 'var(--positive)' : (g < -0.05 ? 'var(--negative)' : 'inherit');
+        return `<span style="color:${color};">${fmt(cur)}</span>`;
     }
     const fmtDs = v => fmtInt(v) + ' máy';
     const fmtDt = v => fmtVND(v);
