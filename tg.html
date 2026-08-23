@@ -4613,7 +4613,7 @@ function renderIndGroupMonthlyTable() {
             ? `<span class="shop-link" data-indgroup="${escapeHtml(grpKey)}" style="cursor:pointer;">${arrow} ${escapeHtml(grpKey)}</span>`
             : escapeHtml(grpKey);
         const trOpen = rowClass ? `<tr class="${rowClass}">` : '<tr>';
-        const groupCell = `<td rowspan="6" style="text-align:center; vertical-align:middle; font-weight:800; font-size:13.5px; background:${bg}; border:2px solid ${border}; letter-spacing:0.3px;">${nameHtml}</td>`;
+        const groupCell = `<td rowspan="6" style="text-align:center; vertical-align:middle; font-weight:800; font-size:13.5px; background:${bg}; border:1px solid var(--border-color); letter-spacing:0.3px;">${nameHtml}</td>`;
 
         const dsRow = `${trOpen}${groupCell}<td style="text-align:center;"><span class="metric-tag units">DS</span></td>` + dsArr.map((v,i) => `<td class="num">${growthCell(dsArr, i, fmtDs)}</td>`).join('') + `<td class="num"><b>${fmtInt(grandDs)} máy</b></td></tr>`;
         const dtRow = `${trOpen}<td style="text-align:center;"><span class="metric-tag revenue">DT</span></td>` + dtArr.map((v,i) => `<td class="num">${growthCell(dtArr, i, fmtDt)}</td>`).join('') + `<td class="num"><b>${fmtVND(grandDt)}</b></td></tr>`;
@@ -4621,7 +4621,7 @@ function renderIndGroupMonthlyTable() {
         const shopRow = `${trOpen}<td style="text-align:center;"><span class="metric-tag shop">SHOP</span></td>` + shopArr.map(v => `<td class="num">${fmtInt(v)}</td>`).join('') + `<td class="num"><b>${fmtInt(avgInt(shopArr))}</b></td></tr>`;
         const oppoRow = `${trOpen}<td style="text-align:center;"><span class="metric-tag oppo">S.I</span></td>` + oppoArr.map(v => `<td class="num">${fmtInt(v)}</td>`).join('') + `<td class="num"><b>${fmtInt(oppoArr.reduce((a,b)=>a+b,0))}</b></td></tr>`;
         const pkRowClass = rowClass ? rowClass : '';
-        const pkRow = `<tr class="${pkRowClass}" style="border-bottom:3px solid ${border};"><td style="text-align:center;"><span class="metric-tag pk">PK</span></td>` + pkArr.map(v => `<td class="num">${fmtInt(v)}</td>`).join('') + `<td class="num"><b>${fmtInt(pkArr.reduce((a,b)=>a+b,0))}</b></td></tr>`;
+        const pkRow = `<tr class="${pkRowClass}" style="border-bottom:1px solid var(--border-color);"><td style="text-align:center;"><span class="metric-tag pk">PK</span></td>` + pkArr.map(v => `<td class="num">${fmtInt(v)}</td>`).join('') + `<td class="num"><b>${fmtInt(pkArr.reduce((a,b)=>a+b,0))}</b></td></tr>`;
 
         const detailRow = (clickable && expandedIndGroups.has(grpKey)) ? indGroupShopDetailHtml(grpKey, months, colspan) : '';
         return dsRow + dtRow + dgRow + shopRow + oppoRow + pkRow + detailRow;
