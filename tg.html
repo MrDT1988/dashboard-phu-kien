@@ -1831,6 +1831,15 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                 </table>
             </div>
         </div>
+
+        <h4 style="margin:20px 0 4px; font-size:14px;">Chi tiết đầy đủ 12 tháng theo Sale</h4>
+        <div class="chart-sub" style="margin-bottom:10px;">Mỗi Sale 6 dòng liền nhau: <b>DS/DT/ĐG</b> (bấm tên Sale để xem bảng mini theo shop) và <b>SHOP/S.I/PK</b> — cùng quy ước cột với bảng "Chi tiết theo nhóm O.C/Normal theo tháng" ở trên.</div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="ind-sale-month-table">
+                <thead><tr id="ind-sale-month-table-head"></tr></thead>
+                <tbody id="ind-sale-month-table-body"></tbody>
+            </table>
+        </div>
     </section>
 
     <section class="table-section">
@@ -6226,6 +6235,7 @@ function refreshIndCluster() {
     renderIndGroupMonthlyTable();
     renderIndSaleTrendChart();
     renderIndSaleSummaryTable();
+    renderIndSaleMonthlyTable();
     renderOcDetailTable();
     renderOcTargetProgressTable();
     renderIndAlertsTable();
