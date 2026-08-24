@@ -7509,6 +7509,7 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
         const cell = (dataForSub[b] || {})[m];
         return s + shareKaMetricValue(cell, metric);
     }, 0));
+    const yearTotal = totalsByMonth.reduce((a,b)=>a+b,0); // tính trước để dùng chung cho cả dòng hãng lẫn dòng TỔNG
     const rowsHtml = KA_MARKET_SHARE_BRANDS.map(brand => {
         const cells = ALL_12_MONTHS.map((m, idx) => {
             const cell = (dataForSub[brand] || {})[m];
@@ -7519,10 +7520,13 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
             return '<td>' + fmtInt(val) + '<div style="font-size:8.5px; color:var(--text-secondary);">(' + pct.toFixed(1) + '%)</div></td>';
         }).join('');
         const yearVal = ALL_12_MONTHS.reduce((s, m) => { const cell = (dataForSub[brand] || {})[m]; return s + shareKaMetricValue(cell, metric); }, 0);
-        return '<tr><td>' + escapeHtml(brand) + '</td>' + cells + '<td><b>' + (yearVal ? fmtInt(yearVal) : '-') + '</b></td></tr>';
+        const yearPct = yearTotal ? (yearVal / yearTotal * 100) : 0;
+        const yearCell = yearVal
+            ? '<b>' + fmtInt(yearVal) + '</b><div style="font-size:8.5px; color:var(--text-secondary);">(' + yearPct.toFixed(1) + '%)</div>'
+            : '-';
+        return '<tr><td>' + escapeHtml(brand) + '</td>' + cells + '<td>' + yearCell + '</td></tr>';
     }).join('');
     const totalRowCells = totalsByMonth.map(v => '<td><b>' + (v ? fmtInt(v) : '-') + '</b></td>').join('');
-    const yearTotal = totalsByMonth.reduce((a,b)=>a+b,0);
     const totalRow = '<tr style="font-weight:800; border-top:2px solid rgba(255,255,255,0.15);"><td>TỔNG</td>' + totalRowCells + '<td>' + (yearTotal ? fmtInt(yearTotal) : '-') + '</td></tr>';
     tbody.innerHTML = rowsHtml + totalRow;
 }
