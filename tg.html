@@ -2033,6 +2033,20 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
     <section class="table-section">
         <div class="table-section-header">
             <div>
+                <h3>Tổng quan Mục tiêu Shop IND</h3>
+                <div class="chart-sub">3 chỉ số theo dõi độ phủ &amp; hiệu suất shop IND, tính theo tháng gần nhất có dữ liệu.</div>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--gap); align-items:stretch;">
+            <div id="ind-goal-oc" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;"></div>
+            <div id="ind-goal-perf" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;"></div>
+            <div id="ind-goal-so" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;"></div>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
                 <h3>Chương trình tháng — Thưởng Sale IND</h3>
                 <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Xe: 2 Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc <b>TỔNG số máy CẢ XE</b> (cộng số máy 2 Sale lại rồi mới tra bậc, ra đúng 1 mức chung cho cả xe): <b>&lt;100 máy: 3.2%</b>, <b>&gt;100 máy: 4.2%</b>, <b>&gt;150 máy: 4.7%</b>, <b>&gt;200 máy: 5.2%</b>, <b>&gt;250 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn). Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Độ phủ Shop S.O</b> = tổng số shop có bán / tổng số shop đăng ký của CẢ XE (gộp 2 Sale, không xét riêng từng người) - dưới <b>60%</b> bị phạt <b>1.000.000đ/Xe</b> (đúng 1 lần cho cả xe, không nhân theo số người), trừ vào Lương Sale. <b>Lương Sale</b> = 2 Lương cơ bản + Tiền thưởng chung của xe (đã trừ phạt nếu có). <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Đổi Tháng bên dưới để tính thử chi phí.</div>
             </div>
@@ -5588,6 +5602,53 @@ function shortIndShopName(fullName) {
     if (IND_SHOP_NAME_ALIAS_NORM[norm]) return IND_SHOP_NAME_ALIAS_NORM[norm];
     return s;
 }
+// ================= "Tổng quan Mục tiêu Shop IND" (3 thẻ trên bảng Chương trình Xe) =================
+function indGoalCardHtml(title, achieved, target, colorHex) {
+    const pct = target ? Math.min(100, achieved / target * 100) : 0;
+    const barColor = pct >= 100 ? 'var(--positive)' : (pct >= 70 ? colorHex : 'var(--negative)');
+    return '<div style="font-size:12.5px; color:' + colorHex + '; font-weight:700; margin-bottom:10px;">' + title + '</div>'
+        + '<div style="font-size:26px; font-weight:800; color:var(--text-primary); margin-bottom:8px;">' + fmtInt(achieved) + ' <span style="font-size:14px; color:var(--text-secondary); font-weight:600;">/ ' + fmtInt(target) + ' shop</span></div>'
+        + '<div style="background:rgba(255,255,255,0.08); border-radius:6px; height:8px; overflow:hidden; margin-bottom:6px;"><div style="width:' + pct.toFixed(1) + '%; height:100%; background:' + barColor + ';"></div></div>'
+        + '<div style="font-size:11.5px; color:' + barColor + '; font-weight:700;">' + pct.toFixed(1) + '% mục tiêu</div>';
+}
+// Gộp DS/DT theo shop (đã rút gọn tên trùng biến thể qua shortIndShopName, cùng cách O.C dùng) cho ĐÚNG
+// 1 tháng - dùng chung cho thẻ "Shop >5 máy hoặc >25tr" và "Shop có S.O".
+function computeIndShopMonthlyTotals(month) {
+    const byShop = {};
+    DATA.crosstab.forEach(rec => {
+        if (rec.channel !== 'IND' || rec.m !== month) return;
+        const shortName = shortIndShopName(rec.store);
+        if (!byShop[shortName]) byShop[shortName] = { ds: 0, dt: 0 };
+        byShop[shortName].ds += rec.sellout;
+        byShop[shortName].dt += rec.rev;
+    });
+    return byShop;
+}
+function renderIndGoalCards() {
+    const ocEl = document.getElementById('ind-goal-oc');
+    const perfEl = document.getElementById('ind-goal-perf');
+    const soEl = document.getElementById('ind-goal-so');
+    if (!ocEl || !perfEl || !soEl) return;
+
+    // Thẻ 1: O.C Hoàn thành Target (Target 25 shop) - dùng lại đúng logic "Đạt/Chưa đạt" của bảng
+    // "Chi tiết Target O.C" (dat = %HT Doanh thu >= 100%).
+    const ocRows = computeOcTargetProgressRows();
+    const ocAchieved = ocRows.filter(r => r.dat).length;
+    ocEl.innerHTML = indGoalCardHtml('O.C Hoàn thành Target', ocAchieved, 25, 'var(--oppo-green)');
+
+    // Thẻ 2 & 3: cùng dùng dữ liệu tháng gần nhất, gộp theo shop (đã rút gọn tên trùng biến thể).
+    const months = indMonthsList();
+    const latestMonth = months.length ? months[months.length - 1] : null;
+    const shopTotals = latestMonth ? computeIndShopMonthlyTotals(latestMonth) : {};
+    const shopList = Object.values(shopTotals);
+
+    const perfAchieved = shopList.filter(s => s.ds > 5 || s.dt > 25000000).length;
+    perfEl.innerHTML = indGoalCardHtml('Shop &gt;5 máy hoặc &gt;25tr DT', perfAchieved, 60, '#4C72B0');
+
+    const soAchieved = shopList.filter(s => s.ds > 0).length;
+    soEl.innerHTML = indGoalCardHtml('Shop IND có S.O', soAchieved, 110, '#B0B7BD');
+}
+
 function computeOcTargetProgressRows() {
     const months = indMonthsList();
     const latestMonth = months.length ? months[months.length - 1] : null;
@@ -6596,6 +6657,7 @@ function refreshIndCluster() {
     renderOcTargetProgressTable();
     renderIndAlertsTable();
     renderIndShopRankingTable();
+    renderIndGoalCards();
 }
 // Đã bỏ UI "Bộ lọc chung — Chi tiết IND" (ms-ind-sale/ms-ind-shop/ind-reset) theo yêu cầu anh Thái -
 // indFilters giữ nguyên state {sales:[],stores:[]} mặc định (không lọc gì), refreshIndCluster() chỉ
