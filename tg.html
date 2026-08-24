@@ -2410,7 +2410,7 @@ async function fetchRowsFromAppsScript(baseUrl, sheetName, startRow) {
     if (msgEl) msgEl.textContent = 'Đang kiểm tra kích thước dữ liệu...';
     let info;
     try {
-        info = await fetchJSON(baseUrl + '?' + sheetParam + '&mode=info', 60000);
+        info = await fetchJSON(baseUrl + '?' + sheetParam + '&mode=info', 120000);
     } catch (err) {
         throw new Error('Không gọi được Apps Script (bước info): ' + err.message);
     }
@@ -2728,7 +2728,7 @@ async function loadAndRender() {
         if (msgEl) msgEl.textContent = 'Đang kiểm tra checkpoint đã lưu...';
         let checkpoint = null;
         try {
-            const cp = await fetchJSON(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME) + '&mode=checkpoint', 30000);
+            const cp = await fetchJSON(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME) + '&mode=checkpoint', 120000);
             if (cp && cp.exists !== false && cp.data) checkpoint = cp;
         } catch (err) {
             console.warn('Không tải được checkpoint (sẽ tải toàn bộ dữ liệu):', err.message);
@@ -8499,7 +8499,7 @@ async function fetchMwgTargetMap(baseUrl) {
     // Sheet Target 2026 nhỏ, không phân trang. Cấu trúc: cột B (index 1) = Store ID, cột C (index 2) = Target doanh thu
     try {
         const url = baseUrl + '?sheet=' + encodeURIComponent(TARGET_SHEET_NAME) + '&mode=data&start=1&count=5000';
-        const rows = await fetchJSON(url, 60000);
+        const rows = await fetchJSON(url, 120000);
         if (!Array.isArray(rows)) throw new Error('Sai định dạng dữ liệu Target');
         rows.shift(); // bỏ header
         const map = {};
@@ -8527,7 +8527,7 @@ async function fetchRowsFromAppsScript(baseUrl, startRow) {
     if (msgEl) msgEl.textContent = 'Đang kiểm tra kích thước dữ liệu...';
     let info;
     try {
-        info = await fetchJSON(baseUrl + '?mode=info', 30000);
+        info = await fetchJSON(baseUrl + '?mode=info', 120000);
     } catch (err) {
         throw new Error('Không gọi được Apps Script (bước info): ' + err.message);
     }
@@ -8552,7 +8552,7 @@ async function fetchRowsFromAppsScript(baseUrl, startRow) {
 
     async function fetchOneChunkAttempt(ch, idx) {
         const url = baseUrl + '?mode=data&start=' + ch.start + '&count=' + ch.count;
-        const part = await fetchJSON(url, 90000);
+        const part = await fetchJSON(url, 180000);
         if (part && !Array.isArray(part) && part.error) {
             throw new Error('Apps Script báo lỗi: ' + part.error);
         }
@@ -8879,7 +8879,7 @@ async function loadAndRender() {
         if (msgEl) msgEl.textContent = 'Đang kiểm tra checkpoint đã lưu...';
         let checkpoint = null;
         try {
-            const cp = await fetchJSON(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME) + '&mode=checkpoint', 30000);
+            const cp = await fetchJSON(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME) + '&mode=checkpoint', 120000);
             if (cp && cp.exists !== false && cp.data) checkpoint = cp;
         } catch (err) {
             console.warn('Không tải được checkpoint (sẽ tải toàn bộ dữ liệu):', err.message);
