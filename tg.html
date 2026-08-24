@@ -5770,6 +5770,38 @@ function computeIndCommissionRows(month) {
     rows.sort((a, b) => b.units - a.units);
     return { rows, monthTotals };
 }
+// Chi tiết Shop theo Doanh thu khi bấm vào tên 1 Xe trong bảng "Chương trình tháng — Thưởng Sale IND" -
+// lấy trực tiếp từ DATA.crosstab (channel IND, đúng tháng đang xem, Sale thuộc nhóm Xe đó), gộp theo Shop,
+// sắp Doanh thu giảm dần. Độc lập với computeIndCommissionRows() vì cần chi tiết TỪNG SHOP, không chỉ tổng theo Sale.
+let expandedIndXe = new Set();
+function indXeShopDetailHtml(xeLabel, shortNames, month, colspan) {
+    const byShop = {};
+    DATA.crosstab.forEach(rec => {
+        if (rec.channel !== 'IND' || rec.m !== month) return;
+        if (!shortNames.includes(shortSaleNameUpper(rec.sales))) return;
+        if (!rec.store) return;
+        if (!byShop[rec.store]) byShop[rec.store] = { rev: 0, units: 0, sale: rec.sales };
+        byShop[rec.store].rev += rec.rev;
+        byShop[rec.store].units += rec.sellout;
+    });
+    const shops = Object.keys(byShop).sort((a, b) => byShop[b].rev - byShop[a].rev);
+    if (!shops.length) {
+        return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#101a15; padding:12px 16px; color:var(--text-secondary);">Không có shop nào phát sinh doanh thu trong tháng này (${escapeHtml(xeLabel)}).</td></tr>`;
+    }
+    const grandRev = shops.reduce((s, st) => s + byShop[st].rev, 0);
+    const rowsHtml = shops.map(st => {
+        const d = byShop[st];
+        return `<tr><td class="sdt-shop">${escapeHtml(st)} <span class="sdt-sale">${escapeHtml(shortSaleName(d.sale))}</span></td><td class="num">${fmtInt(d.units)} máy</td><td class="sdt-total">${fmtVND(d.rev)}</td></tr>`;
+    }).join('');
+    const totalRow = `<tr class="sdt-grand"><td class="sdt-shop">Tổng ${escapeHtml(xeLabel)}</td><td class="num">${fmtInt(shops.reduce((s,st)=>s+byShop[st].units,0))} máy</td><td class="sdt-total">${fmtVND(grandRev)}</td></tr>`;
+    return `<tr class="product-detail-row"><td colspan="${colspan}" style="padding:0;">
+        <table class="data-table" style="margin:6px 10px 10px; width:calc(100% - 20px);">
+            <thead><tr><th>Shop</th><th class="num">Số lượng</th><th class="num">Doanh thu</th></tr></thead>
+            <tbody>${rowsHtml}${totalRow}</tbody>
+        </table>
+    </td></tr>`;
+}
+
 // Gộp các dòng theo Sale (r.sale) thành theo Xe (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân -
 // dùng chung định nghĩa IND_SALE_TABLE_GROUPS/IND_SALE_TABLE_XE_LABELS với bảng nhiệt phía trên, bỏ qua
 // nhóm O.C vì nhóm đó vốn không nằm trong computeIndCommissionRows). "Mức thưởng" tính TRỰC TIẾP theo
@@ -5797,6 +5829,7 @@ function groupIndCommissionRowsByXe(rows) {
         const kpiLd = revBonus * IND_COMMISSION_KPI_LD_RATE;
         return {
             label: xeLabels[gi],
+            shortNames,
             members: memberRows.map(r => shortSaleName(r.sale)).join(' + '),
             shopSoActive: sum('shopSoActive'), shopSoTotal: sum('shopSoTotal'),
             units, revActual, revBonus,
@@ -5831,8 +5864,10 @@ function renderIndCommissionTable() {
         const hrPct = g.revBonus ? ((g.kpiLd + g.salarySale) / g.revBonus * 100) : null;
         const shopSoHtml = '<span' + (g.anyPenalized ? ' style="color:var(--negative); font-weight:700;"' : '') + '>' + fmtInt(g.shopSoActive) + '/' + fmtInt(g.shopSoTotal) + '</span>';
         const salarySaleHtml = fmtVND(g.salarySale) + (g.anyPenalized ? ' <span style="color:var(--negative); font-size:11px;">(có phạt)</span>' : '');
-        return '<tr>'
-            + '<td><b>' + escapeHtml(g.label) + '</b><div style="font-size:10.5px; color:var(--text-secondary);">' + escapeHtml(g.members) + '</div></td>'
+        const arrow = expandedIndXe.has(g.label) ? '▾' : '▸';
+        const labelHtml = '<span class="shop-link" data-xe="' + escapeHtml(g.label) + '" style="cursor:pointer;">' + arrow + ' <b>' + escapeHtml(g.label) + '</b></span>';
+        const row = '<tr>'
+            + '<td>' + labelHtml + '<div style="font-size:10.5px; color:var(--text-secondary);">' + escapeHtml(g.members) + '</div></td>'
             + '<td class="num">' + shopSoHtml + '</td>'
             + '<td class="num">' + fmtInt(g.units) + ' máy</td>'
             + '<td class="num">' + fmtVND(g.revActual) + '</td>'
@@ -5844,6 +5879,8 @@ function renderIndCommissionTable() {
             + '<td class="num">' + fmtVND(g.kpiLd) + '</td>'
             + '<td class="num">' + (hrPct === null ? '-' : fmtPct(hrPct)) + '</td>'
             + '</tr>';
+        const detailRow = expandedIndXe.has(g.label) ? indXeShopDetailHtml(g.label, g.shortNames, effectiveMonth, 11) : '';
+        return row + detailRow;
     }
     let html = grouped.map(xeRowHtml).join('');
     // Sale lẻ chưa gán vào Xe nào (nếu có) - vẫn hiện riêng từng dòng như bảng cũ, không gộp bừa.
@@ -5882,6 +5919,13 @@ function renderIndCommissionTable() {
         + '<td class="num">' + (totalHrPct === null ? '-' : fmtPct(totalHrPct)) + '</td>'
         + '</tr>';
     body.innerHTML = html;
+    body.querySelectorAll('.shop-link[data-xe]').forEach(el => {
+        el.addEventListener('click', () => {
+            const xe = el.dataset.xe;
+            if (expandedIndXe.has(xe)) expandedIndXe.delete(xe); else expandedIndXe.add(xe);
+            renderIndCommissionTable();
+        });
+    });
 }
 renderIndCommissionTable();
 if (document.getElementById('ind-commission-month-select')) {
