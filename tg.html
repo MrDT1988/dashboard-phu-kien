@@ -2497,6 +2497,34 @@ async function fetchSellInRows(baseUrl) {
     }
 }
 
+// ================= Sheet "SHOP THEO SALE" (nguồn CHUẨN cho Shop -> Sale phụ trách, riêng IND) =================
+// Anh Thái yêu cầu 24/8: cột Sale trong CENTER đôi khi không cập nhật kịp khi đổi người phụ trách shop,
+// nên với IND phải LẤY SALE TỪ SHEET NÀY (không lấy rec.sales trong CENTER) để tính đúng thưởng theo Xe.
+// Cấu trúc: cột A = Store ID, B = Store (tên đầy đủ, khớp định dạng rec.store bên CENTER), C = Sales,
+// D = CHANNEL, E = SIZE SHOP.
+const SHOP_THEO_SALE_SHEET_NAME = 'SHOP THEO SALE';
+async function fetchShopSaleMap(baseUrl) {
+    // map theo TÊN Store (khớp trực tiếp với rec.store của CENTER) - ưu tiên vì CENTER không có store_id
+    // gắn theo transaction; giữ thêm map theo Store ID phòng khi cần đối chiếu sau này.
+    try {
+        const { rows } = await fetchRowsFromAppsScript(baseUrl, SHOP_THEO_SALE_SHEET_NAME);
+        rows.shift(); // bỏ header
+        const byStoreName = {};
+        rows.forEach(r => {
+            if (!r || r.length < 3) return;
+            const storeName = (r[1] || '').toString().trim();
+            const sale = (r[2] || '').toString().trim();
+            const channel = (r[3] || '').toString().trim().toUpperCase();
+            if (channel !== 'IND') return; // sheet chỉ cần dùng cho IND
+            if (storeName && sale) byStoreName[storeName] = sale;
+        });
+        return byStoreName;
+    } catch (err) {
+        console.warn('Không tải được sheet "SHOP THEO SALE" (IND sẽ tạm dùng lại Sale trong CENTER):', err.message);
+        return {};
+    }
+}
+
 // ================= Gộp dữ liệu checkpoint (đã tính sẵn) + dữ liệu mới (vừa tính) =================
 function mergeFinalData(a, b) {
     const months_sorted = Array.from(new Set([...a.months_sorted, ...b.months_sorted])).sort((x,y)=>x-y);
@@ -2729,6 +2757,11 @@ async function loadAndRender() {
         // ảnh hưởng tới phần còn lại của dashboard nếu lỗi.
         if (msgEl) msgEl.textContent = 'Đang tải dữ liệu Sell In (IND)...';
         DATA.sell_in_rows = await fetchSellInRows(APPS_SCRIPT_URL);
+
+        // Shop theo Sale (sheet riêng "SHOP THEO SALE", nguồn CHUẨN cho Sale phụ trách IND - xem hàm
+        // fetchShopSaleMap()) - tải song song vị trí này, không ảnh hưởng phần còn lại nếu lỗi.
+        if (msgEl) msgEl.textContent = 'Đang tải Shop theo Sale (IND)...';
+        DATA.shop_sale_map = await fetchShopSaleMap(APPS_SCRIPT_URL);
 
         if (loadingEl) loadingEl.style.display = 'none';
         const updEl = document.getElementById('last-updated');
@@ -5699,17 +5732,25 @@ function indCommissionIneligibleOcStores() {
     });
     return ocStores;
 }
+// Sale THẬT SỰ phụ trách 1 shop - ưu tiên tra sheet "SHOP THEO SALE" (nguồn CHUẨN, anh Thái yêu cầu
+// 24/8, vì cột Sale bên CENTER đôi khi chưa cập nhật kịp khi đổi người phụ trách); nếu shop không có
+// trong sheet đó (shop mới/chưa cập nhật) thì tạm dùng lại đúng Sale ghi trong CENTER (fallback).
+function resolveIndSale(store, fallbackSale) {
+    if (store && DATA.shop_sale_map && DATA.shop_sale_map[store]) return DATA.shop_sale_map[store];
+    return fallbackSale;
+}
 function computeIndCommissionMonthTotals() {
     const monthTotals = {}; // month -> { bySale: { name: { sellout, revOther, revA6c, stores:Set } } }
     const ocStores = indCommissionIneligibleOcStores();
     DATA.crosstab.forEach(rec => {
         if (rec.channel !== 'IND') return;
-        if (!indCommissionEligibleSale(rec.sales)) return;
         if (rec.store && ocStores.has(rec.store)) return; // shop đã có Gói -> loại khỏi thưởng Xe
+        const sale = resolveIndSale(rec.store, rec.sales);
+        if (!indCommissionEligibleSale(sale)) return;
         if (!monthTotals[rec.m]) monthTotals[rec.m] = { bySale: {} };
         const bySale = monthTotals[rec.m].bySale;
-        if (!bySale[rec.sales]) bySale[rec.sales] = { sellout: 0, revOther: 0, revA6c: 0, stores: new Set() };
-        const b = bySale[rec.sales];
+        if (!bySale[sale]) bySale[sale] = { sellout: 0, revOther: 0, revA6c: 0, stores: new Set() };
+        const b = bySale[sale];
         b.sellout += rec.sellout;
         if (indIsA6cModel(rec.model)) b.revA6c += rec.rev; else b.revOther += rec.rev;
         if (rec.store && rec.sellout > 0) b.stores.add(rec.store); // cho cột "Shop S.O"
@@ -5724,10 +5765,11 @@ function indCommissionTotalStoresBySale() {
     const ocStores = indCommissionIneligibleOcStores();
     DATA.store_rows.forEach(r => {
         if (r.channel !== 'IND') return;
-        if (!indCommissionEligibleSale(r.sale)) return;
         if (ocStores.has(r.store)) return; // shop đã có Gói -> không tính vào mẫu số Shop S.O đăng ký
-        if (!bySale[r.sale]) bySale[r.sale] = new Set();
-        bySale[r.sale].add(r.store);
+        const sale = resolveIndSale(r.store, r.sale);
+        if (!indCommissionEligibleSale(sale)) return;
+        if (!bySale[sale]) bySale[sale] = new Set();
+        bySale[sale].add(r.store);
     });
     const out = {};
     Object.keys(bySale).forEach(s => { out[s] = bySale[s].size; });
@@ -5794,9 +5836,10 @@ function indXeShopDetailHtml(xeLabel, shortNames, month, colspan) {
     const ocStores = indCommissionIneligibleOcStores();
     DATA.crosstab.forEach(rec => {
         if (rec.channel !== 'IND' || rec.m !== month) return;
-        if (!shortNames.includes(shortSaleNameUpper(rec.sales))) return;
         if (!rec.store || ocStores.has(rec.store)) return; // shop đã có Gói -> loại khỏi chi tiết Xe (khớp đúng logic tính thưởng)
-        if (!byShop[rec.store]) byShop[rec.store] = { rev: 0, units: 0, sale: rec.sales };
+        const sale = resolveIndSale(rec.store, rec.sales);
+        if (!shortNames.includes(shortSaleNameUpper(sale))) return;
+        if (!byShop[rec.store]) byShop[rec.store] = { rev: 0, units: 0, sale };
         byShop[rec.store].rev += rec.rev;
         byShop[rec.store].units += rec.sellout;
     });
