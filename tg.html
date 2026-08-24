@@ -1087,6 +1087,44 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
     </section>
 
+    <section class="table-section" id="channel-program-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Tổng Chương trình Bán hàng theo Kênh</h3>
+                <div class="chart-sub">Tổng hợp ngân sách từng chương trình khuyến khích bán hàng đang chạy theo từng Kênh. Mỗi kênh có bộ lọc Tháng riêng.</div>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--gap); align-items:stretch;">
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #FFC800; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <span style="width:10px; height:10px; border-radius:50%; background:#FFC800; display:inline-block;"></span>
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">MWG</h4>
+                </div>
+                <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Chương trình Shop Size S/A/B — Thưởng 1,2% Doanh thu</div>
+                <select id="channel-program-mwg-month" style="margin-bottom:10px;"><option value="">Chọn tháng...</option></select>
+                <div id="channel-program-mwg-result" style="flex:1;"></div>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #B0B7BD; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <span style="width:10px; height:10px; border-radius:50%; background:#B0B7BD; display:inline-block;"></span>
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">KA</h4>
+                </div>
+                <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Chương trình Shop chưa có PG — Hỗ trợ bậc thang + KPI Sale</div>
+                <select id="channel-program-ka-month" style="margin-bottom:10px;"><option value="">Chọn tháng...</option></select>
+                <div id="channel-program-ka-result" style="flex:1;"></div>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #2ee673; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <span style="width:10px; height:10px; border-radius:50%; background:#2ee673; display:inline-block;"></span>
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">IND</h4>
+                </div>
+                <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Chương trình tháng — Thưởng Sale nhóm shop Normal</div>
+                <select id="channel-program-ind-month" style="margin-bottom:10px;"><option value="">Chọn tháng...</option></select>
+                <div id="channel-program-ind-result" style="flex:1;"></div>
+            </div>
+        </div>
+    </section>
+
     <section class="notes-section">
         <h4>Lưu ý / rủi ro về dữ liệu (Strategic Notes)</h4>
         <ul>
@@ -7189,6 +7227,109 @@ if (kaNoPgMonthSelect) {
 }
 renderKaNoPgTable();
 
+// ================= "Tổng Chương trình Bán hàng theo Kênh" (3 thẻ MWG/KA/IND) =================
+function fillMonthSelect(sel) {
+    ALL_12_MONTHS.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = String(m);
+        opt.textContent = 'T' + m;
+        sel.appendChild(opt);
+    });
+}
+function programEmptyState(el, msg) {
+    el.innerHTML = `<div style="text-align:center; color:var(--text-secondary); font-size:12px; padding:20px 0;">${msg}</div>`;
+}
+function programResultHtml(label1, val1, label2, val2, sub) {
+    return `<div style="font-size:11px; color:var(--text-secondary); margin-bottom:2px;">${label1}</div>`
+        + `<div style="font-size:17px; font-weight:800; color:var(--text-primary); margin-bottom:8px;">${val1}</div>`
+        + `<div style="font-size:11px; color:var(--text-secondary); margin-bottom:2px;">${label2}</div>`
+        + `<div style="font-size:19px; font-weight:800; color:var(--oppo-green);">${val2}</div>`
+        + (sub ? `<div style="font-size:10.5px; color:var(--text-secondary); margin-top:6px;">${sub}</div>` : '');
+}
+
+// ---- MWG: doc DATA cua panel "Chi tiet MWG" qua window.__exportDataMain (panel do render bang
+// initDashboard rieng, khong cung scope voi DATA o day) - co the chua san sang luc trang moi load nen
+// ham nay duoc goi lai lan nua ngay khi panel MWG tai xong (xem cho gan window.__exportDataMain).
+function renderChannelProgramMwg() {
+    const resultEl = document.getElementById('channel-program-mwg-result');
+    const sel = document.getElementById('channel-program-mwg-month');
+    if (!resultEl || !sel) return;
+    const mwgData = window.__exportDataMain;
+    if (!mwgData || !mwgData.shop_rows_brand4) { programEmptyState(resultEl, '⏳ Đang tải dữ liệu MWG...'); return; }
+    const month = sel.value ? parseInt(sel.value, 10) : null;
+    if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return; }
+    const idx = month - 1;
+    let rev = 0, numShops = 0;
+    mwgData.shop_rows_brand4.forEach(s => {
+        const size = s.shop_size || '';
+        if (size !== 'S' && size !== 'A' && size !== 'B') return;
+        const b = s.brands && s.brands['Oppo'];
+        const r = b && b.monthly_rev ? (b.monthly_rev[idx] || 0) : 0;
+        if (r > 0) numShops++;
+        rev += r;
+    });
+    const budget = rev * 0.012;
+    resultEl.innerHTML = programResultHtml('Doanh thu nhóm S/A/B', fmtVND(rev), 'Ngân sách (1,2%)', fmtVND(budget), numShops + ' shop có doanh thu');
+}
+
+// ---- KA: dung lai dung logic bac thang cua bang "Chuong trinh Shop chua co PG" o Chi tiet KA.
+function renderChannelProgramKa() {
+    const resultEl = document.getElementById('channel-program-ka-result');
+    const sel = document.getElementById('channel-program-ka-month');
+    if (!resultEl || !sel) return;
+    const month = sel.value ? parseInt(sel.value, 10) : null;
+    if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return; }
+    const subByStore = kaStoreSubchannelByName();
+    const revByStore = {};
+    DATA.crosstab.forEach(rec => {
+        if (rec.channel !== 'KA' || rec.m !== month) return;
+        const sub = subByStore[rec.store] || '(Chưa xác định)';
+        if (sub === '(Chưa xác định)') return;
+        revByStore[rec.store] = (revByStore[rec.store] || 0) + rec.rev;
+    });
+    const rows = Object.keys(revByStore).map(store => ({ store, sub: subByStore[store], rev: revByStore[store] }))
+        .filter(r => r.sub && !kaShopHasPg(r.sub, r.store));
+    const totalRev = rows.reduce((s, r) => s + r.rev, 0);
+    function hoTroRate(v) {
+        if (v > 2_000_000_000) return 0.015;
+        if (v >= 1_000_000_000) return 0.012;
+        return 0.008;
+    }
+    const rate = hoTroRate(totalRev);
+    const budget = totalRev * rate + totalRev * 0.01;
+    const ratePct = (rate * 100).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+    resultEl.innerHTML = programResultHtml(`Doanh thu nhóm (${rows.length} shop) — mức Hỗ trợ ${ratePct}%`, fmtVND(totalRev), 'Ngân sách (Hỗ trợ + KPI Sale)', fmtVND(budget));
+}
+
+// ---- IND: dung lai dung logic cua "Chuong trinh thang - Thuong Sale IND" (nhom shop Normal, tuc cac
+// Sale khong thuoc nhom O.C co dinh Khanh/Thuan/Loi - xem computeIndCommissionRows()).
+function renderChannelProgramInd() {
+    const resultEl = document.getElementById('channel-program-ind-result');
+    const sel = document.getElementById('channel-program-ind-month');
+    if (!resultEl || !sel) return;
+    const month = sel.value ? parseInt(sel.value, 10) : null;
+    if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return; }
+    const { rows } = computeIndCommissionRows(month);
+    const totalSalary = rows.reduce((s, r) => s + r.salarySale, 0);
+    const totalRev = rows.reduce((s, r) => s + r.revActual, 0);
+    resultEl.innerHTML = programResultHtml(`Doanh thu nhóm Normal (${rows.length} Sale)`, fmtVND(totalRev), 'Tổng Lương Sale (ngân sách)', fmtVND(totalSalary));
+}
+
+['mwg', 'ka', 'ind'].forEach(ch => {
+    const sel = document.getElementById(`channel-program-${ch}-month`);
+    if (!sel) return;
+    fillMonthSelect(sel);
+    sel.addEventListener('change', () => {
+        if (ch === 'mwg') renderChannelProgramMwg();
+        else if (ch === 'ka') renderChannelProgramKa();
+        else renderChannelProgramInd();
+    });
+});
+renderChannelProgramMwg();
+window.__renderChannelProgramMwg = renderChannelProgramMwg; // để panel MWG (script khác) gọi lại khi DATA của nó sẵn sàng
+renderChannelProgramKa();
+renderChannelProgramInd();
+
 // ---- 2 bảng thị phần 12 tháng theo Kênh phụ FPT/Viettel ----
 const KA_MARKET_SHARE_BRANDS = ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'Honor', 'Khác'];
 const KA_MARKET_SHARE_DATA = { FPT: {}, VIETTEL: {} };
@@ -7384,6 +7525,24 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
         console.error('Không tải được dữ liệu Thị phần (Share KA):', err);
         if (noteEl) noteEl.insertAdjacentHTML('afterend', '<div style="color:var(--negative); font-size:11.5px; margin-top:4px;">⚠️ Không tải được dữ liệu thị phần từ Sheet Share KA (' + escapeHtml(err.message) + ') — đang hiện bảng trống.</div>');
     });
+})();
+
+// ================= Dữ liệu cho "Tổng Chương trình Bán hàng theo Kênh" (mục Overview TG) =================
+// Tính sẵn Doanh thu OPPO theo THÁNG cho nhóm shop Size S/A/B (MWG) - lưu ra window để phần script khác
+// (panel Tổng quan, nơi đặt UI của mục "Chương trình bán hàng theo Kênh") đọc lại, vì DATA ở đây là biến
+// cục bộ riêng của initDashboard() panel MWG, không tự chia sẻ được sang script khác.
+(function () {
+    const monthlyRev = {};
+    (DATA.shop_rows_brand4 || []).forEach(s => {
+        if (!['S', 'A', 'B'].includes(s.shop_size)) return;
+        const oppo = s.brands && s.brands['Oppo'];
+        if (!oppo) return;
+        (oppo.monthly_rev || []).forEach((rev, idx) => {
+            const m = idx + 1;
+            monthlyRev[m] = (monthlyRev[m] || 0) + (rev || 0);
+        });
+    });
+    window.__mwgSabMonthlyRev = monthlyRev;
 })();
 
 } // end initDashboard
@@ -8446,6 +8605,7 @@ loadAndRender();
 
 function initDashboard(DATA) {
 window.__exportDataMain = DATA; // lưu lại để nút "Xuất HTML" dùng, không ảnh hưởng logic gốc
+if (window.__renderChannelProgramMwg) window.__renderChannelProgramMwg(); // panel Tổng quan cần DATA này cho thẻ "Chương trình MWG"
 // Màu biểu đồ theo hãng: IP (Apple) xám đậm, hãng nhỏ/khác xám nhạt, 5 hãng lớn (Oppo/Samsung/Xiaomi/Vivo/Realme) dùng đúng màu thương hiệu thật của hãng đó.
 const BRAND_COLORS = {
     'Apple': '#A1A1A6', 'Samsung': '#5C7CFA', 'Oppo': '#2ee673',
