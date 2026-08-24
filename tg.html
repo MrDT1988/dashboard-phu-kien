@@ -1091,17 +1091,20 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Tổng Chương trình Bán hàng theo Kênh</h3>
-                <div class="chart-sub">Tổng hợp ngân sách từng chương trình khuyến khích bán hàng đang chạy theo từng Kênh. Mỗi kênh có bộ lọc Tháng riêng.</div>
+                <div class="chart-sub">Tổng hợp ngân sách từng chương trình khuyến khích bán hàng đang chạy theo từng Kênh, dùng chung 1 bộ lọc Tháng để xem tổng chi phí tháng đó.</div>
+            </div>
+            <div class="table-controls">
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
+                <select id="channel-program-month"><option value="">Chọn tháng...</option></select>
             </div>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--gap); align-items:stretch;">
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--gap); align-items:stretch; margin-bottom:var(--gap);">
             <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #FFC800; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
                     <span style="width:10px; height:10px; border-radius:50%; background:#FFC800; display:inline-block;"></span>
                     <h4 style="margin:0; font-size:14px; color:var(--text-primary);">MWG</h4>
                 </div>
                 <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Chương trình Shop Size S/A/B — Thưởng 1,2% Doanh thu</div>
-                <select id="channel-program-mwg-month" style="margin-bottom:10px;"><option value="">Chọn tháng...</option></select>
                 <div id="channel-program-mwg-result" style="flex:1;"></div>
             </div>
             <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #B0B7BD; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
@@ -1110,7 +1113,6 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                     <h4 style="margin:0; font-size:14px; color:var(--text-primary);">KA</h4>
                 </div>
                 <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Chương trình Shop chưa có PG — Hỗ trợ bậc thang + KPI Sale</div>
-                <select id="channel-program-ka-month" style="margin-bottom:10px;"><option value="">Chọn tháng...</option></select>
                 <div id="channel-program-ka-result" style="flex:1;"></div>
             </div>
             <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #2ee673; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
@@ -1119,10 +1121,10 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                     <h4 style="margin:0; font-size:14px; color:var(--text-primary);">IND</h4>
                 </div>
                 <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Chương trình tháng — Thưởng Sale nhóm shop Normal</div>
-                <select id="channel-program-ind-month" style="margin-bottom:10px;"><option value="">Chọn tháng...</option></select>
                 <div id="channel-program-ind-result" style="flex:1;"></div>
             </div>
         </div>
+        <div id="channel-program-total" style="background:linear-gradient(135deg, rgba(34,229,160,0.14), rgba(34,229,160,0.05)); border:1px solid var(--oppo-green); border-radius:var(--radius); padding:16px 20px;"></div>
     </section>
 
     <section class="notes-section">
@@ -7227,7 +7229,7 @@ if (kaNoPgMonthSelect) {
 }
 renderKaNoPgTable();
 
-// ================= "Tổng Chương trình Bán hàng theo Kênh" (3 thẻ MWG/KA/IND) =================
+// ================= "Tổng Chương trình Bán hàng theo Kênh" (3 thẻ MWG/KA/IND, dùng chung 1 Tháng) =================
 function fillMonthSelect(sel) {
     ALL_12_MONTHS.forEach(m => {
         const opt = document.createElement('option');
@@ -7246,18 +7248,22 @@ function programResultHtml(label1, val1, label2, val2, sub) {
         + `<div style="font-size:19px; font-weight:800; color:var(--oppo-green);">${val2}</div>`
         + (sub ? `<div style="font-size:10.5px; color:var(--text-secondary); margin-top:6px;">${sub}</div>` : '');
 }
+function currentProgramMonth() {
+    const sel = document.getElementById('channel-program-month');
+    return sel && sel.value ? parseInt(sel.value, 10) : null;
+}
 
 // ---- MWG: doc DATA cua panel "Chi tiet MWG" qua window.__exportDataMain (panel do render bang
 // initDashboard rieng, khong cung scope voi DATA o day) - co the chua san sang luc trang moi load nen
 // ham nay duoc goi lai lan nua ngay khi panel MWG tai xong (xem cho gan window.__exportDataMain).
+// Tra ve budget (so tien) de ham tong hop cong lai; tra ve null neu chua co du lieu/chua chon thang.
 function renderChannelProgramMwg() {
     const resultEl = document.getElementById('channel-program-mwg-result');
-    const sel = document.getElementById('channel-program-mwg-month');
-    if (!resultEl || !sel) return;
+    if (!resultEl) return null;
     const mwgData = window.__exportDataMain;
-    if (!mwgData || !mwgData.shop_rows_brand4) { programEmptyState(resultEl, '⏳ Đang tải dữ liệu MWG...'); return; }
-    const month = sel.value ? parseInt(sel.value, 10) : null;
-    if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return; }
+    if (!mwgData || !mwgData.shop_rows_brand4) { programEmptyState(resultEl, '⏳ Đang tải dữ liệu MWG...'); return null; }
+    const month = currentProgramMonth();
+    if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return null; }
     const idx = month - 1;
     let rev = 0, numShops = 0;
     mwgData.shop_rows_brand4.forEach(s => {
@@ -7270,15 +7276,15 @@ function renderChannelProgramMwg() {
     });
     const budget = rev * 0.012;
     resultEl.innerHTML = programResultHtml('Doanh thu nhóm S/A/B', fmtVND(rev), 'Ngân sách (1,2%)', fmtVND(budget), numShops + ' shop có doanh thu');
+    return budget;
 }
 
 // ---- KA: dung lai dung logic bac thang cua bang "Chuong trinh Shop chua co PG" o Chi tiet KA.
 function renderChannelProgramKa() {
     const resultEl = document.getElementById('channel-program-ka-result');
-    const sel = document.getElementById('channel-program-ka-month');
-    if (!resultEl || !sel) return;
-    const month = sel.value ? parseInt(sel.value, 10) : null;
-    if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return; }
+    if (!resultEl) return null;
+    const month = currentProgramMonth();
+    if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return null; }
     const subByStore = kaStoreSubchannelByName();
     const revByStore = {};
     DATA.crosstab.forEach(rec => {
@@ -7299,36 +7305,53 @@ function renderChannelProgramKa() {
     const budget = totalRev * rate + totalRev * 0.01;
     const ratePct = (rate * 100).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
     resultEl.innerHTML = programResultHtml(`Doanh thu nhóm (${rows.length} shop) — mức Hỗ trợ ${ratePct}%`, fmtVND(totalRev), 'Ngân sách (Hỗ trợ + KPI Sale)', fmtVND(budget));
+    return budget;
 }
 
 // ---- IND: dung lai dung logic cua "Chuong trinh thang - Thuong Sale IND" (nhom shop Normal, tuc cac
 // Sale khong thuoc nhom O.C co dinh Khanh/Thuan/Loi - xem computeIndCommissionRows()).
 function renderChannelProgramInd() {
     const resultEl = document.getElementById('channel-program-ind-result');
-    const sel = document.getElementById('channel-program-ind-month');
-    if (!resultEl || !sel) return;
-    const month = sel.value ? parseInt(sel.value, 10) : null;
-    if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return; }
+    if (!resultEl) return null;
+    const month = currentProgramMonth();
+    if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return null; }
     const { rows } = computeIndCommissionRows(month);
     const totalSalary = rows.reduce((s, r) => s + r.salarySale, 0);
     const totalRev = rows.reduce((s, r) => s + r.revActual, 0);
     resultEl.innerHTML = programResultHtml(`Doanh thu nhóm Normal (${rows.length} Sale)`, fmtVND(totalRev), 'Tổng Lương Sale (ngân sách)', fmtVND(totalSalary));
+    return totalSalary;
 }
 
-['mwg', 'ka', 'ind'].forEach(ch => {
-    const sel = document.getElementById(`channel-program-${ch}-month`);
-    if (!sel) return;
-    fillMonthSelect(sel);
-    sel.addEventListener('change', () => {
-        if (ch === 'mwg') renderChannelProgramMwg();
-        else if (ch === 'ka') renderChannelProgramKa();
-        else renderChannelProgramInd();
-    });
-});
-renderChannelProgramMwg();
-window.__renderChannelProgramMwg = renderChannelProgramMwg; // để panel MWG (script khác) gọi lại khi DATA của nó sẵn sàng
-renderChannelProgramKa();
-renderChannelProgramInd();
+function renderChannelProgramAll() {
+    const budgetMwg = renderChannelProgramMwg();
+    const budgetKa = renderChannelProgramKa();
+    const budgetInd = renderChannelProgramInd();
+    const totalEl = document.getElementById('channel-program-total');
+    if (!totalEl) return;
+    const month = currentProgramMonth();
+    if (!month) { totalEl.innerHTML = ''; return; }
+    if (budgetMwg === null || budgetKa === null || budgetInd === null) {
+        totalEl.innerHTML = '<div style="text-align:center; color:var(--text-secondary); font-size:12px;">⏳ Đang chờ đủ dữ liệu 3 kênh...</div>';
+        return;
+    }
+    const grand = budgetMwg + budgetKa + budgetInd;
+    totalEl.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+                <div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:2px;">Tổng chi phí chương trình bán hàng — Tháng ${month} (MWG + KA + IND)</div>
+                <div style="font-size:11px; color:var(--text-secondary);">MWG ${fmtVND(budgetMwg)} · KA ${fmtVND(budgetKa)} · IND ${fmtVND(budgetInd)}</div>
+            </div>
+            <div style="font-size:26px; font-weight:800; color:var(--oppo-green); white-space:nowrap;">${fmtVND(grand)}</div>
+        </div>`;
+}
+
+const channelProgramMonthSelect = document.getElementById('channel-program-month');
+if (channelProgramMonthSelect) {
+    fillMonthSelect(channelProgramMonthSelect);
+    channelProgramMonthSelect.addEventListener('change', renderChannelProgramAll);
+}
+renderChannelProgramAll();
+window.__renderChannelProgramMwg = renderChannelProgramAll; // để panel MWG (script khác) gọi lại khi DATA của nó sẵn sàng
 
 // ---- 2 bảng thị phần 12 tháng theo Kênh phụ FPT/Viettel ----
 const KA_MARKET_SHARE_BRANDS = ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'Honor', 'Khác'];
