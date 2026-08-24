@@ -5688,11 +5688,24 @@ function indCommissionEligibleSale(saleName) {
     if (!saleName || saleName === '(Không rõ)') return false;
     return !IND_SALE_CHART_TOP_NAMES.includes(shortSaleNameUpper(saleName));
 }
+// Loại hẳn shop đã có Gói (Platinum/Titan/Gold = thuộc O.C) ra khỏi tính thưởng Xe, BẤT KỂ cột Sale
+// trên sheet ghi ai (VD "Tân Hạnh Phúc" có Gói Gold nhưng Sale ghi TIẾN - vẫn phải loại, vì shop O.C có
+// chương trình thưởng riêng, không tính chung vào thưởng Xe/Normal - anh Thái xác nhận 24/8).
+function indCommissionIneligibleOcStores() {
+    const levelByStore = indStoreLevelByName();
+    const ocStores = new Set();
+    Object.keys(levelByStore).forEach(store => {
+        if (classifyIndLevel(levelByStore[store]).group === 'O.C') ocStores.add(store);
+    });
+    return ocStores;
+}
 function computeIndCommissionMonthTotals() {
     const monthTotals = {}; // month -> { bySale: { name: { sellout, revOther, revA6c, stores:Set } } }
+    const ocStores = indCommissionIneligibleOcStores();
     DATA.crosstab.forEach(rec => {
         if (rec.channel !== 'IND') return;
         if (!indCommissionEligibleSale(rec.sales)) return;
+        if (rec.store && ocStores.has(rec.store)) return; // shop đã có Gói -> loại khỏi thưởng Xe
         if (!monthTotals[rec.m]) monthTotals[rec.m] = { bySale: {} };
         const bySale = monthTotals[rec.m].bySale;
         if (!bySale[rec.sales]) bySale[rec.sales] = { sellout: 0, revOther: 0, revA6c: 0, stores: new Set() };
@@ -5708,9 +5721,11 @@ function computeIndCommissionMonthTotals() {
 // indKpiFilters vì đây là bộ lọc riêng của Chương trình tháng).
 function indCommissionTotalStoresBySale() {
     const bySale = {};
+    const ocStores = indCommissionIneligibleOcStores();
     DATA.store_rows.forEach(r => {
         if (r.channel !== 'IND') return;
         if (!indCommissionEligibleSale(r.sale)) return;
+        if (ocStores.has(r.store)) return; // shop đã có Gói -> không tính vào mẫu số Shop S.O đăng ký
         if (!bySale[r.sale]) bySale[r.sale] = new Set();
         bySale[r.sale].add(r.store);
     });
@@ -5776,10 +5791,11 @@ function computeIndCommissionRows(month) {
 let expandedIndXe = new Set();
 function indXeShopDetailHtml(xeLabel, shortNames, month, colspan) {
     const byShop = {};
+    const ocStores = indCommissionIneligibleOcStores();
     DATA.crosstab.forEach(rec => {
         if (rec.channel !== 'IND' || rec.m !== month) return;
         if (!shortNames.includes(shortSaleNameUpper(rec.sales))) return;
-        if (!rec.store) return;
+        if (!rec.store || ocStores.has(rec.store)) return; // shop đã có Gói -> loại khỏi chi tiết Xe (khớp đúng logic tính thưởng)
         if (!byShop[rec.store]) byShop[rec.store] = { rev: 0, units: 0, sale: rec.sales };
         byShop[rec.store].rev += rec.rev;
         byShop[rec.store].units += rec.sellout;
