@@ -2790,10 +2790,11 @@ const OC_LEVEL_MAP = {
 const OC_LEVEL_ORDER = ['Platinum', 'Titan', 'Gold'];
 // Target/shop/tháng do anh Thái cung cấp. Target cả level/tháng = số này x số shop CÓ PHÁT SINH
 // SELLOUT trong level đó tháng đó (cùng cách đếm với bảng "Số shop phát sinh Sellout" ở mục 3).
+// Đã nhân đôi so với target gói cũ theo yêu cầu anh Thái (24/8).
 const OC_TARGET_PER_SHOP = {
-    'Platinum': { ds: 120, dt: 600000000 },
-    'Titan': { ds: 80, dt: 400000000 },
-    'Gold': { ds: 40, dt: 200000000 },
+    'Platinum': { ds: 240, dt: 1200000000 },
+    'Titan': { ds: 160, dt: 800000000 },
+    'Gold': { ds: 80, dt: 400000000 },
 };
 function classifyIndLevel(rawLevel) {
     const key = (rawLevel || '').trim().toUpperCase();
@@ -4668,7 +4669,7 @@ function computeIndGroupShopMonthly(group) {
 }
 // Bảng chi tiết Shop khi mở rộng 1 nhóm O.C/Normal - hiện DOANH THU từng tháng theo shop. Nhóm O.C có thêm
 // badge "Gói" (lấy theo level hiện tại của shop) và tô nền đỏ nhạt tháng nào doanh thu dưới target gói đó
-// (Platinum 600tr / Titan 400tr / Gold 200tr / tháng). Nhóm Normal tô nền xanh nhạt tháng nào doanh thu vượt
+// (Platinum 1,2 tỷ / Titan 800tr / Gold 400tr / tháng). Nhóm Normal tô nền xanh nhạt tháng nào doanh thu vượt
 // 50 triệu. Thiết kế đơn giản, dùng bảng riêng (không dùng .mini-week-table vốn để dành cho bảng 53 tuần).
 // Thứ tự shop: O.C xếp theo hạng Platinum -> Titan -> Gold (OC_LEVEL_ORDER, cùng hạng thì DT cao trước);
 // Normal xếp theo Doanh thu cao -> thấp.
@@ -4719,7 +4720,7 @@ function indGroupShopDetailHtml(group, months, colspan) {
     const goiTotalCol = isOC ? '<td></td>' : '';
     const dtRow = `<tr class="sdt-grand"><td class="sdt-shop">Tổng cả nhóm</td>${goiTotalCol}${dtByMonth.map(v=>`<td>${v ? fmtVND(v) : '-'}</td>`).join('')}<td class="sdt-total">${fmtVND(grandDt)}</td></tr>`;
     const legend = isOC
-        ? '<span class="sdt-legend-dot sdt-miss"></span> dưới target gói (Platinum 600M · Titan 400M · Gold 200M/tháng)'
+        ? '<span class="sdt-legend-dot sdt-miss"></span> dưới target gói (Platinum 1,2 tỷ · Titan 800tr · Gold 400tr/tháng)'
         : '<span class="sdt-legend-dot sdt-hit"></span> doanh thu vượt 50M/tháng';
     // table-layout:fixed + colgroup để 12 cột tháng rộng bằng nhau tuyệt đối, cân vừa khung (không tràn ngang,
     // không cần cuộn). Shop 18% · Gói 8% (chỉ O.C) · Tổng 9% · phần còn lại chia đều cho 12 tháng.
@@ -5887,7 +5888,7 @@ if (document.getElementById('ind-commission-month-select')) {
 //   1) Tồn kho tăng: Sell in (OPPO) tháng gần nhất > Sell out cùng tháng >= 3 máy chênh lệch
 //   2) Shop dừng bán: có sellout > 0 tháng trước, về 0 ở tháng gần nhất
 //   3) O.C dưới target: shop nhóm O.C có DS tháng gần nhất < target/shop/tháng theo level -> nguy cơ rớt hạng
-//   4) Cơ hội nâng hạng: shop nhóm Normal có DS tháng gần nhất >= ngưỡng Gold (40 máy) nhưng chưa vào O.C
+//   4) Cơ hội nâng hạng: shop nhóm Normal có DS tháng gần nhất >= ngưỡng Gold (80 máy) nhưng chưa vào O.C
 // Sắp xếp theo mức ưu tiên (rủi ro tiền/hàng tồn trước, cơ hội tăng trưởng sau cùng).
 function computeIndAlerts() {
     const months = indMonthsList();
