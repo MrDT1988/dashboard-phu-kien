@@ -2024,9 +2024,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             </div>
         </div>
         <div style="display:flex; gap:8px; margin-bottom:12px;">
-            <button class="ind-sale-metric-btn oc-target-tab active" data-level="Platinum" type="button">Platinum</button>
-            <button class="ind-sale-metric-btn oc-target-tab" data-level="Titan" type="button">Titan</button>
-            <button class="ind-sale-metric-btn oc-target-tab" data-level="Gold" type="button">Gold</button>
+            <button class="ind-sale-metric-btn oc-target-tab active" data-levels="Platinum,Titan" type="button">Platinum &amp; Titan</button>
+            <button class="ind-sale-metric-btn oc-target-tab" data-levels="Gold" type="button">Gold</button>
         </div>
         <div class="table-scroll" style="max-height:640px;">
             <table class="data-table" id="ind-oc-target-table">
@@ -4792,7 +4791,7 @@ function indGroupShopDetailHtml(group, months, colspan) {
             }
             return `<td${cls}>${v ? fmtVND(v) : '-'}</td>`;
         }).join('');
-        return `<tr><td class="sdt-shop">${escapeHtml(st)}${saleLabel}</td>${goiCell}${valueCells}<td class="sdt-total">${fmtVND(total)}</td></tr>`;
+        return `<tr><td class="sdt-shop">${escapeHtml(shortIndShopName(st))}${saleLabel}</td>${goiCell}${valueCells}<td class="sdt-total">${fmtVND(total)}</td></tr>`;
     }).join('');
     const dtByMonth = months.map(m => stores.reduce((s,st) => s + ((storeMonth[st][m]||{}).dt||0), 0));
     const grandDt = dtByMonth.reduce((a,b)=>a+b,0);
@@ -5648,18 +5647,19 @@ function renderIndGoalCards() {
     const latestMonth = months.length ? months[months.length - 1] : null;
     const targetMonth = indReviewMonth || latestMonth;
 
-    // Thẻ 1: O.C Hoàn thành Target (Target 25 shop) - dùng lại đúng logic "Đạt/Chưa đạt" của bảng
-    // "Chi tiết Target O.C" (dat = %HT Doanh thu >= 100%), tính đúng theo Tháng đang chọn.
+    // Thẻ 1: O.C Đạt Gói (Target 25 shop) - dùng đúng logic "Gói THỰC TẾ đạt được theo doanh thu" (mốc
+    // mới anh Thái set: >200tr=GOLD/>400tr=TITAN/>600tr=PLATINUM), KHÔNG phải %HT so target riêng nữa.
     const ocRows = computeOcTargetProgressRows(targetMonth);
-    const ocAchieved = ocRows.filter(r => r.dat).length;
-    ocEl.innerHTML = indGoalCardHtml('O.C Hoàn thành Target', ocAchieved, 25, 'var(--oppo-green)');
+    const ocAchieved = ocRows.filter(r => !!r.qualifyLevel).length;
+    ocEl.innerHTML = indGoalCardHtml('O.C Đạt Gói', ocAchieved, 25, 'var(--oppo-green)');
 
     // Thẻ 2 & 3: cùng dùng đúng Tháng đang chọn, gộp theo shop (đã rút gọn tên trùng biến thể).
     const shopTotals = targetMonth ? computeIndShopMonthlyTotals(targetMonth) : {};
     const shopList = Object.values(shopTotals);
 
-    const perfAchieved = shopList.filter(s => s.ds > 5 || s.dt > 25000000).length;
-    perfEl.innerHTML = indGoalCardHtml('Shop &gt;5 máy hoặc &gt;25tr DT', perfAchieved, 60, '#4C72B0');
+    // "Đạt" = >= (đạt đúng mốc cũng tính), không phải > nữa.
+    const perfAchieved = shopList.filter(s => s.ds >= 5 || s.dt >= 25000000).length;
+    perfEl.innerHTML = indGoalCardHtml('Shop đạt 5 máy hoặc 25tr DT', perfAchieved, 60, '#4C72B0');
 
     const soAchieved = shopList.filter(s => s.ds > 0).length;
     soEl.innerHTML = indGoalCardHtml('Shop IND có S.O', soAchieved, 110, '#B0B7BD');
@@ -5737,13 +5737,13 @@ function ocLevelRank(level) {
 // Mặc định sắp theo Gói: Platinum -> Titan -> Gold (đúng thứ tự anh Thái yêu cầu), trong cùng 1 Gói thì
 // sắp theo % HT target D.T tăng dần (shop thấp nhất lên đầu). Bấm tiêu đề cột để đổi cách sắp.
 let ocTargetProgressSort = { field: 'level', dir: 'asc' };
-let ocTargetActiveLevel = 'Platinum'; // 3 tab Platinum/Titan/Gold - lọc theo Gói ĐANG GÁN cho shop
+let ocTargetActiveLevels = ['Platinum', 'Titan']; // 2 tab "Platinum & Titan" / "Gold" - lọc theo Gói ĐANG GÁN cho shop
 const OC_QUALIFY_COLOR = { PLATINUM: '#B8C4CC', TITAN: '#7EA6E0', GOLD: '#E0B24D' };
 function renderOcTargetProgressTable() {
     const body = document.getElementById('ind-oc-target-table-body');
     if (!body) return;
     let rows = computeOcTargetProgressRows(indReviewMonth);
-    rows = rows.filter(r => r.level === ocTargetActiveLevel);
+    rows = rows.filter(r => ocTargetActiveLevels.includes(r.level));
     rows.sort((a, b) => {
         if (ocTargetProgressSort.field === 'level') {
             let cmp = ocLevelRank(a.level) - ocLevelRank(b.level);
@@ -5788,7 +5788,7 @@ function renderOcTargetProgressTable() {
 }
 document.querySelectorAll('.oc-target-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-        ocTargetActiveLevel = btn.dataset.level;
+        ocTargetActiveLevels = btn.dataset.levels.split(',');
         document.querySelectorAll('.oc-target-tab').forEach(b => b.classList.toggle('active', b === btn));
         renderOcTargetProgressTable();
     });
