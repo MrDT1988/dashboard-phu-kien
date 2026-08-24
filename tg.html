@@ -2763,6 +2763,28 @@ async function loadAndRender() {
         if (msgEl) msgEl.textContent = 'Đang tải Shop theo Sale (IND)...';
         DATA.shop_sale_map = await fetchShopSaleMap(APPS_SCRIPT_URL);
 
+        // Ghi đè NGAY TẠI ĐÂY (1 chỗ duy nhất) Sale phụ trách cho MỌI bản ghi IND trong crosstab +
+        // store_rows, dùng sheet "SHOP THEO SALE" làm nguồn CHUẨN thay cho cột Sale trong CENTER (anh
+        // Thái yêu cầu 25/8: "SHOP THEO SALE dùng xác định sale phụ trách của TOÀN BỘ biểu đồ/bảng liên
+        // quan IND, Center chỉ để xác định số liệu bán từng shop"). Nhờ vá 1 lần ở DATA thay vì sửa từng
+        // hàm, MỌI bảng/biểu đồ IND phía sau tự động dùng đúng Sale mà không cần đổi gì thêm. Số lượng/
+        // doanh thu vẫn nguyên như CENTER - chỉ đổi tên Sale gắn với mỗi bản ghi/shop. Shop nào chưa có
+        // trong sheet "SHOP THEO SALE" thì GIỮ NGUYÊN Sale cũ của CENTER (fallback an toàn).
+        if (DATA.shop_sale_map && Object.keys(DATA.shop_sale_map).length) {
+            let patchedCrosstab = 0, patchedStoreRows = 0;
+            DATA.crosstab.forEach(rec => {
+                if (rec.channel !== 'IND' || !rec.store) return;
+                const trueSale = DATA.shop_sale_map[rec.store];
+                if (trueSale && trueSale !== rec.sales) { rec.sales = trueSale; patchedCrosstab++; }
+            });
+            DATA.store_rows.forEach(r => {
+                if (r.channel !== 'IND' || !r.store) return;
+                const trueSale = DATA.shop_sale_map[r.store];
+                if (trueSale && trueSale !== r.sale) { r.sale = trueSale; patchedStoreRows++; }
+            });
+            console.log('Đã vá Sale IND theo "SHOP THEO SALE": ' + patchedCrosstab + ' dòng crosstab, ' + patchedStoreRows + ' dòng store_rows đổi khác CENTER.');
+        }
+
         if (loadingEl) loadingEl.style.display = 'none';
         const updEl = document.getElementById('last-updated');
         if (updEl) updEl.textContent = 'Dữ liệu tải lúc: ' + new Date().toLocaleString('vi-VN') + ' · ' + sourceNote;
