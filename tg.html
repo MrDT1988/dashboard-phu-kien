@@ -2020,8 +2020,13 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Tiến độ Target theo Shop O.C</h3>
-                <div class="chart-sub">Theo Tháng đang chọn ở trên. Target theo Gói (Platinum/Titan/Gold). Sell in chỉ tính OPPO. Bấm tiêu đề cột để sắp xếp - có thể lọc thêm theo Sale ở bộ lọc chung phía trên mục 1-5.</div>
+                <div class="chart-sub">Theo Tháng đang chọn ở trên. Target theo Gói (Platinum/Titan/Gold). <b>Đạt</b> = Gói THỰC TẾ doanh thu đạt được (không phụ thuộc Gói đang gán): &lt;200tr = không đạt gói nào · &gt;200tr = GOLD · &gt;400tr = TITAN · &gt;600tr = PLATINUM. Sell in chỉ tính OPPO. Bấm tiêu đề cột để sắp xếp - có thể lọc thêm theo Sale ở bộ lọc chung phía trên mục 1-5.</div>
             </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <button class="ind-sale-metric-btn oc-target-tab active" data-level="Platinum" type="button">Platinum</button>
+            <button class="ind-sale-metric-btn oc-target-tab" data-level="Titan" type="button">Titan</button>
+            <button class="ind-sale-metric-btn oc-target-tab" data-level="Gold" type="button">Gold</button>
         </div>
         <div class="table-scroll" style="max-height:640px;">
             <table class="data-table" id="ind-oc-target-table">
@@ -2035,7 +2040,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                         <th data-field="pctDt" class="num">%HT Target</th>
                         <th data-field="dat" class="num">Đạt</th>
                         <th data-field="sellIn" class="num">S.I</th>
-                        <th data-field="sellInReno16" class="num">S.I R16</th>
+                        <th data-field="sellInReno16" class="num">S.I &gt;10M</th>
                     </tr>
                 </thead>
                 <tbody id="ind-oc-target-table-body"></tbody>
@@ -5555,19 +5560,21 @@ function renderOcDetailTable() {
 // "SELL IN" (chỉ nhóm hàng OPPO, không tính PK); Sell in Reno16 lọc riêng theo tên sản phẩm chứa "Reno16".
 function computeSellInByStoreId(month) {
     const rows = DATA.sell_in_rows || [];
-    const result = {}; // storeId -> { oppo, reno16 }
+    const result = {}; // storeId -> { oppo, premium }
     rows.forEach(r => {
         if (!r || r.length < 7) return;
         const storeId = String(r[SELLIN_COL.STORE_ID] || '').trim();
         const rowMonth = parseInt(r[SELLIN_COL.MONTH], 10);
         const nhomHang = String(r[SELLIN_COL.GROUP] || '').trim().toUpperCase();
-        const product = String(r[SELLIN_COL.PRODUCT] || '').trim();
+        const product = String(r[SELLIN_COL.PRODUCT] || '').trim().toLowerCase();
         const qty = num(r[SELLIN_COL.QTY]);
         if (!storeId || nhomHang !== 'OPPO') return;
         if (month && rowMonth !== month) return;
-        if (!result[storeId]) result[storeId] = { oppo: 0, reno16: 0 };
+        if (!result[storeId]) result[storeId] = { oppo: 0, premium: 0 };
         result[storeId].oppo += qty;
-        if (product.toLowerCase().includes('reno16')) result[storeId].reno16 += qty;
+        // "S.I >10M" (đổi từ chỉ Reno16 sang gộp cả nhóm sản phẩm tầm giá >10M theo tên model - anh
+        // Thái yêu cầu 25/8): Reno / A_ Pro / Find - khớp không phân biệt hoa/thường trên tên sản phẩm.
+        if (product.includes('reno') || product.includes('pro') || product.includes('find')) result[storeId].premium += qty;
     });
     return result;
 }
@@ -5683,7 +5690,7 @@ function computeOcTargetProgressRows(month) {
         if (indFilters.stores.length && !indFilters.stores.includes(r.store)) return;
         const target = OC_TARGET_PER_SHOP[cls.sub];
         const ddt = dsDtByStore[r.store] || { ds: 0, dt: 0 };
-        const sellIn = sellInByStoreId[String(r.store_id || '').trim()] || { oppo: 0, reno16: 0 };
+        const sellIn = sellInByStoreId[String(r.store_id || '').trim()] || { oppo: 0, premium: 0 };
         rawRows.push({
             store: r.store,
             level: cls.sub,
@@ -5691,7 +5698,7 @@ function computeOcTargetProgressRows(month) {
             dt: ddt.dt,
             targetDt: target.dt,
             sellIn: sellIn.oppo,
-            sellInReno16: sellIn.reno16,
+            sellInReno16: sellIn.premium,
         });
     });
     // Gộp các shop bị nhập nhiều biến thể tên khác nhau cho CÙNG 1 địa điểm (VD "Huỳnh Mai - Bến Tre
@@ -5708,9 +5715,19 @@ function computeOcTargetProgressRows(month) {
         m.sellIn += r.sellIn;
         m.sellInReno16 += r.sellInReno16;
     });
+    // Gói THỰC TẾ đạt được theo doanh thu (KHÔNG phụ thuộc Gói đang được gán) - anh Thái yêu cầu 25/8:
+    // dù shop đang gán Platinum (target 600tr) mà chỉ đạt 319tr (chưa đủ target riêng), thì về BẢN CHẤT
+    // doanh thu đó vẫn đủ điều kiện Gói GOLD (>200tr) nên cột "Đạt" phải note "GOLD", không phải ✗ trơn.
+    // <200tr = Không đạt gói nào · >200tr = GOLD · >400tr = TITAN · >600tr = PLATINUM (ngưỡng CAO NHẤT đạt được).
+    function ocQualifyLevel(dt) {
+        if (dt > 600000000) return 'PLATINUM';
+        if (dt > 400000000) return 'TITAN';
+        if (dt > 200000000) return 'GOLD';
+        return null;
+    }
     return Object.values(merged).map(m => {
         const pctDt = m.targetDt ? (m.dt / m.targetDt * 100) : null;
-        return { ...m, pctDt, dat: pctDt !== null && pctDt >= 100 };
+        return { ...m, pctDt, dat: pctDt !== null && pctDt >= 100, qualifyLevel: ocQualifyLevel(m.dt) };
     });
 }
 function ocLevelRank(level) {
@@ -5720,10 +5737,13 @@ function ocLevelRank(level) {
 // Mặc định sắp theo Gói: Platinum -> Titan -> Gold (đúng thứ tự anh Thái yêu cầu), trong cùng 1 Gói thì
 // sắp theo % HT target D.T tăng dần (shop thấp nhất lên đầu). Bấm tiêu đề cột để đổi cách sắp.
 let ocTargetProgressSort = { field: 'level', dir: 'asc' };
+let ocTargetActiveLevel = 'Platinum'; // 3 tab Platinum/Titan/Gold - lọc theo Gói ĐANG GÁN cho shop
+const OC_QUALIFY_COLOR = { PLATINUM: '#B8C4CC', TITAN: '#7EA6E0', GOLD: '#E0B24D' };
 function renderOcTargetProgressTable() {
     const body = document.getElementById('ind-oc-target-table-body');
     if (!body) return;
-    const rows = computeOcTargetProgressRows(indReviewMonth);
+    let rows = computeOcTargetProgressRows(indReviewMonth);
+    rows = rows.filter(r => r.level === ocTargetActiveLevel);
     rows.sort((a, b) => {
         if (ocTargetProgressSort.field === 'level') {
             let cmp = ocLevelRank(a.level) - ocLevelRank(b.level);
@@ -5742,9 +5762,9 @@ function renderOcTargetProgressTable() {
     } else {
         body.innerHTML = rows.map(r => {
             const pctStyle = r.pctDt === null ? '' : ('style="color:' + (r.pctDt >= 100 ? 'var(--positive)' : 'var(--negative)') + '; font-weight:700;"');
-            const datHtml = r.pctDt === null ? '-' : (r.dat
-                ? '<span style="color:var(--positive); font-weight:800;">✓</span>'
-                : '<span style="color:var(--negative); font-weight:800;">✗</span>');
+            const datHtml = r.qualifyLevel
+                ? '<span style="color:' + OC_QUALIFY_COLOR[r.qualifyLevel] + '; font-weight:800;">' + r.qualifyLevel + '</span>'
+                : '<span style="color:var(--negative); font-weight:800;">✗</span>';
             return '<tr>'
                 + '<td>' + escapeHtml(r.store) + '</td>'
                 + '<td style="text-align:center;"><span class="tag">' + escapeHtml(r.level) + '</span></td>'
@@ -5766,6 +5786,13 @@ function renderOcTargetProgressTable() {
         }
     });
 }
+document.querySelectorAll('.oc-target-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        ocTargetActiveLevel = btn.dataset.level;
+        document.querySelectorAll('.oc-target-tab').forEach(b => b.classList.toggle('active', b === btn));
+        renderOcTargetProgressTable();
+    });
+});
 document.querySelectorAll('#ind-oc-target-table thead th[data-field]').forEach(th => {
     th.addEventListener('click', () => {
         const field = th.dataset.field;
