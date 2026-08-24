@@ -2034,7 +2034,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Chương trình tháng — Thưởng Sale IND</h3>
-                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b>. <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc S.O (tổng số máy mọi model bán ra trong tháng): <b>&lt;50 máy: 3.2%</b>, <b>&gt;50 máy: 4.2%</b>, <b>&gt;65 máy: 4.7%</b>, <b>&gt;80 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn). Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn (còn <b>2.2% / 3.2% / 3.7% / 4.7%</b>). <b>Shop S.O</b> = số shop có bán / tổng shop đăng ký của Sale trong tháng - dưới <b>70%</b> bị phạt <b>300.000đ</b>, trừ thẳng vào <b>Lương Sale</b>. <b>Lương Sale</b> = Lương cơ bản + Tiền thưởng (đã trừ phạt nếu có). <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b> (tỷ lệ chi phí nhân sự trên doanh thu). Đổi Tháng bên dưới để tính thử chi phí.</div>
+                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Sale: Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc S.O riêng (tổng số máy mọi model bán ra trong tháng): <b>&lt;50 máy: 3.2%</b>, <b>&gt;50 máy: 4.2%</b>, <b>&gt;65 máy: 4.7%</b>, <b>&gt;80 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn) - <b>Mức thưởng (BQ)</b> hiện ở đây là % bình quân gia quyền của cả 2 Sale trong xe, vì mỗi người có thể rơi vào bậc khác nhau. Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Shop S.O</b> = số shop có bán / tổng shop đăng ký - dưới <b>70%</b> bị phạt <b>300.000đ</b>/Sale, trừ vào Lương Sale (đánh dấu "có phạt" nếu 1 trong 2 Sale của xe bị phạt). <b>Lương Sale</b> = Lương cơ bản + Tiền thưởng (đã trừ phạt nếu có), cộng cả 2 Sale trong xe. <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Đổi Tháng bên dưới để tính thử chi phí.</div>
             </div>
         </div>
         <div class="filter-bar">
@@ -2045,7 +2045,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <table class="data-table" id="ind-commission-table">
                 <thead>
                     <tr>
-                        <th>Sale</th>
+                        <th>Xe</th>
                         <th class="num">Shop S.O</th>
                         <th class="num">S.O</th>
                         <th class="num">DT</th>
@@ -5766,6 +5766,36 @@ function computeIndCommissionRows(month) {
     rows.sort((a, b) => b.units - a.units);
     return { rows, monthTotals };
 }
+// Gộp các dòng theo Sale (r.sale) thành theo Xe (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân -
+// dùng chung định nghĩa IND_SALE_TABLE_GROUPS/IND_SALE_TABLE_XE_LABELS với bảng nhiệt phía trên, bỏ qua
+// nhóm O.C vì nhóm đó vốn không nằm trong computeIndCommissionRows). "Mức thưởng" hiển thị là % BÌNH QUÂN
+// GIA QUYỀN (tổng Tiền thưởng / tổng Center) vì 2 Sale chung 1 xe có thể rơi vào 2 bậc thưởng khác nhau,
+// không cộng được y hệt 1 con số % chung.
+function groupIndCommissionRowsByXe(rows) {
+    const xeGroups = IND_SALE_TABLE_GROUPS.slice(1); // bỏ nhóm 0 (O.C), giữ đúng 3 nhóm Xe 1/2/3
+    const xeLabels = IND_SALE_TABLE_XE_LABELS.slice(1);
+    const grouped = xeGroups.map((shortNames, gi) => {
+        const memberRows = rows.filter(r => shortNames.includes(shortSaleNameUpper(r.sale)));
+        if (!memberRows.length) return null;
+        const sum = (field) => memberRows.reduce((s, r) => s + r[field], 0);
+        const revBonus = sum('revBonus');
+        const bonus = sum('bonus');
+        return {
+            label: xeLabels[gi],
+            members: memberRows.map(r => shortSaleName(r.sale)).join(' + '),
+            shopSoActive: sum('shopSoActive'), shopSoTotal: sum('shopSoTotal'),
+            units: sum('units'), revActual: sum('revActual'), revBonus,
+            blendedRatePct: revBonus ? (bonus / revBonus * 100) : 0,
+            bonus, baseSalary: sum('baseSalary'), salarySale: sum('salarySale'), kpiLd: sum('kpiLd'),
+            anyPenalized: memberRows.some(r => r.shopSoPenalized),
+        };
+    }).filter(Boolean);
+    // Sale nào không khớp nhóm Xe nào (VD tên mới chưa gán xe) thì vẫn giữ lại từng dòng riêng ở cuối,
+    // không âm thầm mất dữ liệu.
+    const groupedShortNames = new Set(xeGroups.flat());
+    const ungrouped = rows.filter(r => !groupedShortNames.has(shortSaleNameUpper(r.sale)));
+    return { grouped, ungrouped };
+}
 function renderIndCommissionTable() {
     const body = document.getElementById('ind-commission-table-body');
     if (!body) return;
@@ -5777,27 +5807,46 @@ function renderIndCommissionTable() {
         body.innerHTML = '<tr><td colspan="11" style="text-align:center; color:var(--text-secondary); padding:16px;">Chưa có dữ liệu tháng này.</td></tr>';
         return;
     }
+    const { grouped, ungrouped } = groupIndCommissionRowsByXe(finalRows);
     let totalUnits = 0, totalRevActual = 0, totalRevBonus = 0, totalBonus = 0, totalBase = 0, totalSalarySale = 0, totalKpiLd = 0, totalShopSoActive = 0, totalShopSoTotal = 0;
-    let html = finalRows.map(r => {
+    function xeRowHtml(g) {
+        totalUnits += g.units; totalRevActual += g.revActual; totalRevBonus += g.revBonus;
+        totalBonus += g.bonus; totalBase += g.baseSalary; totalSalarySale += g.salarySale; totalKpiLd += g.kpiLd;
+        totalShopSoActive += g.shopSoActive; totalShopSoTotal += g.shopSoTotal;
+        const hrPct = g.revBonus ? ((g.kpiLd + g.salarySale) / g.revBonus * 100) : null;
+        const shopSoHtml = '<span' + (g.anyPenalized ? ' style="color:var(--negative); font-weight:700;"' : '') + '>' + fmtInt(g.shopSoActive) + '/' + fmtInt(g.shopSoTotal) + '</span>';
+        const salarySaleHtml = fmtVND(g.salarySale) + (g.anyPenalized ? ' <span style="color:var(--negative); font-size:11px;">(có phạt)</span>' : '');
+        return '<tr>'
+            + '<td><b>' + escapeHtml(g.label) + '</b><div style="font-size:10.5px; color:var(--text-secondary);">' + escapeHtml(g.members) + '</div></td>'
+            + '<td class="num">' + shopSoHtml + '</td>'
+            + '<td class="num">' + fmtInt(g.units) + ' máy</td>'
+            + '<td class="num">' + fmtVND(g.revActual) + '</td>'
+            + '<td class="num">' + fmtVND(g.revBonus) + '</td>'
+            + '<td class="num">' + g.blendedRatePct.toFixed(1) + '% <span style="opacity:.65; font-size:11px;">(BQ)</span></td>'
+            + '<td class="num" style="color:var(--positive); font-weight:700;">' + fmtVND(g.bonus) + '</td>'
+            + '<td class="num">' + fmtVND(g.baseSalary) + '</td>'
+            + '<td class="num" style="font-weight:800;">' + salarySaleHtml + '</td>'
+            + '<td class="num">' + fmtVND(g.kpiLd) + '</td>'
+            + '<td class="num">' + (hrPct === null ? '-' : fmtPct(hrPct)) + '</td>'
+            + '</tr>';
+    }
+    let html = grouped.map(xeRowHtml).join('');
+    // Sale lẻ chưa gán vào Xe nào (nếu có) - vẫn hiện riêng từng dòng như bảng cũ, không gộp bừa.
+    html += ungrouped.map(r => {
         totalUnits += r.units; totalRevActual += r.revActual; totalRevBonus += r.revBonus;
         totalBonus += r.bonus; totalBase += r.baseSalary; totalSalarySale += r.salarySale; totalKpiLd += r.kpiLd;
         totalShopSoActive += r.shopSoActive; totalShopSoTotal += r.shopSoTotal;
-        const rateHtml = r.hasA6c
-            ? ((r.rate * 100).toFixed(1) + '% <span style="opacity:.65; font-size:11px;">(A6c ' + (r.rateA6c * 100).toFixed(1) + '%)</span>')
-            : ((r.rate * 100).toFixed(1) + '%');
-        const shopSoPctHtml = r.shopSoRatio === null ? '' : (' <span style="font-size:11px; opacity:.75;">(' + (r.shopSoRatio * 100).toFixed(0) + '%)</span>');
-        const shopSoHtml = '<span' + (r.shopSoPenalized ? ' style="color:var(--negative); font-weight:700;"' : '') + '>' + fmtInt(r.shopSoActive) + '/' + fmtInt(r.shopSoTotal) + '</span>' + shopSoPctHtml;
-        const salarySaleHtml = fmtVND(r.salarySale) + (r.shopSoPenalized ? ' <span style="color:var(--negative); font-size:11px;">(-' + fmtVND(r.shopSoPenalty) + ')</span>' : '');
+        const shopSoHtml = '<span' + (r.shopSoPenalized ? ' style="color:var(--negative); font-weight:700;"' : '') + '>' + fmtInt(r.shopSoActive) + '/' + fmtInt(r.shopSoTotal) + '</span>';
         return '<tr>'
             + '<td>' + escapeHtml(shortSaleName(r.sale)) + '</td>'
             + '<td class="num">' + shopSoHtml + '</td>'
             + '<td class="num">' + fmtInt(r.units) + ' máy</td>'
             + '<td class="num">' + fmtVND(r.revActual) + '</td>'
             + '<td class="num">' + fmtVND(r.revBonus) + '</td>'
-            + '<td class="num">' + rateHtml + '</td>'
+            + '<td class="num">' + (r.rate * 100).toFixed(1) + '%</td>'
             + '<td class="num" style="color:var(--positive); font-weight:700;">' + fmtVND(r.bonus) + '</td>'
             + '<td class="num">' + fmtVND(r.baseSalary) + '</td>'
-            + '<td class="num" style="font-weight:800;">' + salarySaleHtml + '</td>'
+            + '<td class="num" style="font-weight:800;">' + fmtVND(r.salarySale) + '</td>'
             + '<td class="num">' + fmtVND(r.kpiLd) + '</td>'
             + '<td class="num">' + (r.hrPct === null ? '-' : fmtPct(r.hrPct)) + '</td>'
             + '</tr>';
