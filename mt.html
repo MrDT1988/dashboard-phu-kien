@@ -184,6 +184,24 @@ body {
 .seg-tab-btn.active { background: var(--oppo-green); color:#fff; border-color:var(--text-primary); }
 .channel-nav { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:var(--gap); }
 .channel-nav a { flex:1; min-width:140px; text-align:center; background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.35); text-decoration:none; color:var(--text-primary); font-weight:700; font-size:13px; border-left:4px solid var(--oppo-green); transition:box-shadow .2s, border-color .2s; }
+.db-tg-tabnav { display:flex; width:100%; gap:12px; margin-bottom:var(--gap); }
+.db-tg-tab {
+    flex:1; text-align:center; border:1px solid rgba(255,255,255,0.4); background:rgba(255,255,255,0.08);
+    cursor:pointer; font-family:inherit; font-size:14.5px; font-weight:800; color:#fff;
+    padding:16px 12px; border-radius:12px; transition:background 0.15s ease, color 0.15s ease;
+}
+.db-tg-tab:hover { background:rgba(255,255,255,0.2); }
+.db-tg-tab.active { background:var(--oppo-green); color:#04140e; border-color:var(--oppo-green); box-shadow:0 0 12px rgba(34,229,160,0.5); }
+.db-tg-panel[hidden] { display:none; }
+@media (max-width: 760px) { .db-tg-tabnav { flex-wrap:wrap; } .db-tg-tab { flex:1 1 45%; } }
+.ph-section { opacity:0.72; border-style:dashed !important; }
+.ph-badge { align-self:flex-start; background:rgba(255,197,66,0.16); color:#ffd166; border:1px solid rgba(255,197,66,0.35);
+    border-radius:20px; padding:4px 12px; font-size:11px; font-weight:800; white-space:nowrap; }
+.ph-body { padding:22px 16px; text-align:center; color:var(--text-secondary); font-size:12.5px; font-style:italic;
+    border:1px dashed var(--border-color); border-radius:var(--radius); margin-top:10px; }
+.part-header { margin:26px 0 4px; font-size:16px; font-weight:800; color:var(--oppo-green);
+    border-left:4px solid var(--oppo-green); padding-left:10px; }
+.sticky-filter { position:sticky; top:0; z-index:50; background:var(--bg-page, #0a0e14); padding-top:6px; }
 .channel-nav a:hover { box-shadow:0 4px 14px rgba(0,0,0,0.45); border-color:rgba(34,229,160,0.35); }
 .section-anchor { scroll-margin-top: 14px; }
 .insight-card { display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border-radius:8px; margin-bottom:10px; font-size:13px; line-height:1.5; }
@@ -262,14 +280,31 @@ body {
         <div id="provisional-note" style="display:none; margin-top:8px; background:rgba(255,197,66,0.15); color:#ffd166; border-radius:8px; padding:6px 12px; font-size:11.5px; font-weight:600;"></div>
     </div>
 
-    <nav class="channel-nav">
-        <a href="#sec-overview">📊 Tổng quan</a>
-        <a href="#sec-mwg">🟡 Kênh MWG</a>
-        <a href="#sec-ka">🔵 Kênh KA</a>
-        <a href="#sec-ind">🟢 Kênh IND</a>
-        <a href="#sec-insight">⚠️ Cảnh báo &amp; Đề xuất</a>
+    <nav class="db-tg-tabnav">
+        <button class="db-tg-tab active" data-panel="panel-overview" type="button">📊 Tổng quan</button>
+        <button class="db-tg-tab" data-panel="panel-mwg" type="button">🟡 Chi tiết MWG</button>
+        <button class="db-tg-tab" data-panel="panel-ka" type="button">🔵 Chi tiết KA</button>
+        <button class="db-tg-tab" data-panel="panel-ind" type="button">🟢 Chi tiết IND</button>
+        <button class="db-tg-tab" data-panel="panel-insight" type="button">⚠️ Cảnh báo &amp; Đề xuất</button>
     </nav>
+    <section class="table-section sticky-filter">
+        <div class="table-section-header">
+            <div>
+                <h3>Bộ lọc chung</h3>
+                <div class="chart-sub">Áp dụng cho <b>tất cả các tab</b> bên dưới (trừ mục Biên chế PG/Sale — luôn theo toàn Kênh).</div>
+            </div>
+        </div>
+        <div class="filter-bar">
+            <label>Tháng</label>
+            <div class="multiselect" id="ms-month"></div>
+            <label>Khu vực</label>
+            <div class="multiselect" id="ms-area"></div>
+            <button class="reset-btn" id="global-reset">Xóa lọc</button>
+        </div>
+    </section>
 
+
+<div class="db-tg-panel" id="panel-overview">
     <!-- ============ 1. TỔNG QUAN — ALL KÊNH ============ -->
     <h2 id="sec-overview" class="section-anchor" style="margin-bottom:10px; color:var(--oppo-green-dark);">1. Tổng quan — Toàn bộ Kênh (MWG + IND + KA)</h2>
 
@@ -290,22 +325,28 @@ body {
         </div>
     </section>
 
-    <section class="table-section">
+
+    <section class="table-section ph-section">
         <div class="table-section-header">
             <div>
-                <h3>Bộ lọc chung</h3>
-                <div class="chart-sub">Áp dụng cho toàn bộ dashboard bên dưới (trừ mục Biên chế PG/Sale ở trên — luôn theo toàn Kênh).</div>
+                <h3>Doanh số theo tuần — Cả năm 2026</h3>
+                <div class="chart-sub">Biểu đồ Sellout theo tuần cả năm, tách theo Kênh — giống mục cùng tên bên DB TG.</div>
             </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
         </div>
-        <div class="filter-bar">
-            <label>Tháng</label>
-            <div class="multiselect" id="ms-month"></div>
-            <label>Khu vực</label>
-            <div class="multiselect" id="ms-area"></div>
-            <button class="reset-btn" id="global-reset">Xóa lọc</button>
-        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
     </section>
 
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>So sánh hiệu suất giữa các kênh</h3>
+                <div class="chart-sub">Thẻ so sánh MWG / KA / IND: doanh số, doanh thu, đơn giá TB, tăng trưởng MoM.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
     <section class="chart-row">
         <div class="chart-container chart-tall">
             <h3>Doanh số theo Kênh theo tháng</h3>
@@ -321,6 +362,17 @@ body {
         </div>
     </section>
 
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Doanh thu theo Kênh theo tháng</h3>
+                <div class="chart-sub">Biểu đồ doanh thu 12 tháng tách theo Kênh (hiện mới có bảng gộp DS/DT bên dưới).</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
     <section class="table-section">
         <div class="table-section-header">
             <div>
@@ -336,8 +388,80 @@ body {
         </div>
     </section>
 
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Sell Out Reno &amp; Find so với các model còn lại</h3>
+                <div class="chart-sub">Tách riêng Reno / Find / model khác theo tháng, kèm tỉ trọng.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Cụm biểu đồ Reno / Phân khúc giá / Tỉ trọng Kênh</h3>
+                <div class="chart-sub">3 biểu đồ cạnh nhau: tỉ trọng Reno theo Kênh · tỉ trọng phân khúc giá theo Kênh · tỉ trọng đóng góp theo Kênh.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Target theo Kênh &amp; theo Sale</h3>
+                <div class="chart-sub">Bảng target/thực hiện/%HT theo Kênh và theo Sale — cần anh cấp file target Miền Trung.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Xu hướng % Hoàn thành Target theo tháng</h3>
+                <div class="chart-sub">Đường %HT 12 tháng theo Kênh — phụ thuộc dữ liệu target ở trên.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Chi tiết theo Shop/Đối tác</h3>
+                <div class="chart-sub">Bảng tổng hợp toàn bộ shop/đối tác của cả 3 kênh trong 1 bảng, có bộ lọc.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Chiến lược Kênh</h3>
+                <div class="chart-sub">Khối ghi chú định hướng từng kênh — anh cung cấp nội dung, em dựng khung.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+</div>
+
+<div class="db-tg-panel" id="panel-mwg" hidden>
     <!-- ============ 2. KÊNH MWG — DEEP DIVE ============ -->
     <h2 id="sec-mwg" class="section-anchor" style="margin:28px 0 10px; color:var(--oppo-green-dark);">2. Chi tiết Kênh MWG</h2>
+    <h3 class="part-header">Phần 1 — Overview MWG 2026</h3>
+    <div class="chart-sub" style="margin:-4px 0 12px;">Toàn cảnh cả năm theo hãng / khu vực / phân khúc — giống Phần 1 bên DB TG.</div>
+
 
     <section class="table-section">
         <div class="table-section-header">
@@ -355,6 +479,28 @@ body {
         </div>
     </section>
 
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Doanh số theo hãng theo tháng</h3>
+                <div class="chart-sub">Biểu đồ 12 tháng tách theo 6 hãng lớn (OPPO/Samsung/Xiaomi/Apple/vivo/realme).</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Bảng doanh thu &amp; doanh số theo hãng theo tháng</h3>
+                <div class="chart-sub">Mỗi hãng 2 hàng DS/DT × 12 tháng, kèm tỉ trọng — giống bảng cùng tên bên DB TG.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
     <section class="chart-row">
         <div class="chart-container chart-tall">
             <h3>Doanh số Khu vực (Kênh MWG) theo tháng</h3>
@@ -408,6 +554,39 @@ body {
         </div>
     </section>
 
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Hiệu suất theo Size Shop (MWG)</h3>
+                <div class="chart-sub">Nhóm shop S/A/B/C/D: số shop, doanh số, doanh thu, thị phần OPPO.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Tỉ trọng từng hãng theo phân khúc giá</h3>
+                <div class="chart-sub">Ma trận hãng × phân khúc giá (dưới 5M / 5-10M / 10-20M / trên 20M).</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>TOP 10 sản phẩm bán chạy — 6 hãng lớn</h3>
+                <div class="chart-sub">Bảng xếp hạng model theo doanh số, lọc theo hãng.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
     <section class="table-section">
         <div class="table-section-header">
             <div>
@@ -488,6 +667,9 @@ body {
         </div>
     </section>
 
+
+    <h3 class="part-header">Phần 2 — Review Tháng</h3>
+    <div class="chart-sub" style="margin:-4px 0 12px;">Theo dõi tháng đang chạy: so sánh cùng kỳ, doanh số/doanh thu theo ngày.</div>
     <section class="table-section mwg-unified-section">
         <div class="table-section-header">
             <div>
@@ -585,8 +767,33 @@ body {
         </div>
     </section>
 
+</div>
+
+<div class="db-tg-panel" id="panel-ka" hidden>
     <!-- ============ 3. KÊNH KA ============ -->
     <h2 id="sec-ka" class="section-anchor" style="margin:28px 0 10px; color:var(--oppo-green-dark);">3. Chi tiết Kênh KA</h2>
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Doanh số theo tuần — Cả năm 2026 (KA)</h3>
+                <div class="chart-sub">Sellout theo tuần riêng kênh KA.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Sell Out theo tháng (KA)</h3>
+                <div class="chart-sub">Biểu đồ 12 tháng riêng kênh KA, tách theo kênh phụ.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
 
     <section class="table-section">
         <div class="table-section-header">
@@ -625,10 +832,46 @@ body {
         </div>
     </section>
 
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Thị phần theo tháng — FPT &amp; Viettel</h3>
+                <div class="chart-sub">Thị phần OPPO tại FPT và Viettel theo tháng, có mục tiêu và cảnh báo đỏ khi dưới ngưỡng.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Doanh thu chi tiết theo Shop — theo Kênh phụ &amp; Tháng</h3>
+                <div class="chart-sub">Bảng doanh thu 12 tháng từng shop KA, nhóm theo kênh phụ.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+</div>
+
+<div class="db-tg-panel" id="panel-ind" hidden>
     <!-- ============ 4. KÊNH IND ============ -->
     <h2 id="sec-ind" class="section-anchor" style="margin:28px 0 10px; color:var(--oppo-green-dark);">4. Chi tiết Kênh IND (OPPO Club)</h2>
 
     <div class="ind-data-warning" id="ind-store-month-warning">⚠️ Chưa có dữ liệu chi tiết Shop/Tháng cho kênh IND (checkpoint đang dùng bản Apps Script cũ). Các phần bên dưới — 4 thẻ KPI, O.C/Normal theo tháng, Target theo Shop O.C, Chương trình tháng thưởng — sẽ trống cho tới khi anh cập nhật code AppsScript_MienTrung_backend_v4.gs mới rồi bấm "Chốt kỳ ngay".</div>
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Doanh số theo tuần — Cả năm 2026 (IND)</h3>
+                <div class="chart-sub">Sellout theo tuần riêng kênh IND, tách O.C / Normal.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
 
     <div class="chart-sub" style="margin-bottom:10px;">4 thẻ dưới đây mặc định là số liệu <b>tháng gần nhất có dữ liệu</b> (riêng kênh IND), kèm so sánh với tháng liền trước (MoM). Có thể đổi Tháng/Khu vực bằng bộ lọc bên dưới.</div>
     <div class="filter-bar" style="margin-bottom:14px;">
@@ -707,6 +950,17 @@ body {
         </div>
     </section>
 
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Bộ lọc biểu đồ Sell Out / Sell In theo nhóm</h3>
+                <div class="chart-sub">Thẻ chọn nhóm O.C / Normal dùng chung cho 2 biểu đồ bên dưới.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
     <section class="chart-row">
         <div class="chart-container chart-tall">
             <h3>Xu hướng Sellout Kênh IND theo tháng</h3>
@@ -783,6 +1037,28 @@ body {
         </div>
     </section>
 
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Sell In theo tháng — O.C / Normal</h3>
+                <div class="chart-sub">Biểu đồ Sell In 12 tháng tách 2 nhóm — cần cột Sell In trong nguồn dữ liệu MT.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
+
+    <section class="table-section ph-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Tổng quan Mục tiêu Shop IND</h3>
+                <div class="chart-sub">3 thẻ: O.C đạt gói · Shop sell-out đạt ngưỡng · Shop IND có S.O — cần anh chốt con số target cho Miền Trung.</div>
+            </div>
+            <span class="ph-badge">Chờ dữ liệu</span>
+        </div>
+        <div class="ph-body">Mục này đang để trống theo bố cục DB TG. Khi có dữ liệu/nguồn, báo em dựng nội dung.</div>
+    </section>
     <section class="table-section">
         <div class="table-section-header">
             <div>
@@ -841,6 +1117,9 @@ body {
         </div>
     </section>
 
+</div>
+
+<div class="db-tg-panel" id="panel-insight" hidden>
     <!-- ============ 5. CẢNH BÁO & ĐỀ XUẤT ============ -->
     <h2 id="sec-insight" class="section-anchor" style="margin:28px 0 10px; color:var(--oppo-green-dark);">5. Cảnh báo &amp; Nhận xét &amp; Đề xuất</h2>
 
@@ -853,6 +1132,8 @@ body {
         </div>
         <div id="insight-list"></div>
     </section>
+
+</div>
 
 </div>
 <script>
@@ -3401,5 +3682,22 @@ function renderInsights() {
     `).join('');
 }
 </script>
+<script>
+(function () {
+    var tabs = document.querySelectorAll('.db-tg-tab');
+    var panels = document.querySelectorAll('.db-tg-panel');
+    function activate(name) {
+        tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.panel === name); });
+        panels.forEach(function (p) { p.hidden = (p.id !== name); });
+        // Chart.js vẽ khi panel đang ẩn sẽ ra kích thước 0 -> bắn resize để nó tính lại
+        window.dispatchEvent(new Event('resize'));
+        setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    tabs.forEach(function (t) { t.addEventListener('click', function () { activate(t.dataset.panel); }); });
+    activate('panel-overview');
+})();
+</script>
+
 </body>
 </html>
