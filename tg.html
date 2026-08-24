@@ -168,7 +168,8 @@ body {
     .db-tg-tabnav { flex-wrap:wrap; }
     .db-tg-tab { flex:1 1 45%; }
     #channel-strategy-section > div[style*="grid-template-columns:repeat(3"],
-    #hr-policy-section > div[style*="grid-template-columns:repeat(2"] { grid-template-columns:1fr !important; }
+    #hr-policy-section > div[style*="grid-template-columns:repeat(2"],
+    #channel-program-section > div[style*="grid-template-columns:repeat(3"] { grid-template-columns:1fr !important; }
 }
 /* Bảng Sellout & Doanh thu theo kênh theo tháng: nhiều cột (nhãn DS/DT/ĐG + 12 tháng + Tổng) nên
    thu nhỏ font/padding riêng cho bảng này để vừa khung dashboard, không tràn ngang. */
@@ -1100,27 +1101,24 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
         <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--gap); align-items:stretch; margin-bottom:var(--gap);">
             <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #FFC800; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                     <span style="width:10px; height:10px; border-radius:50%; background:#FFC800; display:inline-block;"></span>
-                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">MWG</h4>
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">Chương trình MWG</h4>
                 </div>
-                <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Bonus Shop trọng điểm S/A/B — Mốc tăng trưởng DT so với TB 6 tháng (TT10/15/20%)</div>
                 <div id="channel-program-mwg-result" style="flex:1;"></div>
             </div>
             <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #B0B7BD; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                     <span style="width:10px; height:10px; border-radius:50%; background:#B0B7BD; display:inline-block;"></span>
-                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">KA</h4>
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">Chương trình KA</h4>
                 </div>
-                <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Chương trình Shop chưa có PG — Hỗ trợ bậc thang + KPI Sale</div>
                 <div id="channel-program-ka-result" style="flex:1;"></div>
             </div>
             <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #2ee673; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                     <span style="width:10px; height:10px; border-radius:50%; background:#2ee673; display:inline-block;"></span>
-                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">IND</h4>
+                    <h4 style="margin:0; font-size:14px; color:var(--text-primary);">Chương trình IND</h4>
                 </div>
-                <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Chương trình tháng — Thưởng Sale nhóm shop Normal</div>
                 <div id="channel-program-ind-result" style="flex:1;"></div>
             </div>
         </div>
@@ -7229,7 +7227,9 @@ if (kaNoPgMonthSelect) {
 }
 renderKaNoPgTable();
 
-// ================= "Tổng Chương trình Bán hàng theo Kênh" (3 thẻ MWG/KA/IND, dùng chung 1 Tháng) =================
+// ================= "Tổng Chương trình Bán hàng theo Kênh" (dùng chung 1 Tháng) =================
+// Mỗi kênh chỉ liệt kê các khoản (Doanh thu + Chi phí) - khoản nào không có Doanh thu gắn liền
+// (KPI, Lương Sale) thì chỉ note Chi phí, theo đúng yêu cầu anh Thái.
 function fillMonthSelect(sel) {
     ALL_12_MONTHS.forEach(m => {
         const opt = document.createElement('option');
@@ -7241,36 +7241,41 @@ function fillMonthSelect(sel) {
 function programEmptyState(el, msg) {
     el.innerHTML = `<div style="text-align:center; color:var(--text-secondary); font-size:12px; padding:20px 0;">${msg}</div>`;
 }
-function programResultHtml(label1, val1, label2, val2, sub) {
-    return `<div style="font-size:11px; color:var(--text-secondary); margin-bottom:2px;">${label1}</div>`
-        + `<div style="font-size:17px; font-weight:800; color:var(--text-primary); margin-bottom:8px;">${val1}</div>`
-        + `<div style="font-size:11px; color:var(--text-secondary); margin-bottom:2px;">${label2}</div>`
-        + `<div style="font-size:19px; font-weight:800; color:var(--oppo-green);">${val2}</div>`
-        + (sub ? `<div style="font-size:10.5px; color:var(--text-secondary); margin-top:6px;">${sub}</div>` : '');
-}
 function currentProgramMonth() {
     const sel = document.getElementById('channel-program-month');
     return sel && sel.value ? parseInt(sel.value, 10) : null;
 }
+// dt = null -> chỉ hiện Chi phí (dùng cho KPI/Lương Sale); isTotal = true -> in đậm, có viền trên
+function programLineRow(label, dt, chiPhi, isTotal) {
+    const dtHtml = dt !== null ? `<div style="font-size:11px; color:var(--text-secondary);">DT: ${dt}</div>` : '';
+    return `<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; padding:${isTotal ? '8px 0 0' : '6px 0'}; ${isTotal ? 'border-top:1px solid var(--border-color); margin-top:6px;' : ''}">
+        <span style="font-size:${isTotal ? '13' : '12'}px; color:var(--text-primary); font-weight:${isTotal ? '800' : '600'};">${label}</span>
+        <span style="text-align:right; white-space:nowrap;">
+            ${dtHtml}
+            <div style="font-size:${isTotal ? '15' : '13'}px; color:var(--oppo-green); font-weight:800;">${chiPhi}</div>
+        </span>
+    </div>`;
+}
 
-// ---- MWG: goi ham window.__computeMwgGrowthBonusTotal (dinh nghia trong scope panel "Chi tiet MWG",
-// khac scope voi DATA o day) - la dung Y HET cong thuc "1. Bonus Shop trong diem (Size S,A,B) - Moc
-// tang truong doanh thu so voi DT TB 2026" da co san o panel MWG, KHONG PHAI 1,2% (do la rieng cua
-// Sale Loc/Khai - muc 2, khac chuong trinh). Co the chua san sang luc trang moi load nen ham nay duoc
-// goi lai lan nua ngay khi panel MWG tai xong.
-// Tra ve budget (so tien) de ham tong hop cong lai; tra ve null neu chua co du lieu/chua chon thang.
+// ---- MWG: 2 khoản - (1) Chương trình shop trọng điểm S/A/B (mốc tăng trưởng TT10/15/20% so DT TB 6
+// tháng, hàm định nghĩa bên panel "Chi tiết MWG" nên gọi qua window.__computeMwgGrowthBonusTotal) và
+// (2) Bonus riêng Sale Lộc & Sale Khải (1,2% DT OPPO + Bonus Model, hàm window.__computeMwgLocKhaiBonusTotal).
 function renderChannelProgramMwg() {
     const resultEl = document.getElementById('channel-program-mwg-result');
     if (!resultEl) return null;
-    if (!window.__computeMwgGrowthBonusTotal) { programEmptyState(resultEl, '⏳ Đang tải dữ liệu MWG...'); return null; }
+    if (!window.__computeMwgGrowthBonusTotal || !window.__computeMwgLocKhaiBonusTotal) { programEmptyState(resultEl, '⏳ Đang tải dữ liệu MWG...'); return null; }
     const month = currentProgramMonth();
     if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return null; }
-    const { totalBonus, totalProjectedRev, numShopsAtGoal, totalShops } = window.__computeMwgGrowthBonusTotal(month);
-    resultEl.innerHTML = programResultHtml('DT dự phóng nhóm S/A/B', fmtVND(totalProjectedRev), 'Ngân sách (mốc TT 10/15/20%)', fmtVND(totalBonus), `${numShopsAtGoal}/${totalShops} shop đạt mốc thưởng`);
-    return totalBonus;
+    const trongDiem = window.__computeMwgGrowthBonusTotal(month);
+    const locKhai = window.__computeMwgLocKhaiBonusTotal(month);
+    const total = trongDiem.totalBonus + locKhai.totalBonus;
+    resultEl.innerHTML = programLineRow('Chương trình shop trọng điểm', fmtVND(trongDiem.totalProjectedRev), fmtVND(trongDiem.totalBonus))
+        + programLineRow('Bonus sale (Lộc &amp; Khải)', fmtVND(locKhai.totalRev), fmtVND(locKhai.totalBonus))
+        + programLineRow('Tổng', null, fmtVND(total), true);
+    return total;
 }
 
-// ---- KA: dung lai dung logic bac thang cua bang "Chuong trinh Shop chua co PG" o Chi tiet KA.
+// ---- KA: 2 khoản - KPI Sale (1% DT, chỉ note Chi phí) và Hỗ trợ (bậc thang theo tổng DT nhóm chưa PG, có DT đi kèm).
 function renderChannelProgramKa() {
     const resultEl = document.getElementById('channel-program-ka-result');
     if (!resultEl) return null;
@@ -7292,25 +7297,29 @@ function renderChannelProgramKa() {
         if (v >= 1_000_000_000) return 0.012;
         return 0.008;
     }
-    const rate = hoTroRate(totalRev);
-    const budget = totalRev * rate + totalRev * 0.01;
-    const ratePct = (rate * 100).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
-    resultEl.innerHTML = programResultHtml(`Doanh thu nhóm (${rows.length} shop) — mức Hỗ trợ ${ratePct}%`, fmtVND(totalRev), 'Ngân sách (Hỗ trợ + KPI Sale)', fmtVND(budget));
-    return budget;
+    const kpiSale = totalRev * 0.01;
+    const hoTro = totalRev * hoTroRate(totalRev);
+    const total = kpiSale + hoTro;
+    resultEl.innerHTML = programLineRow('KPI Sale', null, fmtVND(kpiSale))
+        + programLineRow('Hỗ trợ', fmtVND(totalRev), fmtVND(hoTro))
+        + programLineRow('Tổng', null, fmtVND(total), true);
+    return total;
 }
 
-// ---- IND: dung lai dung logic cua "Chuong trinh thang - Thuong Sale IND" (nhom shop Normal, tuc cac
-// Sale khong thuoc nhom O.C co dinh Khanh/Thuan/Loi - xem computeIndCommissionRows()).
+// ---- IND: 2 khoản - Lương Sale (lương cơ bản + thưởng theo bậc S.O, chỉ note Chi phí) và KPI (LĐ = 0,5% Center, chỉ note Chi phí).
 function renderChannelProgramInd() {
     const resultEl = document.getElementById('channel-program-ind-result');
     if (!resultEl) return null;
     const month = currentProgramMonth();
     if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return null; }
     const { rows } = computeIndCommissionRows(month);
-    const totalSalary = rows.reduce((s, r) => s + r.salarySale, 0);
-    const totalRev = rows.reduce((s, r) => s + r.revActual, 0);
-    resultEl.innerHTML = programResultHtml(`Doanh thu nhóm Normal (${rows.length} Sale)`, fmtVND(totalRev), 'Tổng Lương Sale (ngân sách)', fmtVND(totalSalary));
-    return totalSalary;
+    const luongSale = rows.reduce((s, r) => s + r.salarySale, 0);
+    const kpi = rows.reduce((s, r) => s + r.kpiLd, 0);
+    const total = luongSale + kpi;
+    resultEl.innerHTML = programLineRow('Lương Sale', null, fmtVND(luongSale))
+        + programLineRow('KPI', null, fmtVND(kpi))
+        + programLineRow('Tổng', null, fmtVND(total), true);
+    return total;
 }
 
 function renderChannelProgramAll() {
@@ -11217,7 +11226,33 @@ function computeMwgGrowthBonusTotal(month) {
     return { totalBonus, totalProjectedRev, numShopsAtGoal, totalShops: shops.length };
 }
 window.__computeMwgGrowthBonusTotal = computeMwgGrowthBonusTotal;
-if (window.__renderChannelProgramMwg) window.__renderChannelProgramMwg(); // panel Tổng quan cần cả DATA lẫn hàm này cho thẻ "Chương trình MWG" - gọi lại ở ĐÂY (sau khi hàm đã gán xong), không phải ngay đầu initDashboard
+
+// Bản KHÔNG lệ thuộc bộ lọc UI của "2. Bonus Sale Lộc & Sale Khải — 1,2% Doanh thu OPPO + Bonus Model",
+// dùng cho thẻ tóm tắt "Tổng Chương trình Bán hàng theo Kênh". Công thức giữ NGUYÊN theo đúng đoạn tính
+// trong computeThiDuaBonusBySale() (mục "Riêng Sale Lộc/Khải" ở dưới) nhưng tách riêng, chỉ 1 tháng,
+// không cộng gộp với phần TT10/15/20% của mục 1 (2 chương trình độc lập, hiển thị riêng theo yêu cầu).
+function computeMwgLocKhaiBonusTotal(month) {
+    const idx = month - 1;
+    const bonusModelByShop = computeBonusModelByShop([idx]);
+    const allSaleNames = [...new Set(DATA.shop_rows_brand4.map(s => s.sale))].filter(Boolean);
+    let totalRev = 0, totalBonus = 0;
+    allSaleNames.forEach(saleName => {
+        const matchedGroup = THIDUA_SALE_GROUPS.find(g => saleName.toUpperCase().includes(g.keyword));
+        if (!matchedGroup) return;
+        const shopsOfSale = DATA.shop_rows_brand4.filter(s => s.sale === saleName);
+        let oppoRev = 0, bonusModelTotal = 0;
+        shopsOfSale.forEach(shop => {
+            oppoRev += sumShopMonths(shop, [idx]).oppoRev;
+            bonusModelTotal += bonusModelByShop[shop.shop] || 0;
+        });
+        totalRev += oppoRev;
+        totalBonus += oppoRev * 1.2 / 100 + bonusModelTotal;
+    });
+    return { totalRev, totalBonus };
+}
+window.__computeMwgLocKhaiBonusTotal = computeMwgLocKhaiBonusTotal;
+
+if (window.__renderChannelProgramMwg) window.__renderChannelProgramMwg(); // panel Tổng quan cần cả DATA lẫn 2 hàm trên cho thẻ "Chương trình MWG" - gọi lại ở ĐÂY (sau khi hàm đã gán xong), không phải ngay đầu initDashboard
 
 function renderThiDuaSizeTable() {
     // Chưa chọn thẻ Sale nào (kể cả "Tất cả Sale") -> ẩn cả bảng + các cảnh báo liên quan cho gọn, chỉ hiện placeholder.
