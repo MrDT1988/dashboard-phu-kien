@@ -7500,6 +7500,12 @@ function shareKaMetricValue(cell, metric) {
     if (metric === 'b1020') return (cell.b1015 || 0) + (cell.b1520 || 0);
     return cell[metric] || 0;
 }
+// Mục tiêu tối thiểu riêng cho OPPO theo từng Kênh phụ - chỉ áp dụng khi đang xem đúng chỉ số tương ứng
+// (S.O = nút "DS", PK 10-20M = nút "10-20M"). Dưới mục tiêu -> % tô đỏ cảnh báo ngay trên bảng.
+const KA_SHARE_TARGETS = {
+    FPT: { ds: 18, b1020: 40 },
+    VIETTEL: { ds: 25, b1020: 40 },
+};
 function renderKaMarketShareTable(subchannel, tbodyId) {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
@@ -7510,6 +7516,12 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
         return s + shareKaMetricValue(cell, metric);
     }, 0));
     const yearTotal = totalsByMonth.reduce((a,b)=>a+b,0); // tính trước để dùng chung cho cả dòng hãng lẫn dòng TỔNG
+    const targetForThisMetric = (KA_SHARE_TARGETS[subchannel] || {})[metric]; // undefined nếu chỉ số đang chọn không có mục tiêu (VD 10-15M/15-20M riêng lẻ)
+    // pctColor: chỉ dòng OPPO mới so mục tiêu (đây là hãng của mình); các hãng khác luôn dùng màu bình thường.
+    function pctColor(brand, pct) {
+        if (brand === 'OPPO' && targetForThisMetric !== undefined && pct < targetForThisMetric) return 'var(--negative)';
+        return 'var(--text-primary)';
+    }
     const rowsHtml = KA_MARKET_SHARE_BRANDS.map(brand => {
         const cells = ALL_12_MONTHS.map((m, idx) => {
             const cell = (dataForSub[brand] || {})[m];
@@ -7517,12 +7529,12 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
             if (!val) return '<td>-</td>';
             const total = totalsByMonth[idx];
             const pct = total ? (val / total * 100) : 0;
-            return '<td>' + fmtInt(val) + '<div style="font-size:8.5px; color:var(--text-secondary);">(' + pct.toFixed(1) + '%)</div></td>';
+            return '<td>' + fmtInt(val) + '<div style="font-size:8.5px; font-weight:700; color:' + pctColor(brand, pct) + ';">(' + pct.toFixed(1) + '%)</div></td>';
         }).join('');
         const yearVal = ALL_12_MONTHS.reduce((s, m) => { const cell = (dataForSub[brand] || {})[m]; return s + shareKaMetricValue(cell, metric); }, 0);
         const yearPct = yearTotal ? (yearVal / yearTotal * 100) : 0;
         const yearCell = yearVal
-            ? '<b>' + fmtInt(yearVal) + '</b><div style="font-size:8.5px; color:var(--text-secondary);">(' + yearPct.toFixed(1) + '%)</div>'
+            ? '<b>' + fmtInt(yearVal) + '</b><div style="font-size:8.5px; font-weight:700; color:' + pctColor(brand, yearPct) + ';">(' + yearPct.toFixed(1) + '%)</div>'
             : '-';
         return '<tr><td>' + escapeHtml(brand) + '</td>' + cells + '<td>' + yearCell + '</td></tr>';
     }).join('');
