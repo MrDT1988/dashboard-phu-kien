@@ -2034,7 +2034,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Chương trình tháng — Thưởng Sale IND</h3>
-                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Xe: 2 Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc <b>TỔNG số máy CẢ XE</b> (cộng số máy 2 Sale lại rồi mới tra bậc, ra đúng 1 mức chung cho cả xe): <b>&lt;100 máy: 3.2%</b>, <b>&gt;100 máy: 4.2%</b>, <b>&gt;150 máy: 4.7%</b>, <b>&gt;200 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn). Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Shop S.O</b> = số shop có bán / tổng shop đăng ký - dưới <b>70%</b> bị phạt <b>300.000đ</b>/Sale, trừ vào Lương Sale (đánh dấu "có phạt" nếu 1 trong 2 Sale của xe bị phạt, vẫn xét riêng từng người vì mỗi người phụ trách shop khác nhau). <b>Lương Sale</b> = 2 Lương cơ bản + Tiền thưởng chung của xe (đã trừ phạt nếu có). <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Đổi Tháng bên dưới để tính thử chi phí.</div>
+                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Xe: 2 Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc <b>TỔNG số máy CẢ XE</b> (cộng số máy 2 Sale lại rồi mới tra bậc, ra đúng 1 mức chung cho cả xe): <b>&lt;100 máy: 3.2%</b>, <b>&gt;100 máy: 4.2%</b>, <b>&gt;150 máy: 4.7%</b>, <b>&gt;200 máy: 5.2%</b>, <b>&gt;250 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn). Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Shop S.O</b> = số shop có bán / tổng shop đăng ký - dưới <b>70%</b> bị phạt <b>300.000đ</b>/Sale, trừ vào Lương Sale (đánh dấu "có phạt" nếu 1 trong 2 Sale của xe bị phạt, vẫn xét riêng từng người vì mỗi người phụ trách shop khác nhau). <b>Lương Sale</b> = 2 Lương cơ bản + Tiền thưởng chung của xe (đã trừ phạt nếu có). <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Đổi Tháng bên dưới để tính thử chi phí.</div>
             </div>
         </div>
         <div class="filter-bar">
@@ -5656,20 +5656,22 @@ document.querySelectorAll('#ind-oc-target-table thead th[data-field]').forEach(t
 // ĐÚNG 1 tháng đang xem (không lũy kế/không so MoM - đây là công cụ tính thử chi phí theo tháng).
 const IND_COMMISSION_BASE_SALARY = 6000000;
 const IND_COMMISSION_TIERS = [
-    { minUnits: 200, rate: 0.057 },
+    { minUnits: 250, rate: 0.057 },
+    { minUnits: 200, rate: 0.052 },
     { minUnits: 150, rate: 0.047 },
     { minUnits: 100, rate: 0.042 },
 ];
 const IND_COMMISSION_BASE_RATE = 0.032;
-// Bậc CHUẨN (mọi model trừ A6c) - mốc số máy đã nhân đôi theo yêu cầu anh Thái (24/8): gốc 50/65/80
-// -> còn 100/150/200. Giữ nguyên mức % (3.2/4.2/4.7/5.7%). Lấy mức CAO NHẤT mà S.O ĐÃ VƯỢT QUA (strict >),
-// KHÔNG cộng dồn nhiều bậc. VD 99 máy -> 3.2% (nền); đúng 100 máy -> vẫn 3.2% (chưa vượt qua 100); 101
-// máy -> 4.2%; 150 máy -> vẫn 4.2%; 151 máy -> 4.7%; 200 máy -> vẫn 4.7%; 201 máy -> 5.7%. Mốc S.O dùng để
-// xác định bậc = TỔNG số máy mọi model của Sale trong tháng (kể cả A6c, không tách riêng).
+// Bậc CHUẨN (mọi model trừ A6c) - anh Thái chỉnh lại lần 6 (24/8): thêm mốc 200 máy = 5.2%, mốc cao nhất
+// dời từ 200 lên 250 máy = 5.7%. Đủ 5 mức: <100: 3.2%, >100: 4.2%, >150: 4.7%, >200: 5.2%, >250: 5.7%.
+// Lấy mức CAO NHẤT mà S.O ĐÃ VƯỢT QUA (strict >), KHÔNG cộng dồn nhiều bậc. VD 99 máy -> 3.2% (nền);
+// đúng 100 máy -> vẫn 3.2% (chưa vượt qua 100); 101 máy -> 4.2%; 150 máy -> vẫn 4.2%; 151 máy -> 4.7%;
+// 200 máy -> vẫn 4.7%; 201 máy -> 5.2%; 250 máy -> vẫn 5.2%; 251 máy -> 5.7%. Mốc S.O dùng để xác định
+// bậc = TỔNG số máy mọi model của Sale (hoặc TỔNG cả Xe) trong tháng (kể cả A6c, không tách riêng).
 const IND_COMMISSION_A6C_DISCOUNT = 0.01; // "A6c thấp hơn 1% so với bậc chuẩn" (anh Thái chỉnh lại lần
 // 5 - trước là 0.3%) - áp riêng cho PHẦN doanh thu đến từ model A6c (match không phân biệt hoa/thường
 // trên rec.model, VD "A6c 5G" vẫn tính). Bậc A6c cuối cùng: <100 máy 2.2%, >100 máy 3.2%, >150 máy 3.7%,
-// >200 máy 4.7%.
+// >200 máy 4.2%, >250 máy 4.7%.
 function indCommissionRate(units) {
     for (let i = 0; i < IND_COMMISSION_TIERS.length; i++) {
         if (units > IND_COMMISSION_TIERS[i].minUnits) return IND_COMMISSION_TIERS[i].rate;
