@@ -1847,6 +1847,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 <div class="db-tg-panel" id="panel-ind" hidden>
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Chi tiết Kênh IND (OPPO Club)</h2>
 
+    <h2 class="part-title" style="margin:4px 0 14px; padding-left:15px; position:relative;"><span style="position:absolute; left:0; top:0; bottom:0; width:5px; border-radius:3px; background:#64748b;"></span>Phần 1 — Overview IND<span class="part-sub">Bức tranh chung: KPI tháng, theo tuần, theo nhóm O.C/Normal, theo Sale, theo Shop</span></h2>
+
     <div class="chart-sub" style="margin-bottom:10px;">4 thẻ dưới đây mặc định là số liệu <b>tháng gần nhất có dữ liệu</b> (riêng kênh IND), kèm so sánh với tháng liền trước (MoM) - riêng tháng đang xem nếu <b>chưa đủ dữ liệu cả tháng</b> thì tự so <b>cùng kỳ ngày</b> với tháng trước. Có thể đổi Tháng/Sale/Shop bằng bộ lọc bên dưới.</div>
     <div class="filter-bar" style="margin-bottom:14px;">
         <label>Tháng</label>
@@ -2003,11 +2005,31 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
     </section>
 
+    <h2 class="part-title" style="margin:4px 0 14px; padding-left:15px; position:relative;"><span style="position:absolute; left:0; top:0; bottom:0; width:5px; border-radius:3px; background:var(--oppo-green); box-shadow:0 0 6px rgba(34,229,160,0.6);"></span>Phần 2 — Review Tháng<span class="part-sub">Mục tiêu Shop, Target O.C và Chương trình thưởng Xe - dùng chung 1 bộ lọc Tháng</span></h2>
+    <div class="filter-bar" style="margin-bottom:14px;">
+        <label>Tháng</label>
+        <select id="ind-review-month-select" class="reset-btn" style="cursor:pointer;"><option value="">Gần nhất</option></select>
+    </div>
+
+    <section class="table-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Tổng quan Mục tiêu Shop IND</h3>
+                <div class="chart-sub">3 chỉ số theo dõi độ phủ &amp; hiệu suất shop IND, theo Tháng đang chọn ở trên.</div>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--gap); align-items:stretch;">
+            <div id="ind-goal-oc" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;"></div>
+            <div id="ind-goal-perf" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;"></div>
+            <div id="ind-goal-so" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;"></div>
+        </div>
+    </section>
+
     <section class="table-section">
         <div class="table-section-header">
             <div>
                 <h3>Tiến độ Target theo Shop O.C</h3>
-                <div class="chart-sub">Số liệu tháng gần nhất có dữ liệu. Target theo Gói (Platinum/Titan/Gold). Sell in chỉ tính OPPO. Bấm tiêu đề cột để sắp xếp.</div>
+                <div class="chart-sub">Theo Tháng đang chọn ở trên. Target theo Gói (Platinum/Titan/Gold). Sell in chỉ tính OPPO. Bấm tiêu đề cột để sắp xếp - có thể lọc thêm theo Sale ở bộ lọc chung phía trên mục 1-5.</div>
             </div>
         </div>
         <div class="table-scroll" style="max-height:640px;">
@@ -2033,31 +2055,9 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
     <section class="table-section">
         <div class="table-section-header">
             <div>
-                <h3>Tổng quan Mục tiêu Shop IND</h3>
-                <div class="chart-sub">3 chỉ số theo dõi độ phủ &amp; hiệu suất shop IND, dùng chung 1 bộ lọc Tháng.</div>
-            </div>
-            <div class="table-controls">
-                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
-                <select id="ind-goal-month"><option value="">Gần nhất</option></select>
-            </div>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--gap); align-items:stretch;">
-            <div id="ind-goal-oc" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;"></div>
-            <div id="ind-goal-perf" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;"></div>
-            <div id="ind-goal-so" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius); padding:16px;"></div>
-        </div>
-    </section>
-
-    <section class="table-section">
-        <div class="table-section-header">
-            <div>
                 <h3>Chương trình tháng — Thưởng Sale IND</h3>
-                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Xe: 2 Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc <b>TỔNG số máy CẢ XE</b> (cộng số máy 2 Sale lại rồi mới tra bậc, ra đúng 1 mức chung cho cả xe): <b>&lt;100 máy: 3.2%</b>, <b>&gt;100 máy: 4.2%</b>, <b>&gt;150 máy: 4.7%</b>, <b>&gt;200 máy: 5.2%</b>, <b>&gt;250 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn). Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Độ phủ Shop S.O</b> = tổng số shop có bán / tổng số shop đăng ký của CẢ XE (gộp 2 Sale, không xét riêng từng người) - dưới <b>60%</b> bị phạt <b>1.000.000đ/Xe</b> (đúng 1 lần cho cả xe, không nhân theo số người), trừ vào Lương Sale. <b>Lương Sale</b> = 2 Lương cơ bản + Tiền thưởng chung của xe (đã trừ phạt nếu có). <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Đổi Tháng bên dưới để tính thử chi phí.</div>
+                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Xe: 2 Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc <b>TỔNG số máy CẢ XE</b> (cộng số máy 2 Sale lại rồi mới tra bậc, ra đúng 1 mức chung cho cả xe): <b>&lt;100 máy: 3.2%</b>, <b>&gt;100 máy: 4.2%</b>, <b>&gt;150 máy: 4.7%</b>, <b>&gt;200 máy: 5.2%</b>, <b>&gt;250 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn). Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Độ phủ Shop S.O</b> = tổng số shop có bán / tổng số shop đăng ký của CẢ XE (gộp 2 Sale, không xét riêng từng người) - dưới <b>60%</b> bị phạt <b>1.000.000đ/Xe</b> (đúng 1 lần cho cả xe, không nhân theo số người), trừ vào Lương Sale. <b>Lương Sale</b> = 2 Lương cơ bản + Tiền thưởng chung của xe (đã trừ phạt nếu có). <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Theo Tháng đang chọn ở trên.</div>
             </div>
-        </div>
-        <div class="filter-bar">
-            <label>Tháng</label>
-            <select id="ind-commission-month-select" class="reset-btn" style="cursor:pointer;"><option value="">Gần nhất</option></select>
         </div>
         <div class="table-scroll" style="max-height:none;">
             <table class="data-table" id="ind-commission-table">
@@ -5628,7 +5628,7 @@ function computeIndShopMonthlyTotals(month) {
     });
     return byShop;
 }
-let indGoalMonth = null; // null = dùng tháng gần nhất (mặc định); có giá trị = tháng đang chọn từ dropdown dùng chung cho cả 3 thẻ
+let indReviewMonth = null; // null = dùng tháng gần nhất (mặc định); có giá trị = tháng đang chọn từ dropdown DÙNG CHUNG cho cả 3 phần "Review Tháng" (Mục tiêu Shop / Target O.C / Chương trình Xe)
 function renderIndGoalCards() {
     const ocEl = document.getElementById('ind-goal-oc');
     const perfEl = document.getElementById('ind-goal-perf');
@@ -5637,7 +5637,7 @@ function renderIndGoalCards() {
 
     const months = indMonthsList();
     const latestMonth = months.length ? months[months.length - 1] : null;
-    const targetMonth = indGoalMonth || latestMonth;
+    const targetMonth = indReviewMonth || latestMonth;
 
     // Thẻ 1: O.C Hoàn thành Target (Target 25 shop) - dùng lại đúng logic "Đạt/Chưa đạt" của bảng
     // "Chi tiết Target O.C" (dat = %HT Doanh thu >= 100%), tính đúng theo Tháng đang chọn.
@@ -5654,19 +5654,6 @@ function renderIndGoalCards() {
 
     const soAchieved = shopList.filter(s => s.ds > 0).length;
     soEl.innerHTML = indGoalCardHtml('Shop IND có S.O', soAchieved, 110, '#B0B7BD');
-}
-const indGoalMonthSelect = document.getElementById('ind-goal-month');
-if (indGoalMonthSelect) {
-    ALL_12_MONTHS.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = String(m);
-        opt.textContent = 'T' + m;
-        indGoalMonthSelect.appendChild(opt);
-    });
-    indGoalMonthSelect.addEventListener('change', () => {
-        indGoalMonth = indGoalMonthSelect.value ? parseInt(indGoalMonthSelect.value, 10) : null;
-        renderIndGoalCards();
-    });
 }
 
 function computeOcTargetProgressRows(month) {
@@ -5734,7 +5721,7 @@ let ocTargetProgressSort = { field: 'level', dir: 'asc' };
 function renderOcTargetProgressTable() {
     const body = document.getElementById('ind-oc-target-table-body');
     if (!body) return;
-    const rows = computeOcTargetProgressRows();
+    const rows = computeOcTargetProgressRows(indReviewMonth);
     rows.sort((a, b) => {
         if (ocTargetProgressSort.field === 'level') {
             let cmp = ocLevelRank(a.level) - ocLevelRank(b.level);
@@ -5883,7 +5870,6 @@ const IND_COMMISSION_KPI_LD_RATE = 0.005; // "LĐ = 0.5% x Doanh thu tính thư�
 // doanh thu tính thưởng của Sale (KHÔNG phân biệt A6c/model khác).
 const IND_COMMISSION_SHOP_SO_THRESHOLD = 0.6; // "Shop S.O" (shop có bán / tổng shop đăng ký) < 60% -> phạt (tính theo CẢ XE, không phải từng Sale riêng - anh Thái xác nhận 25/8).
 const IND_COMMISSION_SHOP_SO_PENALTY = 1000000; // phạt 1 triệu / XE (không phải / Sale), trừ vào Lương Sale của cả xe.
-let indCommissionMonth = null;
 function computeIndCommissionRows(month) {
     const monthTotals = computeIndCommissionMonthTotals();
     const bucket = (month !== null && monthTotals[month]) ? monthTotals[month] : { bySale: {} };
@@ -6018,7 +6004,7 @@ function renderIndCommissionTable() {
     if (!body) return;
     const monthTotals = computeIndCommissionMonthTotals();
     const monthsWithData = Object.keys(monthTotals).map(Number).sort((a, b) => a - b);
-    const effectiveMonth = indCommissionMonth !== null ? indCommissionMonth : (monthsWithData.length ? monthsWithData[monthsWithData.length - 1] : null);
+    const effectiveMonth = indReviewMonth !== null ? indReviewMonth : (monthsWithData.length ? monthsWithData[monthsWithData.length - 1] : null);
     const finalRows = computeIndCommissionRows(effectiveMonth).rows;
     if (!finalRows.length) {
         body.innerHTML = '<tr><td colspan="11" style="text-align:center; color:var(--text-secondary); padding:16px;">Chưa có dữ liệu tháng này.</td></tr>';
@@ -6097,18 +6083,6 @@ function renderIndCommissionTable() {
     });
 }
 renderIndCommissionTable();
-if (document.getElementById('ind-commission-month-select')) {
-    const indCommissionMonthSelectEl = document.getElementById('ind-commission-month-select');
-    (DATA.months_sorted || []).slice().sort((a, b) => a - b).forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = String(m); opt.textContent = 'T' + m + '/2026';
-        indCommissionMonthSelectEl.appendChild(opt);
-    });
-    indCommissionMonthSelectEl.addEventListener('change', () => {
-        indCommissionMonth = indCommissionMonthSelectEl.value ? parseInt(indCommissionMonthSelectEl.value, 10) : null;
-        renderIndCommissionTable();
-    });
-}
 
 // ================= Mục 6: Cảnh báo & Cơ hội hành động - Kênh IND =================
 // Quét từng shop IND (theo bộ lọc Sale/Shop hiện tại) ở tháng gần nhất có dữ liệu, phát hiện 4 tín hiệu:
@@ -6690,6 +6664,24 @@ document.querySelectorAll('.ind-sale-metric-btn').forEach(btn => {
     });
 });
 refreshIndCluster();
+
+// Bộ lọc Tháng DÙNG CHUNG cho "Phần 2 — Review Tháng" (Tổng quan Mục tiêu Shop / Tiến độ Target O.C /
+// Chương trình Xe) - đổi 1 lần, cả 3 phần cùng cập nhật theo đúng Tháng đang chọn.
+const indReviewMonthSelect = document.getElementById('ind-review-month-select');
+if (indReviewMonthSelect) {
+    (DATA.months_sorted || []).slice().sort((a, b) => a - b).forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = String(m); opt.textContent = 'T' + m + '/2026';
+        indReviewMonthSelect.appendChild(opt);
+    });
+    indReviewMonthSelect.addEventListener('change', () => {
+        indReviewMonth = indReviewMonthSelect.value ? parseInt(indReviewMonthSelect.value, 10) : null;
+        renderIndGoalCards();
+        renderOcTargetProgressTable();
+        renderIndCommissionTable();
+    });
+}
+
 // Bộ lọc RIÊNG Tháng/Sản phẩm cho mục 2b - theo anh Thái, CHỈ áp dụng cho bảng tóm tắt bên phải, KHÔNG
 // đụng tới biểu đồ bên trái (biểu đồ luôn hiện đủ 12 tháng) lẫn bảng chi tiết theo tháng mục 2c. Sản
 // phẩm KHÔNG có lựa chọn PK - chỉ lấy model bán ra (crosstab, luôn là OPPO) + sản phẩm OPPO trong sheet
