@@ -2034,7 +2034,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Chương trình tháng — Thưởng Sale IND</h3>
-                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Sale: Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc S.O riêng (tổng số máy mọi model bán ra trong tháng): <b>&lt;100 máy: 3.2%</b>, <b>&gt;100 máy: 4.2%</b>, <b>&gt;150 máy: 4.7%</b>, <b>&gt;200 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn) - <b>Mức thưởng (BQ)</b> hiện ở đây là % bình quân gia quyền của cả 2 Sale trong xe, vì mỗi người có thể rơi vào bậc khác nhau. Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Shop S.O</b> = số shop có bán / tổng shop đăng ký - dưới <b>70%</b> bị phạt <b>300.000đ</b>/Sale, trừ vào Lương Sale (đánh dấu "có phạt" nếu 1 trong 2 Sale của xe bị phạt). <b>Lương Sale</b> = Lương cơ bản + Tiền thưởng (đã trừ phạt nếu có), cộng cả 2 Sale trong xe. <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Đổi Tháng bên dưới để tính thử chi phí.</div>
+                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Xe: 2 Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc <b>TỔNG số máy CẢ XE</b> (cộng số máy 2 Sale lại rồi mới tra bậc, ra đúng 1 mức chung cho cả xe): <b>&lt;100 máy: 3.2%</b>, <b>&gt;100 máy: 4.2%</b>, <b>&gt;150 máy: 4.7%</b>, <b>&gt;200 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn). Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Shop S.O</b> = số shop có bán / tổng shop đăng ký - dưới <b>70%</b> bị phạt <b>300.000đ</b>/Sale, trừ vào Lương Sale (đánh dấu "có phạt" nếu 1 trong 2 Sale của xe bị phạt, vẫn xét riêng từng người vì mỗi người phụ trách shop khác nhau). <b>Lương Sale</b> = 2 Lương cơ bản + Tiền thưởng chung của xe (đã trừ phạt nếu có). <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Đổi Tháng bên dưới để tính thử chi phí.</div>
             </div>
         </div>
         <div class="filter-bar">
@@ -5747,6 +5747,8 @@ function computeIndCommissionRows(month) {
             sale: s,
             units,
             revActual,
+            revOther: b.revOther,
+            revA6c: b.revA6c,
             revBonus,
             rate,
             rateA6c,
@@ -5768,9 +5770,9 @@ function computeIndCommissionRows(month) {
 }
 // Gộp các dòng theo Sale (r.sale) thành theo Xe (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân -
 // dùng chung định nghĩa IND_SALE_TABLE_GROUPS/IND_SALE_TABLE_XE_LABELS với bảng nhiệt phía trên, bỏ qua
-// nhóm O.C vì nhóm đó vốn không nằm trong computeIndCommissionRows). "Mức thưởng" hiển thị là % BÌNH QUÂN
-// GIA QUYỀN (tổng Tiền thưởng / tổng Center) vì 2 Sale chung 1 xe có thể rơi vào 2 bậc thưởng khác nhau,
-// không cộng được y hệt 1 con số % chung.
+// nhóm O.C vì nhóm đó vốn không nằm trong computeIndCommissionRows). "Mức thưởng" tính TRỰC TIẾP theo
+// TỔNG số máy CẢ XE (gộp units của cả 2 Sale rồi mới tra bậc) - ra ĐÚNG 1 mức %, KHÔNG phải bình quân
+// gia quyền từng người như trước (anh Thái yêu cầu 24/8: "tính luôn chứ sao lại tính bình quân").
 function groupIndCommissionRowsByXe(rows) {
     const xeGroups = IND_SALE_TABLE_GROUPS.slice(1); // bỏ nhóm 0 (O.C), giữ đúng 3 nhóm Xe 1/2/3
     const xeLabels = IND_SALE_TABLE_XE_LABELS.slice(1);
@@ -5778,15 +5780,26 @@ function groupIndCommissionRowsByXe(rows) {
         const memberRows = rows.filter(r => shortNames.includes(shortSaleNameUpper(r.sale)));
         if (!memberRows.length) return null;
         const sum = (field) => memberRows.reduce((s, r) => s + r[field], 0);
-        const revBonus = sum('revBonus');
-        const bonus = sum('bonus');
+        const units = sum('units');
+        const revOther = sum('revOther');
+        const revA6c = sum('revA6c');
+        const revActual = revOther + revA6c;
+        const revBonus = revActual * 0.8;
+        // Tra bậc thưởng theo TỔNG số máy cả xe (không phải từng người riêng) - đúng 1 mức duy nhất.
+        const rate = indCommissionRate(units);
+        const rateA6c = indCommissionRateA6c(units);
+        const bonus = (revOther * 0.8 * rate) + (revA6c * 0.8 * rateA6c);
+        const baseSalary = sum('baseSalary');
+        const totalPenalty = sum('shopSoPenalty'); // phạt Shop S.O vẫn xét riêng từng người (mỗi người phụ trách shop khác nhau)
+        const salarySale = Math.max(0, baseSalary + bonus - totalPenalty);
+        const kpiLd = revBonus * IND_COMMISSION_KPI_LD_RATE;
         return {
             label: xeLabels[gi],
             members: memberRows.map(r => shortSaleName(r.sale)).join(' + '),
             shopSoActive: sum('shopSoActive'), shopSoTotal: sum('shopSoTotal'),
-            units: sum('units'), revActual: sum('revActual'), revBonus,
-            blendedRatePct: revBonus ? (bonus / revBonus * 100) : 0,
-            bonus, baseSalary: sum('baseSalary'), salarySale: sum('salarySale'), kpiLd: sum('kpiLd'),
+            units, revActual, revBonus,
+            ratePct: rate * 100,
+            bonus, baseSalary, salarySale, kpiLd,
             anyPenalized: memberRows.some(r => r.shopSoPenalized),
         };
     }).filter(Boolean);
@@ -5822,7 +5835,7 @@ function renderIndCommissionTable() {
             + '<td class="num">' + fmtInt(g.units) + ' máy</td>'
             + '<td class="num">' + fmtVND(g.revActual) + '</td>'
             + '<td class="num">' + fmtVND(g.revBonus) + '</td>'
-            + '<td class="num">' + g.blendedRatePct.toFixed(1) + '% <span style="opacity:.65; font-size:11px;">(BQ)</span></td>'
+            + '<td class="num">' + g.ratePct.toFixed(1) + '%</td>'
             + '<td class="num" style="color:var(--positive); font-weight:700;">' + fmtVND(g.bonus) + '</td>'
             + '<td class="num">' + fmtVND(g.baseSalary) + '</td>'
             + '<td class="num" style="font-weight:800;">' + salarySaleHtml + '</td>'
@@ -7361,16 +7374,19 @@ function renderChannelProgramKa() {
 }
 
 // ---- IND: 2 khoản - Lương Sale (CHỈ lương cơ bản 6.000.000đ/người, chỉ note Chi phí) và KPI (tiền thưởng
-// theo bậc S.O - phần biến động theo doanh số, chỉ note Chi phí). Không gồm LĐ (0,5% Center) và không trừ
-// phạt Shop S.O<70% ở đây - đây là bảng tóm tắt 2 khoản chính, xem đủ chi tiết ở "Chương trình tháng — Thưởng Sale IND".
+// theo bậc TỔNG số máy CẢ XE - dùng chung logic groupIndCommissionRowsByXe() với bảng chi tiết, để 2 nơi
+// luôn khớp số nhau. Không gồm LĐ (0,5% Center) và không trừ phạt Shop S.O<70% ở đây - đây là bảng tóm
+// tắt 2 khoản chính, xem đủ chi tiết ở "Chương trình tháng — Thưởng Sale IND".
 function renderChannelProgramInd() {
     const resultEl = document.getElementById('channel-program-ind-result');
     if (!resultEl) return null;
     const month = currentProgramMonth();
     if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return null; }
     const { rows } = computeIndCommissionRows(month);
-    const luongSale = rows.reduce((s, r) => s + r.baseSalary, 0);
-    const kpi = rows.reduce((s, r) => s + r.bonus, 0);
+    const { grouped, ungrouped } = groupIndCommissionRowsByXe(rows);
+    const allGroups = grouped.concat(ungrouped.map(r => ({ baseSalary: r.baseSalary, bonus: r.bonus })));
+    const luongSale = allGroups.reduce((s, g) => s + g.baseSalary, 0);
+    const kpi = allGroups.reduce((s, g) => s + g.bonus, 0);
     const total = luongSale + kpi;
     resultEl.innerHTML = programCardWrap(programLineRow('Lương Sale', null, fmtVND(luongSale))
         + programLineRow('KPI', null, fmtVND(kpi))
