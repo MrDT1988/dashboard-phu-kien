@@ -2034,7 +2034,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Chương trình tháng — Thưởng Sale IND</h3>
-                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Sale: Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc S.O riêng (tổng số máy mọi model bán ra trong tháng): <b>&lt;50 máy: 3.2%</b>, <b>&gt;50 máy: 4.2%</b>, <b>&gt;65 máy: 4.7%</b>, <b>&gt;80 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn) - <b>Mức thưởng (BQ)</b> hiện ở đây là % bình quân gia quyền của cả 2 Sale trong xe, vì mỗi người có thể rơi vào bậc khác nhau. Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Shop S.O</b> = số shop có bán / tổng shop đăng ký - dưới <b>70%</b> bị phạt <b>300.000đ</b>/Sale, trừ vào Lương Sale (đánh dấu "có phạt" nếu 1 trong 2 Sale của xe bị phạt). <b>Lương Sale</b> = Lương cơ bản + Tiền thưởng (đã trừ phạt nếu có), cộng cả 2 Sale trong xe. <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Đổi Tháng bên dưới để tính thử chi phí.</div>
+                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Sale: Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc S.O riêng (tổng số máy mọi model bán ra trong tháng): <b>&lt;100 máy: 3.2%</b>, <b>&gt;100 máy: 4.2%</b>, <b>&gt;150 máy: 4.7%</b>, <b>&gt;200 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn) - <b>Mức thưởng (BQ)</b> hiện ở đây là % bình quân gia quyền của cả 2 Sale trong xe, vì mỗi người có thể rơi vào bậc khác nhau. Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Shop S.O</b> = số shop có bán / tổng shop đăng ký - dưới <b>70%</b> bị phạt <b>300.000đ</b>/Sale, trừ vào Lương Sale (đánh dấu "có phạt" nếu 1 trong 2 Sale của xe bị phạt). <b>Lương Sale</b> = Lương cơ bản + Tiền thưởng (đã trừ phạt nếu có), cộng cả 2 Sale trong xe. <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Đổi Tháng bên dưới để tính thử chi phí.</div>
             </div>
         </div>
         <div class="filter-bar">
@@ -2790,11 +2790,10 @@ const OC_LEVEL_MAP = {
 const OC_LEVEL_ORDER = ['Platinum', 'Titan', 'Gold'];
 // Target/shop/tháng do anh Thái cung cấp. Target cả level/tháng = số này x số shop CÓ PHÁT SINH
 // SELLOUT trong level đó tháng đó (cùng cách đếm với bảng "Số shop phát sinh Sellout" ở mục 3).
-// Đã nhân đôi so với target gói cũ theo yêu cầu anh Thái (24/8).
 const OC_TARGET_PER_SHOP = {
-    'Platinum': { ds: 240, dt: 1200000000 },
-    'Titan': { ds: 160, dt: 800000000 },
-    'Gold': { ds: 80, dt: 400000000 },
+    'Platinum': { ds: 120, dt: 600000000 },
+    'Titan': { ds: 80, dt: 400000000 },
+    'Gold': { ds: 40, dt: 200000000 },
 };
 function classifyIndLevel(rawLevel) {
     const key = (rawLevel || '').trim().toUpperCase();
@@ -4669,7 +4668,7 @@ function computeIndGroupShopMonthly(group) {
 }
 // Bảng chi tiết Shop khi mở rộng 1 nhóm O.C/Normal - hiện DOANH THU từng tháng theo shop. Nhóm O.C có thêm
 // badge "Gói" (lấy theo level hiện tại của shop) và tô nền đỏ nhạt tháng nào doanh thu dưới target gói đó
-// (Platinum 1,2 tỷ / Titan 800tr / Gold 400tr / tháng). Nhóm Normal tô nền xanh nhạt tháng nào doanh thu vượt
+// (Platinum 600tr / Titan 400tr / Gold 200tr / tháng). Nhóm Normal tô nền xanh nhạt tháng nào doanh thu vượt
 // 50 triệu. Thiết kế đơn giản, dùng bảng riêng (không dùng .mini-week-table vốn để dành cho bảng 53 tuần).
 // Thứ tự shop: O.C xếp theo hạng Platinum -> Titan -> Gold (OC_LEVEL_ORDER, cùng hạng thì DT cao trước);
 // Normal xếp theo Doanh thu cao -> thấp.
@@ -4720,7 +4719,7 @@ function indGroupShopDetailHtml(group, months, colspan) {
     const goiTotalCol = isOC ? '<td></td>' : '';
     const dtRow = `<tr class="sdt-grand"><td class="sdt-shop">Tổng cả nhóm</td>${goiTotalCol}${dtByMonth.map(v=>`<td>${v ? fmtVND(v) : '-'}</td>`).join('')}<td class="sdt-total">${fmtVND(grandDt)}</td></tr>`;
     const legend = isOC
-        ? '<span class="sdt-legend-dot sdt-miss"></span> dưới target gói (Platinum 1,2 tỷ · Titan 800tr · Gold 400tr/tháng)'
+        ? '<span class="sdt-legend-dot sdt-miss"></span> dưới target gói (Platinum 600M · Titan 400M · Gold 200M/tháng)'
         : '<span class="sdt-legend-dot sdt-hit"></span> doanh thu vượt 50M/tháng';
     // table-layout:fixed + colgroup để 12 cột tháng rộng bằng nhau tuyệt đối, cân vừa khung (không tràn ngang,
     // không cần cuộn). Shop 18% · Gói 8% (chỉ O.C) · Tổng 9% · phần còn lại chia đều cho 12 tháng.
@@ -5657,20 +5656,20 @@ document.querySelectorAll('#ind-oc-target-table thead th[data-field]').forEach(t
 // ĐÚNG 1 tháng đang xem (không lũy kế/không so MoM - đây là công cụ tính thử chi phí theo tháng).
 const IND_COMMISSION_BASE_SALARY = 6000000;
 const IND_COMMISSION_TIERS = [
-    { minUnits: 80, rate: 0.057 },
-    { minUnits: 65, rate: 0.047 },
-    { minUnits: 50, rate: 0.042 },
+    { minUnits: 200, rate: 0.057 },
+    { minUnits: 150, rate: 0.047 },
+    { minUnits: 100, rate: 0.042 },
 ];
 const IND_COMMISSION_BASE_RATE = 0.032;
-// Bậc CHUẨN (mọi model trừ A6c) đã hạ thêm 0.3%/mốc (anh Thái chỉnh lại lần 4): gốc ban đầu 3.5/4.5/5/6%
-// -> còn <50 máy: 3.2%, >50: 4.2%, >65: 4.7%, >80: 5.7%. Lấy mức CAO NHẤT mà S.O ĐÃ VƯỢT QUA (strict >),
-// KHÔNG cộng dồn nhiều bậc. VD 49 máy -> 3.2% (nền); đúng 50 máy -> vẫn 3.2% (chưa vượt qua 50); 51
-// máy -> 4.2%; 65 máy -> vẫn 4.2%; 66 máy -> 4.7%; 80 máy -> vẫn 4.7%; 81 máy -> 5.7%. Mốc S.O dùng để
+// Bậc CHUẨN (mọi model trừ A6c) - mốc số máy đã nhân đôi theo yêu cầu anh Thái (24/8): gốc 50/65/80
+// -> còn 100/150/200. Giữ nguyên mức % (3.2/4.2/4.7/5.7%). Lấy mức CAO NHẤT mà S.O ĐÃ VƯỢT QUA (strict >),
+// KHÔNG cộng dồn nhiều bậc. VD 99 máy -> 3.2% (nền); đúng 100 máy -> vẫn 3.2% (chưa vượt qua 100); 101
+// máy -> 4.2%; 150 máy -> vẫn 4.2%; 151 máy -> 4.7%; 200 máy -> vẫn 4.7%; 201 máy -> 5.7%. Mốc S.O dùng để
 // xác định bậc = TỔNG số máy mọi model của Sale trong tháng (kể cả A6c, không tách riêng).
 const IND_COMMISSION_A6C_DISCOUNT = 0.01; // "A6c thấp hơn 1% so với bậc chuẩn" (anh Thái chỉnh lại lần
 // 5 - trước là 0.3%) - áp riêng cho PHẦN doanh thu đến từ model A6c (match không phân biệt hoa/thường
-// trên rec.model, VD "A6c 5G" vẫn tính). Bậc A6c cuối cùng: <50 máy 2.2%, >50 máy 3.2%, >65 máy 3.7%,
-// >80 máy 4.7%.
+// trên rec.model, VD "A6c 5G" vẫn tính). Bậc A6c cuối cùng: <100 máy 2.2%, >100 máy 3.2%, >150 máy 3.7%,
+// >200 máy 4.7%.
 function indCommissionRate(units) {
     for (let i = 0; i < IND_COMMISSION_TIERS.length; i++) {
         if (units > IND_COMMISSION_TIERS[i].minUnits) return IND_COMMISSION_TIERS[i].rate;
@@ -5888,7 +5887,7 @@ if (document.getElementById('ind-commission-month-select')) {
 //   1) Tồn kho tăng: Sell in (OPPO) tháng gần nhất > Sell out cùng tháng >= 3 máy chênh lệch
 //   2) Shop dừng bán: có sellout > 0 tháng trước, về 0 ở tháng gần nhất
 //   3) O.C dưới target: shop nhóm O.C có DS tháng gần nhất < target/shop/tháng theo level -> nguy cơ rớt hạng
-//   4) Cơ hội nâng hạng: shop nhóm Normal có DS tháng gần nhất >= ngưỡng Gold (80 máy) nhưng chưa vào O.C
+//   4) Cơ hội nâng hạng: shop nhóm Normal có DS tháng gần nhất >= ngưỡng Gold (40 máy) nhưng chưa vào O.C
 // Sắp xếp theo mức ưu tiên (rủi ro tiền/hàng tồn trước, cơ hội tăng trưởng sau cùng).
 function computeIndAlerts() {
     const months = indMonthsList();
