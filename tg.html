@@ -7256,6 +7256,11 @@ function programLineRow(label, dt, chiPhi, isTotal) {
         </span>
     </div>`;
 }
+// Bọc các dòng trong 1 khung cao 100% + giãn đều (justify-content:space-between) để 3 thẻ MWG/KA/IND
+// cao bằng nhau và cân đối, dù số dòng có DT (cao hơn) hay không (thấp hơn) khác nhau giữa các thẻ.
+function programCardWrap(rowsHtml) {
+    return `<div style="display:flex; flex-direction:column; height:100%; justify-content:space-between;">${rowsHtml}</div>`;
+}
 
 // ---- MWG: 2 khoản - (1) Chương trình shop trọng điểm S/A/B (mốc tăng trưởng TT10/15/20% so DT TB 6
 // tháng, hàm định nghĩa bên panel "Chi tiết MWG" nên gọi qua window.__computeMwgGrowthBonusTotal) và
@@ -7269,9 +7274,9 @@ function renderChannelProgramMwg() {
     const trongDiem = window.__computeMwgGrowthBonusTotal(month);
     const locKhai = window.__computeMwgLocKhaiBonusTotal(month);
     const total = trongDiem.totalBonus + locKhai.totalBonus;
-    resultEl.innerHTML = programLineRow('Chương trình shop trọng điểm', fmtVND(trongDiem.totalProjectedRev), fmtVND(trongDiem.totalBonus))
+    resultEl.innerHTML = programCardWrap(programLineRow('Chương trình shop trọng điểm', fmtVND(trongDiem.totalProjectedRev), fmtVND(trongDiem.totalBonus))
         + programLineRow('Bonus sale (Lộc &amp; Khải)', fmtVND(locKhai.totalRev), fmtVND(locKhai.totalBonus))
-        + programLineRow('Tổng', null, fmtVND(total), true);
+        + programLineRow('Tổng', null, fmtVND(total), true));
     return total;
 }
 
@@ -7300,25 +7305,27 @@ function renderChannelProgramKa() {
     const kpiSale = totalRev * 0.01;
     const hoTro = totalRev * hoTroRate(totalRev);
     const total = kpiSale + hoTro;
-    resultEl.innerHTML = programLineRow('KPI Sale', null, fmtVND(kpiSale))
+    resultEl.innerHTML = programCardWrap(programLineRow('KPI Sale', null, fmtVND(kpiSale))
         + programLineRow('Hỗ trợ', fmtVND(totalRev), fmtVND(hoTro))
-        + programLineRow('Tổng', null, fmtVND(total), true);
+        + programLineRow('Tổng', null, fmtVND(total), true));
     return total;
 }
 
-// ---- IND: 2 khoản - Lương Sale (lương cơ bản + thưởng theo bậc S.O, chỉ note Chi phí) và KPI (LĐ = 0,5% Center, chỉ note Chi phí).
+// ---- IND: 2 khoản - Lương Sale (CHỈ lương cơ bản 6.000.000đ/người, chỉ note Chi phí) và KPI (tiền thưởng
+// theo bậc S.O - phần biến động theo doanh số, chỉ note Chi phí). Không gồm LĐ (0,5% Center) và không trừ
+// phạt Shop S.O<70% ở đây - đây là bảng tóm tắt 2 khoản chính, xem đủ chi tiết ở "Chương trình tháng — Thưởng Sale IND".
 function renderChannelProgramInd() {
     const resultEl = document.getElementById('channel-program-ind-result');
     if (!resultEl) return null;
     const month = currentProgramMonth();
     if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return null; }
     const { rows } = computeIndCommissionRows(month);
-    const luongSale = rows.reduce((s, r) => s + r.salarySale, 0);
-    const kpi = rows.reduce((s, r) => s + r.kpiLd, 0);
+    const luongSale = rows.reduce((s, r) => s + r.baseSalary, 0);
+    const kpi = rows.reduce((s, r) => s + r.bonus, 0);
     const total = luongSale + kpi;
-    resultEl.innerHTML = programLineRow('Lương Sale', null, fmtVND(luongSale))
+    resultEl.innerHTML = programCardWrap(programLineRow('Lương Sale', null, fmtVND(luongSale))
         + programLineRow('KPI', null, fmtVND(kpi))
-        + programLineRow('Tổng', null, fmtVND(total), true);
+        + programLineRow('Tổng', null, fmtVND(total), true));
     return total;
 }
 
