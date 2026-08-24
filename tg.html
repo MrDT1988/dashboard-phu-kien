@@ -5557,13 +5557,21 @@ function renderOcDetailTable() {
 // đúng THÁNG GẦN NHẤT có dữ liệu (không lũy kế cả năm) - DS/DT thực tế tính từ crosstab đúng tháng đó,
 // Target = target/shop/tháng theo Gói (KHÔNG nhân số tháng). Sell in cũng chỉ lấy đúng tháng đó từ sheet
 // "SELL IN" (chỉ nhóm hàng OPPO, không tính PK); Sell in Reno16 lọc riêng theo tên sản phẩm chứa "Reno16".
+// parseSellInMonth: lấy CHUỖI SỐ ĐẦU TIÊN trong ô THÁNG, không dùng parseInt() thẳng - vì nếu sheet ghi
+// dạng chữ (VD "T7", "Tháng 7") thay vì số thuần "7", parseInt("T7") sẽ ra NaN và KHÔNG BAO GIỜ khớp
+// được tháng nào, khiến Sell-in bị lệch/về 0 mỗi khi lọc theo 1 tháng cụ thể (phát hiện 25/8 khi anh
+// Thái báo số Sell-in bị lệch nhiều).
+function parseSellInMonth(raw) {
+    const m = String(raw == null ? '' : raw).match(/\d+/);
+    return m ? parseInt(m[0], 10) : NaN;
+}
 function computeSellInByStoreId(month) {
     const rows = DATA.sell_in_rows || [];
     const result = {}; // storeId -> { oppo, premium }
     rows.forEach(r => {
         if (!r || r.length < 7) return;
         const storeId = String(r[SELLIN_COL.STORE_ID] || '').trim();
-        const rowMonth = parseInt(r[SELLIN_COL.MONTH], 10);
+        const rowMonth = parseSellInMonth(r[SELLIN_COL.MONTH]);
         const nhomHang = String(r[SELLIN_COL.GROUP] || '').trim().toUpperCase();
         const product = String(r[SELLIN_COL.PRODUCT] || '').trim().toLowerCase();
         const qty = num(r[SELLIN_COL.QTY]);
