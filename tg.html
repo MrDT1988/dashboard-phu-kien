@@ -1994,15 +1994,6 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                 </table>
             </div>
         </div>
-
-        <h4 style="margin:20px 0 4px; font-size:14px;">Chi tiết đầy đủ 12 tháng theo Sale</h4>
-        <div class="chart-sub" style="margin-bottom:10px;">Mỗi Sale 6 dòng liền nhau: <b>DS/DT/ĐG</b> (bấm tên Sale để xem bảng mini theo shop) và <b>SHOP/S.I/PK</b> — cùng quy ước cột với bảng "Chi tiết theo nhóm O.C/Normal theo tháng" ở trên.</div>
-        <div class="table-scroll" style="max-height:none;">
-            <table class="data-table" id="ind-sale-month-table">
-                <thead><tr id="ind-sale-month-table-head"></tr></thead>
-                <tbody id="ind-sale-month-table-body"></tbody>
-            </table>
-        </div>
     </section>
 
     <h2 class="part-title" style="margin:4px 0 14px; padding-left:15px; position:relative;"><span style="position:absolute; left:0; top:0; bottom:0; width:5px; border-radius:3px; background:var(--oppo-green); box-shadow:0 0 6px rgba(34,229,160,0.6);"></span>Phần 2 — Review Tháng<span class="part-sub">Mục tiêu Shop, Target O.C và Chương trình thưởng Xe - dùng chung 1 bộ lọc Tháng</span></h2>
@@ -2515,11 +2506,13 @@ async function fetchSellInRows(baseUrl) {
     }
 }
 
-// ================= Sheet "SHOP THEO SALE" (nguồn CHUẨN cho Shop -> Sale phụ trách, riêng IND) =================
-// Anh Thái yêu cầu 24/8: cột Sale trong CENTER đôi khi không cập nhật kịp khi đổi người phụ trách shop,
-// nên với IND phải LẤY SALE TỪ SHEET NÀY (không lấy rec.sales trong CENTER) để tính đúng thưởng theo Xe.
+// ================= Sheet "SHOP THEO SALE" (nguồn CHUẨN cho Shop -> Sale phụ trách VÀ Gói O.C, riêng IND) =================
+// Anh Thái yêu cầu 24/8 (Sale) + 25/8 (Gói O.C): cột Sale VÀ cột SIZE SHOP trong CENTER đôi khi không
+// khớp thực tế (Sale đổi người phụ trách; Gói O.C thì có tháng shop rớt/đạt lại theo doanh số CENTER tự
+// tính, trong khi anh Thái muốn 1 DANH SÁCH CỐ ĐỊNH, tự tay điều chỉnh ngay trên sheet này khi cần) - nên
+// với IND phải LẤY CẢ SALE LẪN GÓI TỪ SHEET NÀY, không lấy rec.sales/r.level trong CENTER.
 // Cấu trúc: cột A = Store ID, B = Store (tên đầy đủ, khớp định dạng rec.store bên CENTER), C = Sales,
-// D = CHANNEL, E = SIZE SHOP.
+// D = CHANNEL, E = SIZE SHOP (giá trị y hệt cột level bên CENTER, VD "OPPO CLUB - PLATINUM"/"NORMAL"...).
 const SHOP_THEO_SALE_SHEET_NAME = 'SHOP THEO SALE';
 async function fetchShopSaleMap(baseUrl) {
     // map theo TÊN Store (khớp trực tiếp với rec.store của CENTER) - ưu tiên vì CENTER không có store_id
@@ -2528,18 +2521,21 @@ async function fetchShopSaleMap(baseUrl) {
         const { rows } = await fetchRowsFromAppsScript(baseUrl, SHOP_THEO_SALE_SHEET_NAME);
         rows.shift(); // bỏ header
         const byStoreName = {};
+        const levelByStoreName = {};
         rows.forEach(r => {
             if (!r || r.length < 3) return;
             const storeName = (r[1] || '').toString().trim();
             const sale = (r[2] || '').toString().trim();
             const channel = (r[3] || '').toString().trim().toUpperCase();
+            const level = (r[4] || '').toString().trim();
             if (channel !== 'IND') return; // sheet chỉ cần dùng cho IND
             if (storeName && sale) byStoreName[storeName] = sale;
+            if (storeName && level) levelByStoreName[storeName] = level;
         });
-        return byStoreName;
+        return { byStoreName, levelByStoreName };
     } catch (err) {
-        console.warn('Không tải được sheet "SHOP THEO SALE" (IND sẽ tạm dùng lại Sale trong CENTER):', err.message);
-        return {};
+        console.warn('Không tải được sheet "SHOP THEO SALE" (IND sẽ tạm dùng lại Sale/Gói trong CENTER):', err.message);
+        return { byStoreName: {}, levelByStoreName: {} };
     }
 }
 
@@ -2776,20 +2772,24 @@ async function loadAndRender() {
         if (msgEl) msgEl.textContent = 'Đang tải dữ liệu Sell In (IND)...';
         DATA.sell_in_rows = await fetchSellInRows(APPS_SCRIPT_URL);
 
-        // Shop theo Sale (sheet riêng "SHOP THEO SALE", nguồn CHUẨN cho Sale phụ trách IND - xem hàm
-        // fetchShopSaleMap()) - tải song song vị trí này, không ảnh hưởng phần còn lại nếu lỗi.
+        // Shop theo Sale (sheet riêng "SHOP THEO SALE", nguồn CHUẨN cho Sale phụ trách VÀ Gói O.C của
+        // IND - xem hàm fetchShopSaleMap()) - tải song song vị trí này, không ảnh hưởng phần còn lại nếu lỗi.
         if (msgEl) msgEl.textContent = 'Đang tải Shop theo Sale (IND)...';
-        DATA.shop_sale_map = await fetchShopSaleMap(APPS_SCRIPT_URL);
+        const shopTheoSale = await fetchShopSaleMap(APPS_SCRIPT_URL);
+        DATA.shop_sale_map = shopTheoSale.byStoreName;
+        DATA.shop_level_map = shopTheoSale.levelByStoreName;
 
-        // Ghi đè NGAY TẠI ĐÂY (1 chỗ duy nhất) Sale phụ trách cho MỌI bản ghi IND trong crosstab +
-        // store_rows, dùng sheet "SHOP THEO SALE" làm nguồn CHUẨN thay cho cột Sale trong CENTER (anh
-        // Thái yêu cầu 25/8: "SHOP THEO SALE dùng xác định sale phụ trách của TOÀN BỘ biểu đồ/bảng liên
-        // quan IND, Center chỉ để xác định số liệu bán từng shop"). Nhờ vá 1 lần ở DATA thay vì sửa từng
-        // hàm, MỌI bảng/biểu đồ IND phía sau tự động dùng đúng Sale mà không cần đổi gì thêm. Số lượng/
-        // doanh thu vẫn nguyên như CENTER - chỉ đổi tên Sale gắn với mỗi bản ghi/shop. Shop nào chưa có
-        // trong sheet "SHOP THEO SALE" thì GIỮ NGUYÊN Sale cũ của CENTER (fallback an toàn).
+        // Ghi đè NGAY TẠI ĐÂY (1 chỗ duy nhất) Sale phụ trách + Gói O.C cho MỌI bản ghi IND trong crosstab
+        // + store_rows, dùng sheet "SHOP THEO SALE" làm nguồn CHUẨN thay cho CENTER (anh Thái yêu cầu
+        // 25/8: Sale hay đổi người phụ trách; Gói O.C thì có tháng shop rớt/đạt lại theo doanh số CENTER
+        // tự tính trong khi anh muốn 1 danh sách CỐ ĐỊNH, tự điều chỉnh ngay trên sheet khi cần - "SHOP
+        // THEO SALE" áp dụng cho TOÀN BỘ biểu đồ/bảng liên quan IND, Center chỉ để xác định số liệu bán
+        // từng shop). Nhờ vá 1 lần ở DATA thay vì sửa từng hàm, MỌI bảng/biểu đồ IND phía sau tự động
+        // dùng đúng Sale/Gói mà không cần đổi gì thêm. Số lượng/doanh thu vẫn nguyên như CENTER - chỉ đổi
+        // Sale/Gói gắn với mỗi bản ghi/shop. Shop nào chưa có trong sheet "SHOP THEO SALE" thì GIỮ NGUYÊN
+        // Sale/Gói cũ của CENTER (fallback an toàn).
         if (DATA.shop_sale_map && Object.keys(DATA.shop_sale_map).length) {
-            let patchedCrosstab = 0, patchedStoreRows = 0;
+            let patchedCrosstab = 0, patchedStoreRows = 0, patchedLevel = 0;
             DATA.crosstab.forEach(rec => {
                 if (rec.channel !== 'IND' || !rec.store) return;
                 const trueSale = DATA.shop_sale_map[rec.store];
@@ -2799,8 +2799,10 @@ async function loadAndRender() {
                 if (r.channel !== 'IND' || !r.store) return;
                 const trueSale = DATA.shop_sale_map[r.store];
                 if (trueSale && trueSale !== r.sale) { r.sale = trueSale; patchedStoreRows++; }
+                const trueLevel = DATA.shop_level_map[r.store];
+                if (trueLevel && trueLevel !== r.level) { r.level = trueLevel; patchedLevel++; }
             });
-            console.log('Đã vá Sale IND theo "SHOP THEO SALE": ' + patchedCrosstab + ' dòng crosstab, ' + patchedStoreRows + ' dòng store_rows đổi khác CENTER.');
+            console.log('Đã vá Sale/Gói IND theo "SHOP THEO SALE": ' + patchedCrosstab + ' dòng crosstab, ' + patchedStoreRows + ' Sale + ' + patchedLevel + ' Gói ở store_rows đổi khác CENTER.');
         }
 
         if (loadingEl) loadingEl.style.display = 'none';
@@ -6647,7 +6649,6 @@ function refreshIndCluster() {
     renderIndGroupMonthlyTable();
     renderIndSaleTrendChart();
     renderIndSaleSummaryTable();
-    renderIndSaleMonthlyTable();
     renderOcDetailTable();
     renderOcTargetProgressTable();
     renderIndAlertsTable();
