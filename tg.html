@@ -1104,7 +1104,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                     <span style="width:10px; height:10px; border-radius:50%; background:#FFC800; display:inline-block;"></span>
                     <h4 style="margin:0; font-size:14px; color:var(--text-primary);">MWG</h4>
                 </div>
-                <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Chương trình Shop Size S/A/B — Thưởng 1,2% Doanh thu</div>
+                <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:10px;">Bonus Shop trọng điểm S/A/B — Mốc tăng trưởng DT so với TB 6 tháng (TT10/15/20%)</div>
                 <div id="channel-program-mwg-result" style="flex:1;"></div>
             </div>
             <div style="background:var(--bg-card); border:1px solid var(--border-color); border-top:3px solid #B0B7BD; border-radius:var(--radius); padding:16px; display:flex; flex-direction:column;">
@@ -7253,30 +7253,21 @@ function currentProgramMonth() {
     return sel && sel.value ? parseInt(sel.value, 10) : null;
 }
 
-// ---- MWG: doc DATA cua panel "Chi tiet MWG" qua window.__exportDataMain (panel do render bang
-// initDashboard rieng, khong cung scope voi DATA o day) - co the chua san sang luc trang moi load nen
-// ham nay duoc goi lai lan nua ngay khi panel MWG tai xong (xem cho gan window.__exportDataMain).
+// ---- MWG: goi ham window.__computeMwgGrowthBonusTotal (dinh nghia trong scope panel "Chi tiet MWG",
+// khac scope voi DATA o day) - la dung Y HET cong thuc "1. Bonus Shop trong diem (Size S,A,B) - Moc
+// tang truong doanh thu so voi DT TB 2026" da co san o panel MWG, KHONG PHAI 1,2% (do la rieng cua
+// Sale Loc/Khai - muc 2, khac chuong trinh). Co the chua san sang luc trang moi load nen ham nay duoc
+// goi lai lan nua ngay khi panel MWG tai xong.
 // Tra ve budget (so tien) de ham tong hop cong lai; tra ve null neu chua co du lieu/chua chon thang.
 function renderChannelProgramMwg() {
     const resultEl = document.getElementById('channel-program-mwg-result');
     if (!resultEl) return null;
-    const mwgData = window.__exportDataMain;
-    if (!mwgData || !mwgData.shop_rows_brand4) { programEmptyState(resultEl, '⏳ Đang tải dữ liệu MWG...'); return null; }
+    if (!window.__computeMwgGrowthBonusTotal) { programEmptyState(resultEl, '⏳ Đang tải dữ liệu MWG...'); return null; }
     const month = currentProgramMonth();
     if (!month) { programEmptyState(resultEl, '📅 Chọn Tháng để xem ngân sách.'); return null; }
-    const idx = month - 1;
-    let rev = 0, numShops = 0;
-    mwgData.shop_rows_brand4.forEach(s => {
-        const size = s.shop_size || '';
-        if (size !== 'S' && size !== 'A' && size !== 'B') return;
-        const b = s.brands && s.brands['Oppo'];
-        const r = b && b.monthly_rev ? (b.monthly_rev[idx] || 0) : 0;
-        if (r > 0) numShops++;
-        rev += r;
-    });
-    const budget = rev * 0.012;
-    resultEl.innerHTML = programResultHtml('Doanh thu nhóm S/A/B', fmtVND(rev), 'Ngân sách (1,2%)', fmtVND(budget), numShops + ' shop có doanh thu');
-    return budget;
+    const { totalBonus, totalProjectedRev, numShopsAtGoal, totalShops } = window.__computeMwgGrowthBonusTotal(month);
+    resultEl.innerHTML = programResultHtml('DT dự phóng nhóm S/A/B', fmtVND(totalProjectedRev), 'Ngân sách (mốc TT 10/15/20%)', fmtVND(totalBonus), `${numShopsAtGoal}/${totalShops} shop đạt mốc thưởng`);
+    return totalBonus;
 }
 
 // ---- KA: dung lai dung logic bac thang cua bang "Chuong trinh Shop chua co PG" o Chi tiet KA.
@@ -8628,7 +8619,6 @@ loadAndRender();
 
 function initDashboard(DATA) {
 window.__exportDataMain = DATA; // lưu lại để nút "Xuất HTML" dùng, không ảnh hưởng logic gốc
-if (window.__renderChannelProgramMwg) window.__renderChannelProgramMwg(); // panel Tổng quan cần DATA này cho thẻ "Chương trình MWG"
 // Màu biểu đồ theo hãng: IP (Apple) xám đậm, hãng nhỏ/khác xám nhạt, 5 hãng lớn (Oppo/Samsung/Xiaomi/Vivo/Realme) dùng đúng màu thương hiệu thật của hãng đó.
 const BRAND_COLORS = {
     'Apple': '#A1A1A6', 'Samsung': '#5C7CFA', 'Oppo': '#2ee673',
@@ -11196,6 +11186,38 @@ function daysElapsedForShopMonth(shop, monthNum) {
 
 // T1-T6/2026 (chỉ số mảng monthly_rev, 0-based) — dùng làm baseline "DT TB 2026" cố định, KHÔNG phụ thuộc bộ lọc Tháng đang chọn.
 const THIDUA_DT_TB_MONTH_IDX = [0, 1, 2, 3, 4, 5];
+
+// Bản KHÔNG lệ thuộc bộ lọc UI của "1. Bonus Shop trọng điểm (Size S,A,B) — Mốc tăng trưởng doanh thu
+// so với DT TB 2026", dùng cho thẻ tóm tắt "Tổng Chương trình Bán hàng theo Kênh" ở panel Tổng quan
+// (khác scope DATA nên expose qua window). Công thức giữ NGUYÊN Y HỆT renderThiDuaSizeTable() bên dưới:
+// TT10% -> 0,05% DT dự phóng, TT15% -> 0,1%, TT20% -> 0,15% (lấy mốc cao nhất, không cộng dồn),
+// tính trên TOÀN BỘ shop Size S/A/B (không áp bộ lọc Sale/Size đang chọn trên UI).
+function computeMwgGrowthBonusTotal(month) {
+    const daysInMonth = DAYS_IN_MONTH_2026[month] || 30;
+    const shops = DATA.shop_rows_brand4.filter(isSABShop);
+    let totalBonus = 0, totalProjectedRev = 0, numShopsAtGoal = 0;
+    shops.forEach(shop => {
+        const h1Sum = THIDUA_DT_TB_MONTH_IDX.reduce((sum, i) => sum + ((shop.brands['Oppo'] ? shop.brands['Oppo'].monthly_rev[i] : 0) || 0), 0);
+        const dtTb = h1Sum / THIDUA_DT_TB_MONTH_IDX.length;
+        if (!dtTb) return;
+        const idx = month - 1;
+        const { oppoRev } = sumShopMonths(shop, [idx]);
+        const tt10 = dtTb * 1.10, tt15 = dtTb * 1.15, tt20 = dtTb * 1.20;
+        const daysElapsed = daysElapsedForShopMonth(shop, month);
+        const projFactor = daysElapsed > 0 ? (daysInMonth / daysElapsed) : 1;
+        const projectedOppoRev = oppoRev * projFactor;
+        let rate = 0;
+        if (projectedOppoRev >= tt20) rate = 0.15;
+        else if (projectedOppoRev >= tt15) rate = 0.1;
+        else if (projectedOppoRev >= tt10) rate = 0.05;
+        if (rate > 0) numShopsAtGoal++;
+        totalBonus += projectedOppoRev * rate / 100;
+        totalProjectedRev += projectedOppoRev;
+    });
+    return { totalBonus, totalProjectedRev, numShopsAtGoal, totalShops: shops.length };
+}
+window.__computeMwgGrowthBonusTotal = computeMwgGrowthBonusTotal;
+if (window.__renderChannelProgramMwg) window.__renderChannelProgramMwg(); // panel Tổng quan cần cả DATA lẫn hàm này cho thẻ "Chương trình MWG" - gọi lại ở ĐÂY (sau khi hàm đã gán xong), không phải ngay đầu initDashboard
 
 function renderThiDuaSizeTable() {
     // Chưa chọn thẻ Sale nào (kể cả "Tất cả Sale") -> ẩn cả bảng + các cảnh báo liên quan cho gọn, chỉ hiện placeholder.
