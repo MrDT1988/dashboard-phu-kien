@@ -2034,7 +2034,11 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Tổng quan Mục tiêu Shop IND</h3>
-                <div class="chart-sub">3 chỉ số theo dõi độ phủ &amp; hiệu suất shop IND, tính theo tháng gần nhất có dữ liệu.</div>
+                <div class="chart-sub">3 chỉ số theo dõi độ phủ &amp; hiệu suất shop IND, dùng chung 1 bộ lọc Tháng.</div>
+            </div>
+            <div class="table-controls">
+                <label style="font-size:11.5px;color:var(--text-secondary);font-weight:600;">Tháng</label>
+                <select id="ind-goal-month"><option value="">Gần nhất</option></select>
             </div>
         </div>
         <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--gap); align-items:stretch;">
@@ -5624,22 +5628,25 @@ function computeIndShopMonthlyTotals(month) {
     });
     return byShop;
 }
+let indGoalMonth = null; // null = dùng tháng gần nhất (mặc định); có giá trị = tháng đang chọn từ dropdown dùng chung cho cả 3 thẻ
 function renderIndGoalCards() {
     const ocEl = document.getElementById('ind-goal-oc');
     const perfEl = document.getElementById('ind-goal-perf');
     const soEl = document.getElementById('ind-goal-so');
     if (!ocEl || !perfEl || !soEl) return;
 
+    const months = indMonthsList();
+    const latestMonth = months.length ? months[months.length - 1] : null;
+    const targetMonth = indGoalMonth || latestMonth;
+
     // Thẻ 1: O.C Hoàn thành Target (Target 25 shop) - dùng lại đúng logic "Đạt/Chưa đạt" của bảng
-    // "Chi tiết Target O.C" (dat = %HT Doanh thu >= 100%).
-    const ocRows = computeOcTargetProgressRows();
+    // "Chi tiết Target O.C" (dat = %HT Doanh thu >= 100%), tính đúng theo Tháng đang chọn.
+    const ocRows = computeOcTargetProgressRows(targetMonth);
     const ocAchieved = ocRows.filter(r => r.dat).length;
     ocEl.innerHTML = indGoalCardHtml('O.C Hoàn thành Target', ocAchieved, 25, 'var(--oppo-green)');
 
-    // Thẻ 2 & 3: cùng dùng dữ liệu tháng gần nhất, gộp theo shop (đã rút gọn tên trùng biến thể).
-    const months = indMonthsList();
-    const latestMonth = months.length ? months[months.length - 1] : null;
-    const shopTotals = latestMonth ? computeIndShopMonthlyTotals(latestMonth) : {};
+    // Thẻ 2 & 3: cùng dùng đúng Tháng đang chọn, gộp theo shop (đã rút gọn tên trùng biến thể).
+    const shopTotals = targetMonth ? computeIndShopMonthlyTotals(targetMonth) : {};
     const shopList = Object.values(shopTotals);
 
     const perfAchieved = shopList.filter(s => s.ds > 5 || s.dt > 25000000).length;
@@ -5648,17 +5655,31 @@ function renderIndGoalCards() {
     const soAchieved = shopList.filter(s => s.ds > 0).length;
     soEl.innerHTML = indGoalCardHtml('Shop IND có S.O', soAchieved, 110, '#B0B7BD');
 }
+const indGoalMonthSelect = document.getElementById('ind-goal-month');
+if (indGoalMonthSelect) {
+    ALL_12_MONTHS.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = String(m);
+        opt.textContent = 'T' + m;
+        indGoalMonthSelect.appendChild(opt);
+    });
+    indGoalMonthSelect.addEventListener('change', () => {
+        indGoalMonth = indGoalMonthSelect.value ? parseInt(indGoalMonthSelect.value, 10) : null;
+        renderIndGoalCards();
+    });
+}
 
-function computeOcTargetProgressRows() {
+function computeOcTargetProgressRows(month) {
     const months = indMonthsList();
     const latestMonth = months.length ? months[months.length - 1] : null;
-    const sellInByStoreId = computeSellInByStoreId(latestMonth);
-    // DS/DT đúng tháng gần nhất, gộp theo shop - lấy từ crosstab (store_rows là lũy kế cả năm, không
+    const targetMonth = month || latestMonth; // không truyền month -> giữ đúng hành vi cũ (tháng gần nhất)
+    const sellInByStoreId = computeSellInByStoreId(targetMonth);
+    // DS/DT đúng tháng đang xem, gộp theo shop - lấy từ crosstab (store_rows là lũy kế cả năm, không
     // dùng được ở đây).
     const dsDtByStore = {};
-    if (latestMonth) {
+    if (targetMonth) {
         DATA.crosstab.forEach(rec => {
-            if (rec.channel !== 'IND' || rec.m !== latestMonth) return;
+            if (rec.channel !== 'IND' || rec.m !== targetMonth) return;
             if (!dsDtByStore[rec.store]) dsDtByStore[rec.store] = { ds: 0, dt: 0 };
             dsDtByStore[rec.store].ds += rec.sellout;
             dsDtByStore[rec.store].dt += rec.rev;
