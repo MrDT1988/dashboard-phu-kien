@@ -267,6 +267,7 @@ h4.dh:first-child{margin-top:0}
       </div>
       <h4 class="dh">Các hãng trong tháng (số máy)</h4>
       <div class="hb" id="hb-brand"></div>
+      <div class="note" id="mkt-ret"></div>
       <div class="note">Chỉ kênh MWG mới có số của mọi hãng nên mới tính được thị phần. KA và IND không có mẫu số nên không hiện ở đây.</div>
     </div>
   </section>
@@ -482,9 +483,8 @@ function renderOver(){
     tg.textContent=(p>=pace?'✅ Đúng/vượt tiến độ — ':p>=pace*0.85?'⚠️ Hơi chậm — ':'⛔ Đang chậm — ')+pct(p)+' target tháng';
   }
 
-  var K=function(x){document.title='S:'+x};
-  K('daily');renderDaily(o);K('month');renderMonth(o);K('chan');renderChan(o);K('seg');renderSeg(o);K('ser');renderSer(o);K('mkt');renderMkt(o);
-  K('alerts');renderAlerts(o);K('find');renderFind(o);K('rank');renderRank(o);K('DONE');
+  renderDaily(o); renderMonth(o); renderChan(o); renderSeg(o); renderSer(o); renderMkt(o);
+  renderAlerts(o); renderFind(o); renderRank(o);
 }
 
 /* ---- theo ngày ---- */
@@ -579,6 +579,15 @@ function renderMkt(o){
   $('#mkt-su').textContent=pct(su);
   $('#mkt-sr').textContent=pct(sr);
   $('#mkt-rank').textContent=rank?('#'+rank+'/'+br.length):'—';
+  // MWG la so DOI TAC gui, CENTER la so OPPO ghi nhan -> chenh lech = may doi tra
+  var own=(o.ch&&o.ch.MWG)?o.ch.MWG[MI][0]:null, ret=$('#mkt-ret');
+  if(own!==null&&m[0]>0){
+    var gap=m[0]-own, rate=m[0]?gap/m[0]*100:0;
+    ret.innerHTML='<b>Máy đổi trả:</b> MWG báo '+n0(m[0])+' máy · OPPO ghi nhận '+n0(own)+
+      ' máy → chênh <b style="color:var(--amber)">'+n0(gap)+' máy ('+pct(rate)+')</b>. '+
+      'Thị phần ở trên tính trọn trên số MWG để tử số và mẫu số cùng một nguồn.';
+    ret.hidden=false;
+  } else ret.hidden=true;
   var max=br.length?br[0][1]:1;
   hbars($('#hb-brand'),br.map(function(x){
     var isO=String(x[0]).toLowerCase()==='oppo';
@@ -800,10 +809,12 @@ function openShop(name){
       '<div>OPPO / thị trường<b>'+n0(m[0])+' / '+n0(m[2])+'</b></div>'+
       '<div>Hạng trong shop<b>'+(rank?'#'+rank:'—')+'</b></div></div>'+
       '<div class="hb" id="sh-brand"></div>';
-    if(Math.abs(m[0]-cur[0])>0){
-      h+='<div class="note warnnote">⚠️ Hai sheet ghi khác nhau: sheet sellout OPPO là <b>'+n0(cur[0])+
-         ' máy</b>, sheet DATA MWG là <b>'+n0(m[0])+' máy</b> (lệch '+n0(Math.abs(m[0]-cur[0]))+
-         '). Thị phần ở trên tính trọn trên sheet DATA MWG để tử số và mẫu số cùng nguồn.</div>';
+    var gap=m[0]-cur[0];
+    if(gap!==0&&m[0]>0){
+      h+='<div class="note"><b>Máy đổi trả:</b> MWG báo <b>'+n0(m[0])+' máy</b>, OPPO ghi nhận <b>'+
+         n0(cur[0])+' máy</b> → chênh <b style="color:var(--amber)">'+n0(gap)+' máy ('+
+         pct(gap/m[0]*100)+')</b>.<br>MWG là số đối tác gửi, OPPO là số thực ghi nhận — phần chênh chính là máy đổi trả. '+
+         'Thị phần ở trên tính trọn trên số MWG để tử số và mẫu số cùng một nguồn.</div>';
     }
   } else if(s.ch2==='MWG'){
     h+='<div class="note">Shop MWG này chưa đối chiếu được với sheet DATA MWG (tên shop 2 sheet ghi khác nhau) nên chưa có thị phần.</div>';
@@ -868,7 +879,6 @@ function go(v){
    KHỞI ĐỘNG
    ========================================================= */
 function boot(data){
-  document.title='S:boot';
   D=data;
   try{localStorage.setItem(LS_DATA,JSON.stringify(D))}catch(e){}
   CUR=null; try{CUR=localStorage.getItem(LS_WHO)}catch(e){}
@@ -876,7 +886,6 @@ function boot(data){
   if(CUR!=='__ALL__'&&names.indexOf(CUR)<0) CUR=null;
   $('#loading').hidden=true;
   $$('section').forEach(function(s){s.hidden=(s.id!=='v-over')});
-  document.title='S:pre-render';
   if(!CUR){CUR='__ALL__';renderOver();openPicker()}
   else renderOver();
 }
