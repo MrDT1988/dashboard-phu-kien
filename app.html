@@ -373,7 +373,9 @@ function drawBars(el,labels,values,opts){
   opts=opts||{};
   var W=680,H=opts.h||150,PB=opts.labels===false?12:22,PT=20;
   var n=values.length; if(!n){el.innerHTML='';return}
-  var max=Math.max.apply(null,values.concat(opts.cmp||[])); if(max<=0)max=1;
+  // Thang do lay ca thang truoc de 2 duong cung ti le, nhung nhan "cao nhat" phai la cua THANG NAY
+  var vmax=Math.max.apply(null,values);
+  var max=Math.max(vmax,(opts.cmp&&opts.cmp.length)?Math.max.apply(null,opts.cmp):0); if(max<=0)max=1;
   var gap=n>20?2:(n>12?4:6);
   var bw=(W-(n-1)*gap)/n;
   var plot=H-PB-PT;
@@ -386,7 +388,7 @@ function drawBars(el,labels,values,opts){
       pts.push((k*(bw+gap)+bw/2).toFixed(1)+','+y(c[k]).toFixed(1)); }
     if(pts.length>1) s+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+(opts.cmpColor||'#5a6676')+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/>';
   }
-  var maxI=values.indexOf(max), lastI=n-1;
+  var maxI=values.indexOf(vmax), lastI=n-1;
   if(opts.lastIdx!==undefined) lastI=opts.lastIdx;
   for(var i=0;i<n;i++){
     var v=values[i]||0, h=Math.max(v>0?2:0,(v/max)*plot), x=i*(bw+gap);
