@@ -54,8 +54,10 @@ header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0d142
 .subrow b{display:block;font-size:17px;color:var(--txt);font-weight:800;margin-top:2px}
 
 /* ---------- meter ---------- */
-.meter{height:10px;border-radius:999px;background:#20293a;overflow:hidden;margin:10px 0 8px}
+.meter{position:relative;height:10px;border-radius:999px;background:#20293a;overflow:hidden;margin:10px 0 8px}
 .meter i{display:block;height:100%;border-radius:999px;transition:width .5s ease}
+.meter u{position:absolute;top:-3px;width:2px;height:16px;background:#e8edf5;opacity:.7;border-radius:1px}
+.pacenote{font-size:11px;color:var(--muted);margin:-2px 0 6px}
 .mrow{display:flex;justify-content:space-between;font-size:12px;color:var(--txt2)}
 .tagline{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;margin-top:6px}
 
@@ -171,7 +173,8 @@ details summary{cursor:pointer;font-size:12px;color:var(--txt2);margin-top:10px}
     <div class="card" id="c-target">
       <h2>Tiến độ target tháng</h2>
       <p class="sub" id="t-sub"></p>
-      <div class="meter"><i id="t-bar"></i></div>
+      <div class="meter"><i id="t-bar"></i><u id="t-pace"></u></div>
+      <div class="pacenote" id="t-pacenote"></div>
       <div class="mrow"><span id="t-now"></span><span id="t-goal"></span></div>
       <div class="tagline" id="t-tag"></div>
     </div>
@@ -249,6 +252,10 @@ function safe(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){
 
 /* ---------- data ---------- */
 function totals(rows){var u=0,r=0;rows.forEach(function(x){u+=x[0];r+=x[1]});return [u,r]}
+// So ngay cua thang dang xem + tien do ky vong theo ngay da chay
+function DIM(){var m=D.months[MI], y=new Date().getFullYear();
+  return new Date(Date.UTC(y,m,0)).getUTCDate()}
+function PACE(){var dim=DIM(), d=Math.min(D.maxDay||dim,dim); return d/dim*100}
 function curSale(){
   if(CUR==='__ALL__'){
     var m=D.all.m;
@@ -327,20 +334,25 @@ function render(){
     d.textContent=(g>=0?'▲ ':'▼ ')+Math.abs(g).toFixed(1)+'% so T'+M[MI-1];
   } else {d.className='delta flat';d.textContent='';}
 
-  // target
-  var tot=totals(s.m), tgYear=s.tg, tgMonth=tgYear?tgYear/12:0;
+  // target — cot target trong sheet la TARGET THANG (khong chia 12)
+  var tgMonth=s.tg||0;
   var c=$('#c-target');
-  if(!tgYear){c.style.display='none'}
+  if(!tgMonth){c.style.display='none'}
   else{
     c.style.display='';
-    var p=tgMonth?cur[1]/tgMonth*100:0, cl=p>=100?'--green':p>=70?'--amber':'--red';
+    var p=cur[1]/tgMonth*100, pace=PACE();
+    // So voi tien do ky vong theo so ngay da chay, khong so voi 100% giua thang
+    var cl=p>=pace?'--green':p>=pace*0.85?'--amber':'--red';
     $('#t-bar').style.width=Math.min(100,p)+'%';
     $('#t-bar').style.background='var('+cl+')';
-    $('#t-sub').textContent='Target tháng ước tính = target năm ÷ 12';
+    $('#t-pace').style.left='calc('+Math.min(100,pace)+'% - 1px)';
+    $('#t-sub').textContent='Target tháng lấy từ sheet · cộng theo shop đang phụ trách';
+    $('#t-pacenote').textContent='Vạch trắng = tiến độ kỳ vọng '+pct(pace)+' (đã qua '+D.maxDay+'/'+DIM()+' ngày)';
     $('#t-now').textContent=money(cur[1])+' đã đạt';
     $('#t-goal').textContent='mục tiêu '+money(tgMonth);
     var tag=$('#t-tag'); tag.style.color='var('+cl+')';
-    tag.textContent=(p>=100?'✅ Đạt target — ':p>=70?'⚠️ Cần tăng tốc — ':'⛔ Đang chậm — ')+pct(p)+' hoàn thành';
+    tag.textContent=(p>=pace?'✅ Đúng/vượt tiến độ — ':p>=pace*0.85?'⚠️ Hơi chậm — ':'⛔ Đang chậm — ')+
+      pct(p)+' target tháng';
   }
 
   // chart
@@ -378,8 +390,10 @@ function renderAlerts(s){
         pill:'-'+Math.round((1-cur/prv)*100)+'%'});
     }
     if(sh.tg){
-      var tgM=sh.tg/12, p=tgM?revC/tgM*100:0;
-      if(p<50) out.push({p:2,ic:'⚠️',cl:'--amber',t:sh.n,d:'Mới '+money(revC)+' / mục tiêu '+money(tgM)+' tháng',
+      var tgM=sh.tg, p=revC/tgM*100, pace=PACE();
+      // Chi canh bao khi cham RO RET so voi tien do ky vong, tranh bao ca loat dau thang
+      if(p<pace*0.6) out.push({p:2,ic:'⚠️',cl:'--amber',t:sh.n,
+        d:'Mới '+money(revC)+' / target tháng '+money(tgM)+' (kỳ vọng '+pct(pace)+')',
         pill:pct(p)});
     }
   });
