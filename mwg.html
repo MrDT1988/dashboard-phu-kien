@@ -1415,7 +1415,7 @@ async function fetchRowsFromAppsScript(baseUrl, startRow) {
     if (!lastRow || lastRow < 2) throw new Error('Sheet không có dữ liệu (lastRow=' + lastRow + ')');
 
     if (startRow > lastRow) {
-        return { rows: [], lastRow }; // không có dòng mới nào kể từ checkpoint
+        return { rows: [], lastRow, lastDataRow: startRow - 1 }; // không có dòng mới nào kể từ checkpoint
     }
 
     // Bước 2: tính các phần cần tải (start/count)
@@ -1475,7 +1475,14 @@ async function fetchRowsFromAppsScript(baseUrl, startRow) {
     for (const part of results) {
         for (const row of part) allRows.push(row);
     }
-    return { rows: allRows, lastRow };
+    // Cat bo cac dong rong o cuoi: vung "rac" ben duoi du lieu lam getLastRow() bi thoi phong,
+    // khien moc chot ky tro vao cho khong co du lieu -> mai bao "0 dong moi".
+    const laDongRong = (r) => !Array.isArray(r) || r.every(c => c === '' || c === null || c === undefined);
+    let soDong = allRows.length;
+    while (soDong > 0 && laDongRong(allRows[soDong - 1])) soDong--;
+    const rowsSach = allRows.slice(0, soDong);
+    const lastDataRow = soDong > 0 ? (startRow + soDong - 1) : (startRow - 1);
+    return { rows: rowsSach, lastRow, lastDataRow };
 }
 
 // ================= Gộp dữ liệu checkpoint (đã tính sẵn) + dữ liệu mới (vừa tính) =================
@@ -1765,19 +1772,47 @@ async function loadAndRender() {
         }
 
         const startRow = checkpoint ? (checkpoint.lastProcessedRow + 1) : 1;
-        const fetchResult = await fetchRowsFromAppsScript(APPS_SCRIPT_URL, startRow);
+        let fetchResult = await fetchRowsFromAppsScript(APPS_SCRIPT_URL, startRow);
         let rows = fetchResult.rows;
         if (!checkpoint) rows = rows.slice(1); // bỏ dòng header nếu tải từ đầu
+
+        // ---- Đối chiếu mốc chốt kỳ với sheet ----
+        // Lỗi từng gặp (25/08/2026): mốc chốt kỳ lưu theo getLastRow() (bị thổi phồng bởi vùng rác
+        // dưới dữ liệu) nên startRow luôn lớn hơn số dòng thật -> dashboard âm thầm báo "0 dòng mới"
+        // dù sheet đã có số mới. Giờ nếu phát hiện lệch thì tự tải lại toàn bộ thay vì im lặng.
+        let mocSai = false;
+        if (checkpoint) {
+            if (checkpoint.lastProcessedRow > fetchResult.lastRow) {
+                mocSai = true;
+            } else if (rows.length === 0) {
+                try {
+                    if (msgEl) msgEl.textContent = 'Đang đối chiếu mốc chốt kỳ với sheet...';
+                    const probe = await fetchJSON(APPS_SCRIPT_URL + '?mode=data&start=' + checkpoint.lastProcessedRow + '&count=1', 120000);
+                    const r = Array.isArray(probe) ? probe[0] : null;
+                    const rong = !r || !Array.isArray(r) || r.every(c => c === '' || c === null || c === undefined);
+                    if (rong) mocSai = true;
+                } catch (e) {
+                    console.warn('Không đối chiếu được mốc chốt kỳ:', e.message);
+                }
+            }
+        }
+        if (mocSai) {
+            if (msgEl) msgEl.textContent = 'Mốc chốt kỳ không khớp sheet — đang tải lại toàn bộ dữ liệu...';
+            checkpoint = null;
+            fetchResult = await fetchRowsFromAppsScript(APPS_SCRIPT_URL, 1);
+            rows = fetchResult.rows.slice(1);
+        }
+        window.__mocSai = mocSai;
 
         let DATA;
         let sourceNote;
         if (checkpoint) {
             const deltaData = rows.length ? computeData(rows) : null;
             DATA = deltaData ? mergeFinalData(checkpoint.data, deltaData) : checkpoint.data;
-            sourceNote = 'Checkpoint (' + new Date(checkpoint.savedAt).toLocaleDateString('vi-VN') + ') + ' + rows.length.toLocaleString('vi-VN') + ' dòng mới';
+            sourceNote = 'Checkpoint (' + new Date(checkpoint.savedAt).toLocaleDateString('vi-VN') + ') + ' + rows.length.toLocaleString('vi-VN') + ' dòng mới · dòng cuối ' + Number(fetchResult.lastDataRow || 0).toLocaleString('vi-VN');
         } else {
             DATA = computeData(rows);
-            sourceNote = rows.length.toLocaleString('vi-VN') + ' dòng (chưa có checkpoint)';
+            sourceNote = rows.length.toLocaleString('vi-VN') + ' dòng' + (mocSai ? ' ⚠️ đã tải lại toàn bộ vì mốc chốt kỳ sai' : ' (chưa có checkpoint)') + ' · dòng cuối ' + Number(fetchResult.lastDataRow || 0).toLocaleString('vi-VN');
         }
 
         window.__lastFetchInfo = { checkpoint, latestLastRow: fetchResult.lastRow };
@@ -1820,7 +1855,7 @@ async function createCheckpoint() {
                 action: 'saveCheckpoint',
                 sheet: SHEET_NAME,
                 dataJson: JSON.stringify(DATA),
-                lastProcessedRow: fetchResult.lastRow,
+                lastProcessedRow: fetchResult.lastDataRow, // dòng DỮ LIỆU cuối cùng, không phải getLastRow()
             }),
         });
         const result = await resp.json();
