@@ -2128,6 +2128,14 @@ function parseMonthNum(v) {
 function parseDateCell(raw) {
     if (raw === null || raw === undefined || raw === '') return null;
     const s = String(raw).trim();
+    // Apps Script tra o ngay dang Date -> JSON hoa theo gio UTC. Sheet de mui gio GMT+7 nen ngay
+    // 23/8 (00:00 gio VN) thanh chuoi "2026-08-22T17:00:00.000Z"; cat 10 ky tu dau se ra 22/8,
+    // LUI DUNG 1 NGAY. Vi vay khi chuoi CO phan gio thi quy ve ngay theo gio dia phuong cua trinh
+    // duyet thay vi cat chuoi. Chuoi chi co ngay (khong gio) giu nguyen cach cu.
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+        const dt = new Date(s);
+        if (!isNaN(dt.getTime())) return new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+    }
     let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (m) return new Date(Date.UTC(+m[1], +m[2]-1, +m[3]));
     m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -12558,4 +12566,84 @@ window.mwgCreateCheckpoint = (typeof createCheckpoint === 'function') ? createCh
 
 })();
 </script>
+<!-- ===== Nut phong to bieu do / bang so lieu (them 25/08/2026) ===== -->
+<style>
+.chart-container, .table-section { position: relative; }
+.zoom-btn {
+    position: absolute; top: 10px; right: 10px; z-index: 6;
+    width: 28px; height: 28px; padding: 0; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 7px; cursor: pointer; font-size: 14px; font-family: inherit;
+    border: 1px solid var(--border-color, rgba(255,255,255,0.18));
+    background: var(--bg-card, #141b24);
+    color: var(--text-secondary, #8b98a9);
+    opacity: 0.45; transition: opacity .15s ease, color .15s ease, background .15s ease;
+}
+.chart-container:hover > .zoom-btn, .table-section:hover > .zoom-btn { opacity: 1; }
+.zoom-btn:hover { color: var(--oppo-green, #22e5a0); border-color: var(--oppo-green, #22e5a0); }
+#zoom-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 9990; display: none; }
+body.zoom-on #zoom-backdrop { display: block; }
+body.zoom-on { overflow: hidden; }
+.zoomed {
+    position: fixed !important; inset: 14px !important; z-index: 9991 !important;
+    margin: 0 !important; width: auto !important; max-width: none !important;
+    flex: none !important; overflow: auto !important;
+    box-shadow: 0 18px 60px rgba(0,0,0,0.6) !important;
+}
+.zoomed > .zoom-btn { position: fixed; top: 24px; right: 24px; opacity: 1; z-index: 9992; }
+.zoomed .table-scroll { max-height: calc(100vh - 150px) !important; }
+.zoomed canvas { max-height: calc(100vh - 200px) !important; }
+@media print { .zoom-btn, #zoom-backdrop { display: none !important; } }
+</style>
+<script>
+// Bam nut de phong to 1 bieu do / 1 bang ra full man hinh; bam lai (hoac Esc / bam nen toi) de thu nho.
+// Khong di chuyen DOM -> Chart.js giu nguyen instance, chi ban su kien resize de ve lai dung kich thuoc.
+(function () {
+    var backdrop = document.createElement('div');
+    backdrop.id = 'zoom-backdrop';
+    document.body.appendChild(backdrop);
+    var current = null;
+
+    function fireResize() { window.dispatchEvent(new Event('resize')); }
+    function closeZoom() {
+        if (!current) return;
+        current.classList.remove('zoomed');
+        document.body.classList.remove('zoom-on');
+        current = null;
+        fireResize(); setTimeout(fireResize, 90); setTimeout(fireResize, 260);
+    }
+    function openZoom(el) {
+        if (current === el) { closeZoom(); return; }
+        if (current) closeZoom();
+        current = el;
+        el.classList.add('zoomed');
+        document.body.classList.add('zoom-on');
+        el.scrollTop = 0;
+        fireResize(); setTimeout(fireResize, 90); setTimeout(fireResize, 260);
+    }
+    function addBtn(el) {
+        if (el.querySelector(':scope > .zoom-btn')) return;
+        var b = document.createElement('button');
+        b.className = 'zoom-btn';
+        b.type = 'button';
+        b.title = 'Phóng to / thu nhỏ (Esc để đóng)';
+        b.textContent = '\u2922';
+        b.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); openZoom(el); });
+        el.appendChild(b);
+        // Bam doi vao tieu de cung phong to (tien tay hon)
+        var h = el.querySelector('h3');
+        if (h) { h.style.cursor = 'zoom-in'; h.addEventListener('dblclick', function () { openZoom(el); }); }
+    }
+    function scan() { document.querySelectorAll('.chart-container, .table-section').forEach(addBtn); }
+
+    backdrop.addEventListener('click', closeZoom);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeZoom(); });
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan);
+    else scan();
+    [1200, 5000, 15000, 40000].forEach(function (t) { setTimeout(scan, t); });
+    window.__rescanZoom = scan;
+})();
+</script>
+
 </html>
