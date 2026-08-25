@@ -420,7 +420,7 @@ function renderFind(s){
         '<span>'+safe(x.ch)+(x.lv&&x.lv!=='(Không rõ)'?' · '+safe(x.lv):'')+'</span>'+
         '<span>T'+D.months[MI]+': <b>'+n0(cur[0])+'</b> máy</span>'+
         '<span>Cả năm: '+n0(tot[0])+' máy · '+money(tot[1])+'</span>'+
-        (x.tg?'<span>Target: '+money(x.tg)+'/năm</span>':'')+
+        (x.tg?'<span>Target: '+money(x.tg)+'/tháng</span>':'')+
         '</div>'+sparkline(x.m.map(function(v){return v[0]}))+'</div>'}).join('')
       : '<div class="empty">Không tìm thấy shop nào</div>';
   }
