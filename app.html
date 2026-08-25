@@ -482,8 +482,9 @@ function renderOver(){
     tg.textContent=(p>=pace?'✅ Đúng/vượt tiến độ — ':p>=pace*0.85?'⚠️ Hơi chậm — ':'⛔ Đang chậm — ')+pct(p)+' target tháng';
   }
 
-  renderDaily(o); renderMonth(o); renderChan(o); renderSeg(o); renderSer(o); renderMkt(o);
-  renderAlerts(o); renderFind(o); renderRank(o);
+  var K=function(x){document.title='S:'+x};
+  K('daily');renderDaily(o);K('month');renderMonth(o);K('chan');renderChan(o);K('seg');renderSeg(o);K('ser');renderSer(o);K('mkt');renderMkt(o);
+  K('alerts');renderAlerts(o);K('find');renderFind(o);K('rank');renderRank(o);K('DONE');
 }
 
 /* ---- theo ngày ---- */
@@ -867,6 +868,7 @@ function go(v){
    KHỞI ĐỘNG
    ========================================================= */
 function boot(data){
+  document.title='S:boot';
   D=data;
   try{localStorage.setItem(LS_DATA,JSON.stringify(D))}catch(e){}
   CUR=null; try{CUR=localStorage.getItem(LS_WHO)}catch(e){}
@@ -874,6 +876,7 @@ function boot(data){
   if(CUR!=='__ALL__'&&names.indexOf(CUR)<0) CUR=null;
   $('#loading').hidden=true;
   $$('section').forEach(function(s){s.hidden=(s.id!=='v-over')});
+  document.title='S:pre-render';
   if(!CUR){CUR='__ALL__';renderOver();openPicker()}
   else renderOver();
 }
