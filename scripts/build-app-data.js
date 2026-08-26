@@ -53,7 +53,8 @@
         sg: pairs(SEGS.length),        // phan khuc - luy ke ca nam
         sgM: pairs(SEGS.length),       // phan khuc - thang hien tai
         sr: pairs(SERS.length),        // dong may - luy ke
-        srM: pairs(SERS.length)        // dong may - thang hien tai
+        srM: pairs(SERS.length),       // dong may - thang hien tai
+        chd: null                      // chi tiet theo tung kenh (chi dat o cap tinh & sale)
       };
       for (var k in extra) o[k] = extra[k];
       return o;
@@ -85,6 +86,16 @@
       if (!o.ch[ch]) o.ch[ch] = pairs(NM);
       o.ch[ch][i][0] += u; o.ch[ch][i][1] += rv;
     }
+    // Khung chi tiet cho 1 kenh, dung o cap TINH va cap SALE (shop chi thuoc 1 kenh nen khong can)
+    function chdOf(o, ch) {
+      if (!o.chd) o.chd = {};
+      if (!o.chd[ch]) o.chd[ch] = {
+        m: pairs(NM), d: zeros(DIM_CUR), dp: zeros(DIM_PRV),
+        sg: pairs(SEGS.length), sgM: pairs(SEGS.length),
+        sr: pairs(SERS.length), srM: pairs(SERS.length)
+      };
+      return o.chd[ch];
+    }
 
     // =========================================================
     // 2. Do so lieu OPPO theo thang tu crosstab
@@ -108,6 +119,14 @@
           if (isCur) { o.sgM[si][0] += u; o.sgM[si][1] += rv; } }
         if (ri !== undefined && ri >= 0) { o.sr[ri][0] += u; o.sr[ri][1] += rv;
           if (isCur) { o.srM[ri][0] += u; o.srM[ri][1] += rv; } }
+        if (t < 2) {   // chi tinh chi tiet kenh o cap tinh & sale
+          var cd = chdOf(o, ch);
+          cd.m[i][0] += u; cd.m[i][1] += rv;
+          if (si !== undefined) { cd.sg[si][0] += u; cd.sg[si][1] += rv;
+            if (isCur) { cd.sgM[si][0] += u; cd.sgM[si][1] += rv; } }
+          if (ri !== undefined && ri >= 0) { cd.sr[ri][0] += u; cd.sr[ri][1] += rv;
+            if (isCur) { cd.srM[ri][0] += u; cd.srM[ri][1] += rv; } }
+        }
       }
     });
 
@@ -128,9 +147,11 @@
         Object.keys(byStore).forEach(function (st) {
           var u = (byStore[st] || {}).sellout || 0; if (!u) return;
           all[key][dd - 1] += u;
+          chdOf(all, ch)[key][dd - 1] += u;
           var sh = shops[st];
           var sn = (byStore[st] || {}).sale || (sh ? sh.sale : null);
-          var sl = sales[sn || '(Không rõ)']; if (sl) sl[key][dd - 1] += u;
+          var sl = sales[sn || '(Không rõ)'];
+          if (sl) { sl[key][dd - 1] += u; chdOf(sl, ch)[key][dd - 1] += u; }
           if (sh) sh[key][dd - 1] += u;
           if (key === 'd' && dd > maxDay) maxDay = dd;
         });
@@ -214,8 +235,12 @@
       };
 
       all.mkt = { m: packM(mAll), br: topBrands(brAll, 10) };
+      chdOf(all, 'MWG').mkt = all.mkt;
       Object.keys(mSale).forEach(function (sn) {
-        if (sales[sn]) sales[sn].mkt = { m: packM(mSale[sn]), br: topBrands(brSale[sn], 8) };
+        if (sales[sn]) {
+          sales[sn].mkt = { m: packM(mSale[sn]), br: topBrands(brSale[sn], 8) };
+          chdOf(sales[sn], 'MWG').mkt = sales[sn].mkt;
+        }
       });
       Object.keys(mShop).forEach(function (st) {
         shops[st].mkt = { m: packM(mShop[st]), br: topBrands(brShop[st], 6) };
@@ -239,6 +264,19 @@
         sr: packPairs(o.sr), srM: packPairs(o.srM)
       };
       if (o.mkt) r.mkt = o.mkt;
+      if (o.chd) {
+        r.chd = {};
+        CHANS.forEach(function (c) {
+          var cd = o.chd[c]; if (!cd) return;
+          var x = {
+            m: packPairs(cd.m), d: cd.d, dp: cd.dp,
+            sg: packPairs(cd.sg), sgM: packPairs(cd.sgM),
+            sr: packPairs(cd.sr), srM: packPairs(cd.srM)
+          };
+          if (cd.mkt) x.mkt = cd.mkt;
+          r.chd[c] = x;
+        });
+      }
       return r;
     }
 
