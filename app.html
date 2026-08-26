@@ -359,6 +359,8 @@ h4.dh:first-child{margin-top:0}
       <div class="legend" id="lg-day"></div>
       <div class="subhead">Theo tuần — từng kênh</div>
       <div class="tvwrap" id="tv-week"></div>
+      <div class="subhead" id="tvm-h" hidden></div>
+      <div class="tvwrap" id="tv-mkt-thang"></div>
       <details><summary>Xem chi tiết từng ngày</summary><div class="tvwrap" id="tv-day"></div></details>
     </div>
 
@@ -502,7 +504,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.18';
+var APP_VER='2026-08-26.19';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -1189,6 +1191,58 @@ function miniTableNgay(el,mk,day,isU){
   return {o:to,t:tt};
 }
 
+// Thị phần theo THÁNG × từng sale. Lấy mkt.m của TỪNG SHOP rồi cộng lại,
+// nhờ vậy bộ lọc Size shop áp được. mkt.m[i] = [oppoMáy, oppoDT, tổngMáy, tổngDT]
+function mktSaleThang(saleObj,i){
+  var oU=0,oR=0,tU=0,tR=0,co=false;
+  (saleObj.s||[]).forEach(function(sh){
+    if(sh.ch2!==SEG||!sh.mkt||!sh.mkt.m) return;
+    if(F_SIZE&&sh.size!==F_SIZE) return;
+    var v=sh.mkt.m[i]; if(!v) return;
+    co=true; oU+=v[0]||0; oR+=v[1]||0; tU+=v[2]||0; tR+=v[3]||0;
+  });
+  return co?{o:oU,oR:oR,t:tU,tR:tR}:null;
+}
+function miniTableMkThang(el,isU){
+  var dsS=D.sales.filter(function(x){return (x.s||[]).some(function(y){
+    return y.ch2===SEG&&y.mkt&&(!F_SIZE||y.size===F_SIZE)})});
+  if(CUR!=='__ALL__') dsS=dsS.filter(function(x){return x.n===CUR});
+  if(!dsS.length){ el.innerHTML=''; return false }
+  var M=D.months;
+  var oCell=function(x,i){
+    var k=mktSaleThang(x,i);
+    var tu=k?(isU?k.o:k.oR):0, mau=k?(isU?k.t:k.tR):0;
+    if(!mau) return '<b style="color:var(--muted)">—</b>';
+    var sh=tu/mau*100, c=sh>=25?'var(--green)':sh>=15?'var(--amber)':'var(--red)';
+    return '<b style="color:'+c+'">'+pct(sh,0)+'</b>';
+  };
+  var tCell=function(i){
+    var tu=0,mau=0;
+    dsS.forEach(function(x){ var k=mktSaleThang(x,i); if(k){tu+=(isU?k.o:k.oR); mau+=(isU?k.t:k.tR)} });
+    if(!mau) return '<b style="color:var(--muted)">—</b>';
+    var sh=tu/mau*100, c=sh>=25?'var(--green)':sh>=15?'var(--amber)':'var(--red)';
+    return '<b style="color:'+c+'">'+pct(sh,0)+'</b>';
+  };
+  var caNam=function(x){
+    var tu=0,mau=0;
+    M.forEach(function(mm,i){ var k=x?mktSaleThang(x,i):null;
+      if(!x){ dsS.forEach(function(y){ var k2=mktSaleThang(y,i); if(k2){tu+=(isU?k2.o:k2.oR); mau+=(isU?k2.t:k2.tR)} }) }
+      else if(k){ tu+=(isU?k.o:k.oR); mau+=(isU?k.t:k.tR) } });
+    if(!mau) return '<b style="color:var(--muted)">—</b>';
+    var sh=tu/mau*100, c=sh>=25?'var(--green)':sh>=15?'var(--amber)':'var(--red)';
+    return '<b style="color:'+c+'">'+pct(sh,0)+'</b>';
+  };
+  var head=['Sale','Cả năm'].concat(M.map(function(m){return 'T'+m}));
+  var rows=dsS.map(function(x){
+    return [x.n,caNam(x)].concat(M.map(function(m,i){return oCell(x,i)}));
+  });
+  if(dsS.length>1) rows.push(['<b>Tổng</b>',caNam(null)].concat(M.map(function(m,i){return tCell(i)})));
+  el.innerHTML='<table class="tv"><tr>'+head.map(function(h){return '<th>'+safe(h)+'</th>'}).join('')+'</tr>'+
+    rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join('')+
+    '</table>';
+  return true;
+}
+
 function miniTableSale(el,buckets,label,isU){
   var dsS=D.sales.filter(function(x){return (x.chd||{})[SEG]&&(x.s||[]).some(function(y){return y.ch2===SEG})});
   if(CUR!=='__ALL__') dsS=dsS.filter(function(x){return x.n===CUR});
@@ -1316,10 +1370,21 @@ function renderDaily(o){
       }
       hdr.textContent=coTP?nhan:'Theo ngày — từng sale';
     }
+    // Bảng thứ hai: cùng cách đọc nhưng theo THÁNG
+    var hM=$('#tvm-h');
+    var coM=miniTableMkThang($('#tv-mkt-thang'),isU);
+    hM.hidden=!coM;
+    if(coM){
+      var nhanM='Thị phần theo tháng — từng sale ('+(isU?'theo máy':'theo doanh thu')+')';
+      if(F_SIZE) nhanM+=' · size '+F_SIZE;
+      if(F_SEGS.length) nhanM+=' · ⚠ phân khúc không lọc được theo tháng';
+      hM.textContent=nhanM;
+    }
   } else {
     miniTable($('#tv-week'),weeksIn(a,a+day-1),'Tuần');
     if(hdr&&hdr.className==='subhead')
       hdr.textContent=SEG==='ALL'?'Theo tuần — từng kênh':('Theo tuần — kênh '+SEG);
+    $('#tvm-h').hidden=true; $('#tv-mkt-thang').innerHTML='';
   }
 
   var head=['Ngày'];for(var q=1;q<=day;q++)head.push(q);
