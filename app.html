@@ -86,6 +86,11 @@ main{padding:14px 14px 4px;max-width:760px;margin:0 auto}
 .pills button{flex:1;padding:6px 4px;border-radius:8px;font-size:12px;font-weight:600;
   color:var(--ink2);background:var(--card2);border:1px solid var(--line)}
 .pills button.on{color:#0a0e14;background:var(--green);border-color:var(--green)}
+/* Hàng tab phụ (kỳ, dòng máy): nhỏ hơn và khác màu để không lẫn với tab chính */
+.pills.sm{gap:4px;margin:0 0 9px}
+.pills.sm button{flex:none;padding:4px 11px;font-size:11px;border-radius:7px}
+.pills.sm.ky button.on{color:#eaf2ff;background:#2f5c9e;border-color:#3f74c2}
+.pills.sm.ser button.on{color:#1a1405;background:#c08420;border-color:#c08420}
 .subhead{margin:16px 0 6px;font-size:12px;font-weight:700;color:var(--ink2)}
 .cmprow{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
   font-size:11.5px;color:var(--muted);line-height:1.6}
@@ -332,10 +337,10 @@ h4.dh:first-child{margin-top:0}
       <div class="pills" id="p-momode">
         <button data-mom="u" class="on">Doanh số</button><button data-mom="r">Doanh thu</button>
       </div>
-      <div class="pills" id="p-trend">
+      <div class="pills sm ky" id="p-trend">
         <button data-tr="W">Tuần</button><button data-tr="M" class="on">Tháng</button><button data-tr="Q">Quý</button>
       </div>
-      <div class="pills" id="p-ser" hidden></div>
+      <div class="pills sm ser" id="p-ser" hidden></div>
       <p class="sub" id="mo-sub"></p>
       <svg class="chart" id="ch-month"></svg>
       <div class="subhead" id="mo-mini-h">Theo tháng — từng kênh</div>
@@ -358,7 +363,7 @@ h4.dh:first-child{margin-top:0}
 
 <div class="card" id="c-model" hidden>
       <h2>Model bán chạy</h2>
-      <div class="pills" id="p-momo" hidden></div>
+      <div class="pills sm ky" id="p-momo" hidden></div>
       <p class="sub" id="model-sub"></p>
       <div class="hb" id="hb-model"></div>
       <details><summary>Xem dạng bảng</summary><div class="tvwrap" id="tv-model"></div></details>
@@ -467,7 +472,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.05';
+var APP_VER='2026-08-26.06';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -809,6 +814,14 @@ function renderTarget(o){
   var c=$('#c-target');
   // Target = con số anh Thái giao theo KÊNH (tổng 50 tỷ), không phải cộng target từng shop
   var tgc=o.tgc||null, tgMonth=0, tgU=0;
+  // Chưa có target theo kênh trong gói dữ liệu -> tạm cộng target từng shop theo kênh,
+  // để tiến độ từng kênh vẫn xem được ngay. Có target 50 tỷ thì tự thay.
+  var tgcTam=null;
+  if(!tgc){
+    var gom={};
+    (o.s||[]).forEach(function(x){ if(x.tg) gom[x.ch2]=(gom[x.ch2]||0)+x.tg });
+    if(Object.keys(gom).length){ tgcTam={}; Object.keys(gom).forEach(function(k){ tgcTam[k]=[0,gom[k]] }) }
+  }
   if(tgc){
     Object.keys(tgc).forEach(function(k){
       if(SEG!=='ALL'&&k!==SEG) return;
@@ -854,16 +867,17 @@ function renderTarget(o){
   ft.textContent=(fp>=100?'✅ Đà này sẽ ĐẠT target — ':fp>=90?'⚠️ Sát target — ':'⛔ Đà này KHÔNG đạt — ')+
     pct(fp)+' target'+(fp<100?' (thiếu '+money(tgMonth-projR)+')':'');
 
-  renderTargetChan(o,tgc,pace,day,dim,P);
+  renderTargetChan(o,tgc||tgcTam,pace,day,dim,P,!tgc);
 }
 
 /* ---- tiến độ target của TỪNG KÊNH: kênh nào nhanh, kênh nào chậm ---- */
-function renderTargetChan(o,tgc,pace,day,dim,P){
+function renderTargetChan(o,tgc,pace,day,dim,P,laTam){
   var h=$('#t-chan-h'), box=$('#t-chan');
   var chans=D.chans.filter(function(c){return tgc&&tgc[c]&&chanDy(c)});
   if(SEG!=='ALL') chans=chans.filter(function(c){return c===SEG});
   if(!tgc||chans.length<2){ h.hidden=true; box.innerHTML=''; return }
   h.hidden=false;
+  h.textContent='Tiến độ từng kênh'+(laTam?' (target tạm cộng từ shop)':'');
   box.innerHTML=chans.map(function(c){
     var cd=chanDy(c);
     var mr=sumR(cd.dr,P.a,P.b), mu=sumR(cd.dy,P.a,P.b);
@@ -878,7 +892,7 @@ function renderTargetChan(o,tgc,pace,day,dim,P){
         '<span style="color:var('+cl+');font-weight:700">'+pct(p)+'</span></div>'+
       '<div class="meter"><i style="width:'+Math.min(100,p).toFixed(1)+'%;background:var('+cl+')"></i>'+
         '<u style="left:calc('+Math.min(100,pace).toFixed(1)+'% - 1px)"></u></div>'+
-      '<div class="pacenote">'+n0(mu)+'/'+n0(tgu)+' máy · đà này cuối tháng ~'+pct(fp,0)+' target'+
+      '<div class="pacenote">'+(tgu?(n0(mu)+'/'+n0(tgu)+' máy · '):(n0(mu)+' máy · '))+'đà này cuối tháng ~'+pct(fp,0)+' target'+
         (fp<100?' (thiếu '+money(Math.max(0,tg-proj))+')':'')+'</div>'+
       '</div>';
   }).join('');
