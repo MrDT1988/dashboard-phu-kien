@@ -345,6 +345,7 @@ h4.dh:first-child{margin-top:0}
       <div class="filt" id="filt" hidden>
         <label><span>Sale</span><select id="f-sale"></select></label>
         <label id="f-size-w" hidden><span>Size shop</span><select id="f-size"></select></label>
+        <label id="f-ngay-w" hidden><span>Ngày</span><select id="f-ngay"></select></label>
       </div>
       <div id="f-seg-w" hidden style="margin:0 0 10px">
         <span style="display:block;font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:600">Phân khúc giá — bấm chọn nhiều khoảng</span>
@@ -359,7 +360,8 @@ h4.dh:first-child{margin-top:0}
       <div class="legend" id="lg-day"></div>
       <div class="subhead">Theo tuần — từng kênh</div>
       <div class="tvwrap" id="tv-week"></div>
-      <details><summary>Xem chi tiết từng ngày</summary><div class="tvwrap" id="tv-day"></div></details>
+      <div class="subhead" id="tvh-h" hidden></div>
+      <div class="tvwrap" id="tv-hang"></div>
     </div>
 
     <div class="card" id="c-mm" hidden>
@@ -515,7 +517,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.20';
+var APP_VER='2026-08-26.21';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -713,6 +715,19 @@ function buildFilt(){
       D.sizes.map(function(x){return '<option value="'+safe(x)+'">'+safe(x)+'</option>'}).join('');
     $('#f-size').value=F_SIZE||'';
   }
+  // Ô chọn ngày — dùng cho bảng chi tiết từng sale × từng hãng
+  var sh1=(D.sales[0]&&(D.sales[0].s||[]).find(function(x){return x.ch2===SEG&&x.dk}));
+  var coNgay=!!sh1;
+  $('#f-ngay-w').hidden=!coNgay;
+  if(coNgay){
+    var dmax=D.maxDay||DIM();
+    var opt='<option value="0">Cả tháng '+D.months[MI]+'</option>';
+    for(var dd=dmax;dd>=1;dd--) opt+='<option value="'+dd+'">Ngày '+dd+'/'+D.months[MI]+'</option>';
+    $('#f-ngay').innerHTML=opt;
+    if(F_NGAY>dmax) F_NGAY=0;
+    $('#f-ngay').value=String(F_NGAY);
+  }
+
   var coSgm=!!(scope().sgm);
   $('#f-seg-w').hidden=!coSgm;
   if(coSgm){
@@ -867,7 +882,7 @@ function tvTable(head,rows){
 /* =========================================================
    TỔNG QUAN
    ========================================================= */
-var F_SIZE='', F_SEGS=[];       // bo loc size shop / phan khuc gia (chon nhieu)
+var F_SIZE='', F_SEGS=[], F_NGAY=0;   // bo loc size / phan khuc / ngay (0 = ca thang)
 var dyMode='u';                 // bieu do ngay: 'u' = so may, 'r' = doanh thu
 var SER_TAB='ALL';              // tab dong may o the Doanh so
 var MO_THANG=null;              // thang dang loc o the Model ban chay
@@ -1254,6 +1269,71 @@ function miniTableMkThang(el,isU){
   return true;
 }
 
+// Bảng chi tiết: hàng = từng sale, cột = thị phần TỪNG HÃNG.
+// Xem cả tháng hoặc đúng 1 ngày do anh chọn ở ô "Ngày".
+function saleTheoHang(saleObj,ngay,isU){
+  var Y=D.year, m=D.months[MI], dau=toDoy(Y,m,1), dim=DIM();
+  var v=[0,0,0,0,0,0,0,0,0,0], co=false;
+  (saleObj.s||[]).forEach(function(sh){
+    if(sh.ch2!==SEG||!sh.dk) return;
+    if(F_SIZE&&sh.size!==F_SIZE) return;
+    var soCot=(sh.dk[0]||[]).length; if(soCot<10) return;
+    co=true;
+    var d1=ngay?ngay:1, d2=ngay?ngay:Math.min(dim,D.maxDay||dim);
+    for(var d=d1;d<=d2;d++){
+      var c=sh.dk[d-1]; if(!c) continue;
+      for(var k=0;k<10;k++) v[k]+=(c[k]||0);
+    }
+  });
+  return co?v:null;
+}
+function bangSaleHang(el,isU){
+  var dsS=D.sales.filter(function(x){return (x.s||[]).some(function(y){
+    return y.ch2===SEG&&y.dk&&(!F_SIZE||y.size===F_SIZE)})});
+  if(CUR!=='__ALL__') dsS=dsS.filter(function(x){return x.n===CUR});
+  if(!dsS.length){ el.innerHTML=''; return false }
+  var oCua=function(v){
+    var tong=isU?v[8]:v[9];
+    if(!tong) return null;
+    var ds=HANG4.map(function(h){
+      var q=v[isU?h.u:h.r]||0;
+      return {k:h.k,c:h.c,q:q,p:q/tong*100};
+    });
+    var conLai=tong-ds.reduce(function(t,x){return t+x.q},0);
+    ds.push({k:'Khác',c:'#3a4553',q:Math.max(0,conLai),p:Math.max(0,conLai)/tong*100});
+    return {tong:tong,ds:ds};
+  };
+  var head=['Sale','Tổng TT'].concat(HANG4.map(function(h){return h.k}).concat(['Khác']));
+  var rows=dsS.map(function(x){
+    var v=saleTheoHang(x,F_NGAY,isU), t=v?oCua(v):null;
+    var r=[x.n,(t?(isU?n0(t.tong):money(t.tong)):'—')];
+    for(var i=0;i<5;i++){
+      if(!t){ r.push('—'); continue }
+      var d=t.ds[i];
+      r.push('<b'+(i===0?' style="color:'+(d.p>=25?'var(--green)':d.p>=15?'var(--amber)':'var(--red)')+'"':'')+'>'+
+        pct(d.p,0)+'</b><small>'+(isU?n0(d.q):money(d.q))+'</small>');
+    }
+    return r;
+  });
+  if(dsS.length>1){
+    var vt=[0,0,0,0,0,0,0,0,0,0];
+    dsS.forEach(function(x){ var v=saleTheoHang(x,F_NGAY,isU); if(v) for(var k=0;k<10;k++) vt[k]+=v[k] });
+    var tt=oCua(vt);
+    var rt=['<b>Tổng</b>',(tt?(isU?n0(tt.tong):money(tt.tong)):'—')];
+    for(var i2=0;i2<5;i2++){
+      if(!tt){ rt.push('—'); continue }
+      var d2=tt.ds[i2];
+      rt.push('<b'+(i2===0?' style="color:'+(d2.p>=25?'var(--green)':d2.p>=15?'var(--amber)':'var(--red)')+'"':'')+'>'+
+        pct(d2.p,0)+'</b><small>'+(isU?n0(d2.q):money(d2.q))+'</small>');
+    }
+    rows.push(rt);
+  }
+  el.innerHTML='<table class="tv"><tr>'+head.map(function(h){return '<th>'+safe(h)+'</th>'}).join('')+'</tr>'+
+    rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join('')+
+    '</table>';
+  return true;
+}
+
 function miniTableSale(el,buckets,label,isU){
   var dsS=D.sales.filter(function(x){return (x.chd||{})[SEG]&&(x.s||[]).some(function(y){return y.ch2===SEG})});
   if(CUR!=='__ALL__') dsS=dsS.filter(function(x){return x.n===CUR});
@@ -1388,10 +1468,14 @@ function renderDaily(o){
       hdr.textContent=SEG==='ALL'?'Theo tuần — từng kênh':('Theo tuần — kênh '+SEG);
   }
 
-  var head=['Ngày'];for(var q=1;q<=day;q++)head.push(q);
-  var rows=[['Máy'].concat(u.slice(0,day).map(n0)),
-            ['Doanh thu'].concat(r.slice(0,day).map(money))];
-  $('#tv-day').innerHTML=tvTable(head,rows);
+  var hH=$('#tvh-h');
+  if(SEG==='MWG'){
+    var coH=bangSaleHang($('#tv-hang'),isU);
+    hH.hidden=!coH;
+    if(coH) hH.textContent='Chi tiết từng sale × từng hãng — '+
+      (F_NGAY?('ngày '+F_NGAY+'/'+m):('cả tháng '+m))+
+      ' ('+(isU?'theo máy':'theo doanh thu')+')'+(F_SIZE?(' · size '+F_SIZE):'');
+  } else { hH.hidden=true; $('#tv-hang').innerHTML='' }
 }
 
 /* ---- THẺ: Sell out theo tháng — bố cục y hệt thẻ theo ngày ---- */
@@ -2351,6 +2435,7 @@ $('#f-sale').addEventListener('change',function(){
   renderOver(); window.scrollTo(0,0);
 });
 $('#f-size').addEventListener('change',function(){F_SIZE=this.value;renderOver()});
+$('#f-ngay').addEventListener('change',function(){F_NGAY=+this.value;renderOver()});
 
 $('#mask').addEventListener('click',closeSheet);
 $('#pick').addEventListener('click',openPicker);
