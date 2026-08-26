@@ -20,6 +20,9 @@
   --r:14px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* Nhieu khoi dat display:grid/flex/block nen de len [hidden] -> lenh an bi vo hieu.
+   Dat 1 lan o day cho toan bo app, khoi phai nho tung cho. */
+[hidden]{display:none!important}
 html,body{margin:0;padding:0}
 body{
   background:var(--bg);color:var(--ink);
@@ -47,7 +50,6 @@ header{
 /* ===== Thanh tab kenh (nam trong header nen dinh theo header) ===== */
 .segbar{display:flex;gap:6px;overflow-x:auto;margin:11px -16px -10px;padding:0 16px 10px;
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
-.segbar[hidden]{display:none}
 .segbar::-webkit-scrollbar{display:none}
 .segbar button{flex:none;padding:6px 13px;border-radius:999px;font-size:12.5px;font-weight:600;
   color:var(--ink2);background:var(--card);border:1px solid var(--line);white-space:nowrap}
@@ -492,7 +494,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.11';
+var APP_VER='2026-08-26.12';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
