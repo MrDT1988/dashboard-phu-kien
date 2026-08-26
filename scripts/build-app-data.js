@@ -453,11 +453,22 @@
       var sgShopY = {}, sgSaleY = {}, sgAllY = null;  // luy ke ca nam
       function sgBlank() { return quads(SEGA.length); }
 
+      // 4 hang chinh theo TUNG THANG, luu o cap SHOP:
+      // [oppoMay,oppoDT, ssMay,ssDT, xmMay,xmDT, ipMay,ipDT, tongMay,tongDT]
+      var mkmShop = {};
+      var CHI4 = { oppo: 0, samsung: 2, xiaomi: 4, apple: 6 };
       MAIN.shop_segment_crosstab.forEach(function (r) {
         var i = MIDX[r.m]; if (i === undefined) return;
         var u = r.units || 0, rv = r.rev || 0; if (!u && !rv) return;
         var oppo = String(r.brand || '').toLowerCase() === 'oppo';
         var st = mapMain[r.shop];
+        if (st) {
+          if (!mkmShop[st]) { mkmShop[st] = []; for (var q3 = 0; q3 < NM; q3++)
+            mkmShop[st].push([0,0,0,0,0,0,0,0,0,0]); }
+          var j4 = CHI4[String(r.brand || '').toLowerCase()];
+          if (j4 !== undefined) { mkmShop[st][i][j4] += u; mkmShop[st][i][j4 + 1] += rv; }
+          mkmShop[st][i][8] += u; mkmShop[st][i][9] += rv;
+        }
         var sn = st ? shops[st].sale : (r.sale || '(Không rõ)');
 
         var rows = [mAll];
@@ -518,6 +529,12 @@
         if (sgSale[sn]) sales[sn].mkt.sg = packM(sgSale[sn]);
         if (sgSaleY[sn]) sales[sn].mkt.sgY = packM(sgSaleY[sn]);
         chdOf(sales[sn], 'MWG').mkt = sales[sn].mkt;
+      });
+      Object.keys(mkmShop).forEach(function (st) {
+        if (!shops[st]) return;
+        shops[st].mkm = mkmShop[st].map(function (v) {
+          return [v[0], tr(v[1]), v[2], tr(v[3]), v[4], tr(v[5]), v[6], tr(v[7]), v[8], tr(v[9])];
+        });
       });
       Object.keys(mShop).forEach(function (st) {
         shops[st].mkt = { m: packM(mShop[st]), br: topBrands(brShop[st], 6) };
@@ -782,6 +799,7 @@
         if (sh.sid) c.sid = sh.sid;
         if (sh.md) c.md = sh.md;
         if (sh.dk) c.dk = sh.dk;
+        if (sh.mkm) c.mkm = sh.mkm;
         if (sh.dkp) c.dkp = sh.dkp;
         if (sh.hr) c.hr = sh.hr;
         if (sh.stf) c.stf = sh.stf;

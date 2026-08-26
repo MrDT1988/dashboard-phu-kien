@@ -359,9 +359,20 @@ h4.dh:first-child{margin-top:0}
       <div class="legend" id="lg-day"></div>
       <div class="subhead">Theo tuần — từng kênh</div>
       <div class="tvwrap" id="tv-week"></div>
-      <div class="subhead" id="tvm-h" hidden></div>
-      <div class="tvwrap" id="tv-mkt-thang"></div>
       <details><summary>Xem chi tiết từng ngày</summary><div class="tvwrap" id="tv-day"></div></details>
+    </div>
+
+    <div class="card" id="c-mm" hidden>
+      <h2>Sell out theo tháng</h2>
+      <div class="note" id="mm-note"></div>
+      <div class="pills" id="p-mmode">
+        <button data-mmm="u" class="on">Doanh số</button><button data-mmm="r">Doanh thu</button>
+      </div>
+      <p class="sub" id="mm-sub"></p>
+      <svg class="chart" id="ch-mm"></svg>
+      <div class="legend" id="lg-mm"></div>
+      <div class="subhead" id="tvmm-h" hidden></div>
+      <div class="tvwrap" id="tv-mkt-thang"></div>
     </div>
 
     <div class="card">
@@ -504,7 +515,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.19';
+var APP_VER='2026-08-26.20';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -875,7 +886,7 @@ function renderOver(){
     ' · bản '+APP_VER;
 
   renderHero(o); renderTarget(o);
-  renderDaily(o); renderMonth(o); renderChan(o); renderSeg(o);
+  renderDaily(o); renderMonthly(o); renderMonth(o); renderChan(o); renderSeg(o);
   renderModel(o); renderAct(o); renderSellin(o); renderTon();
   renderAlerts(o); renderFind(o); renderRank(o);
 }
@@ -1370,27 +1381,58 @@ function renderDaily(o){
       }
       hdr.textContent=coTP?nhan:'Theo ngày — từng sale';
     }
-    // Bảng thứ hai: cùng cách đọc nhưng theo THÁNG
-    var hM=$('#tvm-h');
-    var coM=miniTableMkThang($('#tv-mkt-thang'),isU);
-    hM.hidden=!coM;
-    if(coM){
-      var nhanM='Thị phần theo tháng — từng sale ('+(isU?'theo máy':'theo doanh thu')+')';
-      if(F_SIZE) nhanM+=' · size '+F_SIZE;
-      if(F_SEGS.length) nhanM+=' · ⚠ phân khúc không lọc được theo tháng';
-      hM.textContent=nhanM;
-    }
+
   } else {
     miniTable($('#tv-week'),weeksIn(a,a+day-1),'Tuần');
     if(hdr&&hdr.className==='subhead')
       hdr.textContent=SEG==='ALL'?'Theo tuần — từng kênh':('Theo tuần — kênh '+SEG);
-    $('#tvm-h').hidden=true; $('#tv-mkt-thang').innerHTML='';
   }
 
   var head=['Ngày'];for(var q=1;q<=day;q++)head.push(q);
   var rows=[['Máy'].concat(u.slice(0,day).map(n0)),
             ['Doanh thu'].concat(r.slice(0,day).map(money))];
   $('#tv-day').innerHTML=tvTable(head,rows);
+}
+
+/* ---- THẺ: Sell out theo tháng — bố cục y hệt thẻ theo ngày ---- */
+var mmMode='u';
+function mkmPhamVi(o){
+  var NM=D.months.length, cu=null, co=false;
+  (o.s||[]).forEach(function(sh){
+    if(sh.ch2!==SEG||!sh.mkm) return;
+    if(F_SIZE&&sh.size!==F_SIZE) return;
+    co=true;
+    if(!cu){ cu=[]; for(var q=0;q<NM;q++){ var z=[];for(var w=0;w<10;w++)z.push(0); cu.push(z) } }
+    for(var i=0;i<NM&&i<sh.mkm.length;i++)
+      for(var k=0;k<10;k++) cu[i][k]+=(sh.mkm[i][k]||0);
+  });
+  return co?cu:null;
+}
+function renderMonthly(o){
+  var c=$('#c-mm');
+  var mkm=(SEG==='MWG')?mkmPhamVi(o):null;
+  if(!mkm){ c.hidden=true; return }
+  c.hidden=false;
+  var isU=mmMode==='u';
+  $$('#p-mmode button').forEach(function(b){b.classList.toggle('on',b.dataset.mmm===mmMode)});
+  var M=D.months;
+  $('#mm-note').innerHTML='Dùng chung bộ lọc <b>Sale</b> / <b>Size shop</b> ở thẻ trên.'+
+    (F_SEGS.length?' <b style="color:var(--amber)">⚠ Phân khúc giá không lọc được theo tháng.</b>':'');
+  $('#mm-sub').textContent='Thị phần 4 hãng chính theo tháng — mỗi cột là 100% thị trường tháng đó, '+
+    'số trên cột là % của OPPO. '+(isU?'Đang chia theo số máy.':'Đang chia theo doanh thu.')+
+    (F_SIZE?(' Chỉ shop size '+F_SIZE+'.'):'');
+  drawShare100($('#ch-mm'),M.map(function(m){return 'T'+m}),{n:mkm,dim:M.length},isU,M.length);
+  $('#lg-mm').innerHTML=HANG4.map(function(h){
+    return '<span><i style="background:'+h.c+'"></i>'+h.k+'</span>'}).join('')+
+    '<span><i style="background:#3a4553"></i>Khác</span>';
+  var hM=$('#tvmm-h');
+  var coM=miniTableMkThang($('#tv-mkt-thang'),isU);
+  hM.hidden=!coM;
+  if(coM){
+    var nhanM='Thị phần theo tháng — từng sale ('+(isU?'theo máy':'theo doanh thu')+')';
+    if(F_SIZE) nhanM+=' · size '+F_SIZE;
+    hM.textContent=nhanM;
+  }
 }
 
 /* ---- doanh số theo Tuần / Tháng / Quý ---- */
@@ -2230,6 +2272,8 @@ document.addEventListener('click',function(e){
     }
     renderOver(); return;
   }
+  var mv2=e.target.closest('[data-mmm]');
+  if(mv2){mmMode=mv2.dataset.mmm;renderMonthly(scope());return}
   var dm=e.target.closest('[data-dym]');
   if(dm){dyMode=dm.dataset.dym;renderDaily(scope());return}
   var mv=e.target.closest('[data-mom]');
