@@ -61,6 +61,34 @@ try {
     rows.forEach(r => { if (r && r.length >= 7) { const s = String(r[COL.STORE_ID] || '').trim(); if (s) idSellin[s] = 1; } });
     const khopId = Object.keys(idSellin).filter(s => idIND[s]).length;
 
+    // 6. TEN DAI LY ben SELL IN vs TEN SHOP ben ban hang — de ghep bang ten
+    const dl = {};      // ten dai ly -> {qty, ids:Set, coShop}
+    rows.forEach(r => {
+      if (!r || r.length < 7) return;
+      const ten = String(r[COL.RETAILER] || '').trim();
+      const sid = String(r[COL.STORE_ID] || '').trim();
+      const q = parseFloat(String(r[COL.QTY]).replace(/[^0-9.-]/g, '')) || 0;
+      if (!ten) return;
+      if (!dl[ten]) dl[ten] = { qty: 0, ids: {}, khop: 0 };
+      dl[ten].qty += q;
+      if (sid) { dl[ten].ids[sid] = 1; if (idIND[sid]) dl[ten].khop = 1; }
+    });
+    const dlList = Object.keys(dl).map(k => ({
+      ten: k, qty: Math.round(dl[k].qty), soMa: Object.keys(dl[k].ids).length, khop: dl[k].khop,
+    })).sort((a, b) => b.qty - a.qty);
+
+    // Ten shop IND ben ban hang, kem so may ban
+    const banShop = {};
+    (W.crosstab || []).forEach(r => {
+      if (r.channel !== 'IND') return;
+      banShop[r.store] = (banShop[r.store] || 0) + (r.sellout || 0);
+    });
+    const shopIND = Object.keys(idIND).map(id => idIND[id]);
+    const shopChuaCoSellin = shopIND.filter(n => {
+      // shop co ban nhung ma cua no khong xuat hien trong sheet
+      return banShop[n] && !Object.keys(idSellin).some(s => idIND[s] === n);
+    }).map(n => ({ ten: n, ban: banShop[n] })).sort((a, b) => b.ban - a.ban);
+
     const top = (o, n) => Object.keys(o).sort((a, b) => o[b] - o[a]).slice(0, n).map(k => k + '  ||  ' + Math.round(o[k]));
 
     return {
@@ -74,6 +102,8 @@ try {
       soTenModelIND: Object.keys(md).length,
       spTop: top(sp, 45),
       mdTop: top(md, 45),
+      dlList, shopChuaCoSellin,
+      soShopIND: shopIND.length,
       spAll: Object.keys(sp).sort((a,b)=>sp[b]-sp[a]).map(k=>[k, Math.round(sp[k])]),
       mdAll: Object.keys(md).sort((a,b)=>md[b]-md[a]).map(k=>[k, md[k]]),
     };
@@ -91,6 +121,10 @@ try {
   log('');
   log('--- 45 TEN MODEL BAN HANG IND (ten || so may ban) ---');
   kq.mdTop.forEach((x, i) => log(String(i + 1).padStart(2) + '. ' + x));
+  log('');
+  log('so dai ly ten rieng ben SELL IN:', kq.dlList.length,
+      '| ten co it nhat 1 ma khop shop:', kq.dlList.filter(d => d.khop).length);
+  log('so shop IND ban nhung khong co dong sell-in:', kq.shopChuaCoSellin.length);
 
   // Ghi ban day du ra file DA MA HOA (repo la public nen khong de tran)
   try {
