@@ -379,6 +379,7 @@ h4.dh:first-child{margin-top:0}
 
     <div class="card" id="c-shop" hidden>
       <h2>Chi tiết theo shop</h2>
+      <div class="note" style="margin:0 0 9px">Bảng này có <b>bộ lọc riêng</b>, không dùng chung với các ô lọc ở thẻ trên.</div>
       <div class="filt">
         <label><span>Tháng</span><select id="s-thang"></select></label>
         <label><span>Sale</span><select id="s-sale"></select></label>
@@ -536,7 +537,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.23';
+var APP_VER='2026-08-26.25';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -668,20 +669,59 @@ function chanShops(o,c){return (o.s||[]).filter(function(x){return x.ch2===c})}
 // Áp bộ lọc Size shop: chỉ giữ shop đúng size, và cộng lại số theo ngày từ các shop đó.
 // Shop chỉ có số theo ngày của THÁNG NÀY (d) nên khi lọc size thì các kỳ khác không lọc được —
 // app nói rõ chỗ đó thay vì lặng lẽ trả số sai.
+// Gom so THI TRUONG (4 hang) cua rieng nhung shop dung size dang loc.
+// Nho co mkm (thi phan 4 hang theo thang o CAP SHOP) nen loc size van tinh duoc
+// day du 4 o KPI dau the — truoc day cho mkt:null lam ca hang KPI bien mat.
+function mktLocSize(lst){
+  var NM=D.months.length, co=false, TEN=['Oppo','Samsung','Xiaomi','Apple'];
+  var m=[], br={}, sg=null;
+  for(var q=0;q<NM;q++) m.push([0,0,0,0]);
+  lst.forEach(function(x){
+    if(x.mkm){
+      co=true;
+      for(var i=0;i<NM&&i<x.mkm.length;i++){
+        var v=x.mkm[i]||[];
+        m[i][0]+=v[0]||0; m[i][1]+=v[1]||0; m[i][2]+=v[8]||0; m[i][3]+=v[9]||0;
+      }
+      var vm=x.mkm[MI];
+      if(vm) for(var k=0;k<4;k++){
+        var t=TEN[k]; br[t]=br[t]||[0,0];
+        br[t][0]+=vm[k*2]||0; br[t][1]+=vm[k*2+1]||0;
+      }
+    }
+    var s2=x.mkt&&x.mkt.sg;
+    if(s2){
+      if(!sg) sg=s2.map(function(){return [0,0,0,0]});
+      s2.forEach(function(r,i){ if(sg[i]){
+        sg[i][0]+=r[0]||0; sg[i][1]+=r[1]||0; sg[i][2]+=r[2]||0; sg[i][3]+=r[3]||0 } });
+    }
+  });
+  if(!co) return null;
+  var kq={m:m, br:Object.keys(br).map(function(t){return [t,br[t][0],br[t][1]]})
+    .sort(function(a,b){return b[1]-a[1]})};
+  if(sg) kq.sg=sg;
+  return kq;
+}
 function locSize(o){
   if(!F_SIZE) return o;
   var lst=(o.s||[]).filter(function(x){return x.size===F_SIZE});
   var Y=D.year, m=D.months[MI], a=toDoy(Y,m,1), dim=DIM();
   var dy=(o.dy||[]).map(function(){return 0}), dr=dy.slice();
   lst.forEach(function(x){
-    for(var i=0;i<dim&&i<(x.d||[]).length;i++) dy[a+i-1]=(dy[a+i-1]||0)+(x.d[i]||0);
+    // Shop khong co doanh thu theo NGAY, chi co doanh thu theo THANG.
+    // -> chia doanh thu thang cua chinh shop do theo ti trong may ban tung ngay.
+    // Truoc day dong nay bi thieu han nen chon size shop la DOANH THU VE 0.
+    var mu=(x.m&&x.m[MI])?(x.m[MI][0]||0):0, mr=(x.m&&x.m[MI])?(x.m[MI][1]||0):0;
+    for(var i=0;i<dim&&i<(x.d||[]).length;i++){
+      var u=x.d[i]||0;
+      dy[a+i-1]=(dy[a+i-1]||0)+u;
+      if(mu) dr[a+i-1]=(dr[a+i-1]||0)+u/mu*mr;
+    }
   });
   var m2=(o.m||[]).map(function(){return [0,0]});
   lst.forEach(function(x){ (x.m||[]).forEach(function(v,i){ m2[i][0]+=v[0]; m2[i][1]+=v[1] }) });
-  // doanh thu theo ngày không có ở cấp shop -> chia đều theo tỉ trọng máy trong ngày
-  var tongM=0; m2.forEach(function(v){tongM+=v[0]});
   return {n:o.n+' · size '+F_SIZE, chan:o.chan, m:m2, dy:dy, dr:dr, ch:o.ch,
-    sg:o.sg, sgM:o.sgM, sr:o.sr, srM:o.srM, mkt:null, tgc:null,
+    sg:o.sg, sgM:o.sgM, sr:o.sr, srM:o.srM, mkt:mktLocSize(lst), tgc:null,
     s:lst, shops:lst.length, tg:lst.reduce(function(t,x){return t+(x.tg||0)},0),
     locSize:F_SIZE, thieuDT:true};
 }
@@ -710,11 +750,21 @@ function chanDy(ch){
 function buildFilt(){
   var box=$('#filt'), sel=$('#f-sale'), nt=$('#filt-note');
   // Anh Thái 26/08: bộ lọc nằm ở phần Sell out theo ngày của tab kênh, không để trên Tổng quan
-  if(SEG!=='MWG'||D.sales.length<=1){ box.hidden=true; nt.hidden=true; return }
+  if(SEG!=='MWG'||D.sales.length<=1){
+    // QUAN TRONG: phai TAT han bo loc, khong chi an o chon.
+    // Truoc day chi an di ma bien F_SIZE/F_SEGS/F_NGAY van giu nguyen -> Tong quan, KA, IND
+    // bi loc ngam theo lua chon ben MWG ma khong co gi bao. Gio roi khoi MWG la xoa sach.
+    F_SIZE=''; F_SEGS=[]; F_NGAY=0;
+    box.hidden=true; nt.hidden=true; return }
   box.hidden=false; nt.hidden=false;
   var sh0=(D.sales[0]&&(D.sales[0].s||[]).find(function(x){return x.dk}));
   var coPKNgay=!!(sh0&&sh0.dk&&sh0.dk[0]&&sh0.dk[0].length>=14);
-  nt.innerHTML='<b>Sale</b> và <b>Size shop</b> đổi cả biểu đồ lẫn bảng theo ngày. '+
+  nt.innerHTML='Ba ô lọc này <b>chỉ áp dụng cho tab MWG</b> — rời khỏi tab này là tự tắt hết.<br>'+
+    '<b>Sale</b> và <b>Size shop</b> đổi cả biểu đồ lẫn bảng theo ngày. '+
+    (F_SIZE?('<b style="color:var(--amber)">Đang lọc size '+safe(F_SIZE)+
+      ': số theo ngày ở cấp shop chỉ có của tháng '+D.months[MI]+
+      ', nên ở thẻ đầu chọn Tuần/Quý rơi ra ngoài tháng này sẽ thiếu số. '+
+      'Doanh thu từng ngày được chia theo tỉ trọng máy bán trong tháng.</b><br>'):'')+
     '<b>Phân khúc giá</b>: dữ liệu theo ngày của DB TG chỉ tách riêng được khoảng <b>10–20M</b>'+
     (coPKNgay?'' : ' <b style="color:var(--amber)">(số này đang được lấy về, chưa có trong bản hiện tại)</b>')+
     '. Chọn khoảng khác thì biểu đồ <b>Doanh số</b> bên dưới lọc đúng, còn bảng theo ngày giữ nguyên và ghi ⚠.';
@@ -1216,23 +1266,31 @@ var HANG4=[{k:'OPPO',u:0,r:1,c:'#00a86f'},{k:'Samsung',u:2,r:3,c:'#4a7fd4'},
            {k:'Xiaomi',u:4,r:5,c:'#c08420'},{k:'Apple',u:6,r:7,c:'#b5559b'}];
 function mktNgay(o){
   var dim=DIM(), co=false, cu=null, cot=0;
+  // Anh Thai 26/08: chon phan khuc 10-20M thi BIEU DO cung phai doi theo.
+  // dk cot 10..13 = [OPPO may, OPPO DT, TONG may, TONG DT] cua rieng khoang 10-20M.
+  // Khoang nay KHONG co so tach theo tung hang, nen ve dang "OPPO / ca thi truong"
+  // chu khong ve bieu do 100% cua 4 hang — khong bia so cho Samsung/Xiaomi/Apple.
+  var pk=chiPK1020();
   (o.s||[]).forEach(function(sh){
     if(!sh.dk||!sh.dk.length) return;
     if(SEG!=='ALL'&&sh.ch2!==SEG) return;
     if(F_SIZE&&sh.size!==F_SIZE) return;
+    var sc=(sh.dk[0]||[]).length;
+    if(pk&&sc<14) return;                 // shop chua co so PK theo ngay -> bo qua
     co=true;
-    cot=Math.max(cot,(sh.dk[0]||[]).length);
+    cot=Math.max(cot,sc);
     if(!cu){ cu=[]; for(var q=0;q<dim;q++){ var z=[];for(var w=0;w<10;w++)z.push(0); cu.push(z) } }
     for(var i=0;i<dim&&i<sh.dk.length;i++){
       var c=sh.dk[i]||[];
-      for(var k=0;k<c.length&&k<10;k++) cu[i][k]+=(c[k]||0);
+      if(pk){ cu[i][0]+=c[10]||0; cu[i][1]+=c[11]||0; cu[i][8]+=c[12]||0; cu[i][9]+=c[13]||0 }
+      else for(var k=0;k<c.length&&k<10;k++) cu[i][k]+=(c[k]||0);
     }
   });
   if(!co||!cu) return null;
-  var cu4=cot>=10;
+  var cu4=cot>=10&&!pk;                   // loc PK thi khong con du 4 hang de ve 100%
   var lay=function(j){ return cu.map(function(v){return v[j]||0}) };
-  var r={n:cu, dim:dim, cu4:cu4,
-    oU:lay(0), tU:lay(cu4?8:1), oR:lay(cu4?1:2), tR:lay(cu4?9:3)};
+  var r={n:cu, dim:dim, cu4:cu4, laPK:pk,
+    oU:lay(0), tU:lay((cot>=10)?8:1), oR:lay((cot>=10)?1:2), tR:lay((cot>=10)?9:3)};
   r.coDT=r.tR.some(function(x){return x});
   return r;
 }
@@ -1490,8 +1548,11 @@ function renderDaily(o){
       '<span><i style="background:#3a4553"></i>Khác</span>';
   } else if(mk&&duocDT){
     var mo2=isU?mk.oU:mk.oR, mt=isU?mk.tU:mk.tR;
-    $('#dy-sub').textContent='Thị phần theo ngày tháng '+m+' — cột xám là cả thị trường, phần xanh là OPPO. '+
-      (isU?'Đang xem số máy.':'Đang xem doanh thu.');
+    $('#dy-sub').textContent='Thị phần theo ngày tháng '+m+
+      (mk.laPK?' — CHỈ phân khúc 10–20M':'')+
+      ' — cột xám là cả thị trường, phần xanh là OPPO. '+
+      (isU?'Đang xem số máy.':'Đang xem doanh thu.')+
+      (mk.laPK?' Khoảng 10–20M không có số tách theo từng hãng nên biểu đồ để dạng OPPO / cả thị trường.':'');
     drawStack($('#ch-day'),labels,mo2.slice(0,dim),mt.slice(0,dim),
       {colorA:'var(--c1)',colorB:'#3a4553',h:186,fmt:function(a2,t2){return isU?n0(t2):money(t2)}});
     $('#lg-day').innerHTML='<span><i style="background:var(--c1)"></i>OPPO</span>'+
@@ -1716,7 +1777,10 @@ function renderMonthly(o){
   $$('#p-mmode button').forEach(function(b){b.classList.toggle('on',b.dataset.mmm===mmMode)});
   var M=D.months;
   $('#mm-note').innerHTML='Dùng chung bộ lọc <b>Sale</b> / <b>Size shop</b> ở thẻ trên.'+
-    (F_SEGS.length?' <b style="color:var(--amber)">⚠ Phân khúc giá không lọc được theo tháng.</b>':'');
+    (F_SEGS.length?('<br><b style="color:var(--amber)">⚠ Thẻ này KHÔNG lọc được theo phân khúc giá</b> — '+
+      'DB MWG chỉ tách phân khúc cho tháng '+D.months[MI]+' và cả năm, không tách cho từng tháng trong năm. '+
+      'Số dưới đây vẫn là <b>toàn bộ phân khúc</b>. Muốn xem theo phân khúc thì dùng bảng '+
+      '<b>Chi tiết theo shop</b> ở dưới.'):'');
   $('#mm-sub').textContent='Thị phần 4 hãng chính theo tháng — mỗi cột là 100% thị trường tháng đó, '+
     'số trên cột là % của OPPO. '+(isU?'Đang chia theo số máy.':'Đang chia theo doanh thu.')+
     (F_SIZE?(' Chỉ shop size '+F_SIZE+'.'):'');
