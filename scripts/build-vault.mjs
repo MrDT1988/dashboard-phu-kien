@@ -91,6 +91,10 @@ function gopAll(D, ds) {
     congD(out.ac, s.ac);
     cong(out.sg, s.sg); cong(out.sgM, s.sgM); cong(out.sr, s.sr); cong(out.srM, s.srM);
     if (s.mo) out.mo = gomModel(out.mo, s.mo);
+    if (s.srm) { if (!out.srm) out.srm = s.srm.map((x) => x.map(() => [0, 0]));
+      s.srm.forEach((ser, k) => ser.forEach((v, i) => { out.srm[k][i][0] += v[0]; out.srm[k][i][1] += v[1]; })); }
+    if (s.moM) { out.moM = out.moM || {};
+      Object.keys(s.moM).forEach((m) => { out.moM[m] = gomModel(out.moM[m], s.moM[m]).slice(0, 12); }); }
     if (s.si) out.si = gomSellin(out.si, s.si);
     if (s.tk) out.tk = gomTon(out.tk, s.tk);
     out.shops += s.shops || 0; out.tg += s.tg || 0;
@@ -152,6 +156,8 @@ function saleTheoKenh(D, s, ch) {
   if (c.mkt) o.mkt = c.mkt;
   if (c.ac) o.ac = c.ac;
   if (c.mo) o.mo = c.mo;
+  if (c.srm) o.srm = c.srm;
+  if (c.moM) o.moM = c.moM;
   if (ch === 'IND' && s.si) o.si = s.si;   // sell-in chi co o kenh IND
   if (ch === 'IND' && s.tk) o.tk = s.tk;   // ton kho cung vay
   return o;

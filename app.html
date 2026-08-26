@@ -311,12 +311,10 @@ h4.dh:first-child{margin-top:0}
     </div>
 
     <div class="card">
-      <h2>Sell out theo ngày</h2>
+      <div class="sec"><h2>Sell out theo ngày</h2><button class="link" id="dy-tog">Xem doanh thu</button></div>
       <p class="sub" id="dy-sub"></p>
       <svg class="chart" id="ch-day"></svg>
       <div class="legend" id="lg-day"></div>
-      <div class="subhead">Doanh thu theo ngày</div>
-      <svg class="chart short" id="ch-dayr"></svg>
       <div class="subhead">Theo tuần — từng kênh</div>
       <div class="tvwrap" id="tv-week"></div>
       <details><summary>Xem chi tiết từng ngày</summary><div class="tvwrap" id="tv-day"></div></details>
@@ -327,6 +325,7 @@ h4.dh:first-child{margin-top:0}
       <div class="pills" id="p-trend">
         <button data-tr="W">Tuần</button><button data-tr="M" class="on">Tháng</button><button data-tr="Q">Quý</button>
       </div>
+      <div class="pills" id="p-ser" hidden></div>
       <p class="sub" id="mo-sub"></p>
       <svg class="chart" id="ch-month"></svg>
       <div class="subhead" id="mo-mini-h">Theo tháng — từng kênh</div>
@@ -347,40 +346,9 @@ h4.dh:first-child{margin-top:0}
       <details><summary>Xem dạng bảng</summary><div class="tvwrap" id="tv-seg"></div></details>
     </div>
 
-    <div class="card" id="c-ser">
-      <h2>Reno &amp; Find</h2>
-      <p class="sub" id="ser-sub"></p>
-      <div class="hb" id="hb-ser"></div>
-    </div>
-
-    <div class="card" id="c-nomkt" hidden>
-      <h2>Thị phần</h2>
-      <p class="sub" id="nomkt-sub"></p>
-    </div>
-
-    <div class="card" id="c-mkt">
-      <h2>Thị phần — kênh MWG</h2>
-      <p class="sub" id="mkt-sub"></p>
-      <div class="kpis">
-        <div>Share máy<b id="mkt-su">—</b></div>
-        <div>Share doanh thu<b id="mkt-sr">—</b></div>
-        <div>Hạng<b id="mkt-rank">—</b></div>
-      </div>
-      <h4 class="dh">Các hãng trong tháng (số máy)</h4>
-      <div class="hb" id="hb-brand"></div>
-      <div class="note" id="mkt-ret"></div>
-      <div class="note">Chỉ kênh MWG mới có số của mọi hãng nên mới tính được thị phần. KA và IND không có mẫu số nên không hiện ở đây.</div>
-    </div>
-
-    <div class="card" id="c-segmkt" hidden>
-      <h2>Phân khúc — thị trường vs OPPO</h2>
-      <p class="sub" id="segmkt-sub"></p>
-      <div class="gb" id="gb-segmkt"></div>
-      <div class="note" id="segmkt-note"></div>
-    </div>
-
-    <div class="card" id="c-model" hidden>
+<div class="card" id="c-model" hidden>
       <h2>Model bán chạy</h2>
+      <div class="pills" id="p-momo" hidden></div>
       <p class="sub" id="model-sub"></p>
       <div class="hb" id="hb-model"></div>
       <details><summary>Xem dạng bảng</summary><div class="tvwrap" id="tv-model"></div></details>
@@ -410,13 +378,7 @@ h4.dh:first-child{margin-top:0}
       <div class="note" id="sellin-note"></div>
     </div>
 
-    <div class="card" id="c-hc" hidden>
-      <h2>Năng suất đầu người</h2>
-      <p class="sub" id="hc-sub"></p>
-      <div class="tvwrap" id="tv-hc"></div>
-      <div class="note">Sale &amp; PG lấy theo danh sách từng tháng của DB TG. Doanh thu chia cho tổng Sale + PG của kênh đó.</div>
-    </div>
-  </section>
+</section>
 
   <!-- ================= TAB 2 : CẢNH BÁO ================= -->
   <section id="v-alert" hidden>
@@ -682,11 +644,12 @@ function drawBars(el,labels,values,opts){
     s+='<rect x="'+x.toFixed(1)+'" y="'+(PT+plot-h).toFixed(1)+'" width="'+bw.toFixed(1)+
        '" height="'+h.toFixed(1)+'" rx="'+Math.min(4,bw/2).toFixed(1)+'" fill="'+col+
        '" opacity="'+(dim?.22:(opts.flat||i===maxI||i===lastI?1:.62))+'" data-i="'+i+'"/>';
-    // chỉ ghi số ở cột cao nhất và cột mới nhất — không rải số khắp nơi
-    if(!dim&&(i===maxI||i===lastI)&&v>0){
-      s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(PT+plot-h-6).toFixed(1)+
-         '" text-anchor="middle" font-size="11" font-weight="700" fill="#e8edf5">'+
-         (opts.fmt?opts.fmt(v):n0(v))+'</text>';
+    // ghi số ở cột cao nhất và cột mới nhất; opts.moiCot = ghi hết
+    if(!dim&&(opts.moiCot||i===maxI||i===lastI)&&v>0){
+      s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(PT+plot-h-5).toFixed(1)+
+         '" text-anchor="middle" font-size="'+(opts.moiCot?'9':'11')+'" font-weight="700" fill="#e8edf5"'+
+         (opts.moiCot?' transform="rotate(-90 '+(x+bw/2).toFixed(1)+' '+(PT+plot-h-5).toFixed(1)+')" text-anchor="start"':'')+
+         '>'+(opts.fmt?opts.fmt(v):n0(v))+'</text>';
     }
     if(opts.labels!==false&&(n<=13||i%Math.ceil(n/10)===0||i===n-1)){
       s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#7c8a9e">'+
@@ -706,26 +669,6 @@ function hbars(el,items){
       '<div class="track"><i style="width:'+(x.v/max*100).toFixed(1)+'%;background:'+x.c+'"></i></div></div>';
   }).join('')||'<div class="empty">Không có số liệu</div>';
 }
-/* ---------- thanh lồng nhau: nền = thị trường, phần đặc = OPPO ---------- */
-function gapBars(el,items){
-  var max=Math.max.apply(null,items.map(function(x){return x.tong}).concat([1]));
-  el.innerHTML=items.map(function(x){
-    var wT=x.tong/max*100, wO=x.oppo/max*100;
-    var sh=x.tong?x.oppo/x.tong*100:0;
-    var cl=sh>=25?'var(--green)':sh>=15?'var(--amber)':'var(--red)';
-    return '<div class="row"><div class="top"><span class="nm">'+safe(x.n)+'</span>'+
-      '<span class="v" style="color:'+cl+';font-weight:700">'+pct(sh,0)+'</span></div>'+
-      '<div class="track"><i class="mk" style="width:'+wT.toFixed(1)+'%"></i>'+
-      '<i class="op" style="width:'+wO.toFixed(1)+'%;background:'+cl+'"></i></div>'+
-      '<div class="foot"><span>OPPO <b>'+n0(x.oppo)+'</b> / thị trường <b>'+n0(x.tong)+'</b></span>'+
-      '<span>'+(x.foot||'')+'</span></div></div>';
-  }).join('')||'<div class="empty">Không có số liệu</div>';
-}
-function gapLegend(){
-  return '<div class="gblg"><span><i style="background:var(--green)"></i>OPPO</span>'+
-    '<span><i style="background:#3a4553"></i>Tổng thị trường</span></div>';
-}
-
 /* ---------- cột chồng: phần A (đặc) + phần còn lại của tổng ---------- */
 function drawStack(el,labels,aVals,tVals,opts){
   opts=opts||{};
@@ -769,6 +712,12 @@ function tvTable(head,rows){
 /* =========================================================
    TỔNG QUAN
    ========================================================= */
+var dyMode='u';                 // bieu do ngay: 'u' = so may, 'r' = doanh thu
+var SER_TAB='ALL';              // tab dong may o the Doanh so
+var MO_THANG=null;              // thang dang loc o the Model ban chay
+var SER_TEN={RENO:'Reno Series',FIND:'Find Series'};
+var SER_PILLS=[{k:'ALL',t:'Tất cả'},{k:'RENO',t:'Reno'},{k:'FIND',t:'Find'},{k:'RF',t:'Reno+Find'}];
+
 function renderOver(){
   MI=D.months.length-1;
   buildSegbar();
@@ -780,8 +729,8 @@ function renderOver(){
     new Date(D.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
 
   renderHero(o); renderTarget(o);
-  renderDaily(o); renderMonth(o); renderChan(o); renderSeg(o); renderSer(o); renderMkt(o);
-  renderSegMkt(o); renderModel(o); renderAct(o); renderSellin(o); renderHc(); renderTon();
+  renderDaily(o); renderMonth(o); renderChan(o); renderSeg(o);
+  renderModel(o); renderAct(o); renderSellin(o); renderTon();
   renderAlerts(o); renderFind(o); renderRank(o);
 }
 
@@ -862,16 +811,18 @@ function renderTarget(o){
 function miniTable(el,buckets,label){
   var chans=D.chans.filter(function(c){return chanDy(c)});
   if(SEG!=='ALL') chans=[SEG];
-  var head=[label].concat(buckets.map(function(b){return b.label}));
+  var o=scope();
+  var oCell=function(s,a2,b2){
+    return '<b>'+n0(sumR(s.dy,a2,b2))+'</b><small>'+money(sumR(s.dr,a2,b2))+'</small>'};
+  var caKy=buckets.length?{a:buckets[0].a,b:buckets[buckets.length-1].b}:{a:1,b:0};
+  var head=[label,'Tổng'].concat(buckets.map(function(b){return b.label}));
   var rows=chans.map(function(c){
     var s=chanDy(c)||{dy:[],dr:[]};
-    return [c].concat(buckets.map(function(b){
-      return '<b>'+n0(sumR(s.dy,b.a,b.b))+'</b><small>'+money(sumR(s.dr,b.a,b.b))+'</small>'}));
+    return [c,oCell(s,caKy.a,caKy.b)].concat(buckets.map(function(b){return oCell(s,b.a,b.b)}));
   });
   if(chans.length>1){
-    var o=scope();
-    rows.push(['<b>Tổng</b>'].concat(buckets.map(function(b){
-      return '<b>'+n0(sumR(o.dy,b.a,b.b))+'</b><small>'+money(sumR(o.dr,b.a,b.b))+'</small>'})));
+    rows.push(['<b>Tổng</b>',oCell(o,caKy.a,caKy.b)]
+      .concat(buckets.map(function(b){return oCell(o,b.a,b.b)})));
   }
   el.innerHTML='<table class="tv"><tr>'+head.map(function(h){return '<th>'+safe(h)+'</th>'}).join('')+'</tr>'+
     rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join('')+
@@ -881,28 +832,27 @@ function miniTable(el,buckets,label){
 /* ---- theo ngày: máy ở trên, doanh thu ở dưới, bảng tuần bên dưới ---- */
 function renderDaily(o){
   var Y=D.year, m=D.months[MI], dim=DIM(), day=D.maxDay||dim;
-  var a=toDoy(Y,m,1), pm=m-1, pa=pm>=1?toDoy(Y,pm,1):null;
-  var u=[],r=[],cu=[];
+  var a=toDoy(Y,m,1);
+  var u=[],r=[];
   for(var i=0;i<dim;i++){
     u.push((o.dy||[])[a+i-1]||0);
     r.push((o.dr||[])[a+i-1]||0);
-    cu.push(pa?((o.dy||[])[pa+i-1]||0):undefined);
   }
-  $('#dy-sub').textContent='Số máy bán ra từng ngày tháng '+m+
-    (pa?' — đường xám là tháng '+pm+' để so cùng ngày.':'.');
+  var isU=dyMode==='u';
+  var vals=isU?u:r;
+  $('#dy-tog').textContent=isU?'Xem doanh thu':'Xem số máy';
+  $('#dy-sub').textContent=(isU?'Số máy bán ra':'Doanh thu')+' từng ngày tháng '+m+
+    ' — số ghi ngay trên mỗi cột.';
   var labels=[];for(var k=1;k<=dim;k++)labels.push(k);
-  drawBars($('#ch-day'),labels,u,{color:'var(--c1)',cmp:pa?cu:null,dimAfter:day-1,lastIdx:day-1,h:150});
-  $('#lg-day').innerHTML='<span><i style="background:var(--c1)"></i>Tháng '+m+'</span>'+
-    (pa?'<span><i class="ln" style="background:#5a6676"></i>Tháng '+pm+'</span>':'');
-  drawBars($('#ch-dayr'),labels,r,{color:'var(--c1)',dimAfter:day-1,lastIdx:day-1,h:78,
-    labels:false,fmt:money,flat:true});
+  drawBars($('#ch-day'),labels,vals,{color:'var(--c1)',dimAfter:day-1,lastIdx:day-1,h:186,
+    moiCot:true,fmt:isU?n0:money});
+  $('#lg-day').innerHTML='';
 
   miniTable($('#tv-week'),weeksIn(a,a+day-1),'Tuần');
 
   var head=['Ngày'];for(var q=1;q<=day;q++)head.push(q);
   var rows=[['Máy'].concat(u.slice(0,day).map(n0)),
             ['Doanh thu'].concat(r.slice(0,day).map(money))];
-  if(pa) rows.push(['Máy tháng '+pm].concat(cu.slice(0,day).map(function(x){return n0(x||0)})));
   $('#tv-day').innerHTML=tvTable(head,rows);
 }
 
@@ -910,13 +860,44 @@ function renderDaily(o){
 function renderMonth(o){
   $$('#p-trend button').forEach(function(b){b.classList.toggle('on',b.dataset.tr===TR)});
   var isU=moMode==='u';
-  var B=bucketsOf(TR);
-  var vals=B.map(function(b){return isU?sumR(o.dy,b.a,b.b):sumR(o.dr,b.a,b.b)});
-  var ten=TR==='W'?'tuần':TR==='Q'?'quý':'tháng';
+
+  // Dòng máy chỉ có số theo THÁNG, nên tab Reno/Find chỉ dùng được ở Tháng và Quý
+  var coSrm=!!(o.srm&&o.srm.length);
+  var pil=$('#p-ser');
+  if(coSrm){
+    if(TR==='W'&&SER_TAB!=='ALL') SER_TAB='ALL';
+    pil.hidden=false;
+    pil.innerHTML=SER_PILLS.map(function(x){
+      var tat=(TR==='W'&&x.k!=='ALL');
+      return '<button data-ser="'+x.k+'"'+(SER_TAB===x.k?' class="on"':'')+
+        (tat?' disabled style="opacity:.35"':'')+'>'+x.t+'</button>'}).join('');
+  } else { pil.hidden=true; SER_TAB='ALL' }
+
+  var B=bucketsOf(TR), ten=TR==='W'?'tuần':TR==='Q'?'quý':'tháng';
+  var vals, ghiChu='';
+  if(SER_TAB==='ALL'||!coSrm){
+    vals=B.map(function(b){return isU?sumR(o.dy,b.a,b.b):sumR(o.dr,b.a,b.b)});
+  } else {
+    // gộp các dòng máy được chọn, theo THÁNG rồi quy về bucket
+    var idx=[]; D.sers.forEach(function(x,i){ if(SER_TAB==='RF'?(x==='Reno Series'||x==='Find Series'):(x===SER_TEN[SER_TAB])) idx.push(i) });
+    var theoThang=D.months.map(function(mm,i){
+      var t=0; idx.forEach(function(k){ t+=((o.srm[k]||[])[i]||[0,0])[isU?0:1] }); return t});
+    vals=B.map(function(b){
+      var t=0;
+      D.months.forEach(function(mm,i){
+        var ma=toDoy(D.year,mm,1);
+        var mb=toDoy(D.year,mm,new Date(Date.UTC(D.year,mm,0)).getUTCDate());
+        if(ma>=b.a&&ma<=b.b||mb>=b.a&&mb<=b.b||(ma<=b.a&&mb>=b.b)) t+=theoThang[i];
+      });
+      return t});
+    ghiChu=' Dòng máy chỉ có số theo tháng nên tab này gộp theo tháng.';
+  }
+
   $('#mo-tog').textContent=isU?'Xem doanh thu':'Xem số máy';
-  $('#mo-sub').textContent=(isU?'Số máy sellout':'Doanh thu')+' theo '+ten+
+  var tenSer=SER_TAB==='ALL'?'':(' — '+(SER_PILLS.filter(function(x){return x.k===SER_TAB})[0]||{}).t);
+  $('#mo-sub').textContent=(isU?'Số máy sellout':'Doanh thu')+tenSer+' theo '+ten+
     ' — cột cao nhất và '+ten+' gần nhất được ghi số. '+
-    (TR==='W'?'12 tuần gần nhất. ':'')+'Kỳ cuối mới chạy được '+periodOf(TR==='W'?'W':TR==='Q'?'Q':'M').len+' ngày.';
+    (TR==='W'?'12 tuần gần nhất. ':'')+'Kỳ cuối mới chạy được '+periodOf(TR==='W'?'W':TR==='Q'?'Q':'M').len+' ngày.'+ghiChu;
   drawBars($('#ch-month'),B.map(function(b){return b.label}),vals,{color:'var(--c1)',fmt:isU?n0:money});
   $('#mo-mini-h').textContent='Theo '+ten+' — từng kênh';
   miniTable($('#tv-month'),B,ten.charAt(0).toUpperCase()+ten.slice(1));
@@ -951,102 +932,45 @@ function renderSeg(o){
     D.segs.map(function(s,i){return [s,n0(o.sgM[i][0]),money(o.sgM[i][1]),n0(o.sg[i][0]),money(o.sg[i][1])]}));
 }
 
-/* ---- Reno & Find ---- */
-function renderSer(o){
-  var c=$('#c-ser'); if(!o.srM||!sumPair(o.srM,0)){c.hidden=true;return} c.hidden=false;
-  var tot=sumPair(o.srM,0);
-  var rf=0; D.sers.forEach(function(s,i){ if(s==='Reno Series'||s==='Find Series') rf+=o.srM[i][0]; });
-  $('#ser-sub').textContent='Tháng '+D.months[MI]+' — Reno + Find chiếm '+
-    (tot?(rf/tot*100).toFixed(1):0)+'% tổng số máy ('+n0(rf)+'/'+n0(tot)+').';
-  hbars($('#hb-ser'),D.sers.map(function(s,i){
-    return {n:s,v:o.srM[i][0],c:SER_COLOR[s]||'var(--neutral)',
-      txt:n0(o.srM[i][0])+' máy · '+money(o.srM[i][1])+' · '+(tot?(o.srM[i][0]/tot*100).toFixed(0):0)+'%'};
-  }).filter(function(x){return x.v>0}).sort(function(a,b){return b.v-a.v}));
-}
-
-/* ---- thị phần (chỉ MWG) ---- */
-function renderMkt(o){
-  var c=$('#c-mkt'), nc=$('#c-nomkt');
-  if(!o.mkt||!o.mkt.m||!o.mkt.m[MI]||!o.mkt.m[MI][2]){
-    c.hidden=true;
-    if(SEG==='KA'||SEG==='IND'){
-      nc.hidden=false;
-      $('#nomkt-sub').textContent=SEG==='KA'
-        ? 'Kênh KA chỉ có số thị phần FPT/Viettel gộp theo tháng, không bổ được xuống từng shop nên app không hiện ở đây.'
-        : 'Đại lý ngoài (IND) không có số của các hãng khác nên không có mẫu số để tính thị phần.';
-    } else nc.hidden=true;
-    return;
-  }
-  nc.hidden=true; c.hidden=false;
-  var m=o.mkt.m[MI];   // [oppoU, oppoRv, totU, totRv]
-  var su=m[2]?m[0]/m[2]*100:0, sr=m[3]?m[1]/m[3]*100:0;
-  var br=(o.mkt.br||[]);
-  var rank=br.map(function(x){return x[0]}).indexOf('Oppo')+1;
-  $('#mkt-sub').textContent='Tháng '+D.months[MI]+' — OPPO '+n0(m[0])+'/'+n0(m[2])+
-    ' máy toàn thị trường tại các shop MWG đang phụ trách.';
-  $('#mkt-su').textContent=pct(su);
-  $('#mkt-sr').textContent=pct(sr);
-  $('#mkt-rank').textContent=rank?('#'+rank+'/'+br.length):'—';
-  // MWG la so DOI TAC gui, CENTER la so OPPO ghi nhan -> chenh lech = may doi tra
-  var own=(SEG==='MWG')?o.m[MI][0]:((o.ch&&o.ch.MWG)?o.ch.MWG[MI][0]:null), ret=$('#mkt-ret');
-  if(own!==null&&m[0]>0){
-    var gap=m[0]-own, rate=m[0]?gap/m[0]*100:0;
-    ret.innerHTML='<b>Máy đổi trả:</b> MWG báo '+n0(m[0])+' máy · OPPO ghi nhận '+n0(own)+
-      ' máy → chênh <b style="color:var(--amber)">'+n0(gap)+' máy ('+pct(rate)+')</b>. '+
-      'Thị phần ở trên tính trọn trên số MWG để tử số và mẫu số cùng một nguồn.';
-    ret.hidden=false;
-  } else ret.hidden=true;
-  var max=br.length?br[0][1]:1;
-  hbars($('#hb-brand'),br.map(function(x){
-    var isO=String(x[0]).toLowerCase()==='oppo';
-    return {n:x[0],v:x[1],c:isO?'var(--c1)':'var(--neutral)',
-      txt:n0(x[1])+' máy · '+money(x[2])};
-  }));
-}
-
 /* =========================================================
    CẢNH BÁO
    ========================================================= */
 var ALERTS=[];
-/* ---- Phân khúc: thị trường vs OPPO (chỉ có ở kênh MWG) ---- */
-function renderSegMkt(o){
-  var c=$('#c-segmkt');
-  var L=D.segsMkt||[], sg=o.mkt&&o.mkt.sg;
-  if(!L.length||!sg||!sg.length){c.hidden=true;return}
-  var items=L.map(function(nm,i){
-    var r=sg[i]||[0,0,0,0];
-    return {n:nm,oppo:r[0],tong:r[2],rev:r[1],trev:r[3],hut:r[2]-r[0]};
-  }).filter(function(x){return x.tong>0});
-  if(!items.length){c.hidden=true;return}
-  items.sort(function(a,b){return b.tong-a.tong});
-  c.hidden=false;
-  $('#segmkt-sub').innerHTML='Tháng '+D.months[MI]+' — kênh MWG. Thanh xám là cả thị trường, thanh màu là phần OPPO giành được.'+gapLegend();
-  var wrap=$('#gb-segmkt');
-  gapBars(wrap,items.map(function(x){
-    return {n:x.n,oppo:x.oppo,tong:x.tong,foot:'hụt '+n0(x.hut)+' máy'};
-  }));
-  // cơ hội lớn nhất = phân khúc còn hụt nhiều máy nhất
-  var best=items.slice().sort(function(a,b){return b.hut-a.hut})[0];
-  var tO=0,tT=0; items.forEach(function(x){tO+=x.oppo;tT+=x.tong});
-  $('#segmkt-note').innerHTML='Toàn kênh MWG: OPPO <b>'+n0(tO)+'</b>/<b>'+n0(tT)+'</b> máy = <b>'+
-    pct(tT?tO/tT*100:0)+'</b>.<br><b>Cơ hội lớn nhất — '+safe(best.n)+':</b> thị trường '+n0(best.tong)+
-    ' máy nhưng OPPO mới '+n0(best.oppo)+' máy (còn hụt <b style="color:var(--amber)">'+n0(best.hut)+
-    ' máy</b>). Đây là phân khúc nên dồn hàng và đẩy trưng bày trước.';
-}
-
-/* ---- Model bán chạy (OPPO) ---- */
+/* ---- Model bán chạy (OPPO), lọc theo tháng ---- */
 function renderModel(o){
-  var c=$('#c-model'), mo=o.mo;
+  var c=$('#c-model');
+  var moM=o.moM||null;
+  var pil=$('#p-momo');
+  if(moM&&Object.keys(moM).length){
+    var ths=Object.keys(moM).map(Number).sort(function(a,b){return a-b});
+    if(MO_THANG===null||(MO_THANG!==0&&ths.indexOf(MO_THANG)<0)) MO_THANG=ths[ths.length-1];
+    pil.hidden=false;
+    pil.innerHTML=ths.map(function(m){
+      return '<button data-momo="'+m+'"'+(MO_THANG===m?' class="on"':'')+'>T'+m+'</button>'}).join('')+
+      '<button data-momo="0"'+(MO_THANG===0?' class="on"':'')+'>Cả năm</button>';
+  } else { pil.hidden=true }
+
+  var mo;
+  if(moM&&MO_THANG){ mo=moM[MO_THANG]||[] }
+  else if(moM&&MO_THANG===0){
+    var g={};
+    Object.keys(moM).forEach(function(m){ (moM[m]||[]).forEach(function(x){
+      if(!g[x[0]])g[x[0]]=[0,0]; g[x[0]][0]+=x[1]; g[x[0]][1]+=x[2] })});
+    mo=Object.keys(g).map(function(k){return [k,g[k][0],g[k][1]]})
+        .sort(function(a,b){return b[1]-a[1]}).slice(0,15);
+  }
+  else { mo=o.mo }
   if(!mo||!mo.length){c.hidden=true;return}
   c.hidden=false;
   var tong=0; mo.forEach(function(x){tong+=x[1]});
-  $('#model-sub').textContent='Tháng '+D.months[MI]+' — '+mo.length+' model OPPO bán nhiều nhất trong phạm vi đang xem.';
+  $('#model-sub').textContent=(MO_THANG?('Tháng '+MO_THANG):'Cả năm')+' — '+mo.length+
+    ' model OPPO bán nhiều nhất trong phạm vi đang xem. Tổng '+n0(tong)+' máy.';
   hbars($('#hb-model'),mo.slice(0,10).map(function(x,i){
-    return {n:x[0],v:x[1],c:i===0?'var(--green)':'var(--c1)',
+    return {n:tenModel(x[0]),v:x[1],c:i===0?'var(--green)':'var(--c1)',
       txt:n0(x[1])+' máy · '+money(x[2])};
   }));
   $('#tv-model').innerHTML=tvTable(['Model','Máy','% tổng','Doanh thu','Đơn giá'],
-    mo.map(function(x){return [x[0],n0(x[1]),(tong?(x[1]/tong*100).toFixed(1):0)+'%',money(x[2]),
+    mo.map(function(x){return [tenModel(x[0]),n0(x[1]),(tong?(x[1]/tong*100).toFixed(1):0)+'%',money(x[2]),
       x[1]?money(Math.round(x[2]/x[1]*10)/10):'—']}));
 }
 
@@ -1097,9 +1021,9 @@ function sellinRows(si,indM){
 
 function renderSellin(o){
   var c=$('#c-sellin');
-  // Sell-in chỉ có ở kênh IND -> chỉ hiện ở Tổng quan hoặc đúng tab IND
-  if(SEG!=='ALL'&&SEG!=='IND'){c.hidden=true;return}
-  var si=(SEG==='IND'?o.si:null)||curObj().si;
+  // Anh Thái 26/08: sell-in chuyển hẳn sang tab kênh IND, không hiện ở Tổng quan
+  if(SEG!=='IND'){c.hidden=true;return}
+  var si=o.si||curObj().si;
   var indM=(SEG==='IND')?o.m:(((curObj().chd||{}).IND||{}).m);
   if(!si||!si.length||!indM){c.hidden=true;return}
   c.hidden=false;
@@ -1113,24 +1037,6 @@ function renderSellin(o){
   $('#tv-sellin').innerHTML=tvTable(['Tháng','Sell-in','Sell out','Chênh','Phụ kiện'],t.rows);
   $('#sellin-note').innerHTML=t.note+' Đây là <b>tồn ước tính</b> đang nằm tại đại lý — '+
     'chưa trừ tồn đầu năm và hàng trả về, nên dùng để nhìn xu hướng chứ đừng chốt số kiểm kê.';
-}
-
-/* ---- Năng suất đầu người ---- */
-function renderHc(){
-  var c=$('#c-hc');
-  if(!D.hc||D.vaiTro==='sale'){c.hidden=true;return}
-  var o=curObj(), M=D.months;
-  var chans=D.chans.filter(function(ch){
-    return D.hc[ch]&&(o.ch||{})[ch]&&(SEG==='ALL'||SEG===ch)});
-  if(!chans.length){c.hidden=true;return}
-  c.hidden=false;
-  $('#hc-sub').textContent='Tháng '+M[MI]+' — số người của từng kênh và doanh thu bình quân.';
-  var rows=chans.map(function(ch){
-    var hc=D.hc[ch][MI]||[0,0], sl=hc[0], pg=hc[1], ng=sl+pg;
-    var rv=((o.ch[ch]||[])[MI]||[0,0])[1];
-    return [ch,n0(sl),n0(pg),money(rv),ng?money(Math.round(rv/ng*10)/10):'—'];
-  });
-  $('#tv-hc').innerHTML=tvTable(['Kênh','Sale','PG','Doanh thu','DT/người'],rows);
 }
 
 /* =========================================================
@@ -1741,6 +1647,10 @@ document.addEventListener('click',function(e){
   if(tt){TR=tt.dataset.tr;renderMonth(scope());return}
   var tk=e.target.closest('[data-tks]');
   if(tk){TK_SALE=tk.dataset.tks;renderTon();window.scrollTo(0,0);return}
+  var sv=e.target.closest('[data-ser]');
+  if(sv&&!sv.disabled){SER_TAB=sv.dataset.ser;renderMonth(scope());return}
+  var mm=e.target.closest('[data-momo]');
+  if(mm){MO_THANG=+mm.dataset.momo;renderModel(scope());return}
   var n=e.target.closest('nav button');
   if(n){go(n.dataset.v);return}
 });
@@ -1792,6 +1702,7 @@ $('#mo-tog').addEventListener('click',function(){moMode=moMode==='u'?'r':'u';ren
 $('#r-tog').addEventListener('click',function(){rankMode=rankMode==='y'?'m':'y';renderRank(scope())});
 $('#a-copy').addEventListener('click',copyAlerts);
 $('#tk-copy').addEventListener('click',copyTon);
+$('#dy-tog').addEventListener('click',function(){dyMode=dyMode==='u'?'r':'u';renderDaily(scope())});
 $('#tk-tog').addEventListener('click',function(){TK_SORT=TK_SORT==='ton'?'ngay':'ton';renderTon()});
 $('#f-q').addEventListener('input',function(){drawFind(this.value)});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet()});

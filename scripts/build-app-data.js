@@ -108,6 +108,8 @@
         sr: pairs(SERS.length),        // dong may - luy ke
         srM: pairs(SERS.length),       // dong may - thang hien tai
         mo: {},                        // model OPPO -> [may, dt] thang hien tai
+        srm: null,                     // dong may theo TUNG THANG  [series][thang] = [may, dt]
+        moM: {},                       // thang -> { model: [may, dt] }
         chd: null                      // chi tiet theo tung kenh (chi dat o cap tinh & sale)
       };
       for (var k in extra) o[k] = extra[k];
@@ -174,7 +176,7 @@
         m: pairs(NM), ac: zeros(NM), d: zeros(DIM_CUR), dp: zeros(DIM_PRV),
         sg: pairs(SEGS.length), sgM: pairs(SEGS.length),
         sr: pairs(SERS.length), srM: pairs(SERS.length),
-        mo: {}
+        mo: {}, srm: null, moM: {}
       };
       return o.chd[ch];
     }
@@ -208,6 +210,17 @@
           if (!o.mo[mdl]) o.mo[mdl] = [0, 0];
           o.mo[mdl][0] += u; o.mo[mdl][1] += rv;
         }
+        // dong may theo TUNG THANG (de bat tab Reno / Find o bieu do doanh so)
+        if (ri !== undefined && ri >= 0) {
+          if (!o.srm) { o.srm = []; for (var z1 = 0; z1 < SERS.length; z1++) o.srm.push(pairs(NM)); }
+          o.srm[ri][i][0] += u; o.srm[ri][i][1] += rv;
+        }
+        // model theo TUNG THANG (de loc model ban chay theo thang)
+        if (mdl && u) {
+          if (!o.moM[r.m]) o.moM[r.m] = {};
+          if (!o.moM[r.m][mdl]) o.moM[r.m][mdl] = [0, 0];
+          o.moM[r.m][mdl][0] += u; o.moM[r.m][mdl][1] += rv;
+        }
         // Ban ra LUY KE theo model — chi kenh IND, CHI cac thang co so sell-in
         if (ch === 'IND' && mdl && u && SI_M[r.m]) {
           if (!o._ban) o._ban = {};
@@ -229,6 +242,15 @@
           if (isCur && mdl && u) {
             if (!cd.mo[mdl]) cd.mo[mdl] = [0, 0];
             cd.mo[mdl][0] += u; cd.mo[mdl][1] += rv;
+          }
+          if (ri !== undefined && ri >= 0) {
+            if (!cd.srm) { cd.srm = []; for (var z2 = 0; z2 < SERS.length; z2++) cd.srm.push(pairs(NM)); }
+            cd.srm[ri][i][0] += u; cd.srm[ri][i][1] += rv;
+          }
+          if (mdl && u) {
+            if (!cd.moM[r.m]) cd.moM[r.m] = {};
+            if (!cd.moM[r.m][mdl]) cd.moM[r.m][mdl] = [0, 0];
+            cd.moM[r.m][mdl][0] += u; cd.moM[r.m][mdl][1] += rv;
           }
         }
       }
@@ -615,6 +637,14 @@
       return out;
     }
     function packPairs(a) { return a.map(function (x) { return [x[0], tr(x[1])]; }); }
+    function packMoM(src2, n) {
+      var out = null;
+      Object.keys(src2 || {}).forEach(function (m) {
+        var ds = topModel(src2[m], n);
+        if (ds.length) { if (!out) out = {}; out[m] = ds; }
+      });
+      return out;
+    }
     function topModel(mo, n) {
       return Object.keys(mo || {})
         .map(function (k) { return [k, mo[k][0], tr(mo[k][1])]; })
@@ -639,6 +669,9 @@
       if (o.ac && o.ac.some(function (x) { return x; })) r.ac = o.ac;
       var mo = topModel(o.mo, withDy ? 15 : 10);
       if (mo.length) r.mo = mo;
+      if (o.srm) r.srm = o.srm.map(packPairs);
+      var mm = packMoM(o.moM, withDy ? 10 : 6);
+      if (mm) r.moM = mm;
       if (withDy) { var x = densify(o); r.dy = x[0]; r.dr = x[1]; }
       else { r.d = o.d; r.dp = o.dp; }
       if (o.mkt) r.mkt = o.mkt;
@@ -659,6 +692,9 @@
           if (cmo.length) y.mo = cmo;
           var z = densify(cd); y.dy = z[0]; y.dr = z[1];
           if (cd.mkt) y.mkt = cd.mkt;
+          if (cd.srm) y.srm = cd.srm.map(packPairs);
+          var cmm = packMoM(cd.moM, 8);
+          if (cmm) y.moM = cmm;
           r.chd[c] = y;
         });
       }
