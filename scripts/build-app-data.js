@@ -71,6 +71,20 @@
     var SERI = {}; SERS.forEach(function (s, i) { SERI[s] = i; });
     var KHAC = SERS.indexOf('Khác');
 
+    // ---- Thang nao co so SELL IN. Ton kho CHI duoc tinh tren cac thang nay,
+    // neu khong se tru ca phan ban ra cua thang chua nhap so -> ton bi hut xuong sai.
+    var SELLIN_COL = { STORE_ID: 0, RETAILER: 1, PROVINCE: 2, MONTH: 3, PRODUCT: 4, GROUP: 5, QTY: 6 };
+    var sellinRows = (MAIN && MAIN.sell_in_rows) || MWG.sell_in_rows || null;
+    var SI_M = {}, SI_LIST = [];
+    if (sellinRows) {
+      sellinRows.forEach(function (r) {
+        if (!r || r.length < 7) return;
+        var m = parseInt(r[SELLIN_COL.MONTH], 10);
+        if (m && MIDX[m] !== undefined) SI_M[m] = 1;
+      });
+      SI_LIST = Object.keys(SI_M).map(Number).sort(function (a, b) { return a - b; });
+    }
+
     // Co bao lay duoc nguon nao - app dung de an/hien tung khoi, khong bia so.
     var src = {
       act: false, sellin: false, hc: false, segMkt: false,
@@ -168,6 +182,11 @@
           if (!o.mo[mdl]) o.mo[mdl] = [0, 0];
           o.mo[mdl][0] += u; o.mo[mdl][1] += rv;
         }
+        // Ban ra LUY KE theo model — chi kenh IND, CHI cac thang co so sell-in
+        if (ch === 'IND' && mdl && u && SI_M[r.m]) {
+          if (!o._ban) o._ban = {};
+          o._ban[mdl] = (o._ban[mdl] || 0) + u;
+        }
         if (t < 2) {   // chi tinh chi tiet kenh o cap tinh & sale
           var cd = chdOf(o, ch);
           cd.m[i][0] += u; cd.m[i][1] += rv;
@@ -218,8 +237,6 @@
     // 4. SELL-IN kenh IND (sheet SELL IN: mang tho, cot theo SELLIN_COL)
     //    Quy ve shop qua Store ID. Nhom hang: OPPO / PK (phu kien) / Khac.
     // =========================================================
-    var SELLIN_COL = { STORE_ID: 0, RETAILER: 1, PROVINCE: 2, MONTH: 3, PRODUCT: 4, GROUP: 5, QTY: 6 };
-    var sellinRows = kho('sell_in_rows');
     if (sellinRows && sellinRows.length) {
       src.sellin = true;
       sellinRows.forEach(function (r) {
@@ -237,11 +254,41 @@
           targets.push(shops[st]);
           if (sales[shops[st].sale]) targets.push(sales[shops[st].sale]);
         }
+        var sp = String(r[SELLIN_COL.PRODUCT] || '').trim();
         targets.forEach(function (o) {
           if (!o.si) { o.si = []; for (var k = 0; k < NM; k++) o.si[k] = [0, 0, 0]; }
           o.si[i][j] += qty;
+          // Nhap LUY KE theo model (chi nhom OPPO) — de tinh ton kho
+          if (j === 0 && sp) {
+            if (!o._nhap) o._nhap = {};
+            o._nhap[sp] = (o._nhap[sp] || 0) + qty;
+          }
         });
       });
+    }
+
+    // ---- Ton kho dai ly IND = nhap luy ke - ban luy ke, theo tung model.
+    // Da kiem chung 26/26 ten san pham ben SELL IN trung khop ten model ben ban hang.
+    var chuanTen = function (s) { return String(s || '').toUpperCase().replace(/\s+/g, ' ').replace(/\s*\+\s*/g, '+').trim(); };
+    function tonKho(o) {
+      if (!o._nhap && !o._ban) return null;
+      var g = {};
+      Object.keys(o._nhap || {}).forEach(function (k) {
+        var c = chuanTen(k);
+        if (!g[c]) g[c] = { n: k, nhap: 0, ban: 0 };
+        g[c].nhap += o._nhap[k];
+      });
+      Object.keys(o._ban || {}).forEach(function (k) {
+        var c = chuanTen(k);
+        if (!g[c]) g[c] = { n: k, nhap: 0, ban: 0 };
+        g[c].ban += o._ban[k];
+      });
+      var ds = Object.keys(g).map(function (c) {
+        return [g[c].n, Math.round(g[c].nhap), g[c].ban, Math.round(g[c].nhap) - g[c].ban];
+      }).filter(function (x) { return x[1] || x[2]; });
+      if (!ds.length) return null;
+      ds.sort(function (a, b) { return b[3] - a[3]; });
+      return ds;
     }
 
     // =========================================================
@@ -520,6 +567,7 @@
       else { r.d = o.d; r.dp = o.dp; }
       if (o.mkt) r.mkt = o.mkt;
       if (o.si) r.si = o.si;
+      var tk = tonKho(o); if (tk) r.tk = tk;   // ton kho IND theo model
       if (o.chd) {
         r.chd = {};
         CHANS.forEach(function (c) {
@@ -580,6 +628,7 @@
       year: YEAR, lastDoy: lastDoy,
       segs: SEGS, sers: SERS, chans: CHANS,
       segsMkt: SEGA,
+      tkMonths: SI_LIST,
       hc: HC,
       src: src,
       mktNote: {

@@ -452,11 +452,39 @@ h4.dh:first-child{margin-top:0}
   </section>
 </main>
 
+<!-- ================= TAB 5 : TỒN KHO IND ================= -->
+<section id="v-ton" hidden>
+  <div class="card">
+    <div class="sec"><h2>Tồn kho đại lý IND</h2><button class="link" id="tk-copy">Copy để gửi Zalo</button></div>
+    <p class="sub" id="tk-sub"></p>
+    <div class="pills" id="tk-sale"></div>
+    <div class="kpis">
+      <div>Đã nhập<b id="tk-in">—</b></div>
+      <div>Đã bán<b id="tk-out">—</b></div>
+      <div>Tồn ước tính<b id="tk-ton">—</b></div>
+    </div>
+    <div class="note" id="tk-note"></div>
+  </div>
+
+  <div class="card">
+    <div class="sec"><h2>Theo model</h2><button class="link" id="tk-tog">Xếp theo ngày bán hết</button></div>
+    <p class="sub" id="tk-msub"></p>
+    <div class="tvwrap" id="tk-mtab"></div>
+  </div>
+
+  <div class="card">
+    <h2>Theo shop</h2>
+    <p class="sub" id="tk-ssub"></p>
+    <div id="tk-slist"></div>
+  </div>
+</section>
+
 <nav>
   <button data-v="over" class="on"><em>📊</em>Tổng quan</button>
   <button data-v="alert"><em>⚠️</em>Cảnh báo</button>
   <button data-v="find"><em>🔍</em>Tra cứu</button>
   <button data-v="rank"><em>🏆</em>Xếp hạng</button>
+  <button data-v="ton" id="nav-ton" hidden><em>📦</em>Tồn kho</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -753,7 +781,7 @@ function renderOver(){
 
   renderHero(o); renderTarget(o);
   renderDaily(o); renderMonth(o); renderChan(o); renderSeg(o); renderSer(o); renderMkt(o);
-  renderSegMkt(o); renderModel(o); renderAct(o); renderSellin(o); renderHc();
+  renderSegMkt(o); renderModel(o); renderAct(o); renderSellin(o); renderHc(); renderTon();
   renderAlerts(o); renderFind(o); renderRank(o);
 }
 
@@ -1105,6 +1133,130 @@ function renderHc(){
   $('#tv-hc').innerHTML=tvTable(['Kênh','Sale','PG','Doanh thu','DT/người'],rows);
 }
 
+/* =========================================================
+   TỒN KHO ĐẠI LÝ IND
+   Tồn = nhập luỹ kế − bán luỹ kế, CHỈ trên các tháng có số sell-in.
+   ========================================================= */
+var TK_SALE='__ALL__', TK_SORT='ton';
+
+// Số ngày đã chạy trong các tháng có số sell-in — để tính "còn bán được mấy ngày"
+function tkSoNgay(){
+  var ms=D.tkMonths||[]; if(!ms.length) return 0;
+  var t=0;
+  ms.forEach(function(m){
+    var dau=toDoy(D.year,m,1);
+    var het=toDoy(D.year,m,new Date(Date.UTC(D.year,m,0)).getUTCDate());
+    t+=Math.max(0,Math.min(D.lastDoy,het)-dau+1);
+  });
+  return t;
+}
+function tkLabel(){
+  var ms=D.tkMonths||[];
+  if(!ms.length) return '';
+  return ms.length===1?('tháng '+ms[0]):('T'+ms[0]+'–T'+ms[ms.length-1]);
+}
+// Ngay ban het: che so ao (chua ban may nao / qua 1 nam)
+function tkNgay(ton,nhip){
+  if(ton<=0) return '—';
+  if(!nhip) return 'chưa bán máy nào';
+  var d=Math.round(ton/nhip);
+  return d>365?'trên 1 năm':n0(d)+' ngày';
+}
+function tkKey(s){return String(s).toUpperCase().replace(/\s+/g,' ').replace(/\s*\+\s*/g,'+').trim()}
+function tkGop(list){
+  var g={};
+  list.forEach(function(tk){
+    (tk||[]).forEach(function(x){
+      var k=tkKey(x[0]);
+      if(!g[k]) g[k]={n:x[0],nhap:0,ban:0};
+      g[k].nhap+=x[1]; g[k].ban+=x[2];
+    });
+  });
+  return Object.keys(g).map(function(k){
+    return {n:g[k].n,nhap:g[k].nhap,ban:g[k].ban,ton:g[k].nhap-g[k].ban}});
+}
+function tkDsSale(){
+  return (D.sales||[]).filter(function(s){
+    return (s.s||[]).some(function(x){return x.ch2==='IND'&&x.tk})});
+}
+function renderTon(){
+  var nav=$('#nav-ton'), dsSale=tkDsSale();
+  if(!dsSale.length){ if(nav)nav.hidden=true; if(VIEW==='ton')go('over'); return }
+  if(nav)nav.hidden=false;
+
+  var pil=$('#tk-sale');
+  if(dsSale.length>1){
+    if(TK_SALE!=='__ALL__'&&!dsSale.some(function(s){return s.n===TK_SALE})) TK_SALE='__ALL__';
+    pil.hidden=false;
+    pil.innerHTML='<button data-tks="__ALL__"'+(TK_SALE==='__ALL__'?' class="on"':'')+'>Tất cả</button>'+
+      dsSale.map(function(s){return '<button data-tks="'+safe(s.n)+'"'+(TK_SALE===s.n?' class="on"':'')+'>'+safe(s.n)+'</button>'}).join('');
+  } else { pil.hidden=true; TK_SALE='__ALL__' }
+
+  var chon=TK_SALE==='__ALL__'?dsSale:dsSale.filter(function(s){return s.n===TK_SALE});
+  var shops=[]; chon.forEach(function(s){
+    (s.s||[]).forEach(function(x){ if(x.ch2==='IND'&&x.tk) shops.push({sh:x,sale:s.n}) })});
+  var rows=tkGop(shops.map(function(x){return x.sh.tk}));
+  var tIn=0,tBan=0; rows.forEach(function(r){tIn+=r.nhap;tBan+=r.ban});
+  var tTon=tIn-tBan, ngay=tkSoNgay(), nhip=ngay?tBan/ngay:0;
+
+  $('#tk-sub').textContent='Cộng dồn '+tkLabel()+' · '+shops.length+' đại lý · '+rows.length+' model.';
+  $('#tk-in').textContent=n0(tIn)+' máy';
+  $('#tk-out').textContent=n0(tBan)+' máy';
+  $('#tk-ton').textContent=n0(tTon)+' máy';
+  $('#tk-ton').style.color=tTon>0?'var(--amber)':'var(--green)';
+  $('#tk-note').innerHTML='Tồn = hàng đã nhập trừ hàng đã bán, tính trên <b>'+tkLabel()+
+    '</b> — tháng nào sheet SELL IN chưa nhập số thì cả nhập lẫn bán của tháng đó đều không đưa vào. '+
+    (nhip>0&&tTon>0?('Với nhịp bán '+(Math.round(nhip*10)/10)+' máy/ngày, chỗ tồn này còn bán được khoảng <b>'+
+      tkNgay(tTon,nhip)+'</b>. '):'')+
+    '<b>Chưa cộng tồn đầu năm, chưa trừ hàng trả về và điều chuyển giữa đại lý</b> — dùng để so shop với nhau và nhìn xu hướng, đừng dùng thay biên bản kiểm kê.';
+
+  rows.forEach(function(r){
+    r.nhip=ngay?r.ban/ngay:0;
+    r.ngay=r.nhip>0?r.ton/r.nhip:(r.ton>0?1e9:0);
+  });
+  rows.sort(function(a,b){return TK_SORT==='ton'?b.ton-a.ton:b.ngay-a.ngay});
+  $('#tk-tog').textContent=TK_SORT==='ton'?'Xếp theo ngày bán hết':'Xếp theo số tồn';
+  $('#tk-msub').textContent='"Còn bán được" = số tồn chia cho nhịp bán mỗi ngày của chính model đó. Trên 60 ngày là hàng đang nằm lâu.';
+  $('#tk-mtab').innerHTML=tvTable(['Model','Nhập','Bán','Tồn','Còn bán được'],
+    rows.map(function(r){
+      return [tenModel(r.n),n0(r.nhap),n0(r.ban),n0(r.ton),tkNgay(r.ton,r.nhip)];
+    }));
+  var am=rows.filter(function(r){return r.ton<0});
+  if(am.length) $('#tk-msub').innerHTML+=' Có <b>'+am.length+' model tồn âm</b> — bán nhiều hơn nhập trong kỳ, tức là đại lý đang bán hàng tồn từ trước hoặc lấy từ nguồn khác.';
+
+  var dsShop=shops.map(function(x){
+    var g=tkGop([x.sh.tk]), inn=0,ban=0;
+    g.forEach(function(r){inn+=r.nhap;ban+=r.ban});
+    var top=g.slice().sort(function(a,b){return b.ton-a.ton})[0];
+    return {n:x.sh.n,sale:x.sale,nhap:inn,ban:ban,ton:inn-ban,top:top};
+  }).sort(function(a,b){return b.ton-a.ton});
+  $('#tk-ssub').textContent='Xếp theo số tồn nhiều nhất. Bấm vào shop để xem chi tiết.';
+  $('#tk-slist').innerHTML=dsShop.map(function(s){
+    var mau=s.ton>0?'var(--amber)':s.ton<0?'var(--red)':'var(--muted)';
+    return '<button class="shop" data-shop="'+safe(s.n)+'"><span class="bd">'+
+      '<span class="t">'+safe(s.n)+'</span><span class="d">'+
+      (TK_SALE==='__ALL__'?safe(s.sale)+' · ':'')+'nhập '+n0(s.nhap)+' · bán '+n0(s.ban)+
+      (s.top&&s.top.ton>0?' · đọng nhiều nhất: '+safe(tenModel(s.top.n))+' '+n0(s.top.ton)+' máy':'')+
+      '</span></span><span class="r" style="color:'+mau+'"><b>'+n0(s.ton)+'</b><small>máy tồn</small></span>'+
+      '<span class="chev">›</span></button>';
+  }).join('')||'<div class="empty">Không có đại lý IND nào có số sell-in</div>';
+}
+function copyTon(){
+  var dsSale=tkDsSale();
+  var chon=TK_SALE==='__ALL__'?dsSale:dsSale.filter(function(s){return s.n===TK_SALE});
+  var shops=[]; chon.forEach(function(s){(s.s||[]).forEach(function(x){if(x.ch2==='IND'&&x.tk)shops.push(x)})});
+  var rows=tkGop(shops.map(function(x){return x.tk})).sort(function(a,b){return b.ton-a.ton});
+  var tIn=0,tBan=0; rows.forEach(function(r){tIn+=r.nhap;tBan+=r.ban});
+  var t='TỒN KHO IND — '+tkLabel()+' ('+(TK_SALE==='__ALL__'?'tất cả sale':TK_SALE)+')\n'+
+    'Nhập '+n0(tIn)+' · Bán '+n0(tBan)+' · Tồn '+n0(tIn-tBan)+' máy\n\nĐọng nhiều nhất:\n'+
+    rows.filter(function(r){return r.ton>0}).slice(0,10).map(function(r,i){
+      return (i+1)+'. '+tenModel(r.n)+': tồn '+n0(r.ton)+' (nhập '+n0(r.nhap)+', bán '+n0(r.ban)+')'}).join('\n')+
+    '\n\n(Tồn ước tính, chưa cộng tồn đầu năm và chưa trừ hàng trả về)';
+  if(navigator.clipboard&&navigator.clipboard.writeText)
+    navigator.clipboard.writeText(t).then(function(){toast('Đã copy, dán vào Zalo được rồi')},function(){fallback(t)});
+  else fallback(t);
+}
+
 function renderAlerts(o){
   var out=[], shops=o.s||[], dim=DIM(), day=D.maxDay||dim, pace=PACE();
   var M=D.months;
@@ -1396,6 +1548,24 @@ function openShop(name){
   }
 
   // ---- sell-in (IND)
+  // ---- ton kho theo model tai shop nay
+  if(s.tk&&s.tk.length){
+    var gg=tkGop([s.tk]).sort(function(a,b){return b.ton-a.ton});
+    var gIn=0,gBan=0; gg.forEach(function(r){gIn+=r.nhap;gBan+=r.ban});
+    var gNgay=tkSoNgay();
+    h+='<h4 class="dh">Tồn kho theo model — '+tkLabel()+'</h4><div class="dl">'+
+      '<div>Đã nhập<b>'+n0(gIn)+' máy</b></div>'+
+      '<div>Đã bán<b>'+n0(gBan)+' máy</b></div>'+
+      '<div>Tồn ước tính<b style="color:'+((gIn-gBan)>0?'var(--amber)':'var(--green)')+'">'+n0(gIn-gBan)+' máy</b></div></div>'+
+      '<div class="tvwrap">'+tvTable(['Model','Nhập','Bán','Tồn','Còn bán được'],
+        gg.map(function(r){
+          return [tenModel(r.n),n0(r.nhap),n0(r.ban),n0(r.ton),tkNgay(r.ton,gNgay?r.ban/gNgay:0)]}))+'</div>';
+    var dong=gg.filter(function(r){return r.ton>0})[0];
+    if(dong) h+='<div class="note">Đọng nhiều nhất: <b>'+safe(tenModel(dong.n))+'</b> — nhập '+n0(dong.nhap)+
+      ', bán '+n0(dong.ban)+', còn <b style="color:var(--amber)">'+n0(dong.ton)+' máy</b>. '+
+      'Tồn ước tính, chưa cộng tồn đầu năm và chưa trừ hàng trả về.</div>';
+  }
+
   if(s.si&&s.si.some(function(x){return x[0]})){
     var tS=sellinRows(s.si,s.m);
     h+='<h4 class="dh">Sell-in vào shop này</h4><div class="tvwrap">'+
@@ -1515,7 +1685,7 @@ function closeSheet(){$('#mask').classList.remove('on');$('#sheet').classList.re
    ========================================================= */
 function go(v){
   VIEW=v;
-  ['over','alert','find','rank'].forEach(function(k){$('#v-'+k).hidden=(k!==v)});
+  ['over','alert','find','rank','ton'].forEach(function(k){var e=$('#v-'+k); if(e)e.hidden=(k!==v)});
   $$('nav button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)});
   window.scrollTo(0,0);
 }
@@ -1548,6 +1718,8 @@ document.addEventListener('click',function(e){
   if(pp){PER=pp.dataset.per;renderHero(scope());return}
   var tt=e.target.closest('[data-tr]');
   if(tt){TR=tt.dataset.tr;renderMonth(scope());return}
+  var tk=e.target.closest('[data-tks]');
+  if(tk){TK_SALE=tk.dataset.tks;renderTon();window.scrollTo(0,0);return}
   var n=e.target.closest('nav button');
   if(n){go(n.dataset.v);return}
 });
@@ -1598,6 +1770,8 @@ $('#pick').addEventListener('click',openPicker);
 $('#mo-tog').addEventListener('click',function(){moMode=moMode==='u'?'r':'u';renderMonth(scope())});
 $('#r-tog').addEventListener('click',function(){rankMode=rankMode==='y'?'m':'y';renderRank(scope())});
 $('#a-copy').addEventListener('click',copyAlerts);
+$('#tk-copy').addEventListener('click',copyTon);
+$('#tk-tog').addEventListener('click',function(){TK_SORT=TK_SORT==='ton'?'ngay':'ton';renderTon()});
 $('#f-q').addEventListener('input',function(){drawFind(this.value)});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet()});
 

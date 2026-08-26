@@ -67,6 +67,18 @@ function gopAll(D, ds) {
     [...(cu || []), ...(them || [])].forEach(([n2, u, r]) => { g[n2] = g[n2] || [0, 0]; g[n2][0] += u; g[n2][1] += r; });
     return Object.keys(g).map((n2) => [n2, g[n2][0], g[n2][1]]).sort((a, b) => b[1] - a[1]).slice(0, 15);
   };
+  const gomTon = (cu, them) => {
+    if (!them) return cu;
+    const key = (x) => String(x).toUpperCase().replace(/\s+/g, ' ').replace(/\s*\+\s*/g, '+').trim();
+    const g = {};
+    [...(cu || []), ...them].forEach(([n2, nhap, ban]) => {
+      const k = key(n2);
+      if (!g[k]) g[k] = { n: n2, nhap: 0, ban: 0 };
+      g[k].nhap += nhap; g[k].ban += ban;
+    });
+    return Object.keys(g).map((k) => [g[k].n, g[k].nhap, g[k].ban, g[k].nhap - g[k].ban])
+      .sort((a2, b2) => b2[3] - a2[3]);
+  };
   const gomSellin = (a, b) => {
     if (!b) return a;
     const r = a || Array.from({ length: NM }, () => [0, 0, 0]);
@@ -80,6 +92,7 @@ function gopAll(D, ds) {
     cong(out.sg, s.sg); cong(out.sgM, s.sgM); cong(out.sr, s.sr); cong(out.srM, s.srM);
     if (s.mo) out.mo = gomModel(out.mo, s.mo);
     if (s.si) out.si = gomSellin(out.si, s.si);
+    if (s.tk) out.tk = gomTon(out.tk, s.tk);
     out.shops += s.shops || 0; out.tg += s.tg || 0;
     for (const c of Object.keys(s.ch || {})) {
       if (!out.ch[c]) out.ch[c] = cap(NM);
@@ -140,6 +153,7 @@ function saleTheoKenh(D, s, ch) {
   if (c.ac) o.ac = c.ac;
   if (c.mo) o.mo = c.mo;
   if (ch === 'IND' && s.si) o.si = s.si;   // sell-in chi co o kenh IND
+  if (ch === 'IND' && s.tk) o.tk = s.tk;   // ton kho cung vay
   return o;
 }
 
@@ -152,7 +166,7 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     dimCur: D.dimCur, dimPrv: D.dimPrv, year: D.year, lastDoy: D.lastDoy,
     segs: D.segs, sers: D.sers,
     chans: kenh ? [kenh] : D.chans,
-    v: D.v, segsMkt: D.segsMkt || [], src: D.src || null,
+    v: D.v, segsMkt: D.segsMkt || [], src: D.src || null, tkMonths: D.tkMonths || [],
     vaiTro, kenh: kenh || null,
     all: gopAll(D, ds), sales: ds,
   };
@@ -161,7 +175,7 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     o.hc = {};
     (kenh ? [kenh] : D.chans).forEach((c) => { if (D.hc[c]) o.hc[c] = D.hc[c]; });
   }
-  if (vaiTro === 'admin') { o.mktNote = D.mktNote; o.all.mkt = D.all.mkt; o.all.chd = D.all.chd; o.all.si = D.all.si; }
+  if (vaiTro === 'admin') { o.mktNote = D.mktNote; o.all.mkt = D.all.mkt; o.all.chd = D.all.chd; o.all.si = D.all.si; o.all.tk = D.all.tk; }
   if (hangCuaToi) o.hang = hangCuaToi;   // "4/16" — biet minh dung dau ma khong thay so nguoi khac
   return o;
 }
