@@ -481,6 +481,8 @@ function money(tr){ // tr = triệu đồng
   return n0(tr)+' tr';
 }
 function pct(v,d){return (v||0).toFixed(d===undefined?1:d)+'%'}
+// Tên model trong sheet MWG dài dòng: "Điện thoại iPhone 17 Pro Max 256GB Silver"
+function tenModel(s){return String(s==null?'':s).replace(/^\s*(Điện thoại|Máy tính bảng)\s+/i,'').trim()}
 function safe(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function sum(a){var t=0;for(var i=0;i<a.length;i++)t+=a[i];return t}
@@ -1042,6 +1044,29 @@ function renderAct(o){
 }
 
 /* ---- Sell-in kênh IND ---- */
+/* Gộp bảng sell-in. Tháng nào sheet SELL IN chưa nhập thì KHÔNG cộng vào tồn —
+   cộng vào sẽ ra số âm sai. Ghi rõ tháng nào còn trống. */
+function sellinRows(si,indM){
+  var M=D.months, rows=[], cumIn=0, cumOut=0, thieu=[], coSo=false;
+  for(var i=0;i<M.length;i++){
+    var cell=si[i]||[0,0,0], inn=cell[0], pk=cell[1];
+    var out=(indM[i]||[0,0])[0];
+    if(inn>0){ coSo=true; cumIn+=inn; cumOut+=out;
+      rows.push(['T'+M[i],n0(inn),n0(out),(inn-out>=0?'+':'')+n0(inn-out),n0(pk)]);
+    } else {
+      thieu.push('T'+M[i]);
+      rows.push(['T'+M[i],'chưa có',n0(out),'—',pk?n0(pk):'—']);
+    }
+  }
+  var ton=cumIn-cumOut;
+  var note='Cộng dồn <b>'+(M.length-thieu.length)+'/'+M.length+' tháng có số sell-in</b>: nhập <b>'+
+    n0(cumIn)+'</b> máy, bán <b>'+n0(cumOut)+'</b> máy → chênh <b style="color:'+
+    (ton>0?'var(--amber)':'var(--green)')+'">'+(ton>=0?'+':'')+n0(ton)+' máy</b>.'+
+    (thieu.length?(' <b style="color:var(--amber)">Sheet SELL IN chưa có số '+thieu.join(', ')+
+      '</b> nên tháng đó không được tính vào tồn.'):'');
+  return {rows:rows,ton:ton,note:note,coSo:coSo,thieu:thieu};
+}
+
 function renderSellin(o){
   var c=$('#c-sellin');
   // Sell-in chỉ có ở kênh IND -> chỉ hiện ở Tổng quan hoặc đúng tab IND
@@ -1050,25 +1075,16 @@ function renderSellin(o){
   var indM=(SEG==='IND')?o.m:(((curObj().chd||{}).IND||{}).m);
   if(!si||!si.length||!indM){c.hidden=true;return}
   c.hidden=false;
-  var M=D.months;
-  var rows=[], cumIn=0, cumOut=0;
-  for(var i=0;i<M.length;i++){
-    var inn=(si[i]||[0,0,0])[0], pk=(si[i]||[0,0,0])[1];
-    var out=(indM[i]||[0,0])[0];
-    cumIn+=inn; cumOut+=out;
-    rows.push(['T'+M[i],n0(inn),n0(out),(inn-out>=0?'+':'')+n0(inn-out),n0(pk)]);
-  }
-  var ton=cumIn-cumOut;
+  var t=sellinRows(si,indM);
+  if(!t.coSo){c.hidden=true;return}
   $('#sellin-sub').textContent='Hàng OPPO nhập vào đại lý IND so với hàng bán ra, theo từng tháng.';
-  $('#si-o').textContent=n0((si[MI]||[0])[0])+' máy';
+  $('#si-o').textContent=(si[MI]&&si[MI][0])?n0(si[MI][0])+' máy':'chưa có';
   $('#si-s').textContent=n0((indM[MI]||[0])[0])+' máy';
-  $('#si-t').textContent=(ton>=0?'+':'')+n0(ton)+' máy';
-  $('#si-t').style.color=ton>0?'var(--amber)':'var(--green)';
-  $('#tv-sellin').innerHTML=tvTable(['Tháng','Sell-in','Sell out','Chênh','Phụ kiện'],rows);
-  $('#sellin-note').innerHTML='Cộng dồn cả năm: nhập <b>'+n0(cumIn)+'</b> máy, bán <b>'+n0(cumOut)+
-    '</b> máy → chênh <b style="color:'+(ton>0?'var(--amber)':'var(--green)')+'">'+(ton>=0?'+':'')+n0(ton)+
-    ' máy</b>. Đây là <b>tồn ước tính</b> đang nằm tại đại lý — chưa trừ tồn đầu năm và hàng trả về, '+
-    'nên dùng để nhìn xu hướng chứ đừng chốt số kiểm kê.';
+  $('#si-t').textContent=(t.ton>=0?'+':'')+n0(t.ton)+' máy';
+  $('#si-t').style.color=t.ton>0?'var(--amber)':'var(--green)';
+  $('#tv-sellin').innerHTML=tvTable(['Tháng','Sell-in','Sell out','Chênh','Phụ kiện'],t.rows);
+  $('#sellin-note').innerHTML=t.note+' Đây là <b>tồn ước tính</b> đang nằm tại đại lý — '+
+    'chưa trừ tồn đầu năm và hàng trả về, nên dùng để nhìn xu hướng chứ đừng chốt số kiểm kê.';
 }
 
 /* ---- Năng suất đầu người ---- */
@@ -1381,17 +1397,10 @@ function openShop(name){
 
   // ---- sell-in (IND)
   if(s.si&&s.si.some(function(x){return x[0]})){
-    var rIn=[],ciIn=0,ciOut=0;
-    for(var q=0;q<M.length;q++){
-      var vIn=(s.si[q]||[0,0,0])[0], vOut=(s.m[q]||[0,0])[0];
-      ciIn+=vIn; ciOut+=vOut;
-      rIn.push(['T'+M[q],n0(vIn),n0(vOut),(vIn-vOut>=0?'+':'')+n0(vIn-vOut),n0((s.si[q]||[0,0,0])[1])]);
-    }
-    var tonS=ciIn-ciOut;
+    var tS=sellinRows(s.si,s.m);
     h+='<h4 class="dh">Sell-in vào shop này</h4><div class="tvwrap">'+
-       tvTable(['Tháng','Sell-in','Sell out','Chênh','Phụ kiện'],rIn)+'</div>'+
-       '<div class="note">Cộng dồn nhập <b>'+n0(ciIn)+'</b> máy, bán <b>'+n0(ciOut)+'</b> máy → tồn ước tính <b style="color:'+
-       (tonS>0?'var(--amber)':'var(--green)')+'">'+(tonS>=0?'+':'')+n0(tonS)+' máy</b>. Chưa trừ tồn đầu năm và hàng trả về.</div>';
+       tvTable(['Tháng','Sell-in','Sell out','Chênh','Phụ kiện'],tS.rows)+'</div>'+
+       '<div class="note">'+tS.note+' Đây là tồn ước tính, chưa trừ tồn đầu năm và hàng trả về.</div>';
   }
 
   h+='</div>';
@@ -1436,13 +1445,13 @@ function openShop(name){
     var tm=0; s.md.forEach(function(x){tm+=x[2]});
     hbars($('#sh-md'),s.md.map(function(x){
       var la=String(x[1]).toLowerCase()==='oppo';
-      return {n:x[0]+' · '+x[1],v:x[2],c:la?'var(--green)':'var(--neutral)',
+      return {n:tenModel(x[0])+' · '+x[1],v:x[2],c:la?'var(--green)':'var(--neutral)',
         txt:n0(x[2])+' máy · '+money(x[3])}}));
     var mo1=s.md.filter(function(x){return String(x[1]).toLowerCase()==='oppo'});
     var doi=s.md.filter(function(x){return String(x[1]).toLowerCase()!=='oppo'})[0];
     $('#sh-md-n').innerHTML='Xanh là OPPO, xám là hãng khác. '+
-      (mo1.length?('Model OPPO mạnh nhất tại đây: <b>'+safe(mo1[0][0])+'</b> ('+n0(mo1[0][2])+' máy). '):'Trong top 10 chưa có model OPPO nào. ')+
-      (doi?('Model đối thủ đang dẫn: <b>'+safe(doi[0])+'</b> — '+safe(doi[1])+', '+n0(doi[2])+' máy.'):'');
+      (mo1.length?('Model OPPO mạnh nhất tại đây: <b>'+safe(tenModel(mo1[0][0]))+'</b> ('+n0(mo1[0][2])+' máy). '):'Trong top 10 chưa có model OPPO nào. ')+
+      (doi?('Model đối thủ đang dẫn: <b>'+safe(tenModel(doi[0]))+'</b> — '+safe(doi[1])+', '+n0(doi[2])+' máy.'):'');
   }
   if($('#sh-mo')){
     hbars($('#sh-mo'),s.mo.slice(0,8).map(function(x,i){
@@ -1472,7 +1481,7 @@ function openShop(name){
   // ---- nhân viên
   if($('#sh-stf')){
     $('#sh-stf').innerHTML=tvTable(['Nhân viên','Máy','Doanh thu','Bán mạnh nhất'],
-      s.stf.map(function(x){return [x[0],n0(x[1]),money(x[2]),x[3]||'—']}));
+      s.stf.map(function(x){return [x[0],n0(x[1]),money(x[2]),tenModel(x[3])||'—']}));
   }
   $('#sh-x').addEventListener('click',closeSheet);
 }
