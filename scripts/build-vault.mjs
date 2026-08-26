@@ -97,6 +97,9 @@ function gopAll(D, ds) {
       Object.keys(s.moM).forEach((m) => { out.moM[m] = gomModel(out.moM[m], s.moM[m]).slice(0, 12); }); }
     if (s.si) out.si = gomSellin(out.si, s.si);
     if (s.tk) out.tk = gomTon(out.tk, s.tk);
+    if (s.tgc) { out.tgc = out.tgc || {};
+      Object.keys(s.tgc).forEach((c) => { out.tgc[c] = out.tgc[c] || [0, 0];
+        out.tgc[c][0] += s.tgc[c][0]; out.tgc[c][1] += s.tgc[c][1]; }); }
     out.shops += s.shops || 0; out.tg += s.tg || 0;
     for (const c of Object.keys(s.ch || {})) {
       if (!out.ch[c]) out.ch[c] = cap(NM);
@@ -158,6 +161,7 @@ function saleTheoKenh(D, s, ch) {
   if (c.mo) o.mo = c.mo;
   if (c.srm) o.srm = c.srm;
   if (c.moM) o.moM = c.moM;
+  if (s.tgc && s.tgc[ch]) o.tgc = { [ch]: s.tgc[ch] };
   if (ch === 'IND' && s.si) o.si = s.si;   // sell-in chi co o kenh IND
   if (ch === 'IND' && s.tk) o.tk = s.tk;   // ton kho cung vay
   return o;
@@ -173,6 +177,7 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     segs: D.segs, sers: D.sers,
     chans: kenh ? [kenh] : D.chans,
     v: D.v, segsMkt: D.segsMkt || [], src: D.src || null, tkMonths: D.tkMonths || [],
+    tgK: D.tgK || null,
     tkLe: (vaiTro === 'admin' || vaiTro === 'leader') ? (D.tkLe || null) : null,
     // Ton kho chi co o kenh IND -> Leader kenh khac khong nhan gi
     dlTon: (kenh && kenh !== 'IND') ? []
@@ -185,7 +190,7 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     o.hc = {};
     (kenh ? [kenh] : D.chans).forEach((c) => { if (D.hc[c]) o.hc[c] = D.hc[c]; });
   }
-  if (vaiTro === 'admin') { o.mktNote = D.mktNote; o.all.mkt = D.all.mkt; o.all.chd = D.all.chd; o.all.si = D.all.si; o.all.tk = D.all.tk; }
+  if (vaiTro === 'admin') { o.mktNote = D.mktNote; o.all.mkt = D.all.mkt; o.all.chd = D.all.chd; o.all.si = D.all.si; o.all.tk = D.all.tk; if (D.all.tgc) o.all.tgc = D.all.tgc; }
   if (hangCuaToi) o.hang = hangCuaToi;   // "4/16" — biet minh dung dau ma khong thay so nguoi khac
   return o;
 }

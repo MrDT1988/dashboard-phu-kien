@@ -293,6 +293,8 @@ h4.dh:first-child{margin-top:0}
         <div>Số shop<b id="o-shops">—</b></div>
       </div>
       <div class="cmprow" id="o-cmp"></div>
+      <div class="subhead" id="hero-chan-h" hidden>Từng kênh — so cùng kỳ</div>
+      <div class="hb" id="hb-hero-chan"></div>
     </div>
 
     <div class="card" id="c-target">
@@ -308,10 +310,15 @@ h4.dh:first-child{margin-top:0}
         <div>Dự kiến DT<b id="fc-r">—</b></div>
       </div>
       <div class="tagline" id="fc-tag"></div>
+      <div class="subhead" id="t-chan-h" hidden>Tiến độ từng kênh</div>
+      <div id="t-chan"></div>
     </div>
 
     <div class="card">
-      <div class="sec"><h2>Sell out theo ngày</h2><button class="link" id="dy-tog">Xem doanh thu</button></div>
+      <h2>Sell out theo ngày</h2>
+      <div class="pills" id="p-dymode">
+        <button data-dym="u" class="on">Doanh số</button><button data-dym="r">Doanh thu</button>
+      </div>
       <p class="sub" id="dy-sub"></p>
       <svg class="chart" id="ch-day"></svg>
       <div class="legend" id="lg-day"></div>
@@ -321,7 +328,10 @@ h4.dh:first-child{margin-top:0}
     </div>
 
     <div class="card">
-      <div class="sec"><h2>Doanh số</h2><button class="link" id="mo-tog">Xem doanh thu</button></div>
+      <h2>Doanh số</h2>
+      <div class="pills" id="p-momode">
+        <button data-mom="u" class="on">Doanh số</button><button data-mom="r">Doanh thu</button>
+      </div>
       <div class="pills" id="p-trend">
         <button data-tr="W">Tuần</button><button data-tr="M" class="on">Tháng</button><button data-tr="Q">Quý</button>
       </div>
@@ -756,6 +766,29 @@ function renderHero(o){
     dl.textContent=(g>=0?'▲ ':'▼ ')+Math.abs(g).toFixed(1)+'% máy so cùng kỳ';
   } else {dl.className='delta flat';dl.textContent='Chưa có kỳ trước để so'}
 
+  // Từng kênh trong cùng kỳ — biết kênh nào kéo lên, kênh nào kéo xuống
+  var chans=D.chans.filter(function(c){return chanDy(c)});
+  if(SEG!=='ALL') chans=[];
+  var hh=$('#hero-chan-h'), hb=$('#hb-hero-chan');
+  if(chans.length>1){
+    hh.hidden=false;
+    var items=chans.map(function(c){
+      var cd=chanDy(c);
+      var cu=sumR(cd.dy,P.a,P.b), cr=sumR(cd.dr,P.a,P.b);
+      var pcu=P.pa?sumR(cd.dy,P.pa,P.pb):0;
+      var g=pcu?((cu-pcu)/pcu*100):null;
+      return {n:c,v:cu,c:CH_COLOR[c]||'var(--neutral)',
+        txt:n0(cu)+' máy · '+money(cr)+(g===null?'':
+          '  <b style="color:var('+(g>=0?'--green':'--red')+')">'+(g>=0?'▲':'▼')+Math.abs(g).toFixed(0)+'%</b>')};
+    }).sort(function(a2,b2){return b2.v-a2.v});
+    hb.innerHTML=items.map(function(x){
+      var max=Math.max.apply(null,items.map(function(y){return y.v}).concat([1]));
+      return '<div class="row"><div class="top"><span class="nm"><i style="background:'+x.c+'"></i>'+
+        '<span>'+safe(x.n)+'</span></span><span class="v">'+x.txt+'</span></div>'+
+        '<div class="track"><i style="width:'+(x.v/max*100).toFixed(1)+'%;background:'+x.c+'"></i></div></div>';
+    }).join('');
+  } else { hh.hidden=true; hb.innerHTML='' }
+
   var gr=pr?((r-pr)/pr*100):null;
   $('#o-cmp').innerHTML= P.pa
     ? 'Cùng kỳ trước: <b>'+n0(pu)+' máy</b> · <b>'+money(pr)+'</b>'+
@@ -770,7 +803,16 @@ function renderTarget(o){
   var P=periodOf('M');
   var mu=sumR(o.dy,P.a,P.b), mr=sumR(o.dr,P.a,P.b);
   var rate=day?mu/day:0, projU=Math.round(rate*dim), projR=day?Math.round(mr/day*dim):0;
-  var c=$('#c-target'), tgMonth=o.tg||0;
+  var c=$('#c-target');
+  // Target = con số anh Thái giao theo KÊNH (tổng 50 tỷ), không phải cộng target từng shop
+  var tgc=o.tgc||null, tgMonth=0, tgU=0;
+  if(tgc){
+    Object.keys(tgc).forEach(function(k){
+      if(SEG!=='ALL'&&k!==SEG) return;
+      tgU+=tgc[k][0]; tgMonth+=tgc[k][1];
+    });
+  }
+  if(!tgMonth) tgMonth=o.tg||0;
 
   $('#fc-rate').textContent=(Math.round(rate*10)/10).toLocaleString('vi-VN')+' máy';
   $('#fc-u').textContent=n0(projU)+' máy';
@@ -793,7 +835,10 @@ function renderTarget(o){
   $('#t-bar').style.width=Math.min(100,p)+'%';
   $('#t-bar').style.background='var('+cl+')';
   $('#t-pace').style.left='calc('+Math.min(100,pace)+'% - 1px)';
-  $('#t-sub').textContent='Target tháng lấy từ sheet, cộng theo shop đang phụ trách.';
+  $('#t-sub').textContent=tgc
+    ? ('Target tháng anh giao theo kênh (tổng toàn tỉnh 50 tỷ), chia cho từng Sale theo tỉ trọng bình quân — giống DB TG.'
+       + (tgU?(' Mục tiêu '+n0(tgU)+' máy.'):''))
+    : 'Target tháng lấy từ sheet, cộng theo shop đang phụ trách.';
   $('#t-pacenote').textContent='Vạch trắng = tiến độ kỳ vọng '+pct(pace)+' (đã qua '+day+'/'+dim+' ngày)';
   $('#t-now').textContent=money(mr)+' đã đạt';
   $('#t-goal').textContent='mục tiêu '+money(tgMonth);
@@ -805,6 +850,35 @@ function renderTarget(o){
   var ft=$('#fc-tag'); ft.style.color='var('+fcl+')';
   ft.textContent=(fp>=100?'✅ Đà này sẽ ĐẠT target — ':fp>=90?'⚠️ Sát target — ':'⛔ Đà này KHÔNG đạt — ')+
     pct(fp)+' target'+(fp<100?' (thiếu '+money(tgMonth-projR)+')':'');
+
+  renderTargetChan(o,tgc,pace,day,dim,P);
+}
+
+/* ---- tiến độ target của TỪNG KÊNH: kênh nào nhanh, kênh nào chậm ---- */
+function renderTargetChan(o,tgc,pace,day,dim,P){
+  var h=$('#t-chan-h'), box=$('#t-chan');
+  var chans=D.chans.filter(function(c){return tgc&&tgc[c]&&chanDy(c)});
+  if(SEG!=='ALL') chans=chans.filter(function(c){return c===SEG});
+  if(!tgc||chans.length<2){ h.hidden=true; box.innerHTML=''; return }
+  h.hidden=false;
+  box.innerHTML=chans.map(function(c){
+    var cd=chanDy(c);
+    var mr=sumR(cd.dr,P.a,P.b), mu=sumR(cd.dy,P.a,P.b);
+    var tg=tgc[c][1]||0, tgu=tgc[c][0]||0;
+    var p=tg?mr/tg*100:0;
+    var cl=p>=pace?'--green':p>=pace*0.85?'--amber':'--red';
+    var proj=day?mr/day*dim:0;
+    var fp=tg?proj/tg*100:0;
+    return '<div style="margin:10px 0 2px">'+
+      '<div class="mrow" style="margin-bottom:5px">'+
+        '<span><b style="color:'+(CH_COLOR[c]||'var(--ink)')+'">'+safe(c)+'</b> '+money(mr)+' / '+money(tg)+'</span>'+
+        '<span style="color:var('+cl+');font-weight:700">'+pct(p)+'</span></div>'+
+      '<div class="meter"><i style="width:'+Math.min(100,p).toFixed(1)+'%;background:var('+cl+')"></i>'+
+        '<u style="left:calc('+Math.min(100,pace).toFixed(1)+'% - 1px)"></u></div>'+
+      '<div class="pacenote">'+n0(mu)+'/'+n0(tgu)+' máy · đà này cuối tháng ~'+pct(fp,0)+' target'+
+        (fp<100?' (thiếu '+money(Math.max(0,tg-proj))+')':'')+'</div>'+
+      '</div>';
+  }).join('');
 }
 
 /* ---- bảng mini: kênh × kỳ ---- */
@@ -840,7 +914,7 @@ function renderDaily(o){
   }
   var isU=dyMode==='u';
   var vals=isU?u:r;
-  $('#dy-tog').textContent=isU?'Xem doanh thu':'Xem số máy';
+  $$('#p-dymode button').forEach(function(b){b.classList.toggle('on',b.dataset.dym===dyMode)});
   $('#dy-sub').textContent=(isU?'Số máy bán ra':'Doanh thu')+' từng ngày tháng '+m+
     ' — số ghi ngay trên mỗi cột.';
   var labels=[];for(var k=1;k<=dim;k++)labels.push(k);
@@ -893,7 +967,7 @@ function renderMonth(o){
     ghiChu=' Dòng máy chỉ có số theo tháng nên tab này gộp theo tháng.';
   }
 
-  $('#mo-tog').textContent=isU?'Xem doanh thu':'Xem số máy';
+  $$('#p-momode button').forEach(function(b){b.classList.toggle('on',b.dataset.mom===moMode)});
   var tenSer=SER_TAB==='ALL'?'':(' — '+(SER_PILLS.filter(function(x){return x.k===SER_TAB})[0]||{}).t);
   $('#mo-sub').textContent=(isU?'Số máy sellout':'Doanh thu')+tenSer+' theo '+ten+
     ' — cột cao nhất và '+ten+' gần nhất được ghi số. '+
@@ -1651,6 +1725,10 @@ document.addEventListener('click',function(e){
   if(sv&&!sv.disabled){SER_TAB=sv.dataset.ser;renderMonth(scope());return}
   var mm=e.target.closest('[data-momo]');
   if(mm){MO_THANG=+mm.dataset.momo;renderModel(scope());return}
+  var dm=e.target.closest('[data-dym]');
+  if(dm){dyMode=dm.dataset.dym;renderDaily(scope());return}
+  var mv=e.target.closest('[data-mom]');
+  if(mv){moMode=mv.dataset.mom;renderMonth(scope());return}
   var n=e.target.closest('nav button');
   if(n){go(n.dataset.v);return}
 });
@@ -1698,11 +1776,9 @@ $('#toast').addEventListener('click',function(e){
 
 $('#mask').addEventListener('click',closeSheet);
 $('#pick').addEventListener('click',openPicker);
-$('#mo-tog').addEventListener('click',function(){moMode=moMode==='u'?'r':'u';renderMonth(scope())});
 $('#r-tog').addEventListener('click',function(){rankMode=rankMode==='y'?'m':'y';renderRank(scope())});
 $('#a-copy').addEventListener('click',copyAlerts);
 $('#tk-copy').addEventListener('click',copyTon);
-$('#dy-tog').addEventListener('click',function(){dyMode=dyMode==='u'?'r':'u';renderDaily(scope())});
 $('#tk-tog').addEventListener('click',function(){TK_SORT=TK_SORT==='ton'?'ngay':'ton';renderTon()});
 $('#f-q').addEventListener('input',function(){drawFind(this.value)});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet()});

@@ -629,6 +629,39 @@
     dlTon.sort(function (a, b) { return b.ton - a.ton; });
 
     // =========================================================
+    // 7e. TARGET THEO KENH — lay dung con so anh Thai giao trong DB TG (tong 50 ty)
+    //     va phan bo xuong tung Sale theo DUNG cach DB TG dang lam:
+    //     ty trong doanh so/doanh thu binh quan thang cua sale trong chinh kenh do.
+    // =========================================================
+    var CHANNEL_TARGETS = {
+      MWG: { u: 3500, rv: 33000000000 },
+      KA:  { u: 600,  rv: 4500000000 },
+      IND: { u: 2000, rv: 12500000000 }
+    };
+    var tenSale = Object.keys(sales);
+    CHANS.forEach(function (c) {
+      var T = CHANNEL_TARGETS[c]; if (!T) return;
+      var tongU = 0, tongR = 0, avg = {};
+      tenSale.forEach(function (sn) {
+        var mm = sales[sn].ch[c]; if (!mm) return;
+        var u = 0, rv = 0;
+        mm.forEach(function (x) { u += x[0]; rv += x[1]; });
+        avg[sn] = { u: u / NM, rv: rv / NM };
+        tongU += avg[sn].u; tongR += avg[sn].rv;
+      });
+      Object.keys(avg).forEach(function (sn) {
+        var o = sales[sn];
+        if (!o.tgc) o.tgc = {};
+        o.tgc[c] = [
+          Math.round(T.u * (tongU ? avg[sn].u / tongU : 0)),
+          tr(T.rv * (tongR ? avg[sn].rv / tongR : 0))
+        ];
+      });
+      if (!all.tgc) all.tgc = {};
+      all.tgc[c] = [T.u, tr(T.rv)];
+    });
+
+    // =========================================================
     // 8. Dong goi
     // =========================================================
     function packCh(o) {
@@ -675,6 +708,7 @@
       if (withDy) { var x = densify(o); r.dy = x[0]; r.dr = x[1]; }
       else { r.d = o.d; r.dp = o.dp; }
       if (o.mkt) r.mkt = o.mkt;
+      if (o.tgc) r.tgc = o.tgc;
       if (o.si) r.si = o.si;
       var tk = tonKho(o); if (tk) r.tk = tk;   // ton kho IND theo model
       if (chuaGhepSellin(o)) r.tkNo = 1;      // ban nhung chua ghep duoc sell-in
@@ -741,6 +775,7 @@
       year: YEAR, lastDoy: lastDoy,
       segs: SEGS, sers: SERS, chans: CHANS,
       segsMkt: SEGA,
+      tgK: { MWG: [3500, tr(33000000000)], KA: [600, tr(4500000000)], IND: [2000, tr(12500000000)] },
       tkMonths: SI_LIST,
       dlTon: dlTon,
       tkLe: {
