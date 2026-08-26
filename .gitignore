@@ -1,2 +1,4 @@
 app-data.json
 tg_raw.json
+*.bak
+patch_*.py

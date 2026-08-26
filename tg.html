@@ -2076,6 +2076,57 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
     </section>
 
+    <section class="table-section" id="ind-ton-section">
+        <div class="table-section-header">
+            <div>
+                <h3>Tồn kho ước tính — theo đại lý &amp; model</h3>
+                <div class="chart-sub" id="ind-ton-sub">-</div>
+            </div>
+        </div>
+        <section class="kpi-row" style="margin:0 0 14px;">
+            <div class="kpi-card">
+                <div class="kpi-label">Đã nhập (Sell In)</div>
+                <div class="kpi-value" id="ind-ton-in">-</div>
+                <div class="kpi-period" id="ind-ton-in-sub">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Đã bán (Sell Out)</div>
+                <div class="kpi-value" id="ind-ton-out">-</div>
+                <div class="kpi-period" id="ind-ton-out-sub">-</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Tồn ước tính</div>
+                <div class="kpi-value" id="ind-ton-ton">-</div>
+                <div class="kpi-period" id="ind-ton-ton-sub">-</div>
+            </div>
+        </section>
+        <div class="chart-sub" id="ind-ton-note" style="margin-bottom:14px;"></div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="ind-ton-model-table">
+                <thead><tr>
+                    <th>Model</th><th class="num">Nhập</th><th class="num">Bán</th>
+                    <th class="num">Tồn</th><th class="num">Còn bán được</th><th class="num">% đã bán</th>
+                </tr></thead>
+                <tbody id="ind-ton-model-body"></tbody>
+            </table>
+        </div>
+        <div class="table-section-header" style="margin-top:20px;">
+            <div>
+                <h3>Tồn theo đại lý</h3>
+                <div class="chart-sub">Đại lý có nhiều chi nhánh được <b>gộp chung</b> vì sheet SELL IN ghi nhập theo công ty còn Sell Out ghi theo từng điểm bán. Bấm tên đại lý để mở chi tiết từng model.</div>
+            </div>
+        </div>
+        <div class="table-scroll" style="max-height:none;">
+            <table class="data-table" id="ind-ton-dl-table">
+                <thead><tr>
+                    <th>#</th><th>Đại lý</th><th class="num">Điểm bán</th><th>Sale</th>
+                    <th class="num">Nhập</th><th class="num">Bán</th><th class="num">Tồn</th><th>Đọng nhiều nhất</th>
+                </tr></thead>
+                <tbody id="ind-ton-dl-body"></tbody>
+            </table>
+        </div>
+    </section>
+
 </div>
 
 <footer class="dashboard-footer">Dữ liệu từ Google Sheet "Data TG 2026" — tab CENTER · Không có số liệu nào được tự tạo</footer>
@@ -6250,6 +6301,242 @@ function computeIndAlerts() {
     return alerts;
 }
 
+
+// ================= TON KHO UOC TINH — kenh IND =================
+// Ton = sell-in luy ke - sell out luy ke, CHI tren cac thang co so trong sheet SELL IN.
+// Tinh o cap DAI LY: nhieu dai ly co vai chi nhanh, sheet SELL IN ghi nhap theo cong ty
+// con Sell Out ghi theo tung diem ban -> chia ra tung diem ban la bia so.
+function tonKhoIndKhongDau(x) {
+    return String(x || '').toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').replace(/\u0111/g, 'd');
+}
+function tonKhoIndKhoaDaiLy(ten) {
+    let t = tonKhoIndKhongDau(ten);
+    t = t.split(/\s[-\u2013]\s|\s*\(|_|,|\s[-\u2013]|[-\u2013]\s/)[0];
+    t = t.replace(/\b(cua hang|cong ty|cty|tnhh|mtv|dntn|doanh nghiep tu nhan)\b/g, ' ');
+    t = t.replace(/[^a-z0-9]+/g, ' ').trim();
+    return t;
+}
+function tonKhoIndChuanModel(x) {
+    return String(x || '').toUpperCase().replace(/\s+/g, ' ').replace(/\s*\+\s*/g, '+').trim();
+}
+
+function computeIndTonKho() {
+    const rows = DATA.sell_in_rows || [];
+    const idToName = indStoreIdToName();
+    const saleByName = indStoreSaleByName();
+
+    // thang nao co so sell-in
+    const thangCo = {};
+    rows.forEach(r => {
+        if (!r || r.length < 7) return;
+        const m = parseInt(r[SELLIN_COL.MONTH], 10);
+        if (m) thangCo[m] = 1;
+    });
+    const dsThang = Object.keys(thangCo).map(Number).sort((a, b) => a - b);
+
+    // gom cac shop IND thanh dai ly
+    const nhom = {};   // khoa -> {ten, shops:[], sale:{}, nhap:{}, ban:{}}
+    DATA.store_rows.forEach(r => {
+        if (r.channel !== 'IND') return;
+        const k = tonKhoIndKhoaDaiLy(r.store);
+        if (!k) return;
+        if (!nhom[k]) nhom[k] = { ten: r.store, shops: [], sale: {}, nhap: {}, ban: {} };
+        if (nhom[k].shops.indexOf(r.store) < 0) nhom[k].shops.push(r.store);
+        if (r.sale) nhom[k].sale[r.sale] = 1;
+    });
+    const khoaCuaShop = {};
+    Object.keys(nhom).forEach(k => nhom[k].shops.forEach(st => { khoaCuaShop[st] = k; }));
+
+    // NHAP: uu tien Store ID, khong khop thi ghep theo TEN dai ly
+    let leTong = 0, leMa = {}, theoMa = 0, theoTen = 0;
+    rows.forEach(r => {
+        if (!r || r.length < 7) return;
+        const m = parseInt(r[SELLIN_COL.MONTH], 10);
+        if (!m) return;
+        if (String(r[SELLIN_COL.GROUP] || '').trim().toUpperCase() !== 'OPPO') return;
+        const qty = num(r[SELLIN_COL.QTY]);
+        if (!qty) return;
+        const sid = String(r[SELLIN_COL.STORE_ID] || '').trim();
+        const sp = String(r[SELLIN_COL.PRODUCT] || '').trim();
+        let k = null;
+        const st = idToName[sid];
+        if (st && khoaCuaShop[st]) { k = khoaCuaShop[st]; theoMa += qty; }
+        else {
+            const kt = tonKhoIndKhoaDaiLy(r[SELLIN_COL.RETAILER]);
+            if (kt && nhom[kt]) { k = kt; theoTen += qty; }
+        }
+        if (!k) { leTong += qty; if (sid) leMa[sid] = 1; return; }
+        const mk = tonKhoIndChuanModel(sp);
+        if (!nhom[k].nhap[mk]) nhom[k].nhap[mk] = { n: sp, v: 0 };
+        nhom[k].nhap[mk].v += qty;
+    });
+
+    // BAN: chi cac thang co sell-in
+    DATA.crosstab.forEach(rec => {
+        if (rec.channel !== 'IND') return;
+        if (!thangCo[rec.m]) return;
+        const k = khoaCuaShop[rec.store];
+        if (!k) return;
+        const mk = tonKhoIndChuanModel(rec.model);
+        if (!mk) return;
+        if (!nhom[k].ban[mk]) nhom[k].ban[mk] = { n: rec.model, v: 0 };
+        nhom[k].ban[mk].v += (rec.sellout || 0);
+    });
+
+    // ap bo loc Sale / Shop cua tab Chi tiet IND
+    const dsDaiLy = [];
+    Object.keys(nhom).forEach(k => {
+        const g = nhom[k];
+        let shops = g.shops;
+        if (indFilters.stores.length) shops = shops.filter(x => indFilters.stores.includes(x));
+        if (!shops.length) return;
+        const sales = {};
+        shops.forEach(x => { if (saleByName[x]) sales[saleByName[x]] = 1; });
+        if (indFilters.sales.length && !Object.keys(sales).some(x => indFilters.sales.includes(x))) return;
+
+        const md = {};
+        Object.keys(g.nhap).forEach(mk => { md[mk] = { n: g.nhap[mk].n, nhap: g.nhap[mk].v, ban: 0 }; });
+        Object.keys(g.ban).forEach(mk => {
+            if (!md[mk]) md[mk] = { n: g.ban[mk].n, nhap: 0, ban: 0 };
+            md[mk].ban += g.ban[mk].v;
+        });
+        const ds = Object.keys(md).map(mk => md[mk]).filter(x => x.nhap || x.ban);
+        let nhap = 0, ban = 0;
+        ds.forEach(x => { nhap += x.nhap; ban += x.ban; });
+        if (!nhap) return;   // chua ghep duoc sell-in -> khong tinh ton, khong bia so am
+        ds.forEach(x => { x.ton = x.nhap - x.ban; });
+        ds.sort((a, b) => b.ton - a.ton);
+        dsDaiLy.push({
+            ten: g.ten, shops: shops, sale: Object.keys(sales),
+            nhap: nhap, ban: ban, ton: nhap - ban, md: ds,
+        });
+    });
+    dsDaiLy.sort((a, b) => b.ton - a.ton);
+
+    // so ngay da chay trong cac thang co sell-in (de tinh "con ban duoc")
+    let soNgay = 0;
+    const nam = (function () {
+        const ks = Object.keys(DATA.overview_daily_by_date || {}).sort();
+        return ks.length ? parseInt(ks[0].slice(0, 4), 10) : new Date().getFullYear();
+    })();
+    let ngayCuoi = 0;
+    Object.keys(DATA.overview_daily_by_date || {}).forEach(iso => {
+        const t = Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+        const doy = Math.round((t - Date.UTC(nam, 0, 1)) / 86400000) + 1;
+        if (doy > ngayCuoi) ngayCuoi = doy;
+    });
+    dsThang.forEach(m => {
+        const dau = Math.round((Date.UTC(nam, m - 1, 1) - Date.UTC(nam, 0, 1)) / 86400000) + 1;
+        const het = Math.round((Date.UTC(nam, m, 0) - Date.UTC(nam, 0, 1)) / 86400000) + 1;
+        soNgay += Math.max(0, Math.min(ngayCuoi, het) - dau + 1);
+    });
+
+    return { dsDaiLy, dsThang, soNgay, leTong: Math.round(leTong), leMa: Object.keys(leMa).length,
+             theoMa: Math.round(theoMa), theoTen: Math.round(theoTen) };
+}
+
+function tonKhoIndSoNgayBan(ton, nhip) {
+    if (ton <= 0) return '-';
+    if (!nhip) return 'chưa bán máy nào';
+    const d = Math.round(ton / nhip);
+    return d > 365 ? 'trên 1 năm' : fmtInt(d) + ' ngày';
+}
+
+function renderIndTonKho() {
+    const body = document.getElementById('ind-ton-model-body');
+    const dlBody = document.getElementById('ind-ton-dl-body');
+    if (!body || !dlBody) return;
+    const K = computeIndTonKho();
+    const nhan = K.dsThang.length
+        ? (K.dsThang.length === 1 ? ('tháng ' + K.dsThang[0]) : ('T' + K.dsThang[0] + '–T' + K.dsThang[K.dsThang.length - 1]))
+        : '(chưa có số sell-in)';
+
+    let tIn = 0, tBan = 0, soDiem = 0;
+    K.dsDaiLy.forEach(x => { tIn += x.nhap; tBan += x.ban; soDiem += x.shops.length; });
+    const tTon = tIn - tBan;
+    const nhip = K.soNgay ? tBan / K.soNgay : 0;
+
+    document.getElementById('ind-ton-sub').innerHTML =
+        'Cộng dồn <b>' + nhan + '</b> · <b>' + K.dsDaiLy.length + '</b> đại lý ghép được sell-in ('
+        + soDiem + ' điểm bán) · <b>' + K.soNgay + '</b> ngày đã chạy. '
+        + 'Chỉ tính các tháng có <b>cả</b> số nhập lẫn số bán — tháng nào sheet SELL IN chưa nhập thì bỏ qua cả hai chiều.';
+    document.getElementById('ind-ton-in').textContent = fmtInt(tIn);
+    document.getElementById('ind-ton-in-sub').textContent = 'máy OPPO, đã loại phụ kiện';
+    document.getElementById('ind-ton-out').textContent = fmtInt(tBan);
+    document.getElementById('ind-ton-out-sub').textContent = 'máy, cùng kỳ ' + nhan;
+    const elTon = document.getElementById('ind-ton-ton');
+    elTon.textContent = fmtInt(tTon);
+    elTon.style.color = tTon > 0 ? '#e0b24d' : '#2ee673';
+    document.getElementById('ind-ton-ton-sub').textContent =
+        (nhip > 0 && tTon > 0) ? ('còn bán được ~' + tonKhoIndSoNgayBan(tTon, nhip)) : 'máy';
+
+    let note = '<b>Cách tính:</b> Tồn = Sell In trừ Sell Out, cộng dồn ' + nhan
+        + '. Ghép nhập vào đại lý theo <b>Store ID</b> trước (' + fmtInt(K.theoMa) + ' máy)'
+        + (K.theoTen ? (', không khớp thì ghép theo <b>tên đại lý</b> (' + fmtInt(K.theoTen) + ' máy)') : '')
+        + '. <b>Chưa cộng tồn đầu năm, chưa trừ hàng trả về và điều chuyển giữa đại lý</b> — dùng để so đại lý với nhau và bắt hàng nằm lâu, không thay được biên bản kiểm kê.';
+    if (K.leTong) {
+        note += '<br><span style="color:#e0b24d;"><b>Chưa khớp được:</b> ' + fmtInt(K.leTong)
+            + ' máy nhập dưới ' + K.leMa + ' mã đại lý không nằm trong danh sách IND — phần lớn là đại lý tỉnh khác cùng nhà phân phối. Không cộng vào tồn.</span>';
+    }
+    document.getElementById('ind-ton-note').innerHTML = note;
+
+    // ---- bang theo model
+    const gm = {};
+    K.dsDaiLy.forEach(x => x.md.forEach(r => {
+        const k = tonKhoIndChuanModel(r.n);
+        if (!gm[k]) gm[k] = { n: r.n, nhap: 0, ban: 0 };
+        gm[k].nhap += r.nhap; gm[k].ban += r.ban;
+    }));
+    const dsModel = Object.keys(gm).map(k => {
+        const r = gm[k];
+        r.ton = r.nhap - r.ban;
+        r.nhip = K.soNgay ? r.ban / K.soNgay : 0;
+        return r;
+    }).sort((a, b) => b.ton - a.ton);
+
+    body.innerHTML = dsModel.length ? dsModel.map(r => {
+        const pct = r.nhap ? (r.ban / r.nhap * 100) : null;
+        const mau = r.ton > 0 ? '#e0b24d' : (r.ton < 0 ? '#5b8fd6' : 'var(--text-secondary)');
+        return '<tr><td>' + r.n + '</td>'
+            + '<td class="num">' + fmtInt(r.nhap) + '</td>'
+            + '<td class="num">' + fmtInt(r.ban) + '</td>'
+            + '<td class="num" style="color:' + mau + '; font-weight:700;">' + fmtInt(r.ton) + '</td>'
+            + '<td class="num">' + tonKhoIndSoNgayBan(r.ton, r.nhip) + '</td>'
+            + '<td class="num">' + (pct === null ? '-' : pct.toFixed(0) + '%') + '</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-secondary);">Không có dữ liệu (theo bộ lọc hiện tại).</td></tr>';
+
+    // ---- bang theo dai ly
+    dlBody.innerHTML = K.dsDaiLy.length ? K.dsDaiLy.map((x, i) => {
+        const top = x.md.filter(r => r.ton > 0)[0];
+        const mau = x.ton > 0 ? '#e0b24d' : (x.ton < 0 ? '#5b8fd6' : 'var(--text-secondary)');
+        const idCt = 'ind-ton-ct-' + i;
+        const ct = '<tr id="' + idCt + '" hidden><td colspan="8" style="padding:0 12px 12px;">'
+            + '<div style="font-size:12px; color:var(--text-secondary); margin:6px 0;">Điểm bán: '
+            + x.shops.map(t => '· ' + t).join('<br>') + '</div>'
+            + '<table class="data-table" style="margin:0;"><thead><tr><th>Model</th><th class="num">Nhập</th><th class="num">Bán</th><th class="num">Tồn</th></tr></thead><tbody>'
+            + x.md.map(r => '<tr><td>' + r.n + '</td><td class="num">' + fmtInt(r.nhap)
+                + '</td><td class="num">' + fmtInt(r.ban) + '</td><td class="num">' + fmtInt(r.ton) + '</td></tr>').join('')
+            + '</tbody></table></td></tr>';
+        return '<tr class="ind-ton-dl-row" data-ct="' + idCt + '" style="cursor:pointer;">'
+            + '<td>' + (i + 1) + '</td>'
+            + '<td><b>' + x.ten + '</b></td>'
+            + '<td class="num">' + x.shops.length + '</td>'
+            + '<td>' + x.sale.join(', ') + '</td>'
+            + '<td class="num">' + fmtInt(x.nhap) + '</td>'
+            + '<td class="num">' + fmtInt(x.ban) + '</td>'
+            + '<td class="num" style="color:' + mau + '; font-weight:700;">' + fmtInt(x.ton) + '</td>'
+            + '<td>' + (top ? (top.n + ' — ' + fmtInt(top.ton) + ' máy') : '-') + '</td></tr>' + ct;
+    }).join('') : '<tr><td colspan="8" style="text-align:center; padding:16px; color:var(--text-secondary);">Không có dữ liệu (theo bộ lọc hiện tại).</td></tr>';
+
+    dlBody.querySelectorAll('.ind-ton-dl-row').forEach(tr => {
+        tr.addEventListener('click', () => {
+            const ct = document.getElementById(tr.dataset.ct);
+            if (ct) ct.hidden = !ct.hidden;
+        });
+    });
+}
+
 function renderIndAlertsTable() {
     const alerts = computeIndAlerts();
     const head = document.getElementById('ind-alerts-table-head');
@@ -6732,6 +7019,7 @@ function refreshIndCluster() {
     renderIndAlertsTable();
     renderIndShopRankingTable();
     renderIndGoalCards();
+    renderIndTonKho();
 }
 // Đã bỏ UI "Bộ lọc chung — Chi tiết IND" (ms-ind-sale/ms-ind-shop/ind-reset) theo yêu cầu anh Thái -
 // indFilters giữ nguyên state {sales:[],stores:[]} mặc định (không lọc gì), refreshIndCluster() chỉ
