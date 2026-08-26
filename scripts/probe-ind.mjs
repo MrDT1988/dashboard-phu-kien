@@ -4,6 +4,8 @@
  * Chi in ra log cua Action (ten san pham la ten hang hoa, khong phai so lieu kinh doanh).
  */
 import { chromium } from 'playwright';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 const SITE = process.env.SITE_URL || 'https://mrdt1988.github.io/dashboard-phu-kien';
 const NAP_TRANG = 180000, CHO_DU_LIEU = 1500000;
@@ -72,6 +74,8 @@ try {
       soTenModelIND: Object.keys(md).length,
       spTop: top(sp, 45),
       mdTop: top(md, 45),
+      spAll: Object.keys(sp).sort((a,b)=>sp[b]-sp[a]).map(k=>[k, Math.round(sp[k])]),
+      mdAll: Object.keys(md).sort((a,b)=>md[b]-md[a]).map(k=>[k, md[k]]),
     };
   });
 
@@ -87,6 +91,20 @@ try {
   log('');
   log('--- 45 TEN MODEL BAN HANG IND (ten || so may ban) ---');
   kq.mdTop.forEach((x, i) => log(String(i + 1).padStart(2) + '. ' + x));
+
+  // Ghi ban day du ra file DA MA HOA (repo la public nen khong de tran)
+  try {
+    const pin = JSON.parse(process.env.SALE_CODES || '{}').admin.pin;
+    const salt = crypto.randomBytes(16), iv = crypto.randomBytes(12), it = 200000;
+    const key = crypto.pbkdf2Sync(String(pin), salt, it, 32, 'sha256');
+    const c = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const ct = Buffer.concat([c.update(JSON.stringify(kq), 'utf8'), c.final(), c.getAuthTag()]);
+    fs.mkdirSync('data', { recursive: true });
+    fs.writeFileSync('data/probe-ind.json', JSON.stringify({
+      it, salt: salt.toString('base64'), iv: iv.toString('base64'), ct: ct.toString('base64'),
+    }));
+    log('da ghi data/probe-ind.json (ma hoa)');
+  } catch (e) { log('CANH BAO: khong ghi duoc file do tham:', String(e.message)); }
 } finally {
   await browser.close();
 }

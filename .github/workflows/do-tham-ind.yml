@@ -1,11 +1,12 @@
-# Do tham du lieu IND — chi chay khi bam tay, KHONG ghi gi vao repo.
+# Do tham du lieu IND — chi chay khi bam tay.
+# Ket qua ghi ra data/probe-ind.json, DA MA HOA bang ma quan ly vung.
 name: Do tham IND (ton kho)
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   probe:
@@ -24,4 +25,12 @@ jobs:
       - name: Do tham
         env:
           SITE_URL: https://mrdt1988.github.io/dashboard-phu-kien
+          SALE_CODES: ${{ secrets.SALE_CODES }}
         run: node scripts/probe-ind.mjs
+      - name: Luu ket qua
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/probe-ind.json
+          git diff --cached --quiet || git commit -m "Ket qua do tham IND (da ma hoa)"
+          git push
