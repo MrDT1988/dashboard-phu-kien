@@ -345,9 +345,12 @@ h4.dh:first-child{margin-top:0}
       <div class="filt" id="filt" hidden>
         <label><span>Sale</span><select id="f-sale"></select></label>
         <label id="f-size-w" hidden><span>Size shop</span><select id="f-size"></select></label>
-        <label id="f-seg-w" hidden><span>Phân khúc giá</span><select id="f-seg"></select></label>
       </div>
-      <div class="note" id="filt-note" hidden>Ba bộ lọc này áp cho <b>cả tab</b> đang xem, không riêng biểu đồ ngày.</div>
+      <div id="f-seg-w" hidden style="margin:0 0 10px">
+        <span style="display:block;font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:600">Phân khúc giá — bấm chọn nhiều khoảng</span>
+        <div class="pills sm ser" id="f-seg"></div>
+      </div>
+      <div class="note" id="filt-note" hidden></div>
       <div class="pills" id="p-dymode">
         <button data-dym="u" class="on">Doanh số</button><button data-dym="r">Doanh thu</button>
       </div>
@@ -499,7 +502,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.14';
+var APP_VER='2026-08-26.15';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -675,9 +678,16 @@ function buildFilt(){
   // Anh Thái 26/08: bộ lọc nằm ở phần Sell out theo ngày của tab kênh, không để trên Tổng quan
   if(SEG!=='MWG'||D.sales.length<=1){ box.hidden=true; nt.hidden=true; return }
   box.hidden=false; nt.hidden=false;
-  sel.innerHTML='<option value="__ALL__">'+safe(tenPhamVi())+'</option>'+
-    D.sales.map(function(x){
-      return '<option value="'+safe(x.n)+'">'+safe(x.n)+' ('+x.shops+' shop)</option>'}).join('');
+  nt.innerHTML='Lọc theo <b>Sale</b> và <b>Size shop</b> đổi cả biểu đồ lẫn bảng theo ngày. '+
+    '<b>Phân khúc giá</b> chỉ khoảng <b>10–20M</b> mới có số theo ngày — chọn khoảng khác thì '+
+    'biểu đồ Doanh số bên dưới đổi theo, còn bảng ngày giữ nguyên toàn phân khúc (có ghi chú ⚠).';
+  // Chỉ liệt kê sale CÓ shop trong kênh đang xem
+  var dsS=D.sales.filter(function(x){return (x.s||[]).some(function(y){return y.ch2===SEG})});
+  if(CUR!=='__ALL__'&&!dsS.some(function(x){return x.n===CUR})) CUR='__ALL__';
+  sel.innerHTML='<option value="__ALL__">Tất cả sale '+safe(SEG)+'</option>'+
+    dsS.map(function(x){
+      var n2=(x.s||[]).filter(function(y){return y.ch2===SEG}).length;
+      return '<option value="'+safe(x.n)+'">'+safe(x.n)+' ('+n2+' shop)</option>'}).join('');
   sel.value=CUR;
   // Size shop / Phân khúc: chỉ bật khi gói dữ liệu có sẵn số
   var coSize=(D.sizes&&D.sizes.length);
@@ -690,9 +700,9 @@ function buildFilt(){
   var coSgm=!!(scope().sgm);
   $('#f-seg-w').hidden=!coSgm;
   if(coSgm){
-    $('#f-seg').innerHTML='<option value="">Tất cả phân khúc</option>'+
-      D.segs.map(function(x,i){return '<option value="'+i+'">'+safe(x)+'</option>'}).join('');
-    $('#f-seg').value=F_SEG===null?'':String(F_SEG);
+    $('#f-seg').innerHTML=D.segs.map(function(x,i){
+      return '<button data-fseg="'+i+'"'+(F_SEGS.indexOf(i)>=0?' class="on"':'')+'>'+safe(x)+'</button>'}).join('')+
+      '<button data-fseg="-1"'+(F_SEGS.length?'':' class="on"')+'>Tất cả</button>';
   }
 }
 function buildSegbar(){
@@ -840,7 +850,7 @@ function tvTable(head,rows){
 /* =========================================================
    TỔNG QUAN
    ========================================================= */
-var F_SIZE='', F_SEG=null;      // bo loc size shop / phan khuc gia
+var F_SIZE='', F_SEGS=[];       // bo loc size shop / phan khuc gia (chon nhieu)
 var dyMode='u';                 // bieu do ngay: 'u' = so may, 'r' = doanh thu
 var SER_TAB='ALL';              // tab dong may o the Doanh so
 var MO_THANG=null;              // thang dang loc o the Model ban chay
@@ -1098,20 +1108,31 @@ function renderTargetChan(o,tgc,pace,day,dim,P,laTam){
 
 /* ---- bảng mini theo SALE, kèm thị phần toàn hãng (chỉ kênh có số thị trường) ---- */
 // dk[] của shop là mảng theo NGÀY trong tháng hiện tại: [máy OPPO, máy toàn thị trường]
+// Chỉ khoảng 10-20M có số theo NGÀY (cột pk1020 của DB TG). Các phân khúc khác
+// không tách được theo ngày -> app nói rõ thay vì trả số sai.
+function chiPK1020(){
+  if(!F_SEGS.length) return false;
+  var ten=F_SEGS.map(function(k){return D.segs[k]});
+  return ten.every(function(t){return /10\s*-\s*15|15\s*-\s*20/.test(t)});
+}
+function locPKNgayDuoc(){ return !F_SEGS.length||chiPK1020() }
+
 function mktSale(saleObj,a,b){
   var Y=D.year, m=D.months[MI], dau=toDoy(Y,m,1);
   var oU=0,tU=0,oR=0,tR=0,co=false,cu4=false;
+  var pk=chiPK1020();
   (saleObj.s||[]).forEach(function(sh){
     if(sh.ch2!==SEG||!sh.dk) return;
+    if(F_SIZE&&sh.size!==F_SIZE) return;          // lọc Size shop
     co=true;
     var soCot=(sh.dk[0]||[]).length; if(soCot>=10) cu4=true;
+    var jO=0,jOr=1,jT=8,jTr=9;
+    if(pk&&soCot>=14){ jO=10; jOr=11; jT=12; jTr=13 }
     for(var doy=Math.max(a,dau);doy<=b;doy++){
       var i=doy-dau; if(i<0||i>=sh.dk.length) continue;
       var c=sh.dk[i]||[];
-      oU+=c[0]||0;
-      tU+=(soCot>=10?(c[8]||0):(c[1]||0));
-      oR+=(soCot>=10?(c[1]||0):(c[2]||0));
-      tR+=(soCot>=10?(c[9]||0):(c[3]||0));
+      if(soCot>=10){ oU+=c[jO]||0; oR+=c[jOr]||0; tU+=c[jT]||0; tR+=c[jTr]||0 }
+      else { oU+=c[0]||0; tU+=c[1]||0; oR+=c[2]||0; tR+=c[3]||0 }
     }
   });
   return co?{o:oU,t:tU,oR:oR,tR:tR,cu4:cu4}:null;
@@ -1124,6 +1145,7 @@ function mktNgay(o){
   (o.s||[]).forEach(function(sh){
     if(!sh.dk||!sh.dk.length) return;
     if(SEG!=='ALL'&&sh.ch2!==SEG) return;
+    if(F_SIZE&&sh.size!==F_SIZE) return;
     co=true;
     cot=Math.max(cot,(sh.dk[0]||[]).length);
     if(!cu){ cu=[]; for(var q=0;q<dim;q++){ var z=[];for(var w=0;w<10;w++)z.push(0); cu.push(z) } }
@@ -1277,9 +1299,13 @@ function renderDaily(o){
     // Anh Thái 26/08: bảng mini theo TỪNG NGÀY, không gộp tuần nữa
     var ngay=[]; for(var q2=0;q2<day;q2++) ngay.push({a:a+q2,b:a+q2,label:String(q2+1)});
     var coTP=miniTableSale($('#tv-week'),ngay,'Sale',isU);
-    if(hdr&&hdr.className==='subhead')
-      hdr.textContent=coTP?('Thị phần từng ngày — từng sale ('+(isU?'theo máy':'theo doanh thu')+')')
-                          :'Theo ngày — từng sale';
+    if(hdr&&hdr.className==='subhead'){
+      var nhan='Thị phần từng ngày — từng sale ('+(isU?'theo máy':'theo doanh thu')+')';
+      if(F_SIZE) nhan+=' · size '+F_SIZE;
+      if(F_SEGS.length) nhan+=chiPK1020()?' · chỉ PK 10–20M'
+        :' · ⚠ phân khúc chưa lọc được theo ngày';
+      hdr.textContent=coTP?nhan:'Theo ngày — từng sale';
+    }
   } else {
     miniTable($('#tv-week'),weeksIn(a,a+day-1),'Tuần');
     if(hdr&&hdr.className==='subhead') hdr.textContent='Theo tuần — từng kênh';
@@ -1307,7 +1333,7 @@ function renderMonth(o){
   var isU=moMode==='u';
 
   // Dòng máy chỉ có số theo THÁNG, nên tab Reno/Find chỉ dùng được ở Tháng và Quý
-  var coSrm=!!(o.srm&&o.srm.length)&&F_SEG===null;
+  var coSrm=!!(o.srm&&o.srm.length)&&!F_SEGS.length;
   var pil=$('#p-ser');
   if(coSrm){
     if(TR==='W'&&SER_TAB!=='ALL') SER_TAB='ALL';
@@ -1320,11 +1346,13 @@ function renderMonth(o){
 
   var B=bucketsOf(TR), ten=TR==='W'?'tuần':TR==='Q'?'quý':'tháng';
   var vals, ghiChu='';
-  if(F_SEG!==null&&o.sgm&&o.sgm[F_SEG]){
-    // Lọc theo phân khúc giá — chỉ có số theo THÁNG nên quy về tháng
-    var tt=D.months.map(function(mm,i){ return (o.sgm[F_SEG][i]||[0,0])[isU?0:1] });
+  if(F_SEGS.length&&o.sgm){
+    // Lọc theo phân khúc giá (chọn được nhiều khoảng) — chỉ có số theo THÁNG
+    var tt=D.months.map(function(mm,i){
+      var t=0; F_SEGS.forEach(function(k){ t+=((o.sgm[k]||[])[i]||[0,0])[isU?0:1] }); return t});
     vals=B.map(function(b){ return gopThang(tt,b) });
-    ghiChu=' Đang lọc phân khúc '+D.segs[F_SEG]+' — phân khúc chỉ có số theo tháng.';
+    ghiChu=' Đang lọc '+F_SEGS.map(function(k){return D.segs[k]}).join(' + ')+
+      ' — phân khúc chỉ có số theo tháng.';
   } else if(SER_TAB==='ALL'||!coSrm){
     vals=B.map(function(b){return isU?sumR(o.dy,b.a,b.b):sumR(o.dr,b.a,b.b)});
   } else {
@@ -2097,6 +2125,13 @@ document.addEventListener('click',function(e){
   if(sv&&!sv.disabled){SER_TAB=sv.dataset.ser;renderMonth(scope());return}
   var mm=e.target.closest('[data-momo]');
   if(mm){MO_THANG=+mm.dataset.momo;renderModel(scope());return}
+  var fs=e.target.closest('[data-fseg]');
+  if(fs){
+    var v=+fs.dataset.fseg;
+    if(v<0) F_SEGS=[];
+    else { var k=F_SEGS.indexOf(v); if(k>=0) F_SEGS.splice(k,1); else F_SEGS.push(v) }
+    renderOver(); return;
+  }
   var dm=e.target.closest('[data-dym]');
   if(dm){dyMode=dm.dataset.dym;renderDaily(scope());return}
   var mv=e.target.closest('[data-mom]');
@@ -2174,7 +2209,7 @@ $('#f-sale').addEventListener('change',function(){
   renderOver(); window.scrollTo(0,0);
 });
 $('#f-size').addEventListener('change',function(){F_SIZE=this.value;renderOver()});
-$('#f-seg').addEventListener('change',function(){F_SEG=this.value===''?null:+this.value;renderOver()});
+
 $('#mask').addEventListener('click',closeSheet);
 $('#pick').addEventListener('click',openPicker);
 $('#r-tog').addEventListener('click',function(){rankMode=rankMode==='y'?'m':'y';renderRank(scope())});

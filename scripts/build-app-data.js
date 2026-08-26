@@ -569,20 +569,24 @@
                    c.samsung_units || 0, c.samsung_rev || 0,
                    c.xiaomi_units || 0, c.xiaomi_rev || 0,
                    c.apple_units || 0, c.apple_rev || 0,
-                   c.total_units || 0, c.total_rev || 0];
+                   c.total_units || 0, c.total_rev || 0,
+                   // rieng khoang 10-20M — DB TG co san theo ngay
+                   c.pk1020_oppo_units || 0, c.pk1020_oppo_rev || 0,
+                   c.pk1020_total_units || 0, c.pk1020_total_rev || 0];
           if (!v[0] && !v[8]) return;
-          var oNo = function (n) { var z = new Array(n); for (var q = 0; q < n; q++) z[q] = [0,0,0,0,0,0,0,0,0,0]; return z; };
+          var oNo = function (n) { var z = new Array(n); for (var q = 0; q < n; q++) z[q] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]; return z; };
           if (m === CUR_M && d >= 1 && d <= DIM_CUR) {
             if (!cur) cur = oNo(DIM_CUR);
-            for (var k1 = 0; k1 < 10; k1++) cur[d - 1][k1] += v[k1];
+            for (var k1 = 0; k1 < 14; k1++) cur[d - 1][k1] += v[k1];
           } else if (PRV_M && m === PRV_M && d >= 1 && d <= DIM_PRV) {
             if (!prv) prv = oNo(DIM_PRV);
-            for (var k2 = 0; k2 < 10; k2++) prv[d - 1][k2] += v[k2];
+            for (var k2 = 0; k2 < 14; k2++) prv[d - 1][k2] += v[k2];
           }
         });
         // doanh thu -> trieu dong cho gon
         var lamTron = function (x) { return x.map(function (v) {
-          return [v[0], tr(v[1]), v[2], tr(v[3]), v[4], tr(v[5]), v[6], tr(v[7]), v[8], tr(v[9])]; }); };
+          return [v[0], tr(v[1]), v[2], tr(v[3]), v[4], tr(v[5]), v[6], tr(v[7]), v[8], tr(v[9]),
+                  v[10], tr(v[11]), v[12], tr(v[13])]; }); };
         if (cur) shops[st].dk = lamTron(cur);
         if (prv) shops[st].dkp = lamTron(prv);
       });
