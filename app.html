@@ -485,7 +485,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.07';
+var APP_VER='2026-08-26.08';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -624,6 +624,7 @@ function scope(){
   return {n:o.n,chan:SEG,m:cd.m,dy:cd.dy||[],dr:cd.dr||[],ch:null,
     sg:cd.sg,sgM:cd.sgM,sr:cd.sr,srM:cd.srM,mkt:cd.mkt,
     ac:cd.ac,mo:cd.mo,si:(SEG==='IND'?o.si:null),
+    tgc:(o.tgc&&o.tgc[SEG])?(function(){var z={};z[SEG]=o.tgc[SEG];return z})():null,
     s:lst,shops:lst.length,tg:lst.reduce(function(t,x){return t+x.tg},0)};
 }
 // Mảng theo ngày của 1 kênh trong phạm vi đang xem (dùng cho bảng mini)
@@ -930,22 +931,41 @@ function renderTarget(o){
 /* ---- tiến độ target của TỪNG KÊNH: kênh nào nhanh, kênh nào chậm ---- */
 function renderTargetChan(o,tgc,pace,day,dim,P,laTam){
   var h=$('#t-chan-h'), box=$('#t-chan');
-  var chans=D.chans.filter(function(c){return tgc&&tgc[c]&&chanDy(c)});
-  if(SEG!=='ALL') chans=chans.filter(function(c){return c===SEG});
-  if(!tgc||chans.length<2){ h.hidden=true; box.innerHTML=''; return }
+  // Ở Tổng quan: tách theo KÊNH. Ở tab 1 kênh: tách theo SALE.
+  var dong=[], coTam=false;
+  if(SEG==='ALL'){
+    D.chans.forEach(function(c){
+      if(!(tgc&&tgc[c]&&chanDy(c))) return;
+      dong.push({n:c,cd:chanDy(c),tg:tgc[c],mau:CH_COLOR[c]||'var(--ink)'});
+    });
+  } else if(CUR==='__ALL__'){
+    var dsS=D.sales.filter(function(x){return (x.chd||{})[SEG]&&(x.s||[]).some(function(y){return y.ch2===SEG})});
+    dsS.forEach(function(x,i){
+      var tg=(x.tgc&&x.tgc[SEG])?x.tgc[SEG]:null;
+      if(!tg){   // chưa có target theo kênh -> tạm cộng target shop của sale đó trong kênh này
+        var t=0; (x.s||[]).forEach(function(y){ if(y.ch2===SEG&&y.tg) t+=y.tg });
+        if(t){ tg=[0,t]; coTam=true }
+      }
+      if(!tg) return;
+      dong.push({n:x.n,cd:x.chd[SEG],tg:tg,mau:segColor(i,dsS.length)});
+    });
+  }
+  if(dong.length<2){ h.hidden=true; box.innerHTML=''; return }
   h.hidden=false;
-  h.textContent='Tiến độ từng kênh'+(laTam?' (target tạm cộng từ shop)':'');
-  box.innerHTML=chans.map(function(c){
-    var cd=chanDy(c);
+  h.textContent='Tiến độ từng '+(SEG==='ALL'?'kênh':'sale')+
+    (((SEG==='ALL'&&laTam)||coTam)?' (target tạm cộng từ shop)':'');
+  dong.sort(function(a2,b2){return (b2.tg[1]||0)-(a2.tg[1]||0)});
+  box.innerHTML=dong.map(function(z){
+    var c=z.n, cd=z.cd;
     var mr=sumR(cd.dr,P.a,P.b), mu=sumR(cd.dy,P.a,P.b);
-    var tg=tgc[c][1]||0, tgu=tgc[c][0]||0;
+    var tg=z.tg[1]||0, tgu=z.tg[0]||0;
     var p=tg?mr/tg*100:0;
     var cl=p>=pace?'--green':p>=pace*0.85?'--amber':'--red';
     var proj=day?mr/day*dim:0;
     var fp=tg?proj/tg*100:0;
     return '<div style="margin:10px 0 2px">'+
       '<div class="mrow" style="margin-bottom:5px">'+
-        '<span><b style="color:'+(CH_COLOR[c]||'var(--ink)')+'">'+safe(c)+'</b> '+money(mr)+' / '+money(tg)+'</span>'+
+        '<span><b style="color:'+z.mau+'">'+safe(c)+'</b> '+money(mr)+' / '+money(tg)+'</span>'+
         '<span style="color:var('+cl+');font-weight:700">'+pct(p)+'</span></div>'+
       '<div class="meter"><i style="width:'+Math.min(100,p).toFixed(1)+'%;background:var('+cl+')"></i>'+
         '<u style="left:calc('+Math.min(100,pace).toFixed(1)+'% - 1px)"></u></div>'+
@@ -977,11 +997,16 @@ function miniTableSale(el,buckets,label){
   var caKy=buckets.length?{a:buckets[0].a,b:buckets[buckets.length-1].b}:{a:1,b:0};
   var coMkt=dsS.some(function(x){return mktSale(x,caKy.a,caKy.b)});
 
+  // Anh Thái 26/08: bảng mini của sale chỉ hiện % thị phần (toàn hãng)
   var oCell=function(x,a2,b2){
-    var u=sumR(x.chd[SEG].dy,a2,b2);
     var mk=coMkt?mktSale(x,a2,b2):null;
-    return '<b>'+n0(u)+'</b><small>'+
-      (mk&&mk.t?(pct(mk.o/mk.t*100,0)+' TP'):money(sumR(x.chd[SEG].dr,a2,b2)))+'</small>';
+    if(mk&&mk.t){
+      var sh=mk.o/mk.t*100;
+      var mau=sh>=25?'var(--green)':sh>=15?'var(--amber)':'var(--red)';
+      return '<b style="color:'+mau+'">'+pct(sh,0)+'</b><small>'+n0(mk.o)+'/'+n0(mk.t)+'</small>';
+    }
+    var u=sumR(x.chd[SEG].dy,a2,b2);
+    return '<b>'+n0(u)+'</b><small>'+money(sumR(x.chd[SEG].dr,a2,b2))+'</small>';
   };
   var head=[label,'Tổng'].concat(buckets.map(function(b){return b.label}));
   var rows=dsS.map(function(x){
@@ -992,7 +1017,11 @@ function miniTableSale(el,buckets,label){
       var u=0,mo2=0,mt=0;
       dsS.forEach(function(x){ u+=sumR(x.chd[SEG].dy,a2,b2);
         var k=coMkt?mktSale(x,a2,b2):null; if(k){mo2+=k.o;mt+=k.t} });
-      return '<b>'+n0(u)+'</b><small>'+(mt?(pct(mo2/mt*100,0)+' TP'):'')+'</small>';
+      if(mt){
+        var sh=mo2/mt*100, mau=sh>=25?'var(--green)':sh>=15?'var(--amber)':'var(--red)';
+        return '<b style="color:'+mau+'">'+pct(sh,0)+'</b><small>'+n0(mo2)+'/'+n0(mt)+'</small>';
+      }
+      return '<b>'+n0(u)+'</b><small></small>';
     };
     rows.push(['<b>Tổng</b>',tCell(caKy.a,caKy.b)].concat(buckets.map(function(b){return tCell(b.a,b.b)})));
   }
@@ -1048,7 +1077,7 @@ function renderDaily(o){
   if(SEG!=='ALL'){
     var coTP=miniTableSale($('#tv-week'),tuan,'Sale');
     if(hdr&&hdr.className==='subhead')
-      hdr.textContent='Theo tuần — từng sale'+(coTP?' (số nhỏ = thị phần toàn hãng)':'');
+      hdr.textContent=coTP?'Thị phần toàn hãng theo tuần — từng sale':'Theo tuần — từng sale';
   } else {
     miniTable($('#tv-week'),tuan,'Tuần');
     if(hdr&&hdr.className==='subhead') hdr.textContent='Theo tuần — từng kênh';
