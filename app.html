@@ -72,6 +72,10 @@ main{padding:14px 14px 4px;max-width:760px;margin:0 auto}
 .delta{display:inline-block;margin-top:7px;font-size:12.5px;font-weight:700}
 .delta.up{color:var(--green)}.delta.down{color:var(--red)}.delta.flat{color:var(--muted)}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+/* Khối 4 chỉ số của MWG: ép đúng 1 hàng, chữ nhỏ lại cho vừa màn hình điện thoại */
+#o-mkt4{grid-template-columns:repeat(4,1fr);gap:6px}
+#o-mkt4>div{padding:9px 7px;font-size:10.5px}
+#o-mkt4>div b{font-size:15px;letter-spacing:-.3px}
 .kpis>div{background:var(--card2);border-radius:10px;padding:9px 10px;font-size:10.5px;color:var(--muted)}
 .kpis b{display:block;font-size:15px;color:var(--ink);margin-top:3px;font-weight:700}
 
@@ -287,11 +291,6 @@ h4.dh:first-child{margin-top:0}
   </div>
   <div class="stamp" id="h-stamp"></div>
   <div class="segbar" id="segbar"></div>
-  <div class="filt" id="filt" hidden>
-    <label><span>Sale</span><select id="f-sale"></select></label>
-    <label id="f-size-w" hidden><span>Size shop</span><select id="f-size"></select></label>
-    <label id="f-seg-w" hidden><span>Phân khúc giá</span><select id="f-seg"></select></label>
-  </div>
 </header>
 
 <main>
@@ -343,6 +342,12 @@ h4.dh:first-child{margin-top:0}
 
     <div class="card">
       <h2>Sell out theo ngày</h2>
+      <div class="filt" id="filt" hidden>
+        <label><span>Sale</span><select id="f-sale"></select></label>
+        <label id="f-size-w" hidden><span>Size shop</span><select id="f-size"></select></label>
+        <label id="f-seg-w" hidden><span>Phân khúc giá</span><select id="f-seg"></select></label>
+      </div>
+      <div class="note" id="filt-note" hidden>Ba bộ lọc này áp cho <b>cả tab</b> đang xem, không riêng biểu đồ ngày.</div>
       <div class="pills" id="p-dymode">
         <button data-dym="u" class="on">Doanh số</button><button data-dym="r">Doanh thu</button>
       </div>
@@ -494,7 +499,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.12';
+var APP_VER='2026-08-26.13';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -666,9 +671,10 @@ function chanDy(ch){
 }
 // Hàng bộ lọc ngay trên trang. Sale dùng chung trạng thái với nút "chọn người xem".
 function buildFilt(){
-  var box=$('#filt'), sel=$('#f-sale');
-  if(D.sales.length<=1){ box.hidden=true; return }
-  box.hidden=false;
+  var box=$('#filt'), sel=$('#f-sale'), nt=$('#filt-note');
+  // Anh Thái 26/08: bộ lọc nằm ở phần Sell out theo ngày của tab kênh, không để trên Tổng quan
+  if(SEG==='ALL'||D.sales.length<=1){ box.hidden=true; nt.hidden=true; return }
+  box.hidden=false; nt.hidden=false;
   sel.innerHTML='<option value="__ALL__">'+safe(tenPhamVi())+'</option>'+
     D.sales.map(function(x){
       return '<option value="'+safe(x.n)+'">'+safe(x.n)+' ('+x.shops+' shop)</option>'}).join('');
