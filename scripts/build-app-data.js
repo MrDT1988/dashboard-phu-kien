@@ -76,7 +76,7 @@
     var SELLIN_COL = { STORE_ID: 0, RETAILER: 1, PROVINCE: 2, MONTH: 3, PRODUCT: 4, GROUP: 5, QTY: 6 };
     var sellinRows = (MAIN && MAIN.sell_in_rows) || MWG.sell_in_rows || null;
     // Sell-in khong ghep duoc vao shop nao — de rieng, khong tron vao tong
-    var leSellin = { tong: 0, mdl: {}, ma: {} };
+    var leSellin = { tong: 0, mdl: {}, ma: {}, theoTen: 0, theoMa: 0 };
     var SI_M = {}, SI_LIST = [];
     if (sellinRows) {
       sellinRows.forEach(function (r) {
@@ -128,6 +128,30 @@
       });
       shopOrder.push(r.store);
       if (r.store_id) idToShop[String(r.store_id).trim()] = r.store;
+    });
+
+    // ---- GOM CHI NHANH THEO DAI LY -------------------------------------------
+    // Nhieu dai ly co vai chi nhanh: sell-in ghi ten cong ty, sell out ghi tung chi nhanh.
+    // Vi vay ton kho phai tinh o cap DAI LY, khong phai tung chi nhanh.
+    function khongDau(x) {
+      return String(x || '').toLowerCase().normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+    }
+    function khoaDaiLy(ten) {
+      var t = khongDau(ten);
+      t = t.split(/\s[-–]\s|\s*\(|_|,|\s[-–]|[-–]\s/)[0];
+      t = t.replace(/\b(cua hang|cong ty|cty|tnhh|mtv|dntn|doanh nghiep tu nhan)\b/g, ' ');
+      t = t.replace(/[^a-z0-9]+/g, ' ').trim();
+      return t;
+    }
+    var dlTheoKhoa = {};     // khoa -> { shops: [ten shop], sale: {} }
+    shopOrder.forEach(function (st) {
+      if (shops[st].chan !== 'IND') return;
+      var k = khoaDaiLy(st);
+      if (!k) return;
+      shops[st].dlk = k;
+      if (!dlTheoKhoa[k]) dlTheoKhoa[k] = { shops: [], ten: st };
+      dlTheoKhoa[k].shops.push(st);
     });
 
     var sales = {}, all = blank({});
@@ -188,6 +212,11 @@
         if (ch === 'IND' && mdl && u && SI_M[r.m]) {
           if (!o._ban) o._ban = {};
           o._ban[mdl] = (o._ban[mdl] || 0) + u;
+          if (t === 2 && o.dlk && dlTheoKhoa[o.dlk]) {   // t===2 la cap SHOP
+            var gg = dlTheoKhoa[o.dlk];
+            if (!gg._ban) gg._ban = {};
+            gg._ban[mdl] = (gg._ban[mdl] || 0) + u;
+          }
         }
         if (t < 2) {   // chi tinh chi tiet kenh o cap tinh & sale
           var cd = chdOf(o, ch);
@@ -252,7 +281,16 @@
         var j = nhom === 'OPPO' ? 0 : (nhom === 'PK' ? 1 : 2);
         var st = idToShop[sid];
         var sp = String(r[SELLIN_COL.PRODUCT] || '').trim();
-        var coShop = !!(st && shops[st]);
+        var coShop = !!(st && shops[st] && shops[st].chan === 'IND');
+        // Ma shop khong khop -> thu ghep theo TEN dai ly (anh Thai: nhieu shop nhieu chi nhanh)
+        var kDL = coShop ? shops[st].dlk : khoaDaiLy(r[SELLIN_COL.RETAILER]);
+        if (!coShop && kDL && dlTheoKhoa[kDL]) {
+          // ghep duoc theo ten -> quy vao chi nhanh dau tien cua dai ly do,
+          // ton se duoc tinh o cap DAI LY nen khong lech
+          st = dlTheoKhoa[kDL].shops[0];
+          coShop = true;
+          leSellin.theoTen += qty;
+        }
         if (!coShop) {
           // Dong sell-in nay khong ghep duoc vao shop IND nao (ma shop la trong sheet
           // khong co trong danh sach shop). KHONG duoc cong vao tong tinh, neu khong
@@ -262,8 +300,14 @@
           leSellin.ma[sid] = 1;
           return;
         }
+        if (idToShop[sid] === st) leSellin.theoMa += qty;
         var targets = [all, shops[st]];
         if (sales[shops[st].sale]) targets.push(sales[shops[st].sale]);
+        // gom them o cap DAI LY de tinh ton dung khi co nhieu chi nhanh
+        var gDL = shops[st].dlk && dlTheoKhoa[shops[st].dlk];
+        if (gDL) {
+          if (j === 0 && sp) { if (!gDL._nhap) gDL._nhap = {}; gDL._nhap[sp] = (gDL._nhap[sp] || 0) + qty; }
+        }
         targets.forEach(function (o) {
           if (!o.si) { o.si = []; for (var k = 0; k < NM; k++) o.si[k] = [0, 0, 0]; }
           o.si[i][j] += qty;
@@ -543,6 +587,25 @@
       });
     }
 
+    // ---- Bang ton theo DAI LY (da gom chi nhanh)
+    var dlTon = [];
+    Object.keys(dlTheoKhoa).forEach(function (k) {
+      var g = dlTheoKhoa[k];
+      var tk = tonKho(g);
+      if (!tk) return;
+      var nhap = 0, ban = 0;
+      tk.forEach(function (x) { nhap += x[1]; ban += x[2]; });
+      if (!nhap) return;                       // chua ghep duoc sell-in -> khong tinh ton
+      var saleSet = {}, tenCN = [];
+      g.shops.forEach(function (st) { saleSet[shops[st].sale] = 1; tenCN.push(st); });
+      dlTon.push({
+        n: g.ten, cn: tenCN, sale: Object.keys(saleSet),
+        nhap: Math.round(nhap), ban: ban, ton: Math.round(nhap) - ban,
+        md: tk.slice(0, 20)
+      });
+    });
+    dlTon.sort(function (a, b) { return b.ton - a.ton; });
+
     // =========================================================
     // 8. Dong goi
     // =========================================================
@@ -643,8 +706,11 @@
       segs: SEGS, sers: SERS, chans: CHANS,
       segsMkt: SEGA,
       tkMonths: SI_LIST,
+      dlTon: dlTon,
       tkLe: {
         tong: Math.round(leSellin.tong),
+        theoMa: Math.round(leSellin.theoMa),
+        theoTen: Math.round(leSellin.theoTen),
         ma: Object.keys(leSellin.ma).length,
         mdl: Object.keys(leSellin.mdl).map(function (k) { return [k, Math.round(leSellin.mdl[k])]; })
                  .sort(function (a, b) { return b[1] - a[1]; }).slice(0, 20)

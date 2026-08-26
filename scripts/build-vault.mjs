@@ -168,6 +168,9 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     chans: kenh ? [kenh] : D.chans,
     v: D.v, segsMkt: D.segsMkt || [], src: D.src || null, tkMonths: D.tkMonths || [],
     tkLe: (vaiTro === 'admin' || vaiTro === 'leader') ? (D.tkLe || null) : null,
+    // Ton kho chi co o kenh IND -> Leader kenh khac khong nhan gi
+    dlTon: (kenh && kenh !== 'IND') ? []
+      : (D.dlTon || []).filter((x) => (x.sale || []).some((sn) => tenSales.includes(sn))),
     vaiTro, kenh: kenh || null,
     all: gopAll(D, ds), sales: ds,
   };

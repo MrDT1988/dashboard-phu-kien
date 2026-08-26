@@ -1179,9 +1179,14 @@ function tkDsSale(){
   return (D.sales||[]).filter(function(s){
     return (s.s||[]).some(function(x){return x.ch2==='IND'&&x.tk})});
 }
+function tkDsDaiLy(){
+  var ds=D.dlTon||[];
+  if(TK_SALE==='__ALL__') return ds;
+  return ds.filter(function(x){return (x.sale||[]).indexOf(TK_SALE)>=0});
+}
 function renderTon(){
   var nav=$('#nav-ton'), dsSale=tkDsSale();
-  if(!dsSale.length){ if(nav)nav.hidden=true; if(VIEW==='ton')go('over'); return }
+  if(!(D.dlTon&&D.dlTon.length)){ if(nav)nav.hidden=true; if(VIEW==='ton')go('over'); return }
   if(nav)nav.hidden=false;
 
   var pil=$('#tk-sale');
@@ -1192,79 +1197,70 @@ function renderTon(){
       dsSale.map(function(s){return '<button data-tks="'+safe(s.n)+'"'+(TK_SALE===s.n?' class="on"':'')+'>'+safe(s.n)+'</button>'}).join('');
   } else { pil.hidden=true; TK_SALE='__ALL__' }
 
-  var chon=TK_SALE==='__ALL__'?dsSale:dsSale.filter(function(s){return s.n===TK_SALE});
-  var tatCa=[]; chon.forEach(function(s){
-    (s.s||[]).forEach(function(x){ if(x.ch2==='IND'&&x.tk) tatCa.push({sh:x,sale:s.n}) })});
-  // Shop nào bán mà không có dòng sell-in nào thì KHÔNG tính tồn — nếu tính sẽ ra âm giả
-  var chuaGhep=tatCa.filter(function(x){return x.sh.tkNo||!x.sh.tk.some(function(r){return r[1]>0})});
-  var shops=tatCa.filter(function(x){return chuaGhep.indexOf(x)<0});
-  var rows=tkGop(shops.map(function(x){return x.sh.tk}));
-  var tIn=0,tBan=0; rows.forEach(function(r){tIn+=r.nhap;tBan+=r.ban});
+  var dl=tkDsDaiLy();
+  var rows=tkGop(dl.map(function(x){return x.md}));
+  var tIn=0,tBan=0; dl.forEach(function(x){tIn+=x.nhap;tBan+=x.ban});
   var tTon=tIn-tBan, ngay=tkSoNgay(), nhip=ngay?tBan/ngay:0;
+  var soCN=0; dl.forEach(function(x){soCN+=(x.cn||[]).length});
 
-  $('#tk-sub').textContent='Cộng dồn '+tkLabel()+' · '+shops.length+' đại lý ghép được sell-in · '+rows.length+' model.';
+  $('#tk-sub').textContent='Cộng dồn '+tkLabel()+' · '+dl.length+' đại lý ('+soCN+' điểm bán) · '+rows.length+' model.';
   $('#tk-in').textContent=n0(tIn)+' máy';
   $('#tk-out').textContent=n0(tBan)+' máy';
   $('#tk-ton').textContent=n0(tTon)+' máy';
   $('#tk-ton').style.color=tTon>0?'var(--amber)':'var(--green)';
   $('#tk-note').innerHTML='Tồn = hàng đã nhập trừ hàng đã bán, tính trên <b>'+tkLabel()+
-    '</b> — tháng nào sheet SELL IN chưa nhập số thì cả nhập lẫn bán của tháng đó đều không đưa vào. '+
+    '</b>. Đại lý có nhiều chi nhánh được <b>gộp chung</b> vì sheet SELL IN ghi theo công ty còn bán hàng ghi theo từng điểm bán. '+
     (nhip>0&&tTon>0?('Với nhịp bán '+(Math.round(nhip*10)/10)+' máy/ngày, chỗ tồn này còn bán được khoảng <b>'+
       tkNgay(tTon,nhip)+'</b>. '):'')+
-    '<b>Chưa cộng tồn đầu năm, chưa trừ hàng trả về và điều chuyển giữa đại lý</b> — dùng để so shop với nhau và nhìn xu hướng, đừng dùng thay biên bản kiểm kê.';
-  // Phần không ghép được — nói thẳng, không giấu vào tổng
-  var banChuaGhep=0; chuaGhep.forEach(function(x){ x.sh.tk.forEach(function(r){banChuaGhep+=r[2]}) });
+    '<b>Chưa cộng tồn đầu năm, chưa trừ hàng trả về và điều chuyển giữa đại lý</b> — dùng để so đại lý với nhau và bắt hàng nằm lâu, đừng dùng thay biên bản kiểm kê.';
   var le=(D.tkLe&&TK_SALE==='__ALL__')?D.tkLe:null;
-  if(chuaGhep.length||le&&le.tong){
-    $('#tk-note').innerHTML+='<br><br><b style="color:var(--amber)">Chưa khớp được:</b> '+
-      (chuaGhep.length?('<b>'+chuaGhep.length+' đại lý</b> đã bán '+n0(banChuaGhep)+
-        ' máy nhưng sheet SELL IN không có dòng nhập nào mang mã shop của họ — em để riêng, không tính tồn cho các shop này. '):'')+
-      (le&&le.tong?('Ngược lại có <b>'+n0(le.tong)+' máy</b> nhập dưới '+n0(le.ma)+
-        ' mã shop không nằm trong danh sách đại lý IND. '):'')+
-      'Cách sửa: bổ sung/đối chiếu cột Store ID trong sheet SELL IN với danh sách shop.';
+  if(le&&le.tong){
+    $('#tk-note').innerHTML+='<br><br><b style="color:var(--amber)">Chưa khớp được:</b> <b>'+n0(le.tong)+
+      ' máy</b> nhập dưới '+n0(le.ma)+' mã đại lý không nằm trong danh sách IND của anh — phần lớn là đại lý tỉnh khác '+
+      'do cùng nhà phân phối. Em để riêng, không cộng vào tồn.';
   }
 
-  rows.forEach(function(r){
-    r.nhip=ngay?r.ban/ngay:0;
-    r.ngay=r.nhip>0?r.ton/r.nhip:(r.ton>0?1e9:0);
+  rows.forEach(function(r){ r.nhip=ngay?r.ban/ngay:0 });
+  rows.sort(function(a,b){
+    if(TK_SORT==='ton') return b.ton-a.ton;
+    var na=a.nhip>0?a.ton/a.nhip:(a.ton>0?1e9:-1), nb=b.nhip>0?b.ton/b.nhip:(b.ton>0?1e9:-1);
+    return nb-na;
   });
-  rows.sort(function(a,b){return TK_SORT==='ton'?b.ton-a.ton:b.ngay-a.ngay});
   $('#tk-tog').textContent=TK_SORT==='ton'?'Xếp theo ngày bán hết':'Xếp theo số tồn';
   $('#tk-msub').textContent='"Còn bán được" = số tồn chia cho nhịp bán mỗi ngày của chính model đó. Trên 60 ngày là hàng đang nằm lâu.';
   $('#tk-mtab').innerHTML=tvTable(['Model','Nhập','Bán','Tồn','Còn bán được'],
-    rows.map(function(r){
-      return [tenModel(r.n),n0(r.nhap),n0(r.ban),n0(r.ton),tkNgay(r.ton,r.nhip)];
-    }));
+    rows.map(function(r){ return [tenModel(r.n),n0(r.nhap),n0(r.ban),n0(r.ton),tkNgay(r.ton,r.nhip)] }));
   var am=rows.filter(function(r){return r.ton<0});
-  if(am.length) $('#tk-msub').innerHTML+=' Có <b>'+am.length+' model tồn âm</b> — bán nhiều hơn nhập trong kỳ, tức là đại lý đang bán hàng tồn từ trước hoặc lấy từ nguồn khác.';
+  if(am.length) $('#tk-msub').innerHTML+=' Có <b>'+am.length+' model tồn âm</b> — bán nhiều hơn nhập trong kỳ, tức là đại lý đang bán hàng tồn từ trước.';
 
-  var dsShop=shops.map(function(x){
-    var g=tkGop([x.sh.tk]), inn=0,ban=0;
-    g.forEach(function(r){inn+=r.nhap;ban+=r.ban});
-    var top=g.slice().sort(function(a,b){return b.ton-a.ton})[0];
-    return {n:x.sh.n,sale:x.sale,nhap:inn,ban:ban,ton:inn-ban,top:top};
-  }).sort(function(a,b){return b.ton-a.ton});
-  $('#tk-ssub').textContent='Xếp theo số tồn nhiều nhất. Bấm vào shop để xem chi tiết.';
-  $('#tk-slist').innerHTML=dsShop.map(function(s){
-    var mau=s.ton>0?'var(--amber)':s.ton<0?'var(--red)':'var(--muted)';
-    return '<button class="shop" data-shop="'+safe(s.n)+'"><span class="bd">'+
-      '<span class="t">'+safe(s.n)+'</span><span class="d">'+
-      (TK_SALE==='__ALL__'?safe(s.sale)+' · ':'')+'nhập '+n0(s.nhap)+' · bán '+n0(s.ban)+
-      (s.top&&s.top.ton>0?' · đọng nhiều nhất: '+safe(tenModel(s.top.n))+' '+n0(s.top.ton)+' máy':'')+
-      '</span></span><span class="r" style="color:'+mau+'"><b>'+n0(s.ton)+'</b><small>máy tồn</small></span>'+
+  $('#tk-ssub').textContent='Xếp theo số tồn nhiều nhất. Bấm vào đại lý để xem điểm bán.';
+  $('#tk-slist').innerHTML=dl.slice().sort(function(a,b){return b.ton-a.ton}).map(function(x){
+    var mau=x.ton>0?'var(--amber)':x.ton<0?'var(--red)':'var(--muted)';
+    var top=(x.md||[]).slice().sort(function(a,b){return b[3]-a[3]})[0];
+    return '<button class="shop" data-shop="'+safe(x.cn[0])+'"><span class="bd">'+
+      '<span class="t">'+safe(tenDaiLy(x))+((x.cn||[]).length>1?' <em style="font-style:normal;color:var(--muted);font-size:11px">('+x.cn.length+' điểm bán)</em>':'')+'</span><span class="d">'+
+      (TK_SALE==='__ALL__'?safe((x.sale||[]).join(', '))+' · ':'')+'nhập '+n0(x.nhap)+' · bán '+n0(x.ban)+
+      (top&&top[3]>0?' · đọng nhiều nhất: '+safe(tenModel(top[0]))+' '+n0(top[3])+' máy':'')+
+      '</span></span><span class="r" style="color:'+mau+'"><b>'+n0(x.ton)+'</b><small>máy tồn</small></span>'+
       '<span class="chev">›</span></button>';
-  }).join('')||'<div class="empty">Không có đại lý IND nào có số sell-in</div>';
+  }).join('')||'<div class="empty">Chưa ghép được sell-in với đại lý nào</div>';
+}
+// Tên hiển thị của đại lý: cắt bớt phần địa chỉ cho gọn
+function tenDaiLy(x){
+  var t=String(x.n||'').split(/\s[-–]\s|\s*\(/)[0].trim();
+  return t||x.n;
 }
 function copyTon(){
-  var dsSale=tkDsSale();
-  var chon=TK_SALE==='__ALL__'?dsSale:dsSale.filter(function(s){return s.n===TK_SALE});
-  var shops=[]; chon.forEach(function(s){(s.s||[]).forEach(function(x){if(x.ch2==='IND'&&x.tk)shops.push(x)})});
-  var rows=tkGop(shops.map(function(x){return x.tk})).sort(function(a,b){return b.ton-a.ton});
-  var tIn=0,tBan=0; rows.forEach(function(r){tIn+=r.nhap;tBan+=r.ban});
+  var dl=tkDsDaiLy();
+  var rows=tkGop(dl.map(function(x){return x.md})).sort(function(a,b){return b.ton-a.ton});
+  var tIn=0,tBan=0; dl.forEach(function(x){tIn+=x.nhap;tBan+=x.ban});
   var t='TỒN KHO IND — '+tkLabel()+' ('+(TK_SALE==='__ALL__'?'tất cả sale':TK_SALE)+')\n'+
-    'Nhập '+n0(tIn)+' · Bán '+n0(tBan)+' · Tồn '+n0(tIn-tBan)+' máy\n\nĐọng nhiều nhất:\n'+
+    'Nhập '+n0(tIn)+' · Bán '+n0(tBan)+' · Tồn '+n0(tIn-tBan)+' máy · '+dl.length+' đại lý\n\nModel đọng nhiều nhất:\n'+
     rows.filter(function(r){return r.ton>0}).slice(0,10).map(function(r,i){
       return (i+1)+'. '+tenModel(r.n)+': tồn '+n0(r.ton)+' (nhập '+n0(r.nhap)+', bán '+n0(r.ban)+')'}).join('\n')+
+    '\n\nĐại lý tồn nhiều nhất:\n'+
+    dl.slice().sort(function(a,b){return b.ton-a.ton}).slice(0,5).map(function(x,i){
+      return (i+1)+'. '+tenDaiLy(x)+': '+n0(x.ton)+' máy'}).join('\n')+
     '\n\n(Tồn ước tính, chưa cộng tồn đầu năm và chưa trừ hàng trả về)';
   if(navigator.clipboard&&navigator.clipboard.writeText)
     navigator.clipboard.writeText(t).then(function(){toast('Đã copy, dán vào Zalo được rồi')},function(){fallback(t)});
@@ -1563,20 +1559,19 @@ function openShop(name){
 
   // ---- sell-in (IND)
   // ---- ton kho theo model tai shop nay
-  if(s.tk&&s.tk.length&&(s.tkNo||!s.tk.some(function(r){return r[1]>0}))){
-    var banG=0; s.tk.forEach(function(r){banG+=r[2]});
-    h+='<h4 class="dh">Tồn kho</h4><div class="note">Shop này đã bán <b>'+n0(banG)+
-       ' máy</b> nhưng sheet SELL IN không có dòng nhập nào mang mã shop này'+
-       (s.sid?(' (mã <b>'+safe(s.sid)+'</b>)'):'')+
-       ' nên chưa tính được tồn. Cần đối chiếu lại cột Store ID trong sheet SELL IN.</div>';
-  } else if(s.tk&&s.tk.length){
-    var gg=tkGop([s.tk]).sort(function(a,b){return b.ton-a.ton});
-    var gIn=0,gBan=0; gg.forEach(function(r){gIn+=r.nhap;gBan+=r.ban});
+  // ---- tồn kho: tính theo ĐẠI LÝ (gộp các chi nhánh cùng công ty)
+  var dlCua=(D.dlTon||[]).filter(function(x){return (x.cn||[]).indexOf(s.n)>=0})[0];
+  if(dlCua){
+    var gg=tkGop([dlCua.md]).sort(function(a,b){return b.ton-a.ton});
     var gNgay=tkSoNgay();
-    h+='<h4 class="dh">Tồn kho theo model — '+tkLabel()+'</h4><div class="dl">'+
-      '<div>Đã nhập<b>'+n0(gIn)+' máy</b></div>'+
-      '<div>Đã bán<b>'+n0(gBan)+' máy</b></div>'+
-      '<div>Tồn ước tính<b style="color:'+((gIn-gBan)>0?'var(--amber)':'var(--green)')+'">'+n0(gIn-gBan)+' máy</b></div></div>'+
+    h+='<h4 class="dh">Tồn kho — '+tkLabel()+'</h4>'+
+      ((dlCua.cn||[]).length>1?('<div class="note" style="margin-top:0">Đại lý <b>'+safe(tenDaiLy(dlCua))+
+        '</b> có <b>'+dlCua.cn.length+' điểm bán</b>, sheet SELL IN ghi nhập theo công ty nên tồn tính chung cho cả '+
+        dlCua.cn.length+' điểm:<br>'+dlCua.cn.map(function(x){return '· '+safe(x)}).join('<br>')+'</div>'):'')+
+      '<div class="dl">'+
+      '<div>Đã nhập<b>'+n0(dlCua.nhap)+' máy</b></div>'+
+      '<div>Đã bán<b>'+n0(dlCua.ban)+' máy</b></div>'+
+      '<div>Tồn ước tính<b style="color:'+(dlCua.ton>0?'var(--amber)':'var(--green)')+'">'+n0(dlCua.ton)+' máy</b></div></div>'+
       '<div class="tvwrap">'+tvTable(['Model','Nhập','Bán','Tồn','Còn bán được'],
         gg.map(function(r){
           return [tenModel(r.n),n0(r.nhap),n0(r.ban),n0(r.ton),tkNgay(r.ton,gNgay?r.ban/gNgay:0)]}))+'</div>';
@@ -1584,6 +1579,12 @@ function openShop(name){
     if(dong) h+='<div class="note">Đọng nhiều nhất: <b>'+safe(tenModel(dong.n))+'</b> — nhập '+n0(dong.nhap)+
       ', bán '+n0(dong.ban)+', còn <b style="color:var(--amber)">'+n0(dong.ton)+' máy</b>. '+
       'Tồn ước tính, chưa cộng tồn đầu năm và chưa trừ hàng trả về.</div>';
+  } else if(s.ch2==='IND'&&s.tk&&s.tk.length){
+    var banG=0; s.tk.forEach(function(r){banG+=r[2]});
+    h+='<h4 class="dh">Tồn kho</h4><div class="note">Điểm bán này đã bán <b>'+n0(banG)+
+       ' máy</b> nhưng chưa ghép được với dòng nhập nào trong sheet SELL IN'+
+       (s.sid?(' (mã <b>'+safe(s.sid)+'</b>)'):'')+
+       ' nên chưa tính được tồn. Cần đối chiếu lại cột Store ID hoặc tên đại lý trong sheet SELL IN.</div>';
   }
 
   if(s.si&&s.si.some(function(x){return x[0]})){
