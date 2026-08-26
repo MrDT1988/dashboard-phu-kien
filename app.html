@@ -355,13 +355,13 @@ h4.dh:first-child{margin-top:0}
       <div class="pills" id="p-dymode">
         <button data-dym="u" class="on">Doanh số</button><button data-dym="r">Doanh thu</button>
       </div>
+      <div class="subhead" id="tvh-h" hidden></div>
+      <div class="tvwrap" id="tv-hang"></div>
       <p class="sub" id="dy-sub"></p>
       <svg class="chart" id="ch-day"></svg>
       <div class="legend" id="lg-day"></div>
       <div class="subhead">Theo tuần — từng kênh</div>
       <div class="tvwrap" id="tv-week"></div>
-      <div class="subhead" id="tvh-h" hidden></div>
-      <div class="tvwrap" id="tv-hang"></div>
     </div>
 
     <div class="card" id="c-mm" hidden>
@@ -517,7 +517,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.21';
+var APP_VER='2026-08-26.22';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
