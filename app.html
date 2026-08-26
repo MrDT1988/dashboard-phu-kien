@@ -305,15 +305,15 @@ h4.dh:first-child{margin-top:0}
       <p class="sub" id="o-sub"></p>
       <div><span class="big" id="o-units">—</span><span class="unit">máy</span></div>
       <div class="delta" id="o-mom"></div>
-      <div class="kpis">
+      <div class="kpis" id="o-kpi3">
         <div>Doanh thu<b id="o-rev">—</b></div>
         <div id="o-avg-w">Đơn giá TB<b id="o-avg">—</b></div>
         <div>Số shop<b id="o-shops">—</b></div>
       </div>
       <div class="kpis" id="o-mkt4" hidden>
+        <div>Doanh thu<b id="k-dt">—</b></div>
         <div>Share DT<small style="display:block;font-size:9px;color:var(--muted)">trừ Apple</small><b id="k-sdt">—</b></div>
         <div>Share DS<b id="k-sds">—</b></div>
-        <div>Đơn giá<small style="display:block;font-size:9px;color:var(--muted)" id="k-dg-sub"></small><b id="k-dg">—</b></div>
         <div>PK 10–20M<b id="k-pk">—</b></div>
       </div>
       <div class="note" id="o-mkt4-note" hidden></div>
@@ -492,7 +492,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.10';
+var APP_VER='2026-08-26.11';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -872,8 +872,8 @@ function renderMkt4(o){
   var mk=o.mkt;
   // Anh Thái 26/08: khối này CHỈ dùng ở tab chi tiết MWG, không hiện ở Tổng quan
   if(SEG!=='MWG'||!mk||!mk.m||!mk.m[MI]||!mk.m[MI][2]){
-    box.hidden=true; nt.hidden=true; $('#o-avg-w').hidden=false; return }
-  $('#o-avg-w').hidden=true;   // đơn giá đã nằm trong 4 chỉ số, bỏ ô trùng
+    box.hidden=true; nt.hidden=true; $('#o-kpi3').hidden=false; return }
+  $('#o-kpi3').hidden=true;    // ở MWG chỉ giữ đúng 4 ô, bỏ hàng cũ cho gọn
   box.hidden=false; nt.hidden=false;
   var m=mk.m[MI];               // [oppoMáy, oppoDT, tổngMáy, tổngDT]
   var oU=m[0],oR=m[1],tU=m[2],tR=m[3];
@@ -891,8 +891,8 @@ function renderMkt4(o){
   $('#k-sds').style.color=sDS>=25?'var(--green)':sDS>=15?'var(--amber)':'var(--red)';
 
   var dgO=oU?Math.round(oR/oU*10)/10:0, dgT=tU?Math.round(tR/tU*10)/10:0;
-  $('#k-dg').textContent=dgO?money(dgO):'—';
-  var dgS=$('#k-dg-sub'); if(dgS) dgS.textContent=dgT?('TT '+money(dgT)):'';
+  var P2=periodOf(PER);
+  $('#k-dt').textContent=money(sumR(o.dr,P2.a,P2.b));
 
   // PK 10-20M: gộp các khoảng 10-15M và 15-20M của bảng phân khúc thị trường
   var pkO=0,pkT=0,coPK=false;
@@ -909,7 +909,7 @@ function renderMkt4(o){
 
   nt.innerHTML='Tháng '+D.months[MI]+' — số của mọi hãng, chỉ có ở kênh MWG. '+
     '<b>Share DT</b> đã bỏ Apple ra khỏi mẫu số ('+n0(apU)+' máy · '+money(apR)+') vì đơn giá Apple quá cao làm loãng tỉ lệ. '+
-    '<b>Đơn giá</b> là của OPPO, dòng nhỏ "TT" là đơn giá bình quân cả thị trường. '+
+    'Đơn giá OPPO '+money(dgO)+' — cả thị trường '+money(dgT)+'. '+
     (coPK?(' <b>PK 10–20M</b>: OPPO '+n0(pkO)+'/'+n0(pkT)+' máy.'):'');
 }
 
