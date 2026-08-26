@@ -499,7 +499,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.13';
+var APP_VER='2026-08-26.14';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -673,7 +673,7 @@ function chanDy(ch){
 function buildFilt(){
   var box=$('#filt'), sel=$('#f-sale'), nt=$('#filt-note');
   // Anh Thái 26/08: bộ lọc nằm ở phần Sell out theo ngày của tab kênh, không để trên Tổng quan
-  if(SEG==='ALL'||D.sales.length<=1){ box.hidden=true; nt.hidden=true; return }
+  if(SEG!=='MWG'||D.sales.length<=1){ box.hidden=true; nt.hidden=true; return }
   box.hidden=false; nt.hidden=false;
   sel.innerHTML='<option value="__ALL__">'+safe(tenPhamVi())+'</option>'+
     D.sales.map(function(x){
@@ -1176,8 +1176,9 @@ function miniTableSale(el,buckets,label,isU){
     if(mk&&mauSo){
       var sh=tuSo/mauSo*100;
       var mau=sh>=25?'var(--green)':sh>=15?'var(--amber)':'var(--red)';
-      return '<b style="color:'+mau+'">'+pct(sh,0)+'</b><small>'+
-        (isU===false?(money(tuSo)+'/'+money(mauSo)):(n0(tuSo)+'/'+n0(mauSo)))+'</small>';
+      return '<b style="color:'+mau+'">'+pct(sh,0)+'</b>'+
+        (buckets.length>14?'':'<small>'+
+          (isU===false?(money(tuSo)+'/'+money(mauSo)):(n0(tuSo)+'/'+n0(mauSo)))+'</small>');
     }
     var u=sumR(x.chd[SEG].dy,a2,b2);
     return '<b>'+n0(u)+'</b><small>'+money(sumR(x.chd[SEG].dr,a2,b2))+'</small>';
@@ -1194,8 +1195,9 @@ function miniTableSale(el,buckets,label,isU){
         if(k){ mo2+=(isU===false?k.oR:k.o); mt+=(isU===false?k.tR:k.t) } });
       if(mt){
         var sh=mo2/mt*100, mau=sh>=25?'var(--green)':sh>=15?'var(--amber)':'var(--red)';
-        return '<b style="color:'+mau+'">'+pct(sh,0)+'</b><small>'+
-          (isU===false?(money(mo2)+'/'+money(mt)):(n0(mo2)+'/'+n0(mt)))+'</small>';
+        return '<b style="color:'+mau+'">'+pct(sh,0)+'</b>'+
+          (buckets.length>14?'':'<small>'+
+            (isU===false?(money(mo2)+'/'+money(mt)):(n0(mo2)+'/'+n0(mt)))+'</small>');
       }
       return '<b>'+n0(u)+'</b><small></small>';
     };
@@ -1272,10 +1274,12 @@ function renderDaily(o){
 
   var hdr=$('#tv-week').previousElementSibling;
   if(SEG!=='ALL'){
-    var coTP=miniTableSale($('#tv-week'),weeksIn(a,a+day-1),'Sale',isU);
+    // Anh Thái 26/08: bảng mini theo TỪNG NGÀY, không gộp tuần nữa
+    var ngay=[]; for(var q2=0;q2<day;q2++) ngay.push({a:a+q2,b:a+q2,label:String(q2+1)});
+    var coTP=miniTableSale($('#tv-week'),ngay,'Sale',isU);
     if(hdr&&hdr.className==='subhead')
-      hdr.textContent=coTP?('Thị phần theo tuần — từng sale ('+(isU?'theo máy':'theo doanh thu')+')')
-                          :'Theo tuần — từng sale';
+      hdr.textContent=coTP?('Thị phần từng ngày — từng sale ('+(isU?'theo máy':'theo doanh thu')+')')
+                          :'Theo ngày — từng sale';
   } else {
     miniTable($('#tv-week'),weeksIn(a,a+day-1),'Tuần');
     if(hdr&&hdr.className==='subhead') hdr.textContent='Theo tuần — từng kênh';
