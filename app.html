@@ -502,7 +502,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.16';
+var APP_VER='2026-08-26.17';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -866,7 +866,8 @@ function renderOver(){
 
   $('#h-name').textContent=o.n+(SEG!=='ALL'?' · '+SEG:'');
   $('#h-stamp').textContent='Số liệu tới ngày '+day+'/'+M[MI]+'/'+D.year+' · cập nhật '+
-    new Date(D.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
+    new Date(D.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})+
+    ' · bản '+APP_VER;
 
   renderHero(o); renderTarget(o);
   renderDaily(o); renderMonth(o); renderChan(o); renderSeg(o);
@@ -964,7 +965,7 @@ function renderHero(o){
         return heroDong(c,cd,P,CH_COLOR[c]||'var(--neutral)');
       });
     }
-  } else if(CUR==='__ALL__'){
+  } else if(SEG==='MWG'&&CUR==='__ALL__'){
     var dsS=D.sales.filter(function(x){return (x.chd||{})[SEG]&&(x.s||[]).some(function(y){return y.ch2===SEG})});
     if(dsS.length>1){
       tieuDe='Từng sale — so cùng kỳ';
@@ -1070,7 +1071,7 @@ function renderTargetChan(o,tgc,pace,day,dim,P,laTam){
       if(!(tgc&&tgc[c]&&chanDy(c))) return;
       dong.push({n:c,cd:chanDy(c),tg:tgc[c],mau:CH_COLOR[c]||'var(--ink)'});
     });
-  } else if(CUR==='__ALL__'){
+  } else if(SEG==='MWG'&&CUR==='__ALL__'){
     var dsS=D.sales.filter(function(x){return (x.chd||{})[SEG]&&(x.s||[]).some(function(y){return y.ch2===SEG})});
     dsS.forEach(function(x,i){
       var tg=(x.tgc&&x.tgc[SEG])?x.tgc[SEG]:null;
@@ -1296,7 +1297,7 @@ function renderDaily(o){
   }
 
   var hdr=$('#tv-week').previousElementSibling;
-  if(SEG!=='ALL'){
+  if(SEG==='MWG'){
     // Anh Thái 26/08: bảng mini theo TỪNG NGÀY, không gộp tuần nữa
     var ngay=[]; for(var q2=0;q2<day;q2++) ngay.push({a:a+q2,b:a+q2,label:String(q2+1)});
     var coTP=miniTableSale($('#tv-week'),ngay,'Sale',isU);
@@ -1309,7 +1310,8 @@ function renderDaily(o){
     }
   } else {
     miniTable($('#tv-week'),weeksIn(a,a+day-1),'Tuần');
-    if(hdr&&hdr.className==='subhead') hdr.textContent='Theo tuần — từng kênh';
+    if(hdr&&hdr.className==='subhead')
+      hdr.textContent=SEG==='ALL'?'Theo tuần — từng kênh':('Theo tuần — kênh '+SEG);
   }
 
   var head=['Ngày'];for(var q=1;q<=day;q++)head.push(q);
