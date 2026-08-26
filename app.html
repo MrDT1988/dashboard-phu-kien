@@ -80,6 +80,19 @@ main{padding:14px 14px 4px;max-width:760px;margin:0 auto}
 .mrow{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink2)}
 .tagline{margin-top:9px;font-size:13px;font-weight:700}
 
+/* ===== Pill chon ky ===== */
+.pills{display:flex;gap:5px;margin:0 0 10px}
+.pills button{flex:1;padding:6px 4px;border-radius:8px;font-size:12px;font-weight:600;
+  color:var(--ink2);background:var(--card2);border:1px solid var(--line)}
+.pills button.on{color:#0a0e14;background:var(--green);border-color:var(--green)}
+.subhead{margin:16px 0 6px;font-size:12px;font-weight:700;color:var(--ink2)}
+.cmprow{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--muted);line-height:1.6}
+.cmprow b{color:var(--ink2)}
+.chart.short{height:78px}
+table.tv td b{font-weight:700}
+table.tv td small{display:block;color:var(--muted);font-size:9.5px;font-weight:400;margin-top:1px}
+
 /* ===== Chart ===== */
 .chart{width:100%;height:150px;display:block;overflow:visible}
 .chart.tall{height:170px}
@@ -180,9 +193,57 @@ nav button .badge{position:absolute;transform:translate(16px,-4px);background:va
 h4.dh{margin:16px 0 6px;font-size:12.5px;font-weight:700;color:var(--ink2)}
 h4.dh:first-child{margin-top:0}
 .loading{text-align:center;padding:60px 20px;color:var(--muted);font-size:13px}
+
+/* ===== Man hinh dang nhap ===== */
+#login{position:fixed;inset:0;z-index:200;background:var(--bg);overflow-y:auto;
+  display:flex;flex-direction:column;padding:calc(28px + env(safe-area-inset-top)) 20px 28px}
+#login[hidden]{display:none}
+#login .wrap{width:100%;max-width:420px;margin:auto}
+#login .brand{font-size:11px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+#login h1{margin:6px 0 4px;font-size:22px;font-weight:800;letter-spacing:-.01em}
+#login .lead{margin:0 0 22px;font-size:13px;color:var(--muted);line-height:1.5}
+#login .who-list{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+#login .who-list button{display:block;width:100%;text-align:left;padding:13px 15px;font-size:14px;
+  border-bottom:1px solid var(--line)}
+#login .who-list button:last-child{border-bottom:0}
+#login .who-list button:active{background:var(--card2)}
+#login .who-list button small{float:right;color:var(--muted);font-size:11px;font-weight:600;
+  border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+#login .who-list .grp{padding:9px 15px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);background:var(--card2);border-bottom:1px solid var(--line)}
+#pin-box{display:none}
+#pin-box.on{display:block}
+#pin-box .nm{font-size:17px;font-weight:700;margin-bottom:3px}
+#pin-in{width:100%;text-align:center;font-size:30px;letter-spacing:.42em;padding:15px 10px 15px 22px;
+  font-weight:700;font-variant-numeric:tabular-nums}
+#login .err{color:var(--red);font-size:12.5px;min-height:19px;margin-top:9px;text-align:center}
+#login .back{margin-top:16px;font-size:13px;color:var(--muted);text-align:center}
+#login .back button{color:var(--green);font-weight:600}
+#login .foot{margin-top:26px;font-size:11px;color:var(--muted);line-height:1.6;text-align:center}
 </style>
 </head>
 <body>
+
+<div id="login" hidden>
+  <div class="wrap">
+    <div class="brand">OPPO Tiền Giang</div>
+    <h1>Báo cáo &amp; Cảnh báo</h1>
+    <p class="lead" id="lg-lead">Chọn tên của anh/chị để đăng nhập.</p>
+
+    <div class="who-list" id="lg-list"></div>
+
+    <div id="pin-box">
+      <div class="nm" id="lg-nm"></div>
+      <p class="lead" style="margin:2px 0 14px">Nhập mã của anh/chị. Chỉ nhập một lần, máy sẽ nhớ.</p>
+      <input id="pin-in" type="tel" inputmode="numeric" autocomplete="off"
+             maxlength="12" placeholder="••••••">
+      <div class="err" id="lg-err"></div>
+      <div class="back"><button id="lg-back">← Chọn tên khác</button></div>
+    </div>
+
+    <div class="foot" id="lg-foot">Số liệu được mã hoá riêng cho từng người.<br>Quên mã thì nhắn anh Thái cấp lại.</div>
+  </div>
+</div>
 
 <header>
   <div class="who">
@@ -190,6 +251,7 @@ h4.dh:first-child{margin-top:0}
       <div class="lbl">Đang xem</div>
       <div class="nm" id="h-name">—</div>
     </div>
+    <button class="btn icon" id="sync" title="Làm mới số liệu"><span>⟳</span></button>
     <button class="btn" id="pick">Đổi ▾</button>
   </div>
   <div class="stamp" id="h-stamp"></div>
@@ -202,6 +264,9 @@ h4.dh:first-child{margin-top:0}
   <!-- ================= TAB 1 : TỔNG QUAN ================= -->
   <section id="v-over" hidden>
     <div class="card hero">
+      <div class="pills" id="p-hero">
+        <button data-per="W">Tuần</button><button data-per="M" class="on">Tháng</button><button data-per="Q">Quý</button>
+      </div>
       <h2 id="o-month">—</h2>
       <p class="sub" id="o-sub"></p>
       <div><span class="big" id="o-units">—</span><span class="unit">máy</span></div>
@@ -211,11 +276,16 @@ h4.dh:first-child{margin-top:0}
         <div>Đơn giá TB<b id="o-avg">—</b></div>
         <div>Số shop<b id="o-shops">—</b></div>
       </div>
+      <div class="cmprow" id="o-cmp"></div>
     </div>
 
-    <div class="card" id="c-fc">
-      <h2>Dự báo cuối tháng</h2>
-      <p class="sub" id="fc-sub"></p>
+    <div class="card" id="c-target">
+      <h2>Tiến độ &amp; dự báo tháng</h2>
+      <p class="sub" id="t-sub"></p>
+      <div class="meter"><i id="t-bar"></i><u id="t-pace"></u></div>
+      <div class="pacenote" id="t-pacenote"></div>
+      <div class="mrow"><span id="t-now"></span><span id="t-goal"></span></div>
+      <div class="tagline" id="t-tag"></div>
       <div class="kpis">
         <div>Tốc độ/ngày<b id="fc-rate">—</b></div>
         <div>Dự kiến máy<b id="fc-u">—</b></div>
@@ -224,28 +294,27 @@ h4.dh:first-child{margin-top:0}
       <div class="tagline" id="fc-tag"></div>
     </div>
 
-    <div class="card" id="c-target">
-      <h2>Tiến độ target tháng</h2>
-      <p class="sub" id="t-sub"></p>
-      <div class="meter"><i id="t-bar"></i><u id="t-pace"></u></div>
-      <div class="pacenote" id="t-pacenote"></div>
-      <div class="mrow"><span id="t-now"></span><span id="t-goal"></span></div>
-      <div class="tagline" id="t-tag"></div>
-    </div>
-
     <div class="card">
-      <div class="sec"><h2>Theo ngày trong tháng</h2><button class="link" id="dy-tog">Xem doanh thu</button></div>
+      <h2>Sell out theo ngày</h2>
       <p class="sub" id="dy-sub"></p>
       <svg class="chart" id="ch-day"></svg>
       <div class="legend" id="lg-day"></div>
-      <details><summary>Xem dạng bảng</summary><div class="tvwrap" id="tv-day"></div></details>
+      <div class="subhead">Doanh thu theo ngày</div>
+      <svg class="chart short" id="ch-dayr"></svg>
+      <div class="subhead">Theo tuần — từng kênh</div>
+      <div class="tvwrap" id="tv-week"></div>
+      <details><summary>Xem chi tiết từng ngày</summary><div class="tvwrap" id="tv-day"></div></details>
     </div>
 
     <div class="card">
-      <div class="sec"><h2>Doanh số theo tháng</h2><button class="link" id="mo-tog">Xem doanh thu</button></div>
+      <div class="sec"><h2>Doanh số</h2><button class="link" id="mo-tog">Xem doanh thu</button></div>
+      <div class="pills" id="p-trend">
+        <button data-tr="W">Tuần</button><button data-tr="M" class="on">Tháng</button><button data-tr="Q">Quý</button>
+      </div>
       <p class="sub" id="mo-sub"></p>
       <svg class="chart" id="ch-month"></svg>
-      <details><summary>Xem dạng bảng</summary><div class="tvwrap" id="tv-month"></div></details>
+      <div class="subhead" id="mo-mini-h">Theo tháng — từng kênh</div>
+      <div class="tvwrap" id="tv-month"></div>
     </div>
 
     <div class="card" id="c-chan">
@@ -329,6 +398,7 @@ h4.dh:first-child{margin-top:0}
   <button data-v="rank"><em>🏆</em>Xếp hạng</button>
 </nav>
 
+<div class="toast" id="toast"></div>
 <div class="mask" id="mask"></div>
 <div class="sheet" id="sheet"></div>
 
@@ -339,6 +409,8 @@ var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
 var D=null, CUR=null, MI=0, VIEW='over', SEG='ALL';
 var dyMode='u', moMode='u', rankMode='y';
+var PER='M';    // ky cua the dau: W = tuan, M = thang, Q = quy
+var TR='M';     // truc cua bieu do doanh so
 
 /* ---------- định dạng ---------- */
 function n0(v){return Math.round(v||0).toLocaleString('vi-VN')}
@@ -372,14 +444,88 @@ function allShops(){
     if(!x.__sale) x.__sale=s.n; out.push(x); }); });
   return out;
 }
+function tenPhamVi(){
+  if(D.vaiTro==='leader'&&D.kenh) return 'Toàn kênh '+D.kenh;
+  if(D.vaiTro==='admin') return 'Toàn Tiền Giang';
+  return 'Toàn bộ khu vực của tôi';
+}
 function curObj(){
   if(CUR==='__ALL__'){
     var o=Object.create(D.all);
-    o.n='Toàn Tiền Giang'; o.s=allShops();
+    o.n=tenPhamVi(); o.s=allShops();
     return o;
   }
   var f=D.sales.filter(function(s){return s.n===CUR})[0];
   return f||(function(){var o=Object.create(D.all);o.n='Toàn Tiền Giang';o.s=allShops();return o})();
+}
+
+/* =========================================================
+   NGÀY - TUẦN - THÁNG - QUÝ
+   Trục chung là "ngày trong năm" (1/1 = 1) nên mọi kỳ đều cắt được
+   bằng 2 chỉ số, và so cùng kỳ chỉ là lùi lại đúng số ngày đã chạy.
+   ========================================================= */
+function fromDoy(doy){return new Date(Date.UTC(D.year||2026,0,doy))}
+function toDoy(y,m,d){return Math.round((Date.UTC(y,m-1,d)-Date.UTC(y,0,1))/86400000)+1}
+function ddmm(doy){var t=fromDoy(doy);return t.getUTCDate()+'/'+(t.getUTCMonth()+1)}
+function monOf(doy){return (fromDoy(doy).getUTCDay()+6)%7}   // 0 = thứ 2
+function sumR(a,x,y){var t=0;if(!a)return 0;for(var i=Math.max(1,x);i<=y;i++)t+=a[i-1]||0;return t}
+
+function periodOf(kind){
+  var last=D.lastDoy, Y=D.year||2026, dt=fromDoy(last);
+  if(kind==='W'){
+    var a=last-monOf(last), len=last-a+1;
+    return {a:a,b:last,len:len,pa:a-7,pb:a-7+len-1,
+      title:'Tuần '+ddmm(a)+'–'+ddmm(last),
+      cmp:'tuần trước ('+ddmm(a-7)+'–'+ddmm(a-7+len-1)+')'};
+  }
+  if(kind==='Q'){
+    var m=dt.getUTCMonth()+1, q=Math.floor((m-1)/3)+1;
+    var qa=toDoy(Y,(q-1)*3+1,1), l2=last-qa+1;
+    var pq=q-1, pa=pq>=1?toDoy(Y,(pq-1)*3+1,1):null;
+    return {a:qa,b:last,len:l2,pa:pa,pb:pa?pa+l2-1:null,
+      title:'Quý '+q+'/'+Y+' · '+ddmm(qa)+'–'+ddmm(last),
+      cmp:pa?('quý '+pq+' ('+ddmm(pa)+'–'+ddmm(pa+l2-1)+')'):null};
+  }
+  var mm=dt.getUTCMonth()+1;
+  var ma=toDoy(Y,mm,1), l3=last-ma+1;
+  var pm=mm-1, pma=pm>=1?toDoy(Y,pm,1):null;
+  return {a:ma,b:last,len:l3,pa:pma,pb:pma?pma+l3-1:null,
+    title:'Tháng '+mm+'/'+Y+' · ngày 1–'+dt.getUTCDate(),
+    cmp:pma?('tháng '+pm+' (ngày 1–'+l3+')'):null};
+}
+
+// Chia 1 khoảng ngày thành các tuần (bắt đầu thứ 2)
+function weeksIn(a,b){
+  var map={},order=[];
+  for(var i=a;i<=b;i++){
+    var ws=i-monOf(i);
+    if(!map[ws]){map[ws]={a:i,b:i};order.push(ws)}
+    if(i<map[ws].a)map[ws].a=i;
+    if(i>map[ws].b)map[ws].b=i;
+  }
+  return order.sort(function(x,y){return x-y}).map(function(k){
+    var w=map[k]; return {a:w.a,b:w.b,label:ddmm(w.a)+'–'+ddmm(w.b)}});
+}
+// Chia thành tháng / quý trong khoảng dữ liệu
+function monthsIn(){
+  return (D.months||[]).map(function(m){
+    var a=toDoy(D.year,m,1), b=Math.min(D.lastDoy,toDoy(D.year,m,new Date(Date.UTC(D.year,m,0)).getUTCDate()));
+    return {a:a,b:b,label:'T'+m}});
+}
+function quartersIn(){
+  var out=[], qs={};
+  (D.months||[]).forEach(function(m){qs[Math.floor((m-1)/3)+1]=1});
+  Object.keys(qs).map(Number).sort(function(x,y){return x-y}).forEach(function(q){
+    var a=toDoy(D.year,(q-1)*3+1,1);
+    var em=q*3, b=Math.min(D.lastDoy,toDoy(D.year,em,new Date(Date.UTC(D.year,em,0)).getUTCDate()));
+    if(b>=a) out.push({a:a,b:b,label:'Q'+q});
+  });
+  return out;
+}
+function bucketsOf(kind){
+  if(kind==='W'){var all=weeksIn(1,D.lastDoy);return all.slice(-12)}
+  if(kind==='Q')return quartersIn();
+  return monthsIn();
 }
 
 /* ---------- phạm vi đang xem: toàn bộ hay 1 kênh ---------- */
@@ -388,17 +534,25 @@ function scope(){
   var o=curObj();
   if(SEG==='ALL') return o;
   var cd=(o.chd||{})[SEG], lst=chanShops(o,SEG);
-  if(!cd) cd={m:o.m.map(function(){return [0,0]}),d:[],dp:[],
+  if(!cd) cd={m:o.m.map(function(){return [0,0]}),dy:[],dr:[],
     sg:D.segs.map(function(){return [0,0]}),sgM:D.segs.map(function(){return [0,0]}),
     sr:D.sers.map(function(){return [0,0]}),srM:D.sers.map(function(){return [0,0]})};
-  return {n:o.n,chan:SEG,m:cd.m,d:cd.d||[],dp:cd.dp||[],ch:null,
+  return {n:o.n,chan:SEG,m:cd.m,dy:cd.dy||[],dr:cd.dr||[],ch:null,
     sg:cd.sg,sgM:cd.sgM,sr:cd.sr,srM:cd.srM,mkt:cd.mkt,
     s:lst,shops:lst.length,tg:lst.reduce(function(t,x){return t+x.tg},0)};
+}
+// Mảng theo ngày của 1 kênh trong phạm vi đang xem (dùng cho bảng mini)
+function chanDy(ch){
+  var o=curObj(), cd=(o.chd||{})[ch];
+  return cd?{dy:cd.dy||[],dr:cd.dr||[]}:null;
 }
 function buildSegbar(){
   var o=curObj();
   var chans=D.chans.filter(function(c){return chanShops(o,c).length});
   if(SEG!=='ALL'&&chans.indexOf(SEG)<0) SEG='ALL';
+  // Leader chỉ phụ trách 1 kênh -> thanh tab kênh không có tác dụng, ẩn đi
+  if(chans.length<=1){ SEG='ALL'; $('#segbar').innerHTML=''; $('#segbar').hidden=true; return }
+  $('#segbar').hidden=false;
   $('#segbar').innerHTML='<button data-seg="ALL"'+(SEG==='ALL'?' class="on"':'')+'>Tổng quan</button>'+
     chans.map(function(c){
       return '<button data-seg="'+c+'"'+(SEG===c?' class="on"':'')+'>'+c+
@@ -473,99 +627,152 @@ function renderOver(){
   MI=D.months.length-1;
   buildSegbar();
   var o=scope(), M=D.months;
-  var cur=o.m[MI], prv=MI>0?o.m[MI-1]:null;
   var dim=DIM(), day=D.maxDay||dim, pace=PACE();
 
-  $('#h-name').textContent=o.n+(SEG==='ALL'?'':' · '+SEG);
-  $('#h-stamp').textContent='Số liệu tới ngày '+day+'/'+M[MI]+'/2026 · cập nhật '+
+  $('#h-name').textContent=o.n+(SEG!=='ALL'?' · '+SEG:'');
+  $('#h-stamp').textContent='Số liệu tới ngày '+day+'/'+M[MI]+'/'+D.year+' · cập nhật '+
     new Date(D.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
 
-  $('#o-month').textContent='Tháng '+M[MI]+'/2026';
-  $('#o-sub').textContent='Tính tới ngày '+day+' — so cùng kỳ tháng trước';
-  $('#o-units').textContent=n0(cur[0]);
-  $('#o-rev').textContent=money(cur[1]);
-  $('#o-avg').textContent=cur[0]?money(Math.round(cur[1]/cur[0]*10)/10):'—';
-  $('#o-shops').textContent=n0(o.shops||(o.s||[]).length);
-  var dl=$('#o-mom');
-  if(prv&&prv[0]){
-    var g=(cur[0]-prv[0])/prv[0]*100;
-    dl.className='delta '+(g>=0?'up':'down');
-    dl.textContent=(g>=0?'▲ ':'▼ ')+Math.abs(g).toFixed(1)+'% so T'+M[MI-1];
-  }else{dl.className='delta flat';dl.textContent=''}
-
-  /* ---- dự báo cuối tháng ---- */
-  var rate=day?cur[0]/day:0, projU=Math.round(rate*dim), projR=day?Math.round(cur[1]/day*dim):0;
-  $('#fc-sub').textContent='Giữ nguyên tốc độ '+day+' ngày đầu tháng thì cuối tháng sẽ về đâu.';
-  $('#fc-rate').textContent=(Math.round(rate*10)/10).toLocaleString('vi-VN')+' máy';
-  $('#fc-u').textContent=n0(projU)+' máy';
-  $('#fc-r').textContent=money(projR);
-  var ft=$('#fc-tag');
-  if(o.tg){
-    var fp=projR/o.tg*100;
-    var fcl=fp>=100?'--green':fp>=90?'--amber':'--red';
-    ft.style.color='var('+fcl+')';
-    ft.textContent=(fp>=100?'✅ Dự kiến ĐẠT target — ':fp>=90?'⚠️ Sát target, còn thiếu — ':'⛔ Dự kiến KHÔNG đạt — ')+
-      pct(fp)+' target'+(fp<100?' (thiếu '+money(o.tg-projR)+')':'');
-  } else { ft.textContent=''; }
-
-  /* ---- target ---- */
-  var tgMonth=o.tg||0, c=$('#c-target');
-  if(!tgMonth){c.hidden=true}
-  else{
-    c.hidden=false;
-    var p=cur[1]/tgMonth*100;
-    var cl=p>=pace?'--green':p>=pace*0.85?'--amber':'--red';
-    $('#t-bar').style.width=Math.min(100,p)+'%';
-    $('#t-bar').style.background='var('+cl+')';
-    $('#t-pace').style.left='calc('+Math.min(100,pace)+'% - 1px)';
-    $('#t-sub').textContent='Target tháng lấy từ sheet, cộng theo shop đang phụ trách.';
-    $('#t-pacenote').textContent='Vạch trắng = tiến độ kỳ vọng '+pct(pace)+' (đã qua '+day+'/'+dim+' ngày)';
-    $('#t-now').textContent=money(cur[1])+' đã đạt';
-    $('#t-goal').textContent='mục tiêu '+money(tgMonth);
-    var tg=$('#t-tag'); tg.style.color='var('+cl+')';
-    tg.textContent=(p>=pace?'✅ Đúng/vượt tiến độ — ':p>=pace*0.85?'⚠️ Hơi chậm — ':'⛔ Đang chậm — ')+pct(p)+' target tháng';
-  }
-
+  renderHero(o); renderTarget(o);
   renderDaily(o); renderMonth(o); renderChan(o); renderSeg(o); renderSer(o); renderMkt(o);
   renderAlerts(o); renderFind(o); renderRank(o);
 }
 
-/* ---- theo ngày ---- */
-function renderDaily(o){
-  var dim=DIM(), day=D.maxDay||dim;
-  var d=(o.d||[]).slice(0,dim), dp=(o.dp||[]).slice(0,dim);
-  var isU=dyMode==='u';
-  // chỉ có số MÁY theo ngày; khi xem doanh thu thì quy đổi theo đơn giá TB tháng
-  var cur=o.m[MI], avg=cur[0]?cur[1]/cur[0]:0;
-  var vals=isU?d:d.map(function(x){return Math.round(x*avg)});
-  var cmp=isU?dp:dp.map(function(x){return Math.round(x*avg)});
-  $('#dy-tog').textContent=isU?'Xem doanh thu':'Xem số máy';
-  $('#dy-sub').textContent=(isU?'Số máy bán ra từng ngày':'Doanh thu ước tính từng ngày (số máy × đơn giá TB tháng)')+
-    ' — đường xám là tháng trước để so cùng ngày.';
-  var labels=[];for(var i=1;i<=dim;i++)labels.push(i);
-  drawBars($('#ch-day'),labels,vals,{
-    color:'var(--c1)',cmp:cmp,dimAfter:day-1,lastIdx:day-1,h:150,
-    fmt:isU?n0:money
+/* ---- thẻ đầu: Tuần / Tháng / Quý, so cùng kỳ theo SỐ NGÀY đã chạy ---- */
+function renderHero(o){
+  $$('#p-hero button').forEach(function(b){b.classList.toggle('on',b.dataset.per===PER)});
+  var P=periodOf(PER);
+  var u=sumR(o.dy,P.a,P.b), r=sumR(o.dr,P.a,P.b);
+  var pu=P.pa?sumR(o.dy,P.pa,P.pb):0, pr=P.pa?sumR(o.dr,P.pa,P.pb):0;
+
+  $('#o-month').textContent=P.title;
+  $('#o-sub').textContent=P.cmp?('Đã chạy '+P.len+' ngày — so đúng '+P.len+' ngày đầu của '+P.cmp):
+    ('Đã chạy '+P.len+' ngày');
+  $('#o-units').textContent=n0(u);
+  $('#o-rev').textContent=money(r);
+  $('#o-avg').textContent=u?money(Math.round(r/u*10)/10):'—';
+  $('#o-shops').textContent=n0(o.shops||(o.s||[]).length);
+
+  var dl=$('#o-mom');
+  if(pu){
+    var g=(u-pu)/pu*100;
+    dl.className='delta '+(g>=0?'up':'down');
+    dl.textContent=(g>=0?'▲ ':'▼ ')+Math.abs(g).toFixed(1)+'% máy so cùng kỳ';
+  } else {dl.className='delta flat';dl.textContent='Chưa có kỳ trước để so'}
+
+  var gr=pr?((r-pr)/pr*100):null;
+  $('#o-cmp').innerHTML= P.pa
+    ? 'Cùng kỳ trước: <b>'+n0(pu)+' máy</b> · <b>'+money(pr)+'</b>'+
+      (gr===null?'':' → doanh thu <b style="color:var('+(gr>=0?'--green':'--red')+')">'+
+        (gr>=0?'▲ ':'▼ ')+Math.abs(gr).toFixed(1)+'%</b>')
+    : '';
+}
+
+/* ---- tiến độ target + dự báo (gộp 1 thẻ) ---- */
+function renderTarget(o){
+  var dim=DIM(), day=D.maxDay||dim, pace=PACE();
+  var P=periodOf('M');
+  var mu=sumR(o.dy,P.a,P.b), mr=sumR(o.dr,P.a,P.b);
+  var rate=day?mu/day:0, projU=Math.round(rate*dim), projR=day?Math.round(mr/day*dim):0;
+  var c=$('#c-target'), tgMonth=o.tg||0;
+
+  $('#fc-rate').textContent=(Math.round(rate*10)/10).toLocaleString('vi-VN')+' máy';
+  $('#fc-u').textContent=n0(projU)+' máy';
+  $('#fc-r').textContent=money(projR);
+
+  if(!tgMonth){
+    c.hidden=false;
+    $('#t-sub').textContent='Nhóm shop này chưa có target trong sheet — chỉ hiện dự báo.';
+    ['#t-bar','#t-pace'].forEach(function(s){$(s).style.display='none'});
+    $('#t-pacenote').textContent=''; $('#t-now').textContent=''; $('#t-goal').textContent='';
+    $('#t-tag').textContent='';
+    $('#fc-tag').style.color='var(--muted)';
+    $('#fc-tag').textContent='Giữ tốc độ '+day+' ngày đầu tháng → cuối tháng ~'+n0(projU)+' máy, '+money(projR)+'.';
+    return;
+  }
+  c.hidden=false;
+  ['#t-bar','#t-pace'].forEach(function(s){$(s).style.display=''});
+  var p=mr/tgMonth*100;
+  var cl=p>=pace?'--green':p>=pace*0.85?'--amber':'--red';
+  $('#t-bar').style.width=Math.min(100,p)+'%';
+  $('#t-bar').style.background='var('+cl+')';
+  $('#t-pace').style.left='calc('+Math.min(100,pace)+'% - 1px)';
+  $('#t-sub').textContent='Target tháng lấy từ sheet, cộng theo shop đang phụ trách.';
+  $('#t-pacenote').textContent='Vạch trắng = tiến độ kỳ vọng '+pct(pace)+' (đã qua '+day+'/'+dim+' ngày)';
+  $('#t-now').textContent=money(mr)+' đã đạt';
+  $('#t-goal').textContent='mục tiêu '+money(tgMonth);
+  var tg=$('#t-tag'); tg.style.color='var('+cl+')';
+  tg.textContent=(p>=pace?'✅ Đúng/vượt tiến độ — ':p>=pace*0.85?'⚠️ Hơi chậm — ':'⛔ Đang chậm — ')+pct(p)+' target tháng';
+
+  var fp=projR/tgMonth*100;
+  var fcl=fp>=100?'--green':fp>=90?'--amber':'--red';
+  var ft=$('#fc-tag'); ft.style.color='var('+fcl+')';
+  ft.textContent=(fp>=100?'✅ Đà này sẽ ĐẠT target — ':fp>=90?'⚠️ Sát target — ':'⛔ Đà này KHÔNG đạt — ')+
+    pct(fp)+' target'+(fp<100?' (thiếu '+money(tgMonth-projR)+')':'');
+}
+
+/* ---- bảng mini: kênh × kỳ ---- */
+function miniTable(el,buckets,label){
+  var chans=D.chans.filter(function(c){return chanDy(c)});
+  if(SEG!=='ALL') chans=[SEG];
+  var head=[label].concat(buckets.map(function(b){return b.label}));
+  var rows=chans.map(function(c){
+    var s=chanDy(c)||{dy:[],dr:[]};
+    return [c].concat(buckets.map(function(b){
+      return '<b>'+n0(sumR(s.dy,b.a,b.b))+'</b><small>'+money(sumR(s.dr,b.a,b.b))+'</small>'}));
   });
-  $('#lg-day').innerHTML='<span><i style="background:var(--c1)"></i>Tháng '+D.months[MI]+'</span>'+
-    (dp.length?'<span><i class="ln" style="background:#5a6676"></i>Tháng '+D.months[MI-1]+'</span>':'');
-  var rows=[['Máy tháng này'].concat(d.slice(0,day).map(n0))];
-  if(dp.length) rows.push(['Máy tháng trước'].concat(dp.slice(0,day).map(n0)));
-  var head=['Ngày'];for(var k=1;k<=day;k++)head.push(k);
+  if(chans.length>1){
+    var o=scope();
+    rows.push(['<b>Tổng</b>'].concat(buckets.map(function(b){
+      return '<b>'+n0(sumR(o.dy,b.a,b.b))+'</b><small>'+money(sumR(o.dr,b.a,b.b))+'</small>'})));
+  }
+  el.innerHTML='<table class="tv"><tr>'+head.map(function(h){return '<th>'+safe(h)+'</th>'}).join('')+'</tr>'+
+    rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join('')+
+    '</table>';
+}
+
+/* ---- theo ngày: máy ở trên, doanh thu ở dưới, bảng tuần bên dưới ---- */
+function renderDaily(o){
+  var Y=D.year, m=D.months[MI], dim=DIM(), day=D.maxDay||dim;
+  var a=toDoy(Y,m,1), pm=m-1, pa=pm>=1?toDoy(Y,pm,1):null;
+  var u=[],r=[],cu=[];
+  for(var i=0;i<dim;i++){
+    u.push((o.dy||[])[a+i-1]||0);
+    r.push((o.dr||[])[a+i-1]||0);
+    cu.push(pa?((o.dy||[])[pa+i-1]||0):undefined);
+  }
+  $('#dy-sub').textContent='Số máy bán ra từng ngày tháng '+m+
+    (pa?' — đường xám là tháng '+pm+' để so cùng ngày.':'.');
+  var labels=[];for(var k=1;k<=dim;k++)labels.push(k);
+  drawBars($('#ch-day'),labels,u,{color:'var(--c1)',cmp:pa?cu:null,dimAfter:day-1,lastIdx:day-1,h:150});
+  $('#lg-day').innerHTML='<span><i style="background:var(--c1)"></i>Tháng '+m+'</span>'+
+    (pa?'<span><i class="ln" style="background:#5a6676"></i>Tháng '+pm+'</span>':'');
+  drawBars($('#ch-dayr'),labels,r,{color:'var(--c1)',dimAfter:day-1,lastIdx:day-1,h:78,
+    labels:false,fmt:money,flat:true});
+
+  miniTable($('#tv-week'),weeksIn(a,a+day-1),'Tuần');
+
+  var head=['Ngày'];for(var q=1;q<=day;q++)head.push(q);
+  var rows=[['Máy'].concat(u.slice(0,day).map(n0)),
+            ['Doanh thu'].concat(r.slice(0,day).map(money))];
+  if(pa) rows.push(['Máy tháng '+pm].concat(cu.slice(0,day).map(function(x){return n0(x||0)})));
   $('#tv-day').innerHTML=tvTable(head,rows);
 }
 
-/* ---- theo tháng ---- */
+/* ---- doanh số theo Tuần / Tháng / Quý ---- */
 function renderMonth(o){
-  var isU=moMode==='u', M=D.months;
-  var vals=o.m.map(function(x){return isU?x[0]:x[1]});
+  $$('#p-trend button').forEach(function(b){b.classList.toggle('on',b.dataset.tr===TR)});
+  var isU=moMode==='u';
+  var B=bucketsOf(TR);
+  var vals=B.map(function(b){return isU?sumR(o.dy,b.a,b.b):sumR(o.dr,b.a,b.b)});
+  var ten=TR==='W'?'tuần':TR==='Q'?'quý':'tháng';
   $('#mo-tog').textContent=isU?'Xem doanh thu':'Xem số máy';
-  $('#mo-sub').textContent=(isU?'Số máy sellout':'Doanh thu')+' theo tháng — cột cao nhất và tháng gần nhất được ghi số. Tháng '+
-    M[MI]+' mới tính tới ngày '+(D.maxDay||DIM())+'.';
-  drawBars($('#ch-month'),M.map(function(m){return 'T'+m}),vals,{color:'var(--c1)',fmt:isU?n0:money});
-  $('#tv-month').innerHTML=tvTable(['Tháng'].concat(M.map(function(m){return 'T'+m})),
-    [['Máy'].concat(o.m.map(function(x){return n0(x[0])})),
-     ['Doanh thu'].concat(o.m.map(function(x){return money(x[1])}))]);
+  $('#mo-sub').textContent=(isU?'Số máy sellout':'Doanh thu')+' theo '+ten+
+    ' — cột cao nhất và '+ten+' gần nhất được ghi số. '+
+    (TR==='W'?'12 tuần gần nhất. ':'')+'Kỳ cuối mới chạy được '+periodOf(TR==='W'?'W':TR==='Q'?'Q':'M').len+' ngày.';
+  drawBars($('#ch-month'),B.map(function(b){return b.label}),vals,{color:'var(--c1)',fmt:isU?n0:money});
+  $('#mo-mini-h').textContent='Theo '+ten+' — từng kênh';
+  miniTable($('#tv-month'),B,ten.charAt(0).toUpperCase()+ten.slice(1));
 }
 
 /* ---- kênh ---- */
@@ -762,6 +969,16 @@ function drawFind(q){
    XẾP HẠNG
    ========================================================= */
 function renderRank(o){
+  if(D.vaiTro==='sale'){
+    $('#r-tog').style.display='none';
+    $('#r-sub').textContent='Vị trí của anh/chị trong đội, tính theo doanh thu lũy kế cả năm.';
+    $('#r-list').innerHTML='<div class="rank me"><span class="no">🏆</span><span class="bd">'+
+      safe(D.sales[0].n)+'<small>hạng trong toàn đội sale</small></span>'+
+      '<span class="v" style="font-size:17px;font-weight:800">'+safe(D.hang||'—')+'</span></div>'+
+      '<div class="note">Số của các sale khác được bảo mật, app chỉ hiện thứ hạng.</div>';
+    renderTopShop(o); return;
+  }
+  $('#r-tog').style.display='';
   var isY=rankMode==='y';
   $('#r-tog').textContent=isY?'Theo tháng này':'Theo cả năm';
   $('#r-sub').textContent=(isY?'Doanh thu lũy kế cả năm':'Doanh thu tháng '+D.months[MI])+
@@ -783,6 +1000,9 @@ function renderRank(o){
       '<span class="v">'+money(r.rv)+'<small>'+n0(r.u)+' máy</small></span></div>';
   }).join('');
 
+  renderTopShop(o);
+}
+function renderTopShop(o){
   var shops=(o.s||[]).slice().sort(function(a,b){return b.m[MI][1]-a.m[MI][1]}).slice(0,20);
   $('#rs-sub').textContent='20 shop doanh thu cao nhất tháng '+D.months[MI]+
     (SEG==='ALL'?' trong phạm vi đang xem.':' — kênh '+SEG+'.');
@@ -913,14 +1133,22 @@ function openShop(name){
    CHỌN NGƯỜI XEM
    ========================================================= */
 function openPicker(){
+  var luu=null; try{luu=JSON.parse(localStorage.getItem(LS_ME))}catch(e){}
+  var tenToi=luu?luu.n:'';
   var h='<div class="hd"><h3>Chọn người xem</h3><button class="x" id="pk-x">✕</button></div>';
-  h+='<button class="sr'+(CUR==='__ALL__'?' on':'')+'" data-who="__ALL__">Toàn Tiền Giang<small>'+
-     D.all.shops+' shop</small></button>';
+  if(D.sales.length>1)
+    h+='<button class="sr'+(CUR==='__ALL__'?' on':'')+'" data-who="__ALL__">'+
+       tenPhamVi()+'<small>'+D.all.shops+' shop</small></button>';
   h+=D.sales.map(function(s){
     return '<button class="sr'+(CUR===s.n?' on':'')+'" data-who="'+safe(s.n)+'">'+safe(s.n)+
       '<small>'+s.shops+' shop</small></button>'}).join('');
+  var moTa=(D.vaiTro==='leader')?('Phụ trách kênh '+safe(D.kenh)):safe(VAI[D.vaiTro]||'');
+  h+='<div class="bodypad"><div class="note">Đang đăng nhập: <b>'+safe(tenToi)+'</b> · '+
+     moTa+(D.hang?' · hạng '+safe(D.hang):'')+
+     '<br><button id="pk-out" style="color:var(--red);font-weight:700;margin-top:8px">Đăng xuất</button></div></div>';
   var sh=$('#sheet'); sh.innerHTML=h; openSheet();
   $('#pk-x').addEventListener('click',closeSheet);
+  var out=$('#pk-out'); if(out) out.addEventListener('click',dangXuat);
 }
 function openSheet(){$('#mask').classList.add('on');$('#sheet').classList.add('on');document.body.style.overflow='hidden'}
 function closeSheet(){$('#mask').classList.remove('on');$('#sheet').classList.remove('on');document.body.style.overflow=''}
@@ -946,8 +1174,10 @@ function boot(data){
   if(CUR!=='__ALL__'&&names.indexOf(CUR)<0) CUR=null;
   $('#loading').hidden=true;
   $$('section').forEach(function(s){s.hidden=(s.id!=='v-over')});
-  if(!CUR){CUR='__ALL__';renderOver();openPicker()}
-  else renderOver();
+  // Sale chỉ có 1 phạm vi -> vào thẳng, không hỏi
+  if(!CUR) CUR=(D.sales.length===1)?D.sales[0].n:'__ALL__';
+  $('#pick').hidden=(D.sales.length<=1&&D.vaiTro==='sale')?false:false;
+  renderOver();
 }
 
 document.addEventListener('click',function(e){
@@ -957,30 +1187,195 @@ document.addEventListener('click',function(e){
   if(w){CUR=w.dataset.who;try{localStorage.setItem(LS_WHO,CUR)}catch(err){}closeSheet();renderOver();return}
   var g=e.target.closest('[data-seg]');
   if(g){SEG=g.dataset.seg;renderOver();window.scrollTo(0,0);return}
+  var pp=e.target.closest('[data-per]');
+  if(pp){PER=pp.dataset.per;renderHero(scope());return}
+  var tt=e.target.closest('[data-tr]');
+  if(tt){TR=tt.dataset.tr;renderMonth(scope());return}
   var n=e.target.closest('nav button');
   if(n){go(n.dataset.v);return}
 });
+/* ---------- nút làm mới ---------- */
+var ACTIONS_URL='https://github.com/MrDT1988/dashboard-phu-kien/actions/workflows/cap-nhat-du-lieu.yml';
+var toastTimer=null;
+function toast(html,giay){
+  var t=$('#toast'); t.innerHTML=html; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.classList.remove('on')},(giay||5)*1000);
+}
+function moc(d){
+  if(!d) return '';
+  var m=d.months[d.months.length-1];
+  return 'tới ngày '+d.maxDay+'/'+m+' · làm mới '+
+    new Date(d.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
+}
+function lamMoi(){
+  var b=$('#sync'); if(b.disabled) return;
+  b.disabled=true; b.classList.add('spin');
+  var truoc=D?D.updated:null;
+  toast('Đang tải số liệu mới…',20);
+  var luu=null; try{luu=JSON.parse(localStorage.getItem(LS_ME))}catch(e){}
+  (luu&&luu.id ? layGoi(luu.id).then(function(b){return moKhoa(b,luu.pin)})
+               : Promise.reject(new Error('chưa đăng nhập')))
+    .then(function(d){
+      var doi=(d.updated!==truoc);
+      D=d; try{localStorage.setItem(LS_DATA,JSON.stringify(D))}catch(e){}
+      renderOver();
+      if(doi) toast('✅ Đã cập nhật — số '+moc(d),5);
+      else toast('Chưa có số mới — vẫn là số '+moc(d)+
+        '.<br>Vừa nhập số vào sheet? Bấm <a href="'+ACTIONS_URL+
+        '" target="_blank" rel="noopener">Lấy số mới từ DB TG</a> rồi quay lại sau ~15 phút.'+
+        '<br><span style="color:var(--muted)">Hệ thống cũng tự lấy số lúc 10:00 mỗi ngày.</span>',14);
+    })
+    .catch(function(e){
+      toast('⚠️ Không tải được số liệu ('+safe(e.message)+'). Kiểm tra mạng rồi thử lại.',6);
+    })
+    .then(function(){b.disabled=false;b.classList.remove('spin')});
+}
+$('#sync').addEventListener('click',lamMoi);
+$('#toast').addEventListener('click',function(e){
+  if(e.target.tagName!=='A') this.classList.remove('on');
+});
+
 $('#mask').addEventListener('click',closeSheet);
 $('#pick').addEventListener('click',openPicker);
-$('#dy-tog').addEventListener('click',function(){dyMode=dyMode==='u'?'r':'u';renderDaily(scope())});
 $('#mo-tog').addEventListener('click',function(){moMode=moMode==='u'?'r':'u';renderMonth(scope())});
 $('#r-tog').addEventListener('click',function(){rankMode=rankMode==='y'?'m':'y';renderRank(scope())});
 $('#a-copy').addEventListener('click',copyAlerts);
 $('#f-q').addEventListener('input',function(){drawFind(this.value)});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet()});
 
-(function load(){
-  var cached=null;
-  try{cached=JSON.parse(localStorage.getItem(LS_DATA))}catch(e){}
-  fetch('app-data.json?t='+Date.now()).then(function(r){
-    if(!r.ok)throw new Error('HTTP '+r.status); return r.json();
-  }).then(boot).catch(function(err){
-    if(cached){boot(cached);
+/* =========================================================
+   ĐĂNG NHẬP — mỗi người một gói số liệu MÃ HOÁ riêng
+   Không có mã thì file tải về chỉ là chuỗi vô nghĩa, không đọc được gì.
+   ========================================================= */
+var LS_ME='oppo_sale_me_v1';
+var IDX=null, ME=null;
+var VAI={admin:'Toàn vùng',leader:'Leader',sale:'Sale'};
+
+function b64(s){
+  var raw=atob(s), a=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i);
+  return a;
+}
+function moKhoa(blob,pin){
+  var C=window.crypto&&window.crypto.subtle;
+  if(!C) return Promise.reject(new Error('Trình duyệt quá cũ, không mở khoá được'));
+  var enc=new TextEncoder();
+  return C.importKey('raw',enc.encode(String(pin)),'PBKDF2',false,['deriveBits'])
+    .then(function(km){
+      return C.deriveBits({name:'PBKDF2',salt:b64(blob.salt),iterations:blob.it,hash:'SHA-256'},km,256);
+    })
+    .then(function(bits){return C.importKey('raw',bits,{name:'AES-GCM'},false,['decrypt'])})
+    .then(function(key){
+      return C.decrypt({name:'AES-GCM',iv:b64(blob.iv),tagLength:128},key,b64(blob.ct));
+    })
+    .then(function(pt){return JSON.parse(new TextDecoder().decode(pt))});
+}
+
+function layIndex(){
+  return fetch('data/index.json?t='+Date.now(),{cache:'no-store'})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()});
+}
+function layGoi(id){
+  return fetch('data/'+id+'.json?t='+Date.now(),{cache:'no-store'})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()});
+}
+
+function veDanhSach(){
+  var nhom=[['admin','Quản lý vùng'],['leader','Leader kênh'],['sale','Sale']];
+  var h='';
+  nhom.forEach(function(g){
+    var ds=IDX.users.filter(function(u){return u.r===g[0]});
+    if(!ds.length) return;
+    h+='<div class="grp">'+g[1]+'</div>';
+    h+=ds.map(function(u){
+      return '<button data-uid="'+safe(u.id)+'">'+safe(u.n)+
+        '<small>'+VAI[u.r]+'</small></button>'}).join('');
+  });
+  $('#lg-list').innerHTML=h;
+}
+function moLogin(){
+  $('#login').hidden=false;
+  $('#pin-box').classList.remove('on');
+  $('#lg-list').style.display='';
+  $('#lg-lead').textContent='Chọn tên của anh/chị để đăng nhập.';
+  $('#lg-err').textContent='';
+  $('#pin-in').value='';
+}
+function chonNguoi(u){
+  ME={id:u.id,n:u.n,r:u.r};
+  $('#lg-list').style.display='none';
+  $('#lg-lead').style.display='none';
+  $('#pin-box').classList.add('on');
+  $('#lg-nm').textContent=u.n;
+  $('#lg-err').textContent='';
+  var i=$('#pin-in'); i.value=''; setTimeout(function(){i.focus()},80);
+}
+function thuMa(pin){
+  var e=$('#lg-err');
+  e.style.color='var(--muted)'; e.textContent='Đang mở khoá…';
+  return layGoi(ME.id)
+    .then(function(blob){return moKhoa(blob,pin)})
+    .then(function(d){
+      try{localStorage.setItem(LS_ME,JSON.stringify({id:ME.id,n:ME.n,r:ME.r,pin:String(pin)}))}catch(x){}
+      $('#login').hidden=true;
+      e.style.color='var(--red)'; e.textContent='';
+      boot(d);
+    })
+    .catch(function(err){
+      e.style.color='var(--red)';
+      e.textContent=(err&&/HTTP/.test(err.message))
+        ? 'Không tải được dữ liệu. Kiểm tra mạng.'
+        : 'Mã không đúng. Kiểm tra lại giúp em.';
+      var i=$('#pin-in'); i.value=''; i.focus();
+    });
+}
+function dangXuat(){
+  try{localStorage.removeItem(LS_ME);localStorage.removeItem(LS_DATA);localStorage.removeItem(LS_WHO)}catch(e){}
+  location.reload();
+}
+
+$('#lg-list').addEventListener('click',function(e){
+  var b=e.target.closest('[data-uid]'); if(!b) return;
+  var u=IDX.users.filter(function(x){return x.id===b.dataset.uid})[0];
+  if(u) chonNguoi(u);
+});
+$('#lg-back').addEventListener('click',function(){
+  $('#pin-box').classList.remove('on');
+  $('#lg-list').style.display=''; $('#lg-lead').style.display='';
+});
+$('#pin-in').addEventListener('input',function(){
+  this.value=this.value.replace(/\D/g,'');
+  $('#lg-err').textContent='';
+  if(this.value.length>=6&&this.value.length<=12){
+    var v=this.value; var self=this;
+    clearTimeout(self._t);
+    self._t=setTimeout(function(){ if(self.value===v) thuMa(v) },420);
+  }
+});
+
+(function khoiDong(){
+  var luu=null; try{luu=JSON.parse(localStorage.getItem(LS_ME))}catch(e){}
+  layIndex().then(function(idx){
+    IDX=idx; veDanhSach();
+    if(luu&&luu.id&&luu.pin&&idx.users.some(function(u){return u.id===luu.id})){
+      ME={id:luu.id,n:luu.n,r:luu.r};
+      $('#loading').textContent='Đang mở khoá số liệu…';
+      return layGoi(luu.id).then(function(b){return moKhoa(b,luu.pin)})
+        .then(function(d){boot(d)})
+        .catch(function(){ moLogin() });      // mã đổi hoặc file mới -> đăng nhập lại
+    }
+    moLogin();
+  }).catch(function(err){
+    // mất mạng: dùng bản đã lưu trong máy nếu có
+    var cached=null; try{cached=JSON.parse(localStorage.getItem(LS_DATA))}catch(e){}
+    if(cached&&luu){
+      boot(cached);
       var s=document.createElement('div');s.className='note';s.style.margin='0 14px 12px';
       s.textContent='⚠️ Không tải được số mới (mất mạng?). Đang dùng bản đã lưu trong máy.';
       document.querySelector('main').prepend(s);
     } else {
-      $('#loading').innerHTML='Không tải được số liệu.<br><small>'+safe(err.message)+'</small>';
+      $('#loading').innerHTML='Không tải được danh sách người dùng.<br><small>'+safe(err.message)+'</small>';
     }
   });
 })();

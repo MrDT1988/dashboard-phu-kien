@@ -26,6 +26,17 @@
     var zeros = function (n) { var a = new Array(n); for (var i = 0; i < n; i++) a[i] = 0; return a; };
     var pairs = function (n) { var a = new Array(n); for (var i = 0; i < n; i++) a[i] = [0, 0]; return a; };
 
+    // Ngay-trong-nam: 1/1 = 1. Dung lam truc chung cho tuan / thang / quy.
+    var lastDoy = 0;
+    function doyOf(y, m, d) {
+      return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86400000) + 1;
+    }
+    function addDy(o, doy, u, rv) {
+      if (!o._dy) { o._dy = {}; o._dr = {}; }
+      o._dy[doy] = (o._dy[doy] || 0) + u;
+      o._dr[doy] = (o._dr[doy] || 0) + rv;
+    }
+
     // ---- nam + so ngay cua thang
     var dayKeys = Object.keys(MWG.overview_daily_by_date || {}).sort();
     var YEAR = dayKeys.length ? +dayKeys[0].slice(0, 4) : new Date().getFullYear();
@@ -136,24 +147,28 @@
     var maxDay = 0;
     Object.keys(MWG.overview_daily_by_date || {}).forEach(function (iso) {
       var p = iso.split('-'); if (p.length !== 3) return;
-      var mo = +p[1], dd = +p[2], key, lim;
+      var yy = +p[0], mo = +p[1], dd = +p[2];
+      var doy = doyOf(yy, mo, dd);
+      var key = null, lim = 0;
       if (mo === CUR_M) { key = 'd'; lim = DIM_CUR; }
       else if (PRV_M && mo === PRV_M) { key = 'dp'; lim = DIM_PRV; }
-      else return;
-      if (dd < 1 || dd > lim) return;
       var byCh = MWG.overview_daily_by_date[iso];
       Object.keys(byCh).forEach(function (ch) {
         var byStore = byCh[ch];
         Object.keys(byStore).forEach(function (st) {
-          var u = (byStore[st] || {}).sellout || 0; if (!u) return;
-          all[key][dd - 1] += u;
-          chdOf(all, ch)[key][dd - 1] += u;
+          var v = byStore[st] || {};
+          var u = v.sellout || 0, rv = v.rev || 0;
+          if (!u && !rv) return;
+          if (doy > lastDoy) lastDoy = doy;
           var sh = shops[st];
-          var sn = (byStore[st] || {}).sale || (sh ? sh.sale : null);
+          var sn = v.sale || (sh ? sh.sale : null);
           var sl = sales[sn || '(Không rõ)'];
-          if (sl) { sl[key][dd - 1] += u; chdOf(sl, ch)[key][dd - 1] += u; }
-          if (sh) sh[key][dd - 1] += u;
-          if (key === 'd' && dd > maxDay) maxDay = dd;
+          // truc ca nam (dung cho tab Tuan / Thang / Quy)
+          addDy(all, doy, u, rv); addDy(chdOf(all, ch), doy, u, rv);
+          if (sl) { addDy(sl, doy, u, rv); addDy(chdOf(sl, ch), doy, u, rv); }
+          // rieng SHOP van giu mang theo ngay cua thang nay / thang truoc
+          if (key && dd >= 1 && dd <= lim && sh) sh[key][dd - 1] += u;
+          if (key === 'd' && u && dd > maxDay) maxDay = dd;
         });
       });
     });
@@ -257,24 +272,36 @@
       return out;
     }
     function packPairs(a) { return a.map(function (x) { return [x[0], tr(x[1])]; }); }
-    function packCore(o) {
+    // Trai mang thua thanh mang dac theo ngay-trong-nam (1..lastDoy)
+    function densify(o) {
+      var u = new Array(lastDoy), r = new Array(lastDoy);
+      for (var i = 0; i < lastDoy; i++) { u[i] = 0; r[i] = 0; }
+      if (o._dy) Object.keys(o._dy).forEach(function (k) {
+        var i = +k - 1; if (i >= 0 && i < lastDoy) { u[i] = o._dy[k]; r[i] = tr(o._dr[k]); }
+      });
+      return [u, r];
+    }
+    function packCore(o, withDy) {
       var r = {
-        m: packPairs(o.m), d: o.d, dp: o.dp, ch: packCh(o),
+        m: packPairs(o.m), ch: packCh(o),
         sg: packPairs(o.sg), sgM: packPairs(o.sgM),
         sr: packPairs(o.sr), srM: packPairs(o.srM)
       };
+      if (withDy) { var x = densify(o); r.dy = x[0]; r.dr = x[1]; }
+      else { r.d = o.d; r.dp = o.dp; }
       if (o.mkt) r.mkt = o.mkt;
       if (o.chd) {
         r.chd = {};
         CHANS.forEach(function (c) {
           var cd = o.chd[c]; if (!cd) return;
-          var x = {
-            m: packPairs(cd.m), d: cd.d, dp: cd.dp,
+          var y = {
+            m: packPairs(cd.m),
             sg: packPairs(cd.sg), sgM: packPairs(cd.sgM),
             sr: packPairs(cd.sr), srM: packPairs(cd.srM)
           };
-          if (cd.mkt) x.mkt = cd.mkt;
-          r.chd[c] = x;
+          var z = densify(cd); y.dy = z[0]; y.dr = z[1];
+          if (cd.mkt) y.mkt = cd.mkt;
+          r.chd[c] = y;
         });
       }
       return r;
@@ -290,7 +317,7 @@
         shops[b].m.forEach(function (x) { rb += x[1]; });
         return rb - ra;
       });
-      var o = packCore(sales[name]);
+      var o = packCore(sales[name], true);
       o.n = name;
       o.shops = lst.length;
       o.tg = lst.reduce(function (t, s) { return t + shops[s].tg; }, 0);
@@ -302,13 +329,14 @@
       return o;
     }).filter(function (o) { return o.shops || o.m.some(function (x) { return x[0]; }); });
 
-    var allOut = packCore(all);
+    var allOut = packCore(all, true);
     allOut.shops = shopOrder.length;
     allOut.tg = shopOrder.reduce(function (t, s) { return t + shops[s].tg; }, 0);
 
     return {
       updated: new Date().toISOString(),
       months: MONTHS, maxDay: maxDay, dimCur: DIM_CUR, dimPrv: DIM_PRV,
+      year: YEAR, lastDoy: lastDoy,
       segs: SEGS, sers: SERS, chans: CHANS,
       mktNote: {
         matched: mkt.matched, shops: mkt.shops,

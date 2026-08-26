@@ -1,0 +1,71 @@
+# Tu dong lam moi so lieu cho App Sale/ASM.
+# Chay tren may chu cua GitHub - KHONG can may cua anh Thai bat.
+name: Cap nhat so lieu App
+
+on:
+  schedule:
+    # 03:00 UTC = 10:00 sang gio Viet Nam. Chay moi ngay.
+    - cron: '0 3 * * *'
+  workflow_dispatch:        # cho phep bam chay tay tren GitHub
+    inputs:
+      force:
+        description: 'Ghi de ngay ca khi so lieu tut lui (1 = co)'
+        required: false
+        default: '0'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cap-nhat-du-lieu
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cai trinh duyet an
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm i --no-audit --no-fund playwright@1.49.1
+          npx playwright install --with-deps chromium
+
+      - name: Lay so lieu moi tu DB TG
+        env:
+          SITE_URL: https://mrdt1988.github.io/dashboard-phu-kien
+          FORCE: ${{ github.event.inputs.force }}
+          SALE_CODES: ${{ secrets.SALE_CODES }}
+        run: node scripts/refresh-app-data.mjs
+
+      # Chia thanh cac goi MA HOA rieng tung nguoi. app-data.json (ban goc, chua ma hoa)
+      # CHI ton tai trong lan chay nay, KHONG BAO GIO duoc luu vao repo.
+      - name: Ma hoa theo tung nguoi
+        env:
+          SALE_CODES: ${{ secrets.SALE_CODES }}
+        run: node scripts/build-vault.mjs
+
+      - name: Luu lai neu co thay doi
+        run: |
+          rm -f app-data.json          # tuyet doi khong day ban chua ma hoa len
+          if git diff --quiet -- data/ && git diff --cached --quiet -- data/; then
+            echo "So lieu khong doi - khong can luu."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/
+          git commit -m "Tu dong cap nhat so lieu app ($(TZ=Asia/Ho_Chi_Minh date '+%d/%m/%Y %H:%M'))"
+          git push
+
+      - name: Bao loi ro rang
+        if: failure()
+        run: |
+          echo "::error::Khong cap nhat duoc so lieu. App van dung ban cu, khong bi mat so."
+          echo "Kiem tra: DB TG co mo duoc khong, Apps Script con song khong."
