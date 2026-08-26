@@ -75,6 +75,8 @@
     // neu khong se tru ca phan ban ra cua thang chua nhap so -> ton bi hut xuong sai.
     var SELLIN_COL = { STORE_ID: 0, RETAILER: 1, PROVINCE: 2, MONTH: 3, PRODUCT: 4, GROUP: 5, QTY: 6 };
     var sellinRows = (MAIN && MAIN.sell_in_rows) || MWG.sell_in_rows || null;
+    // Sell-in khong ghep duoc vao shop nao — de rieng, khong tron vao tong
+    var leSellin = { tong: 0, mdl: {}, ma: {} };
     var SI_M = {}, SI_LIST = [];
     if (sellinRows) {
       sellinRows.forEach(function (r) {
@@ -249,12 +251,19 @@
         if (!qty) return;
         var j = nhom === 'OPPO' ? 0 : (nhom === 'PK' ? 1 : 2);
         var st = idToShop[sid];
-        var targets = [all];
-        if (st && shops[st]) {
-          targets.push(shops[st]);
-          if (sales[shops[st].sale]) targets.push(sales[shops[st].sale]);
-        }
         var sp = String(r[SELLIN_COL.PRODUCT] || '').trim();
+        var coShop = !!(st && shops[st]);
+        if (!coShop) {
+          // Dong sell-in nay khong ghep duoc vao shop IND nao (ma shop la trong sheet
+          // khong co trong danh sach shop). KHONG duoc cong vao tong tinh, neu khong
+          // tong tinh se khac tong cong tung shop -> ra ton am gia o cap shop.
+          leSellin.tong += qty;
+          if (j === 0 && sp) leSellin.mdl[sp] = (leSellin.mdl[sp] || 0) + qty;
+          leSellin.ma[sid] = 1;
+          return;
+        }
+        var targets = [all, shops[st]];
+        if (sales[shops[st].sale]) targets.push(sales[shops[st].sale]);
         targets.forEach(function (o) {
           if (!o.si) { o.si = []; for (var k = 0; k < NM; k++) o.si[k] = [0, 0, 0]; }
           o.si[i][j] += qty;
@@ -289,6 +298,10 @@
       if (!ds.length) return null;
       ds.sort(function (a, b) { return b[3] - a[3]; });
       return ds;
+    }
+    // Shop co ban ma KHONG co bat ky dong sell-in nao -> ton khong tinh duoc
+    function chuaGhepSellin(o) {
+      return !!(o._ban && Object.keys(o._ban).length) && !(o._nhap && Object.keys(o._nhap).length);
     }
 
     // =========================================================
@@ -568,6 +581,7 @@
       if (o.mkt) r.mkt = o.mkt;
       if (o.si) r.si = o.si;
       var tk = tonKho(o); if (tk) r.tk = tk;   // ton kho IND theo model
+      if (chuaGhepSellin(o)) r.tkNo = 1;      // ban nhung chua ghep duoc sell-in
       if (o.chd) {
         r.chd = {};
         CHANS.forEach(function (c) {
@@ -629,6 +643,12 @@
       segs: SEGS, sers: SERS, chans: CHANS,
       segsMkt: SEGA,
       tkMonths: SI_LIST,
+      tkLe: {
+        tong: Math.round(leSellin.tong),
+        ma: Object.keys(leSellin.ma).length,
+        mdl: Object.keys(leSellin.mdl).map(function (k) { return [k, Math.round(leSellin.mdl[k])]; })
+                 .sort(function (a, b) { return b[1] - a[1]; }).slice(0, 20)
+      },
       hc: HC,
       src: src,
       mktNote: {

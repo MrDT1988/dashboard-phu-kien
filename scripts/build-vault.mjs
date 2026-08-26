@@ -167,6 +167,7 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     segs: D.segs, sers: D.sers,
     chans: kenh ? [kenh] : D.chans,
     v: D.v, segsMkt: D.segsMkt || [], src: D.src || null, tkMonths: D.tkMonths || [],
+    tkLe: (vaiTro === 'admin' || vaiTro === 'leader') ? (D.tkLe || null) : null,
     vaiTro, kenh: kenh || null,
     all: gopAll(D, ds), sales: ds,
   };
