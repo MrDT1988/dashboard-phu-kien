@@ -465,6 +465,9 @@ h4.dh:first-child{margin-top:0}
 
 <script>
 'use strict';
+/* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
+   để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
+var APP_VER='2026-08-26.05';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -1673,6 +1676,7 @@ function openPicker(){
   var moTa=(D.vaiTro==='leader')?('Phụ trách kênh '+safe(D.kenh)):safe(VAI[D.vaiTro]||'');
   h+='<div class="bodypad"><div class="note">Đang đăng nhập: <b>'+safe(tenToi)+'</b> · '+
      moTa+(D.hang?' · hạng '+safe(D.hang):'')+
+     '<br><span style="color:var(--muted)">Bản app '+safe(APP_VER)+'</span>'+
      '<br><button id="pk-out" style="color:var(--red);font-weight:700;margin-top:8px">Đăng xuất</button></div></div>';
   var sh=$('#sheet'); sh.innerHTML=h; openSheet();
   $('#pk-x').addEventListener('click',closeSheet);
@@ -1706,6 +1710,8 @@ function boot(data){
   if(!CUR) CUR=(D.sales.length===1)?D.sales[0].n:'__ALL__';
   $('#pick').hidden=(D.sales.length<=1&&D.vaiTro==='sale')?false:false;
   renderOver();
+  // Mỗi lần mở app tự kiểm xem điện thoại có đang giữ bản cũ không
+  setTimeout(function(){ kiemTraBanMoi(true) },1500);
 }
 
 document.addEventListener('click',function(e){
@@ -1746,6 +1752,26 @@ function moc(d){
   return 'tới ngày '+d.maxDay+'/'+m+' · làm mới '+
     new Date(d.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
 }
+/* Trình duyệt (nhất là app đã thêm vào màn hình chính) hay giữ app.html cũ trong bộ nhớ.
+   Tải lại chính file này với cache:'no-store' rồi đọc số hiệu bản để biết có bản mới không. */
+function kiemTraBanMoi(imLang){
+  return fetch('app.html?v='+Date.now(),{cache:'no-store'})
+    .then(function(r){return r.text()})
+    .then(function(t){
+      var m=t.match(/APP_VER\s*=\s*'([^']+)'/);
+      if(!m) return false;
+      if(m[1]===APP_VER) return false;
+      toast('🔄 Có bản app mới ('+safe(m[1])+'). <a href="#" id="nap-lai">Bấm vào đây để cập nhật</a>',60);
+      var a2=document.getElementById('nap-lai');
+      if(a2) a2.addEventListener('click',function(ev){
+        ev.preventDefault();
+        location.replace('app.html?v='+Date.now());
+      });
+      return true;
+    })
+    .catch(function(){return false});
+}
+
 function lamMoi(){
   var b=$('#sync'); if(b.disabled) return;
   b.disabled=true; b.classList.add('spin');
@@ -1758,11 +1784,14 @@ function lamMoi(){
       var doi=(d.updated!==truoc);
       D=d; try{localStorage.setItem(LS_DATA,JSON.stringify(D))}catch(e){}
       renderOver();
+      return kiemTraBanMoi().then(function(coBanMoi){
+        if(coBanMoi) return;   // đã hiện thông báo cập nhật app, không đè lên
       if(doi) toast('✅ Đã cập nhật — số '+moc(d),5);
       else toast('Chưa có số mới — vẫn là số '+moc(d)+
         '.<br>Vừa nhập số vào sheet? Bấm <a href="'+ACTIONS_URL+
         '" target="_blank" rel="noopener">Lấy số mới từ DB TG</a> rồi quay lại sau ~15 phút.'+
         '<br><span style="color:var(--muted)">Hệ thống cũng tự lấy số lúc 10:00 mỗi ngày.</span>',14);
+      });
     })
     .catch(function(e){
       toast('⚠️ Không tải được số liệu ('+safe(e.message)+'). Kiểm tra mạng rồi thử lại.',6);
