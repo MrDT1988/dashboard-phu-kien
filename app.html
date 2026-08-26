@@ -502,7 +502,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.15';
+var APP_VER='2026-08-26.16';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -700,9 +700,10 @@ function buildFilt(){
   var coSgm=!!(scope().sgm);
   $('#f-seg-w').hidden=!coSgm;
   if(coSgm){
-    $('#f-seg').innerHTML=D.segs.map(function(x,i){
-      return '<button data-fseg="'+i+'"'+(F_SEGS.indexOf(i)>=0?' class="on"':'')+'>'+safe(x)+'</button>'}).join('')+
-      '<button data-fseg="-1"'+(F_SEGS.length?'':' class="on"')+'>Tất cả</button>';
+    $('#f-seg').innerHTML=NHOM_PK.map(function(g,i){
+      if(!nhomPKIdx(g).length) return '';
+      return '<button data-fpk="'+i+'"'+(nhomDangChon(g)?' class="on"':'')+'>'+safe(g.t)+'</button>'}).join('')+
+      '<button data-fpk="-1"'+(F_SEGS.length?'':' class="on"')+'>Tất cả</button>';
   }
 }
 function buildSegbar(){
@@ -1351,7 +1352,8 @@ function renderMonth(o){
     var tt=D.months.map(function(mm,i){
       var t=0; F_SEGS.forEach(function(k){ t+=((o.sgm[k]||[])[i]||[0,0])[isU?0:1] }); return t});
     vals=B.map(function(b){ return gopThang(tt,b) });
-    ghiChu=' Đang lọc '+F_SEGS.map(function(k){return D.segs[k]}).join(' + ')+
+    var tenN=NHOM_PK.filter(nhomDangChon).map(function(g){return g.t});
+    ghiChu=' Đang lọc '+(tenN.length?tenN.join(' + '):F_SEGS.map(function(k){return D.segs[k]}).join(' + '))+
       ' — phân khúc chỉ có số theo tháng.';
   } else if(SER_TAB==='ALL'||!coSrm){
     vals=B.map(function(b){return isU?sumR(o.dy,b.a,b.b):sumR(o.dr,b.a,b.b)});
@@ -1538,6 +1540,23 @@ function tkNgay(ton,nhip){
   if(!nhip) return 'chưa bán máy nào';
   var d=Math.round(ton/nhip);
   return d>365?'trên 1 năm':n0(d)+' ngày';
+}
+// 4 nhóm phân khúc anh Thái dùng để nhìn nhanh. Nhận diện theo TÊN khoảng nên
+// đổi nhãn bên DB TG cũng không vỡ.
+var NHOM_PK=[
+  {t:'Dưới 5M', re:/^\s*<\s*5/},
+  {t:'5–10M',   re:/^\s*5\s*-\s*7|^\s*7\s*-\s*10/},
+  {t:'10–20M',  re:/^\s*10\s*-\s*15|^\s*15\s*-\s*20/},
+  {t:'20–30M',  re:/^\s*20\s*-\s*30/}
+];
+function nhomPKIdx(g){
+  var out=[];
+  (D.segs||[]).forEach(function(x,i){ if(g.re.test(x)) out.push(i) });
+  return out;
+}
+function nhomDangChon(g){
+  var idx=nhomPKIdx(g);
+  return idx.length&&idx.every(function(i){return F_SEGS.indexOf(i)>=0});
 }
 function tkKey(s){return String(s).toUpperCase().replace(/\s+/g,' ').replace(/\s*\+\s*/g,'+').trim()}
 function tkGop(list){
@@ -2125,11 +2144,15 @@ document.addEventListener('click',function(e){
   if(sv&&!sv.disabled){SER_TAB=sv.dataset.ser;renderMonth(scope());return}
   var mm=e.target.closest('[data-momo]');
   if(mm){MO_THANG=+mm.dataset.momo;renderModel(scope());return}
-  var fs=e.target.closest('[data-fseg]');
+  var fs=e.target.closest('[data-fpk]');
   if(fs){
-    var v=+fs.dataset.fseg;
-    if(v<0) F_SEGS=[];
-    else { var k=F_SEGS.indexOf(v); if(k>=0) F_SEGS.splice(k,1); else F_SEGS.push(v) }
+    var gi=+fs.dataset.fpk;
+    if(gi<0) F_SEGS=[];
+    else {
+      var g=NHOM_PK[gi], idx=nhomPKIdx(g);
+      if(nhomDangChon(g)) F_SEGS=F_SEGS.filter(function(i){return idx.indexOf(i)<0});
+      else idx.forEach(function(i){ if(F_SEGS.indexOf(i)<0) F_SEGS.push(i) });
+    }
     renderOver(); return;
   }
   var dm=e.target.closest('[data-dym]');
