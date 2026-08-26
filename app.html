@@ -310,6 +310,13 @@ h4.dh:first-child{margin-top:0}
         <div>Đơn giá TB<b id="o-avg">—</b></div>
         <div>Số shop<b id="o-shops">—</b></div>
       </div>
+      <div class="kpis" id="o-mkt4" hidden>
+        <div>Share DT<small style="display:block;font-size:9px;color:var(--muted)">trừ Apple</small><b id="k-sdt">—</b></div>
+        <div>Share DS<b id="k-sds">—</b></div>
+        <div>Đơn giá TT<b id="k-dg">—</b></div>
+        <div>PK 10–20M<b id="k-pk">—</b></div>
+      </div>
+      <div class="note" id="o-mkt4-note" hidden></div>
       <div class="cmprow" id="o-cmp"></div>
       <div class="subhead" id="hero-chan-h" hidden>Từng kênh — so cùng kỳ</div>
       <div class="hb" id="hb-hero-chan"></div>
@@ -485,7 +492,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.08';
+var APP_VER='2026-08-26.09';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -614,18 +621,41 @@ function bucketsOf(kind){
 
 /* ---------- phạm vi đang xem: toàn bộ hay 1 kênh ---------- */
 function chanShops(o,c){return (o.s||[]).filter(function(x){return x.ch2===c})}
+// Áp bộ lọc Size shop: chỉ giữ shop đúng size, và cộng lại số theo ngày từ các shop đó.
+// Shop chỉ có số theo ngày của THÁNG NÀY (d) nên khi lọc size thì các kỳ khác không lọc được —
+// app nói rõ chỗ đó thay vì lặng lẽ trả số sai.
+function locSize(o){
+  if(!F_SIZE) return o;
+  var lst=(o.s||[]).filter(function(x){return x.size===F_SIZE});
+  var Y=D.year, m=D.months[MI], a=toDoy(Y,m,1), dim=DIM();
+  var dy=(o.dy||[]).map(function(){return 0}), dr=dy.slice();
+  lst.forEach(function(x){
+    for(var i=0;i<dim&&i<(x.d||[]).length;i++) dy[a+i-1]=(dy[a+i-1]||0)+(x.d[i]||0);
+  });
+  var m2=(o.m||[]).map(function(){return [0,0]});
+  lst.forEach(function(x){ (x.m||[]).forEach(function(v,i){ m2[i][0]+=v[0]; m2[i][1]+=v[1] }) });
+  // doanh thu theo ngày không có ở cấp shop -> chia đều theo tỉ trọng máy trong ngày
+  var tongM=0; m2.forEach(function(v){tongM+=v[0]});
+  return {n:o.n+' · size '+F_SIZE, chan:o.chan, m:m2, dy:dy, dr:dr, ch:o.ch,
+    sg:o.sg, sgM:o.sgM, sr:o.sr, srM:o.srM, mkt:null, tgc:null,
+    s:lst, shops:lst.length, tg:lst.reduce(function(t,x){return t+(x.tg||0)},0),
+    locSize:F_SIZE, thieuDT:true};
+}
 function scope(){
   var o=curObj();
-  if(SEG==='ALL') return o;
+  if(SEG==='ALL') return locSize(o);
   var cd=(o.chd||{})[SEG], lst=chanShops(o,SEG);
+  if(F_SIZE) lst=lst.filter(function(x){return x.size===F_SIZE});
   if(!cd) cd={m:o.m.map(function(){return [0,0]}),dy:[],dr:[],
     sg:D.segs.map(function(){return [0,0]}),sgM:D.segs.map(function(){return [0,0]}),
     sr:D.sers.map(function(){return [0,0]}),srM:D.sers.map(function(){return [0,0]})};
-  return {n:o.n,chan:SEG,m:cd.m,dy:cd.dy||[],dr:cd.dr||[],ch:null,
+  var kq={n:o.n,chan:SEG,m:cd.m,dy:cd.dy||[],dr:cd.dr||[],ch:null,
     sg:cd.sg,sgM:cd.sgM,sr:cd.sr,srM:cd.srM,mkt:cd.mkt,
     ac:cd.ac,mo:cd.mo,si:(SEG==='IND'?o.si:null),
     tgc:(o.tgc&&o.tgc[SEG])?(function(){var z={};z[SEG]=o.tgc[SEG];return z})():null,
+    sgm:cd.sgm,srm:cd.srm,moM:cd.moM,
     s:lst,shops:lst.length,tg:lst.reduce(function(t,x){return t+x.tg},0)};
+  return F_SIZE?locSize(kq):kq;
 }
 // Mảng theo ngày của 1 kênh trong phạm vi đang xem (dùng cho bảng mini)
 function chanDy(ch){
@@ -802,6 +832,50 @@ function heroDong(ten,cd,P,mau){
     txt:n0(cu)+' máy · '+money(cr)+(g===null?'':
       '  <b style="color:var('+(g>=0?'--green':'--red')+')">'+(g>=0?'▲':'▼')+Math.abs(g).toFixed(0)+'%</b>')};
 }
+/* ---- 4 chỉ số thị trường: Share DT (trừ Apple) · Share DS · Đơn giá thị trường · PK 10-20M ----
+   Chỉ tính được ở nơi có số của mọi hãng (kênh MWG) và chỉ theo THÁNG. */
+function renderMkt4(o){
+  var box=$('#o-mkt4'), nt=$('#o-mkt4-note');
+  var mk=o.mkt;
+  if(!mk||!mk.m||!mk.m[MI]||!mk.m[MI][2]){ box.hidden=true; nt.hidden=true; return }
+  box.hidden=false; nt.hidden=false;
+  var m=mk.m[MI];               // [oppoMáy, oppoDT, tổngMáy, tổngDT]
+  var oU=m[0],oR=m[1],tU=m[2],tR=m[3];
+
+  // Share doanh thu TRỪ APPLE — Apple đơn giá cao làm loãng mẫu số
+  var apU=0,apR=0;
+  (mk.br||[]).forEach(function(x){ if(String(x[0]).toLowerCase()==='apple'){apU=x[1];apR=x[2]} });
+  var mauDT=tR-apR, mauDS=tU-apU;
+  var sDT=mauDT>0?oR/mauDT*100:0;
+  $('#k-sdt').textContent=pct(sDT);
+  $('#k-sdt').style.color=sDT>=25?'var(--green)':sDT>=15?'var(--amber)':'var(--red)';
+
+  var sDS=tU?oU/tU*100:0;
+  $('#k-sds').textContent=pct(sDS);
+  $('#k-sds').style.color=sDS>=25?'var(--green)':sDS>=15?'var(--amber)':'var(--red)';
+
+  $('#k-dg').textContent=tU?money(Math.round(tR/tU*10)/10):'—';
+
+  // PK 10-20M: gộp các khoảng 10-15M và 15-20M của bảng phân khúc thị trường
+  var pkO=0,pkT=0,coPK=false;
+  (D.segsMkt||[]).forEach(function(ten,i){
+    if(!/10\s*-\s*15|15\s*-\s*20/.test(ten)) return;
+    var rw=(mk.sg||[])[i]; if(!rw) return;
+    coPK=true; pkO+=rw[0]; pkT+=rw[2];
+  });
+  if(coPK&&pkT){
+    var sPK=pkO/pkT*100;
+    $('#k-pk').textContent=pct(sPK);
+    $('#k-pk').style.color=sPK>=25?'var(--green)':sPK>=15?'var(--amber)':'var(--red)';
+  } else { $('#k-pk').textContent='—'; $('#k-pk').style.color='' }
+
+  nt.innerHTML='Tháng '+D.months[MI]+' — số của mọi hãng, chỉ có ở kênh MWG. '+
+    '<b>Share DT</b> đã bỏ Apple ra khỏi mẫu số ('+n0(apU)+' máy · '+money(apR)+') vì đơn giá Apple quá cao làm loãng tỉ lệ. '+
+    '<b>Đơn giá TT</b> là đơn giá bình quân của cả thị trường, không phải của OPPO'+
+    (tU?(' — OPPO đang '+money(oU?Math.round(oR/oU*10)/10:0)+'.'):'.')+
+    (coPK?(' <b>PK 10–20M</b>: OPPO '+n0(pkO)+'/'+n0(pkT)+' máy.'):'');
+}
+
 function renderHero(o){
   $$('#p-hero button').forEach(function(b){b.classList.toggle('on',b.dataset.per===PER)});
   var P=periodOf(PER);
@@ -854,6 +928,8 @@ function renderHero(o){
         '<div class="track"><i style="width:'+(x.v/max*100).toFixed(1)+'%;background:'+x.c+'"></i></div></div>';
     }).join('');
   } else { hh.hidden=true; hb.innerHTML='' }
+
+  renderMkt4(o);
 
   var gr=pr?((r-pr)/pr*100):null;
   $('#o-cmp').innerHTML= P.pa
@@ -990,6 +1066,42 @@ function mktSale(saleObj,a,b){
   });
   return co?{o:oU,t:tU}:null;
 }
+// Thị phần theo NGÀY của phạm vi đang xem: cộng mảng dk của các shop
+// dk[i] = [máy OPPO, máy toàn thị trường, DT OPPO, DT toàn thị trường]
+function mktNgay(o){
+  var dim=DIM(), oU=zeroArr(dim), tU=zeroArr(dim), oR=zeroArr(dim), tR=zeroArr(dim), co=false;
+  (o.s||[]).forEach(function(sh){
+    if(!sh.dk) return;
+    if(SEG!=='ALL'&&sh.ch2!==SEG) return;
+    co=true;
+    for(var i=0;i<dim&&i<sh.dk.length;i++){
+      var c=sh.dk[i]||[0,0,0,0];
+      oU[i]+=c[0]||0; tU[i]+=c[1]||0; oR[i]+=c[2]||0; tR[i]+=c[3]||0;
+    }
+  });
+  return co?{oU:oU,tU:tU,oR:oR,tR:tR,coDT:tR.some(function(x){return x})}:null;
+}
+function zeroArr(n){var a=[];for(var i=0;i<n;i++)a.push(0);return a}
+
+// Bảng mini theo NGÀY: chỉ hiện % thị phần của ngày đó
+function miniTableNgay(el,mk,day,isU){
+  var head=['Ngày','Tổng'], row=['% share',''];
+  var to=0,tt=0;
+  for(var i=0;i<day;i++){
+    var o=isU?mk.oU[i]:mk.oR[i], t=isU?mk.tU[i]:mk.tR[i];
+    to+=o; tt+=t;
+    head.push(String(i+1));
+    var sh=t?o/t*100:null;
+    var mau=sh===null?'var(--muted)':sh>=25?'var(--green)':sh>=15?'var(--amber)':'var(--red)';
+    row.push(sh===null?'—':'<b style="color:'+mau+'">'+pct(sh,0)+'</b>');
+  }
+  var shT=tt?to/tt*100:0;
+  row[1]='<b style="color:'+(shT>=25?'var(--green)':shT>=15?'var(--amber)':'var(--red)')+'">'+pct(shT,0)+'</b>';
+  el.innerHTML='<table class="tv"><tr>'+head.map(function(h){return '<th>'+safe(h)+'</th>'}).join('')+'</tr>'+
+    '<tr>'+row.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr></table>';
+  return {o:to,t:tt};
+}
+
 function miniTableSale(el,buckets,label){
   var dsS=D.sales.filter(function(x){return (x.chd||{})[SEG]&&(x.s||[]).some(function(y){return y.ch2===SEG})});
   if(CUR!=='__ALL__') dsS=dsS.filter(function(x){return x.n===CUR});
@@ -1065,21 +1177,39 @@ function renderDaily(o){
   var isU=dyMode==='u';
   var vals=isU?u:r;
   $$('#p-dymode button').forEach(function(b){b.classList.toggle('on',b.dataset.dym===dyMode)});
-  $('#dy-sub').textContent=(isU?'Số máy bán ra':'Doanh thu')+' từng ngày tháng '+m+
-    ' — số ghi ngay trên mỗi cột.';
   var labels=[];for(var k=1;k<=dim;k++)labels.push(k);
-  drawBars($('#ch-day'),labels,vals,{color:'var(--c1)',dimAfter:day-1,lastIdx:day-1,h:186,
-    moiCot:true,fmt:isU?n0:money});
-  $('#lg-day').innerHTML='';
 
-  var tuan=weeksIn(a,a+day-1);
+  // Có số của mọi hãng -> vẽ cột chồng: phần đặc là OPPO, phần xám là cả thị trường
+  var mk=mktNgay(o);
+  var duocDT=mk&&(isU||mk.coDT);
+  if(mk&&duocDT){
+    var mo2=isU?mk.oU:mk.oR, mt=isU?mk.tU:mk.tR;
+    $('#dy-sub').textContent='Thị phần theo ngày tháng '+m+' — cột xám là cả thị trường, phần xanh là OPPO. '+
+      (isU?'Đang xem số máy.':'Đang xem doanh thu.');
+    drawStack($('#ch-day'),labels,mo2.slice(0,dim),mt.slice(0,dim),
+      {colorA:'var(--c1)',colorB:'#3a4553',h:186,fmt:function(a2,t2){return isU?n0(t2):money(t2)}});
+    $('#lg-day').innerHTML='<span><i style="background:var(--c1)"></i>OPPO</span>'+
+      '<span><i style="background:#3a4553"></i>Toàn thị trường</span>';
+  } else {
+    $('#dy-sub').textContent=(isU?'Số máy bán ra':'Doanh thu')+' từng ngày tháng '+m+
+      ' — số ghi ngay trên mỗi cột.'+(mk&&!mk.coDT?' (Chưa có doanh thu thị trường theo ngày nên tạm hiện số của OPPO.)':'');
+    drawBars($('#ch-day'),labels,vals,{color:'var(--c1)',dimAfter:day-1,lastIdx:day-1,h:186,
+      moiCot:true,fmt:isU?n0:money});
+    $('#lg-day').innerHTML='';
+  }
+
   var hdr=$('#tv-week').previousElementSibling;
-  if(SEG!=='ALL'){
-    var coTP=miniTableSale($('#tv-week'),tuan,'Sale');
+  if(mk&&duocDT){
+    var tt2=miniTableNgay($('#tv-week'),mk,day,isU);
+    if(hdr&&hdr.className==='subhead')
+      hdr.textContent='Thị phần từng ngày ('+(isU?'theo máy':'theo doanh thu')+
+        ') — cả tháng '+(tt2.t?pct(tt2.o/tt2.t*100,0):'—');
+  } else if(SEG!=='ALL'){
+    var coTP=miniTableSale($('#tv-week'),weeksIn(a,a+day-1),'Sale');
     if(hdr&&hdr.className==='subhead')
       hdr.textContent=coTP?'Thị phần toàn hãng theo tuần — từng sale':'Theo tuần — từng sale';
   } else {
-    miniTable($('#tv-week'),tuan,'Tuần');
+    miniTable($('#tv-week'),weeksIn(a,a+day-1),'Tuần');
     if(hdr&&hdr.className==='subhead') hdr.textContent='Theo tuần — từng kênh';
   }
 
@@ -1090,12 +1220,22 @@ function renderDaily(o){
 }
 
 /* ---- doanh số theo Tuần / Tháng / Quý ---- */
+// Quy mảng số-theo-tháng về đúng 1 khoảng ngày (bucket)
+function gopThang(theoThang,b){
+  var t=0;
+  D.months.forEach(function(mm,i){
+    var ma=toDoy(D.year,mm,1);
+    var mb=toDoy(D.year,mm,new Date(Date.UTC(D.year,mm,0)).getUTCDate());
+    if((ma>=b.a&&ma<=b.b)||(mb>=b.a&&mb<=b.b)||(ma<=b.a&&mb>=b.b)) t+=theoThang[i];
+  });
+  return t;
+}
 function renderMonth(o){
   $$('#p-trend button').forEach(function(b){b.classList.toggle('on',b.dataset.tr===TR)});
   var isU=moMode==='u';
 
   // Dòng máy chỉ có số theo THÁNG, nên tab Reno/Find chỉ dùng được ở Tháng và Quý
-  var coSrm=!!(o.srm&&o.srm.length);
+  var coSrm=!!(o.srm&&o.srm.length)&&F_SEG===null;
   var pil=$('#p-ser');
   if(coSrm){
     if(TR==='W'&&SER_TAB!=='ALL') SER_TAB='ALL';
@@ -1108,21 +1248,19 @@ function renderMonth(o){
 
   var B=bucketsOf(TR), ten=TR==='W'?'tuần':TR==='Q'?'quý':'tháng';
   var vals, ghiChu='';
-  if(SER_TAB==='ALL'||!coSrm){
+  if(F_SEG!==null&&o.sgm&&o.sgm[F_SEG]){
+    // Lọc theo phân khúc giá — chỉ có số theo THÁNG nên quy về tháng
+    var tt=D.months.map(function(mm,i){ return (o.sgm[F_SEG][i]||[0,0])[isU?0:1] });
+    vals=B.map(function(b){ return gopThang(tt,b) });
+    ghiChu=' Đang lọc phân khúc '+D.segs[F_SEG]+' — phân khúc chỉ có số theo tháng.';
+  } else if(SER_TAB==='ALL'||!coSrm){
     vals=B.map(function(b){return isU?sumR(o.dy,b.a,b.b):sumR(o.dr,b.a,b.b)});
   } else {
     // gộp các dòng máy được chọn, theo THÁNG rồi quy về bucket
     var idx=[]; D.sers.forEach(function(x,i){ if(SER_TAB==='RF'?(x==='Reno Series'||x==='Find Series'):(x===SER_TEN[SER_TAB])) idx.push(i) });
     var theoThang=D.months.map(function(mm,i){
       var t=0; idx.forEach(function(k){ t+=((o.srm[k]||[])[i]||[0,0])[isU?0:1] }); return t});
-    vals=B.map(function(b){
-      var t=0;
-      D.months.forEach(function(mm,i){
-        var ma=toDoy(D.year,mm,1);
-        var mb=toDoy(D.year,mm,new Date(Date.UTC(D.year,mm,0)).getUTCDate());
-        if(ma>=b.a&&ma<=b.b||mb>=b.a&&mb<=b.b||(ma<=b.a&&mb>=b.b)) t+=theoThang[i];
-      });
-      return t});
+    vals=B.map(function(b){ return gopThang(theoThang,b) });
     ghiChu=' Dòng máy chỉ có số theo tháng nên tab này gộp theo tháng.';
   }
 

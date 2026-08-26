@@ -91,6 +91,8 @@ function gopAll(D, ds) {
     congD(out.ac, s.ac);
     cong(out.sg, s.sg); cong(out.sgM, s.sgM); cong(out.sr, s.sr); cong(out.srM, s.srM);
     if (s.mo) out.mo = gomModel(out.mo, s.mo);
+    if (s.sgm) { if (!out.sgm) out.sgm = s.sgm.map((x) => x.map(() => [0, 0]));
+      s.sgm.forEach((sg2, k) => sg2.forEach((v, i) => { out.sgm[k][i][0] += v[0]; out.sgm[k][i][1] += v[1]; })); }
     if (s.srm) { if (!out.srm) out.srm = s.srm.map((x) => x.map(() => [0, 0]));
       s.srm.forEach((ser, k) => ser.forEach((v, i) => { out.srm[k][i][0] += v[0]; out.srm[k][i][1] += v[1]; })); }
     if (s.moM) { out.moM = out.moM || {};
@@ -160,6 +162,7 @@ function saleTheoKenh(D, s, ch) {
   if (c.ac) o.ac = c.ac;
   if (c.mo) o.mo = c.mo;
   if (c.srm) o.srm = c.srm;
+  if (c.sgm) o.sgm = c.sgm;
   if (c.moM) o.moM = c.moM;
   if (s.tgc && s.tgc[ch]) o.tgc = { [ch]: s.tgc[ch] };
   if (ch === 'IND' && s.si) o.si = s.si;   // sell-in chi co o kenh IND
@@ -177,7 +180,7 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     segs: D.segs, sers: D.sers,
     chans: kenh ? [kenh] : D.chans,
     v: D.v, segsMkt: D.segsMkt || [], src: D.src || null, tkMonths: D.tkMonths || [],
-    tgK: D.tgK || null,
+    tgK: D.tgK || null, sizes: D.sizes || [],
     tkLe: (vaiTro === 'admin' || vaiTro === 'leader') ? (D.tkLe || null) : null,
     // Ton kho chi co o kenh IND -> Leader kenh khac khong nhan gi
     dlTon: (kenh && kenh !== 'IND') ? []

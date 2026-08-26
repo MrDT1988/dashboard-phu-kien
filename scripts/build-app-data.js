@@ -109,6 +109,7 @@
         srM: pairs(SERS.length),       // dong may - thang hien tai
         mo: {},                        // model OPPO -> [may, dt] thang hien tai
         srm: null,                     // dong may theo TUNG THANG  [series][thang] = [may, dt]
+        sgm: null,                     // phan khuc theo TUNG THANG [seg][thang] = [may, dt]
         moM: {},                       // thang -> { model: [may, dt] }
         chd: null                      // chi tiet theo tung kenh (chi dat o cap tinh & sale)
       };
@@ -176,7 +177,7 @@
         m: pairs(NM), ac: zeros(NM), d: zeros(DIM_CUR), dp: zeros(DIM_PRV),
         sg: pairs(SEGS.length), sgM: pairs(SEGS.length),
         sr: pairs(SERS.length), srM: pairs(SERS.length),
-        mo: {}, srm: null, moM: {}
+        mo: {}, srm: null, sgm: null, moM: {}
       };
       return o.chd[ch];
     }
@@ -210,6 +211,11 @@
           if (!o.mo[mdl]) o.mo[mdl] = [0, 0];
           o.mo[mdl][0] += u; o.mo[mdl][1] += rv;
         }
+        // phan khuc theo TUNG THANG (cho bo loc PK gia)
+        if (si !== undefined) {
+          if (!o.sgm) { o.sgm = []; for (var z0 = 0; z0 < SEGS.length; z0++) o.sgm.push(pairs(NM)); }
+          o.sgm[si][i][0] += u; o.sgm[si][i][1] += rv;
+        }
         // dong may theo TUNG THANG (de bat tab Reno / Find o bieu do doanh so)
         if (ri !== undefined && ri >= 0) {
           if (!o.srm) { o.srm = []; for (var z1 = 0; z1 < SERS.length; z1++) o.srm.push(pairs(NM)); }
@@ -242,6 +248,10 @@
           if (isCur && mdl && u) {
             if (!cd.mo[mdl]) cd.mo[mdl] = [0, 0];
             cd.mo[mdl][0] += u; cd.mo[mdl][1] += rv;
+          }
+          if (si !== undefined) {
+            if (!cd.sgm) { cd.sgm = []; for (var z3 = 0; z3 < SEGS.length; z3++) cd.sgm.push(pairs(NM)); }
+            cd.sgm[si][i][0] += u; cd.sgm[si][i][1] += rv;
           }
           if (ri !== undefined && ri >= 0) {
             if (!cd.srm) { cd.srm = []; for (var z2 = 0; z2 < SERS.length; z2++) cd.srm.push(pairs(NM)); }
@@ -478,6 +488,7 @@
           });
         }
 
+        if (st && r.shopSize && !shops[st].size) shops[st].size = String(r.shopSize).trim();
         if (r.m === CUR_M) {
           var b = r.brand || '?';
           brAll[b] = brAll[b] || [0, 0]; brAll[b][0] += u; brAll[b][1] += rv;
@@ -554,17 +565,19 @@
           var m = +p[0], d = +p[1];
           var c = dayMap[k] || {};
           var oU = c.oppo_units || 0, tU = c.total_units || 0;
+          var oR = c.oppo_rev || 0, tR = c.total_rev || 0;
           if (!oU && !tU) return;
           if (m === CUR_M && d >= 1 && d <= DIM_CUR) {
-            if (!cur) { cur = new Array(DIM_CUR); for (var a = 0; a < DIM_CUR; a++) cur[a] = [0, 0]; }
-            cur[d - 1][0] += oU; cur[d - 1][1] += tU;
+            if (!cur) { cur = new Array(DIM_CUR); for (var a = 0; a < DIM_CUR; a++) cur[a] = [0, 0, 0, 0]; }
+            cur[d - 1][0] += oU; cur[d - 1][1] += tU; cur[d - 1][2] += oR; cur[d - 1][3] += tR;
           } else if (PRV_M && m === PRV_M && d >= 1 && d <= DIM_PRV) {
-            if (!prv) { prv = new Array(DIM_PRV); for (var b = 0; b < DIM_PRV; b++) prv[b] = [0, 0]; }
-            prv[d - 1][0] += oU; prv[d - 1][1] += tU;
+            if (!prv) { prv = new Array(DIM_PRV); for (var b = 0; b < DIM_PRV; b++) prv[b] = [0, 0, 0, 0]; }
+            prv[d - 1][0] += oU; prv[d - 1][1] += tU; prv[d - 1][2] += oR; prv[d - 1][3] += tR;
           }
         });
-        if (cur) shops[st].dk = cur;
-        if (prv) shops[st].dkp = prv;
+        var lamTron = function (x) { return x.map(function (v) { return [v[0], v[1], tr(v[2]), tr(v[3])]; }); };
+        if (cur) shops[st].dk = lamTron(cur);
+        if (prv) shops[st].dkp = lamTron(prv);
       });
     }
 
@@ -703,6 +716,7 @@
       var mo = topModel(o.mo, withDy ? 15 : 10);
       if (mo.length) r.mo = mo;
       if (o.srm) r.srm = o.srm.map(packPairs);
+      if (o.sgm) r.sgm = o.sgm.map(packPairs);
       var mm = packMoM(o.moM, withDy ? 10 : 6);
       if (mm) r.moM = mm;
       if (withDy) { var x = densify(o); r.dy = x[0]; r.dr = x[1]; }
@@ -727,6 +741,7 @@
           var z = densify(cd); y.dy = z[0]; y.dr = z[1];
           if (cd.mkt) y.mkt = cd.mkt;
           if (cd.srm) y.srm = cd.srm.map(packPairs);
+          if (cd.sgm) y.sgm = cd.sgm.map(packPairs);
           var cmm = packMoM(cd.moM, 8);
           if (cmm) y.moM = cmm;
           r.chd[c] = y;
@@ -775,6 +790,9 @@
       year: YEAR, lastDoy: lastDoy,
       segs: SEGS, sers: SERS, chans: CHANS,
       segsMkt: SEGA,
+      sizes: (function(){var z={};shopOrder.forEach(function(st){if(shops[st].size)z[shops[st].size]=1});
+        return ['S','A','B','C','D','Chưa xếp size'].filter(function(x){return z[x]})
+          .concat(Object.keys(z).filter(function(x){return ['S','A','B','C','D','Chưa xếp size'].indexOf(x)<0}).sort())})(),
       tgK: { MWG: [3500, tr(33000000000)], KA: [600, tr(4500000000)], IND: [2000, tr(12500000000)] },
       tkMonths: SI_LIST,
       dlTon: dlTon,

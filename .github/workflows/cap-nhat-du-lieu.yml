@@ -23,7 +23,8 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # DB TG cham dan; 45 phut da tung khong du. Cho 1 lan thu keo dai 40 phut.
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
 

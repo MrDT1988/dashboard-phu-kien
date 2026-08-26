@@ -17,8 +17,10 @@ import crypto from 'node:crypto';
 const SITE = process.env.SITE_URL || 'https://mrdt1988.github.io/dashboard-phu-kien';
 const OUT = path.resolve(process.env.OUT_FILE || 'app-data.json');
 const NAP_TRANG = Number(process.env.PAGE_TIMEOUT || 180000);   // 3 phut de mo trang
-const CHO_DU_LIEU = Number(process.env.DATA_TIMEOUT || 1500000); // 25 phut de trang tinh xong
-const SO_LAN_THU = Number(process.env.RETRIES || 2);
+// DB TG cham dan theo do lon cua sheet. 26/08 tung timeout 2 lan lien tiep o muc 25 phut,
+// nen doi thanh MOT lan cho that lau thay vi hai lan cho ngan.
+const CHO_DU_LIEU = Number(process.env.DATA_TIMEOUT || 2400000); // 40 phut de trang tinh xong
+const SO_LAN_THU = Number(process.env.RETRIES || 1);
 
 const log = (...a) => console.log('[refresh]', ...a);
 
@@ -75,7 +77,7 @@ async function layMotLan(lanThu) {
       waitUntil: 'domcontentloaded', timeout: NAP_TRANG,
     });
 
-    log('doi trang tu tai va tinh xong (toi da 25 phut)...');
+    log(`doi trang tu tai va tinh xong (toi da ${Math.round(CHO_DU_LIEU / 60000)} phut)...`);
     const bd = Date.now();
     await page.waitForFunction(
       () => !!(window.__exportDataMwg && window.__exportDataMwg.crosstab
