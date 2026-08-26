@@ -502,7 +502,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-26.17';
+var APP_VER='2026-08-26.18';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -678,9 +678,12 @@ function buildFilt(){
   // Anh Thái 26/08: bộ lọc nằm ở phần Sell out theo ngày của tab kênh, không để trên Tổng quan
   if(SEG!=='MWG'||D.sales.length<=1){ box.hidden=true; nt.hidden=true; return }
   box.hidden=false; nt.hidden=false;
-  nt.innerHTML='Lọc theo <b>Sale</b> và <b>Size shop</b> đổi cả biểu đồ lẫn bảng theo ngày. '+
-    '<b>Phân khúc giá</b> chỉ khoảng <b>10–20M</b> mới có số theo ngày — chọn khoảng khác thì '+
-    'biểu đồ Doanh số bên dưới đổi theo, còn bảng ngày giữ nguyên toàn phân khúc (có ghi chú ⚠).';
+  var sh0=(D.sales[0]&&(D.sales[0].s||[]).find(function(x){return x.dk}));
+  var coPKNgay=!!(sh0&&sh0.dk&&sh0.dk[0]&&sh0.dk[0].length>=14);
+  nt.innerHTML='<b>Sale</b> và <b>Size shop</b> đổi cả biểu đồ lẫn bảng theo ngày. '+
+    '<b>Phân khúc giá</b>: dữ liệu theo ngày của DB TG chỉ tách riêng được khoảng <b>10–20M</b>'+
+    (coPKNgay?'' : ' <b style="color:var(--amber)">(số này đang được lấy về, chưa có trong bản hiện tại)</b>')+
+    '. Chọn khoảng khác thì biểu đồ <b>Doanh số</b> bên dưới lọc đúng, còn bảng theo ngày giữ nguyên và ghi ⚠.';
   // Chỉ liệt kê sale CÓ shop trong kênh đang xem
   var dsS=D.sales.filter(function(x){return (x.s||[]).some(function(y){return y.ch2===SEG})});
   if(CUR!=='__ALL__'&&!dsS.some(function(x){return x.n===CUR})) CUR='__ALL__';
@@ -1119,6 +1122,7 @@ function chiPK1020(){
 }
 function locPKNgayDuoc(){ return !F_SEGS.length||chiPK1020() }
 
+var PK_DA_AP=false;   // lần vẽ này có thật sự lọc được PK 10-20M theo ngày không
 function mktSale(saleObj,a,b){
   var Y=D.year, m=D.months[MI], dau=toDoy(Y,m,1);
   var oU=0,tU=0,oR=0,tR=0,co=false,cu4=false;
@@ -1129,7 +1133,7 @@ function mktSale(saleObj,a,b){
     co=true;
     var soCot=(sh.dk[0]||[]).length; if(soCot>=10) cu4=true;
     var jO=0,jOr=1,jT=8,jTr=9;
-    if(pk&&soCot>=14){ jO=10; jOr=11; jT=12; jTr=13 }
+    if(pk&&soCot>=14){ jO=10; jOr=11; jT=12; jTr=13; PK_DA_AP=true }
     for(var doy=Math.max(a,dau);doy<=b;doy++){
       var i=doy-dau; if(i<0||i>=sh.dk.length) continue;
       var c=sh.dk[i]||[];
@@ -1300,12 +1304,16 @@ function renderDaily(o){
   if(SEG==='MWG'){
     // Anh Thái 26/08: bảng mini theo TỪNG NGÀY, không gộp tuần nữa
     var ngay=[]; for(var q2=0;q2<day;q2++) ngay.push({a:a+q2,b:a+q2,label:String(q2+1)});
+    PK_DA_AP=false;
     var coTP=miniTableSale($('#tv-week'),ngay,'Sale',isU);
     if(hdr&&hdr.className==='subhead'){
       var nhan='Thị phần từng ngày — từng sale ('+(isU?'theo máy':'theo doanh thu')+')';
       if(F_SIZE) nhan+=' · size '+F_SIZE;
-      if(F_SEGS.length) nhan+=chiPK1020()?' · chỉ PK 10–20M'
-        :' · ⚠ phân khúc chưa lọc được theo ngày';
+      if(F_SEGS.length){
+        if(PK_DA_AP) nhan+=' · chỉ PK 10–20M';
+        else if(chiPK1020()) nhan+=' · ⚠ chưa có số 10–20M theo ngày (chờ lần cập nhật tới)';
+        else nhan+=' · ⚠ phân khúc này không lọc được theo ngày';
+      }
       hdr.textContent=coTP?nhan:'Theo ngày — từng sale';
     }
   } else {
