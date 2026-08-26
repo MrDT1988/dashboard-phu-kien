@@ -51,18 +51,35 @@ function gopAll(D, ds) {
   const NM = D.months.length, N = D.lastDoy || 0;
   const cap = (n) => Array.from({ length: n }, () => [0, 0]);
   const so = (n) => Array.from({ length: n }, () => 0);
+  const NSG = (D.segsMkt || []).length;
   const out = {
-    m: cap(NM), dy: so(N), dr: so(N), ch: {},
+    m: cap(NM), ac: so(NM), dy: so(N), dr: so(N), ch: {},
     sg: cap(D.segs.length), sgM: cap(D.segs.length),
     sr: cap(D.sers.length), srM: cap(D.sers.length),
     chd: {}, shops: 0, tg: 0,
   };
   const cong = (a, b) => { if (!b) return; for (let i = 0; i < a.length; i++) { a[i][0] += b[i][0]; a[i][1] += b[i][1]; } };
   const congD = (a, b) => { if (!b) return; for (let i = 0; i < a.length; i++) a[i] += (b[i] || 0); };
+  const congQ = (a, b) => { if (!b) return; for (let i = 0; i < a.length; i++) for (let k = 0; k < 4; k++) a[i][k] += (b[i] ? b[i][k] : 0); };
+  const quad = (n) => Array.from({ length: n }, () => [0, 0, 0, 0]);
+  const gomModel = (cu, them) => {
+    const g = {};
+    [...(cu || []), ...(them || [])].forEach(([n2, u, r]) => { g[n2] = g[n2] || [0, 0]; g[n2][0] += u; g[n2][1] += r; });
+    return Object.keys(g).map((n2) => [n2, g[n2][0], g[n2][1]]).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  };
+  const gomSellin = (a, b) => {
+    if (!b) return a;
+    const r = a || Array.from({ length: NM }, () => [0, 0, 0]);
+    for (let i = 0; i < NM; i++) for (let k = 0; k < 3; k++) r[i][k] += (b[i] ? b[i][k] : 0);
+    return r;
+  };
 
   for (const s of ds) {
     cong(out.m, s.m); congD(out.dy, s.dy); congD(out.dr, s.dr);
+    congD(out.ac, s.ac);
     cong(out.sg, s.sg); cong(out.sgM, s.sgM); cong(out.sr, s.sr); cong(out.srM, s.srM);
+    if (s.mo) out.mo = gomModel(out.mo, s.mo);
+    if (s.si) out.si = gomSellin(out.si, s.si);
     out.shops += s.shops || 0; out.tg += s.tg || 0;
     for (const c of Object.keys(s.ch || {})) {
       if (!out.ch[c]) out.ch[c] = cap(NM);
@@ -71,16 +88,20 @@ function gopAll(D, ds) {
     for (const c of Object.keys(s.chd || {})) {
       const src = s.chd[c];
       if (!out.chd[c]) out.chd[c] = {
-        m: cap(NM), dy: so(N), dr: so(N),
+        m: cap(NM), ac: so(NM), dy: so(N), dr: so(N),
         sg: cap(D.segs.length), sgM: cap(D.segs.length),
         sr: cap(D.sers.length), srM: cap(D.sers.length),
       };
       const t = out.chd[c];
       cong(t.m, src.m); congD(t.dy, src.dy); congD(t.dr, src.dr);
+      congD(t.ac, src.ac);
       cong(t.sg, src.sg); cong(t.sgM, src.sgM); cong(t.sr, src.sr); cong(t.srM, src.srM);
+      if (src.mo) t.mo = gomModel(t.mo, src.mo);
       if (src.mkt) {
         if (!t.mkt) t.mkt = { m: Array.from({ length: NM }, () => [0, 0, 0, 0]), br: [] };
         for (let i = 0; i < NM; i++) for (let k = 0; k < 4; k++) t.mkt.m[i][k] += src.mkt.m[i][k];
+        if (src.mkt.sg && NSG) { if (!t.mkt.sg) t.mkt.sg = quad(NSG); congQ(t.mkt.sg, src.mkt.sg); }
+        if (src.mkt.sgY && NSG) { if (!t.mkt.sgY) t.mkt.sgY = quad(NSG); congQ(t.mkt.sgY, src.mkt.sgY); }
         const g = {};
         [...(t.mkt.br || []), ...(src.mkt.br || [])].forEach(([b, u, r]) => {
           g[b] = g[b] || [0, 0]; g[b][0] += u; g[b][1] += r;
@@ -116,6 +137,9 @@ function saleTheoKenh(D, s, ch) {
     s: shops,
   };
   if (c.mkt) o.mkt = c.mkt;
+  if (c.ac) o.ac = c.ac;
+  if (c.mo) o.mo = c.mo;
+  if (ch === 'IND' && s.si) o.si = s.si;   // sell-in chi co o kenh IND
   return o;
 }
 
@@ -128,10 +152,16 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     dimCur: D.dimCur, dimPrv: D.dimPrv, year: D.year, lastDoy: D.lastDoy,
     segs: D.segs, sers: D.sers,
     chans: kenh ? [kenh] : D.chans,
+    v: D.v, segsMkt: D.segsMkt || [], src: D.src || null,
     vaiTro, kenh: kenh || null,
     all: gopAll(D, ds), sales: ds,
   };
-  if (vaiTro === 'admin') { o.mktNote = D.mktNote; o.all.mkt = D.all.mkt; o.all.chd = D.all.chd; }
+  // Headcount la so nguoi cua ca kenh — chi dua cho quan ly vung va leader dung kenh do
+  if (D.hc && vaiTro !== 'sale') {
+    o.hc = {};
+    (kenh ? [kenh] : D.chans).forEach((c) => { if (D.hc[c]) o.hc[c] = D.hc[c]; });
+  }
+  if (vaiTro === 'admin') { o.mktNote = D.mktNote; o.all.mkt = D.all.mkt; o.all.chd = D.all.chd; o.all.si = D.all.si; }
   if (hangCuaToi) o.hang = hangCuaToi;   // "4/16" — biet minh dung dau ma khong thay so nguoi khac
   return o;
 }
