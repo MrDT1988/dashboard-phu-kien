@@ -564,18 +564,25 @@
           var p = String(k).split('-'); if (p.length < 2) return;
           var m = +p[0], d = +p[1];
           var c = dayMap[k] || {};
-          var oU = c.oppo_units || 0, tU = c.total_units || 0;
-          var oR = c.oppo_rev || 0, tR = c.total_rev || 0;
-          if (!oU && !tU) return;
+          // [oppoMay,oppoDT, ssMay,ssDT, xmMay,xmDT, ipMay,ipDT, tongMay,tongDT]
+          var v = [c.oppo_units || 0, c.oppo_rev || 0,
+                   c.samsung_units || 0, c.samsung_rev || 0,
+                   c.xiaomi_units || 0, c.xiaomi_rev || 0,
+                   c.apple_units || 0, c.apple_rev || 0,
+                   c.total_units || 0, c.total_rev || 0];
+          if (!v[0] && !v[8]) return;
+          var oNo = function (n) { var z = new Array(n); for (var q = 0; q < n; q++) z[q] = [0,0,0,0,0,0,0,0,0,0]; return z; };
           if (m === CUR_M && d >= 1 && d <= DIM_CUR) {
-            if (!cur) { cur = new Array(DIM_CUR); for (var a = 0; a < DIM_CUR; a++) cur[a] = [0, 0, 0, 0]; }
-            cur[d - 1][0] += oU; cur[d - 1][1] += tU; cur[d - 1][2] += oR; cur[d - 1][3] += tR;
+            if (!cur) cur = oNo(DIM_CUR);
+            for (var k1 = 0; k1 < 10; k1++) cur[d - 1][k1] += v[k1];
           } else if (PRV_M && m === PRV_M && d >= 1 && d <= DIM_PRV) {
-            if (!prv) { prv = new Array(DIM_PRV); for (var b = 0; b < DIM_PRV; b++) prv[b] = [0, 0, 0, 0]; }
-            prv[d - 1][0] += oU; prv[d - 1][1] += tU; prv[d - 1][2] += oR; prv[d - 1][3] += tR;
+            if (!prv) prv = oNo(DIM_PRV);
+            for (var k2 = 0; k2 < 10; k2++) prv[d - 1][k2] += v[k2];
           }
         });
-        var lamTron = function (x) { return x.map(function (v) { return [v[0], v[1], tr(v[2]), tr(v[3])]; }); };
+        // doanh thu -> trieu dong cho gon
+        var lamTron = function (x) { return x.map(function (v) {
+          return [v[0], tr(v[1]), v[2], tr(v[3]), v[4], tr(v[5]), v[6], tr(v[7]), v[8], tr(v[9])]; }); };
         if (cur) shops[st].dk = lamTron(cur);
         if (prv) shops[st].dkp = lamTron(prv);
       });
