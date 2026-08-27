@@ -5263,9 +5263,13 @@ function buildDashboardData(skus, regionsRaw, theoThang){
       skuMonthlyRevCl.push({ group: d.group, sku: d.sku, months: revMonths8, total: revMonths8.reduce((s,x)=>s+x,0) });
     }
     const dos = Math.round(d.dos*10)/10;
+    // Dùng đủ 12 tháng thật từ sheet (T1.26-T12.26) — tự động cập nhật khi có tháng nhập mới,
+    // không cần sửa code mỗi tháng. TB tháng = tổng / số tháng đã có số liệu thực (>0).
+    const total12 = d.months12.reduce((s,x)=>s+x,0);
+    const activeMonths12 = d.months12.filter(x=>x>0).length || 1;
     skuMonthlyAll.push({
-      group: d.group, sku: skuLabel(d), months: d.months8.slice(), total: total8,
-      avgMonth: Math.round((total8/8)*10)/10, tonKho: d.tonKho,
+      group: d.group, sku: skuLabel(d), months: d.months12.slice(), total: total12,
+      avgMonth: Math.round((total12/activeMonths12)*10)/10, tonKho: d.tonKho,
       dos, needReorder: dos < 60 && dos > 0,
     });
   });
@@ -6103,7 +6107,6 @@ function renderSkuMonthlyAllTable(){
       <td>${r.group}</td>
       <td>${r.sku}</td>
       ${r.months.map(v => `<td class="num">${v ? fmtInt(v) : '<span style="color:var(--text-secondary)">–</span>'}</td>`).join('')}
-      ${[0,0,0,0].map(()=>`<td class="num"><span style="color:var(--text-secondary)">–</span></td>`).join('')}
       <td class="num"><b>${fmtInt(r.total)}</b></td>
       <td class="num">${fmtInt(r.avgMonth)}</td>
       <td class="num">${fmtInt(r.tonKho)}</td>
