@@ -258,13 +258,21 @@ const loiJS = [];
     const nhom = w.NHOM_PK || [];
     const soi = (ds, nhan) => {
       const ten = ds || [];
-      const roi = ten.filter((x) => !nhom.some((g) => g.re.test(x)));
-      const dem = nhom.map((g) => g.t + '=' + ten.filter((x) => g.re.test(x)).length).join(' ');
+      const chia = w.pkChiaNhom(ten);
+      const dung = [].concat(...chia);
+      // Cot CONG DON (">20M" khi da co khoang bat dau tai 20) bi bo qua CO CHU DICH —
+      // gop vao se dem hai lan. Chi cot khong doc noi moi la loi that.
+      const kh = ten.map((x) => w.pkKhoang(x));
+      const batDau = {}; kh.forEach((k) => { if (k && k[1] !== Infinity) batDau[k[0]] = 1; });
+      const bo = ten.filter((x, i) => dung.indexOf(i) < 0);
+      const gopLai = bo.filter((x, j) => { const k = w.pkKhoang(x); return k && k[1] === Infinity && batDau[k[0]]; });
+      const hong = bo.filter((x) => gopLai.indexOf(x) < 0);
       ghi('Phân khúc/' + nhan + ': nhóm nào cũng bắt được ít nhất 1 cột',
-        nhom.every((g) => ten.some((x) => g.re.test(x))),
-        dem + ' | tong ' + ten.length + ' cot');
-      ghi('Phân khúc/' + nhan + ': không cột nào bị bỏ rơi', roi.length === 0,
-        roi.length ? ('bo roi: ' + roi.join(' / ')) : 'tat ca deu vao nhom');
+        chia.every((a) => a.length > 0),
+        nhom.map((g, j) => g.t + '=' + chia[j].length).join(' ') + ' | tong ' + ten.length + ' cot');
+      ghi('Phân khúc/' + nhan + ': không cột nào bị bỏ rơi', hong.length === 0,
+        (hong.length ? 'bo roi: ' + hong.join(' / ') : 'tat ca deu vao nhom') +
+        (gopLai.length ? ' | cot cong don bo qua co chu dich: ' + gopLai.join(' / ') : ''));
     };
     soi(w.D.segs, 'theo ngày');
     soi(w.D.segsMkt, 'thị phần');
