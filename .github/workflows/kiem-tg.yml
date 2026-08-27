@@ -14,6 +14,9 @@ on:
     paths:
       - 'tg.html'
       - 'scripts/kiem-tg.mjs'
+      - 'scripts/pham-vi-dbtg.mjs'
+      - 'scripts/kiem-pham-vi.mjs'
+      - 'scripts/build-dbtg-vault.mjs'
 
 permissions:
   contents: write
@@ -33,6 +36,8 @@ jobs:
           npm i --no-audit --no-fund jsdom@24
       - name: Ra soat tg.html
         run: node scripts/kiem-tg.mjs
+      - name: Kiem bo cat pham vi (chong ro ri giua nguoi voi nguoi)
+        run: node scripts/kiem-pham-vi.mjs
       - name: Luu ket qua
         if: always()
         run: |
