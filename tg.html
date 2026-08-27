@@ -2458,6 +2458,70 @@ async function fetchJSON(url, timeoutMs) {
     }
 }
 
+/* ===== Checkpoint NEN — them 27/08/2026 =========================================
+   File checkpoint da phinh len 22 MB; Apps Script tra ca file mot phat thi hong
+   (tra 404) -> dashboard tuong chua co checkpoint -> tai lai 152.585 dong -> treo.
+   Gio Apps Script nen gzip (22 MB -> 3 MB) roi cat thanh manh nho.
+   Ham nay ghep manh lai va giai nen. Khong co ban nen thi tu quay ve cach cu.
+   ============================================================================== */
+async function fetchText(url, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs || 120000);
+    try {
+        const resp = await fetch(url, { cache: 'no-store', signal: controller.signal });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return await resp.text();
+    } finally { clearTimeout(timer); }
+}
+function base64ToBytes(b64) {
+    const bin = atob(b64);
+    const a = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    return a;
+}
+async function giaiNenGzip(bytes) {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).text();
+}
+async function taiCheckpoint(baseUrl, sheetName, msgEl) {
+    const q = '?sheet=' + encodeURIComponent(sheetName);
+    let meta = null;
+    try {
+        if (msgEl) msgEl.textContent = 'Đang kiểm tra checkpoint đã lưu...';
+        meta = await fetchJSON(baseUrl + q + '&mode=cpmeta', 90000);
+    } catch (err) {
+        console.warn('Không đọc được mô tả checkpoint nén:', err.message);
+    }
+    if (meta && meta.co && meta.nen === 'gzip' && meta.soManh > 0) {
+        if (typeof DecompressionStream === 'function') {
+            try {
+                const phan = [];
+                for (let i = 0; i < meta.soManh; i++) {
+                    if (msgEl) msgEl.textContent =
+                        'Đang tải checkpoint đã nén (' + (i + 1) + '/' + meta.soManh + ')...';
+                    phan.push(await fetchText(baseUrl + q + '&mode=cpart&i=' + i, 180000));
+                }
+                const b64 = phan.join('');
+                if (meta.tongKyTu && b64.length !== meta.tongKyTu)
+                    throw new Error('tải thiếu ' + b64.length + '/' + meta.tongKyTu + ' ký tự');
+                if (msgEl) msgEl.textContent = 'Đang giải nén checkpoint...';
+                const txt = await giaiNenGzip(base64ToBytes(b64));
+                return { lastProcessedRow: meta.lastProcessedRow, savedAt: meta.savedAt,
+                         data: JSON.parse(txt) };
+            } catch (err) {
+                console.warn('Checkpoint nén lỗi, quay về cách cũ:', err.message);
+            }
+        } else {
+            console.warn('Trình duyệt không giải nén được gzip, quay về cách cũ.');
+        }
+    }
+    // Duong lui: cach cu
+    if (msgEl) msgEl.textContent = 'Đang tải checkpoint (bản chưa nén)...';
+    const cp = await fetchJSON(baseUrl + q + '&mode=checkpoint', 120000);
+    return (cp && cp.exists !== false && cp.data) ? cp : null;
+}
+
+
 async function fetchRowsFromAppsScript(baseUrl, sheetName, startRow) {
     const msgEl = document.getElementById('loading-message');
     const CHUNK_SIZE = 15000;
@@ -2794,8 +2858,7 @@ async function loadAndRender() {
         if (msgEl) msgEl.textContent = 'Đang kiểm tra checkpoint đã lưu...';
         let checkpoint = null;
         try {
-            const cp = await fetchJSON(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME) + '&mode=checkpoint', 120000);
-            if (cp && cp.exists !== false && cp.data) checkpoint = cp;
+            checkpoint = await taiCheckpoint(APPS_SCRIPT_URL, SHEET_NAME, msgEl);
         } catch (err) {
             console.warn('Không tải được checkpoint (sẽ tải toàn bộ dữ liệu):', err.message);
         }
@@ -8823,6 +8886,70 @@ async function fetchJSON(url, timeoutMs) {
     }
 }
 
+/* ===== Checkpoint NEN — them 27/08/2026 =========================================
+   File checkpoint da phinh len 22 MB; Apps Script tra ca file mot phat thi hong
+   (tra 404) -> dashboard tuong chua co checkpoint -> tai lai 152.585 dong -> treo.
+   Gio Apps Script nen gzip (22 MB -> 3 MB) roi cat thanh manh nho.
+   Ham nay ghep manh lai va giai nen. Khong co ban nen thi tu quay ve cach cu.
+   ============================================================================== */
+async function fetchText(url, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs || 120000);
+    try {
+        const resp = await fetch(url, { cache: 'no-store', signal: controller.signal });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return await resp.text();
+    } finally { clearTimeout(timer); }
+}
+function base64ToBytes(b64) {
+    const bin = atob(b64);
+    const a = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    return a;
+}
+async function giaiNenGzip(bytes) {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(stream).text();
+}
+async function taiCheckpoint(baseUrl, sheetName, msgEl) {
+    const q = '?sheet=' + encodeURIComponent(sheetName);
+    let meta = null;
+    try {
+        if (msgEl) msgEl.textContent = 'Đang kiểm tra checkpoint đã lưu...';
+        meta = await fetchJSON(baseUrl + q + '&mode=cpmeta', 90000);
+    } catch (err) {
+        console.warn('Không đọc được mô tả checkpoint nén:', err.message);
+    }
+    if (meta && meta.co && meta.nen === 'gzip' && meta.soManh > 0) {
+        if (typeof DecompressionStream === 'function') {
+            try {
+                const phan = [];
+                for (let i = 0; i < meta.soManh; i++) {
+                    if (msgEl) msgEl.textContent =
+                        'Đang tải checkpoint đã nén (' + (i + 1) + '/' + meta.soManh + ')...';
+                    phan.push(await fetchText(baseUrl + q + '&mode=cpart&i=' + i, 180000));
+                }
+                const b64 = phan.join('');
+                if (meta.tongKyTu && b64.length !== meta.tongKyTu)
+                    throw new Error('tải thiếu ' + b64.length + '/' + meta.tongKyTu + ' ký tự');
+                if (msgEl) msgEl.textContent = 'Đang giải nén checkpoint...';
+                const txt = await giaiNenGzip(base64ToBytes(b64));
+                return { lastProcessedRow: meta.lastProcessedRow, savedAt: meta.savedAt,
+                         data: JSON.parse(txt) };
+            } catch (err) {
+                console.warn('Checkpoint nén lỗi, quay về cách cũ:', err.message);
+            }
+        } else {
+            console.warn('Trình duyệt không giải nén được gzip, quay về cách cũ.');
+        }
+    }
+    // Duong lui: cach cu
+    if (msgEl) msgEl.textContent = 'Đang tải checkpoint (bản chưa nén)...';
+    const cp = await fetchJSON(baseUrl + q + '&mode=checkpoint', 120000);
+    return (cp && cp.exists !== false && cp.data) ? cp : null;
+}
+
+
 function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
 
 const TARGET_SHEET_NAME = 'Target 2026';
@@ -9217,8 +9344,7 @@ async function loadAndRender() {
         if (msgEl) msgEl.textContent = 'Đang kiểm tra checkpoint đã lưu...';
         let checkpoint = null;
         try {
-            const cp = await fetchJSON(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME) + '&mode=checkpoint', 120000);
-            if (cp && cp.exists !== false && cp.data) checkpoint = cp;
+            checkpoint = await taiCheckpoint(APPS_SCRIPT_URL, SHEET_NAME, msgEl);
         } catch (err) {
             console.warn('Không tải được checkpoint (sẽ tải toàn bộ dữ liệu):', err.message);
         }
