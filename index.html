@@ -618,7 +618,7 @@ body{
     <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
       <div class="dot"></div>
       <div>
-        <b>Công thức (áp dụng cho mã PK, không gồm Cường lực):</b> Giá HUB = Giá FOB (gồm 8% VAT) × 1,25 (FOB lãi 25%), làm tròn về đơn vị 1.000đ &nbsp;·&nbsp; Giá Đại lý = Giá HUB × 1,20 (HUB lãi 20%), làm tròn về đơn vị 1.000đ &nbsp;·&nbsp; Giá bán lẻ = Giá FOB (gốc, chưa VAT) × 2,5, làm tròn về đơn vị 5.000đ.
+        <b>Công thức (áp dụng cho mã PK, không gồm Cường lực):</b> Giá HUB = Giá FOB (gồm 8% VAT) × 1,25 (FOB lãi 25%), làm tròn về đơn vị 1.000đ &nbsp;·&nbsp; Giá Đại lý = Giá HUB × 1,20 (HUB lãi 20%), làm tròn về đơn vị 1.000đ &nbsp;·&nbsp; Giá bán lẻ = Giá FOB (gồm 8% VAT) × 2,5, làm tròn về đơn vị 5.000đ.
         % hiển thị ngay sau mỗi giá là lợi nhuận so với giá kế tiếp: FOB → HUB, HUB → Đại lý, Đại lý → Bán lẻ.
         Riêng nhóm <b>Cường lực</b>: giá CỐ ĐỊNH, không áp công thức trên — Bán lẻ 50.000đ, HUB 6.000đ, Đại lý 8.000đ; % hiển thị chỉ để tham khảo mức lãi thực tế, không dùng để tính lại giá.
         <b>Lưu ý VAT:</b> Cột Giá FOB hiển thị đã <b>+8% VAT</b> mặc định. Với mã PK, Giá HUB tính từ FOB đã gồm VAT này; Giá bán lẻ vẫn tính từ FOB gốc chưa VAT.
@@ -8452,7 +8452,7 @@ function exportPriceTable(){
     } else {
       hub = Math.round((fobVAT * 1.25) / 1000) * 1000;
       daiLy = Math.round((hub * 1.20) / 1000) * 1000;
-      banLe = Math.round((fob * 2.5) / 5000) * 5000;
+      banLe = Math.round((fobVAT * 2.5) / 5000) * 5000;
     }
     let ghiChu = '';
     if(resolved.source === 'manual') ghiChu = 'Giá FOB gốc tự chỉnh tay';
@@ -8510,7 +8510,7 @@ function renderPriceTable(){
       // Mã PK: HUB = FOB (gồm 8% VAT) x1.25 (FOB lãi 25%), Đại lý = HUB x1.20 (HUB lãi 20%), làm tròn về đơn vị 1.000đ
       hub = Math.round((fobVAT * 1.25) / 1000) * 1000;
       daiLy = Math.round((hub * 1.20) / 1000) * 1000;
-      const banLeRaw = fob * 2.5;
+      const banLeRaw = fobVAT * 2.5; // Bán lẻ tính từ FOB gồm VAT (đồng bộ base với HUB/Đại lý)
       banLe = Math.round(banLeRaw / 5000) * 5000; // làm tròn về đơn vị 5.000đ
       const daiLyPct = daiLy ? Math.round(((banLe - daiLy) / daiLy) * 1000) / 10 : 0;
       let fobTag = '';
