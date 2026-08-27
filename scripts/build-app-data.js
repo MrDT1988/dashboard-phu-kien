@@ -402,6 +402,7 @@
     //    Ten shop 2 sheet khac nhau -> doi chieu theo ma vung + dia chi.
     // =========================================================
     var mkt = { matched: 0, unmatched: [], shops: 0 };
+    var nhomPKTen = null;      // ten 4 nhom gia, chi co khi doc duoc bang phan khuc ben MAIN
     var mapMain = {};           // ten shop ben MAIN -> ten shop ben OPPO
     var norm = function (s) {
       return String(s || '').toLowerCase().normalize('NFD')
@@ -453,6 +454,22 @@
       var sgShopY = {}, sgSaleY = {}, sgAllY = null;  // luy ke ca nam
       function sgBlank() { return quads(SEGA.length); }
 
+      // 4 nhom gia anh Thai dung de nhin nhanh. Nhan dien theo TEN khoang, doi nhan
+      // ben DB TG cung khong vo. Dung cho sgmS = phan khuc x thang o cap shop.
+      var NHOM_TEN = ['Dưới 5M', '5–10M', '10–20M', '20–30M'];
+      var NHOM_RE = [/^\s*<\s*5/, /^\s*5\s*-\s*7|^\s*7\s*-\s*10/,
+                     /^\s*10\s*-\s*15|^\s*15\s*-\s*20/, /^\s*20\s*-\s*30/];
+      var SEG_NHOM = {};
+      SEGA.forEach(function (ten) {
+        NHOM_RE.forEach(function (re, gi) { if (re.test(ten)) SEG_NHOM[ten] = gi; });
+      });
+      var sgmShop = {};
+      function sgmBlank() {
+        var a = [];
+        for (var q = 0; q < NM; q++) a.push([[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]);
+        return a;
+      }
+
       // 4 hang chinh theo TUNG THANG, luu o cap SHOP:
       // [oppoMay,oppoDT, ssMay,ssDT, xmMay,xmDT, ipMay,ipDT, tongMay,tongDT]
       var mkmShop = {};
@@ -499,6 +516,15 @@
           });
         }
 
+        // phan khuc x THANG o cap shop -> muc Shop xem duoc PK 10-20M tung thang
+        var gn = SEG_NHOM[r.seg];
+        if (st && gn !== undefined) {
+          if (!sgmShop[st]) sgmShop[st] = sgmBlank();
+          var o4 = sgmShop[st][i][gn];
+          o4[2] += u; o4[3] += rv;
+          if (oppo) { o4[0] += u; o4[1] += rv; }
+        }
+
         if (st && r.shopSize && !shops[st].size) shops[st].size = String(r.shopSize).trim();
         if (r.m === CUR_M) {
           var b = r.brand || '?';
@@ -536,6 +562,13 @@
           return [v[0], tr(v[1]), v[2], tr(v[3]), v[4], tr(v[5]), v[6], tr(v[7]), v[8], tr(v[9])];
         });
       });
+      Object.keys(sgmShop).forEach(function (st) {
+        if (!shops[st]) return;
+        shops[st].sgmS = sgmShop[st].map(function (mo) {
+          return mo.map(function (v) { return [v[0], tr(v[1]), v[2], tr(v[3])]; });
+        });
+      });
+      nhomPKTen = NHOM_TEN;
       Object.keys(mShop).forEach(function (st) {
         shops[st].mkt = { m: packM(mShop[st]), br: topBrands(brShop[st], 6) };
         if (sgShop[st]) shops[st].mkt.sg = packM(sgShop[st]);
@@ -800,6 +833,7 @@
         if (sh.md) c.md = sh.md;
         if (sh.dk) c.dk = sh.dk;
         if (sh.mkm) c.mkm = sh.mkm;
+        if (sh.sgmS) c.sgmS = sh.sgmS;
         if (sh.dkp) c.dkp = sh.dkp;
         if (sh.hr) c.hr = sh.hr;
         if (sh.stf) c.stf = sh.stf;
@@ -819,6 +853,7 @@
       year: YEAR, lastDoy: lastDoy,
       segs: SEGS, sers: SERS, chans: CHANS,
       segsMkt: SEGA,
+      nhomPK: nhomPKTen,
       sizes: (function(){var z={};shopOrder.forEach(function(st){if(shops[st].size)z[shops[st].size]=1});
         return ['S','A','B','C','D','Chưa xếp size'].filter(function(x){return z[x]})
           .concat(Object.keys(z).filter(function(x){return ['S','A','B','C','D','Chưa xếp size'].indexOf(x)<0}).sort())})(),
