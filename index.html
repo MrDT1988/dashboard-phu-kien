@@ -530,7 +530,7 @@ body{
     <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
       <div class="dot"></div>
       <div>
-        <b>Công thức:</b> Giá bán lẻ = Giá FOB × 2,5 &nbsp;·&nbsp; Giá Đại lý = Giá bán lẻ × 60% &nbsp;·&nbsp; Giá HUB = Giá bán lẻ × 45%.
+        <b>Công thức:</b> Giá bán lẻ = Giá FOB × 2,5 &nbsp;·&nbsp; Giá Đại lý = Giá bán lẻ × 60% &nbsp;·&nbsp; Giá HUB = Giá bán lẻ × 45% &nbsp;·&nbsp; Lợi nhuận/sp = Giá HUB − Giá FOB &nbsp;·&nbsp; Biên LN % = Lợi nhuận / Giá FOB.
         Chọn tháng ở trên để xem giá FOB đúng tháng đó (T8.26 là giá tạm tính, dùng giá FOB T7.26 do Sheet chưa cập nhật).
       </div>
     </div>
@@ -543,6 +543,8 @@ body{
           <th>Tên sản phẩm</th>
           <th class="num cen">Giá FOB</th>
           <th class="num cen">Giá HUB</th>
+          <th class="num cen">Lợi nhuận (HUB-FOB)</th>
+          <th class="num cen">Biên LN %</th>
           <th class="num cen">Giá Đại lý</th>
           <th class="num cen">Giá bán lẻ</th>
         </tr>
@@ -6132,6 +6134,9 @@ function renderPriceTable(){
     const banLe = Math.round(fob * 2.5);
     const daiLy = Math.round(banLe * 0.6);
     const hub = Math.round(banLe * 0.45);
+    const loiNhuan = hub - fob;
+    const bienLN = fob ? Math.round((loiNhuan / fob) * 1000) / 10 : 0;
+    const lnColor = loiNhuan >= 0 ? 'var(--green)' : 'var(--red)';
     return `
     <tr>
       <td>${r.group}</td>
@@ -6139,6 +6144,8 @@ function renderPriceTable(){
       <td>${r.ten || ''}</td>
       <td class="num cen">${fmtMoneyFull(fob)}</td>
       <td class="num cen">${fmtMoneyFull(hub)}</td>
+      <td class="num cen" style="color:${lnColor};font-weight:600;">${fmtMoneyFull(loiNhuan)}</td>
+      <td class="num cen" style="color:${lnColor};font-weight:600;">${bienLN}%</td>
       <td class="num cen">${fmtMoneyFull(daiLy)}</td>
       <td class="num cen">${fmtMoneyFull(banLe)}</td>
     </tr>`;
