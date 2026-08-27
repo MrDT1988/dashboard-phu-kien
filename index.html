@@ -6,6 +6,7 @@
 <title>Dashboard Phụ Kiện 2026 — Nam Phong</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --navy:#1E2761;
@@ -160,6 +161,11 @@ body{
 .table-controls select, .table-controls input[type="text"]{
   padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff;color:var(--text-primary);
 }
+.btn-export{
+  padding:7px 14px;border:none;border-radius:8px;font-size:12.5px;font-weight:700;
+  background:var(--navy);color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+}
+.btn-export:hover{background:var(--navy-dark);}
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
 .badge.good{background:#E4F5EC;color:var(--green);}
 .badge.warn{background:#FFEFE6;color:var(--orange);}
@@ -579,6 +585,7 @@ body{
       <div class="table-controls">
         <select id="priceMonthSelect"></select>
         <select id="priceGroupSelect" style="margin-left:8px;"></select>
+        <button id="exportPriceTableBtn" type="button" class="btn-export" style="margin-left:8px;">⭳ Xuất Excel</button>
         <span id="priceTableInfo" style="margin-left:10px;color:var(--text-secondary);font-size:13px;"></span>
       </div>
     </div>
@@ -8311,6 +8318,57 @@ function priceIncreasePct(sku){
   return 0;
 }
 
+function setupExportPriceTableButton(){
+  const btn = document.getElementById('exportPriceTableBtn');
+  if(!btn) return;
+  btn.addEventListener('click', exportPriceTable);
+}
+
+function exportPriceTable(){
+  if(typeof XLSX === 'undefined'){
+    alert('Chưa tải được thư viện xuất Excel, vui lòng thử lại sau vài giây.');
+    return;
+  }
+  const allRows = DATA.priceTable || [];
+  const rows = priceGroupFilter === 'ALL' ? allRows : allRows.filter(r => r.group === priceGroupFilter);
+  const mi = priceMonthIdx == null ? allRows.length : priceMonthIdx;
+  const monthLabel = (DATA.priceMonthLabels && DATA.priceMonthLabels[mi]) || 'Tat_ca';
+  const CL_GROUP_NAME = 'Cường lực (Dán MH)';
+
+  const exportRows = rows.map(r => {
+    const fobGoc0 = (r.fobMonths8 && r.fobMonths8[mi]) || 0;
+    const incPct = priceIncreasePct(r.sku);
+    const fob = incPct ? Math.round(fobGoc0 * (1 + incPct)) : fobGoc0;
+    const fobVAT = Math.round(fob * 1.08);
+    const isCL = r.group === CL_GROUP_NAME;
+    let banLe, hub, daiLy;
+    if(isCL){
+      banLe = 50000; hub = 6000; daiLy = 8000;
+    } else {
+      hub = Math.round((fobVAT * 1.25) / 1000) * 1000;
+      daiLy = Math.round((hub * 1.20) / 1000) * 1000;
+      banLe = Math.round((fob * 2.5) / 5000) * 5000;
+    }
+    return {
+      'Nhóm': r.group,
+      'Mã sản phẩm': r.sku,
+      'Tên sản phẩm': r.ten || '',
+      'Giá FOB': fobVAT,
+      'Giá HUB': hub,
+      'Giá Đại lý': daiLy,
+      'Giá bán lẻ': banLe,
+      'Ghi chú': incPct ? `Tăng giá FOB gốc +${Math.round(incPct*100)}%` : '',
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(exportRows);
+  ws['!cols'] = [{wch:18},{wch:30},{wch:38},{wch:12},{wch:12},{wch:12},{wch:12},{wch:26}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Bang gia PK');
+  const safeMonth = String(monthLabel).replace(/[^\w.]/g, '');
+  XLSX.writeFile(wb, `Bang_gia_PK_${safeMonth}.xlsx`);
+}
+
 function renderPriceTable(){
   const tbody = document.getElementById('priceTableBody');
   const info = document.getElementById('priceTableInfo');
@@ -8396,6 +8454,7 @@ function runDashboard(){
   renderSkuMonthlyAllTable();
   setupPriceTableMonthSelect();
   setupPriceTableGroupSelect();
+  setupExportPriceTableButton();
   renderPriceTable();
 }
 
