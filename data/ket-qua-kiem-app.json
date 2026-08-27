@@ -1,6 +1,6 @@
 {
- "ban": "2026-08-27.32",
- "tong": 81,
+ "ban": "2026-08-27.33",
+ "tong": 90,
  "khongDat": 0,
  "loiJS": [],
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
@@ -8,7 +8,7 @@
   {
    "ten": "Dang nhap va giai ma goi du lieu",
    "dat": true,
-   "chiTiet": "16 sale, 8 thang, ban ###-08-27.32"
+   "chiTiet": "16 sale, 8 thang, ban ###-08-27.33"
   },
   {
    "ten": "Co du tab kenh",
@@ -186,9 +186,24 @@
    "chiTiet": "liet ke ### shop, sai 0"
   },
   {
-   "ten": "Shop MWG: liet ke du shop hoac noi ro dang cat bot",
+   "ten": "Shop MWG: bam \"Xem them\" thi ra DU shop cua kenh",
    "dat": true,
-   "chiTiet": "hien ###/### (co ghi chu)"
+   "chiTiet": "ban dau ### dong, bam 1 lan -> ###/### shop"
+  },
+  {
+   "ten": "Shop MWG: nut loc \"Chưa bán tháng 8\" dem dung",
+   "dat": true,
+   "chiTiet": "nut ghi 0 | ve ra 0 dong"
+  },
+  {
+   "ten": "Shop MWG: nut loc \"Giảm so tháng 7\" dem dung",
+   "dat": true,
+   "chiTiet": "nut ghi 79 | ve ra 79 dong"
+  },
+  {
+   "ten": "Shop MWG: bo loc nhanh thi ve dung danh sach ban dau",
+   "dat": true,
+   "chiTiet": "sau khi bo = ### | ban dau = ###"
   },
   {
    "ten": "Shop MWG: bam vao shop mo duoc to chi tiet",
@@ -241,9 +256,24 @@
    "chiTiet": "liet ke 29 shop, sai 0"
   },
   {
-   "ten": "Shop KA: liet ke du shop hoac noi ro dang cat bot",
+   "ten": "Shop KA: bam \"Xem them\" thi ra DU shop cua kenh",
    "dat": true,
-   "chiTiet": "hien 29/29 (KHONG co ghi chu)"
+   "chiTiet": "ban dau 29 dong, bam 0 lan -> 29/29 shop"
+  },
+  {
+   "ten": "Shop KA: nut loc \"Chưa bán tháng 8\" dem dung",
+   "dat": true,
+   "chiTiet": "nut ghi 6 | ve ra 6 dong"
+  },
+  {
+   "ten": "Shop KA: nut loc \"Giảm so tháng 7\" dem dung",
+   "dat": true,
+   "chiTiet": "nut ghi 13 | ve ra 13 dong"
+  },
+  {
+   "ten": "Shop KA: bo loc nhanh thi ve dung danh sach ban dau",
+   "dat": true,
+   "chiTiet": "sau khi bo = 29 | ban dau = 29"
   },
   {
    "ten": "Shop KA: bam vao shop mo duoc to chi tiet",
@@ -271,9 +301,24 @@
    "chiTiet": "liet ke ### shop, sai 0"
   },
   {
-   "ten": "Shop IND: liet ke du shop hoac noi ro dang cat bot",
+   "ten": "Shop IND: bam \"Xem them\" thi ra DU shop cua kenh",
    "dat": true,
-   "chiTiet": "hien ###/### (co ghi chu)"
+   "chiTiet": "ban dau ### dong, bam 1 lan -> ###/### shop"
+  },
+  {
+   "ten": "Shop IND: nut loc \"Chưa bán tháng 8\" dem dung",
+   "dat": true,
+   "chiTiet": "nut ghi ### | ve ra ### dong"
+  },
+  {
+   "ten": "Shop IND: nut loc \"Giảm so tháng 7\" dem dung",
+   "dat": true,
+   "chiTiet": "nut ghi 62 | ve ra 62 dong"
+  },
+  {
+   "ten": "Shop IND: bo loc nhanh thi ve dung danh sach ban dau",
+   "dat": true,
+   "chiTiet": "sau khi bo = ### | ban dau = ###"
   },
   {
    "ten": "Shop IND: bam vao shop mo duoc to chi tiet",
