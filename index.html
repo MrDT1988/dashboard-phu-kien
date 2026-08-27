@@ -226,6 +226,14 @@ body{
 .data-table tbody tr:hover{background:#f8f9fc;}
 .data-table tbody td.num{text-align:right;font-variant-numeric:tabular-nums;}
 .data-table td.cen, .data-table th.cen{text-align:center !important;}
+.data-table tbody tr.grp-pk{background:var(--ice-bg);}
+.data-table tbody tr.grp-pk:hover{background:#E4EAF9;}
+.data-table tbody tr.grp-cl{background:rgba(255,107,53,.08);}
+.data-table tbody tr.grp-cl:hover{background:rgba(255,107,53,.15);}
+.data-table tbody tr.grp-first td{border-top:2px solid var(--navy);}
+.data-table tbody tr.grp-last td{border-bottom:2px solid var(--navy);}
+.data-table tbody tr td.grp-edge-l{border-left:2px solid var(--navy);}
+.data-table tbody tr td.grp-edge-r{border-right:2px solid var(--navy);}
 
 /* Region table — 3 color clusters */
 #regionTable th:nth-child(-n+4), #regionTable td:nth-child(-n+4){ background:#EBF1FC; }
@@ -524,6 +532,7 @@ body{
       <h3>Giá FOB &amp; giá suy ra theo tháng</h3>
       <div class="table-controls">
         <select id="priceMonthSelect"></select>
+        <select id="priceGroupSelect" style="margin-left:8px;"></select>
         <span id="priceTableInfo" style="margin-left:10px;color:var(--text-secondary);font-size:13px;"></span>
       </div>
     </div>
@@ -6107,6 +6116,7 @@ function renderSkuMonthlyAllTable(){
 
 
 let priceMonthIdx = null; // index into DATA.priceMonthLabels
+let priceGroupFilter = 'ALL'; // 'ALL' hoặc tên nhóm hàng cụ thể
 
 function setupPriceTableMonthSelect(){
   const sel = document.getElementById('priceMonthSelect');
@@ -6123,15 +6133,31 @@ function setupPriceTableMonthSelect(){
   });
 }
 
+function setupPriceTableGroupSelect(){
+  const sel = document.getElementById('priceGroupSelect');
+  if(!sel) return;
+  const all = DATA.priceTable || [];
+  const groups = [...new Set(all.map(r => r.group))];
+  sel.innerHTML = '<option value="ALL">Tất cả nhóm</option>' + groups.map(g => `<option value="${g}">${g}</option>`).join('');
+  sel.value = priceGroupFilter;
+  sel.addEventListener('change', () => {
+    priceGroupFilter = sel.value;
+    renderPriceTable();
+  });
+}
+
 function renderPriceTable(){
   const tbody = document.getElementById('priceTableBody');
   const info = document.getElementById('priceTableInfo');
   if(!tbody) return;
-  const rows = DATA.priceTable || [];
-  const mi = priceMonthIdx == null ? rows.length : priceMonthIdx;
-  if(info) info.textContent = rows.length + ' mã sản phẩm';
+  const allRows = DATA.priceTable || [];
+  const rows = priceGroupFilter === 'ALL' ? allRows : allRows.filter(r => r.group === priceGroupFilter);
+  const mi = priceMonthIdx == null ? allRows.length : priceMonthIdx;
+  if(info) info.textContent = rows.length + ' / ' + allRows.length + ' mã sản phẩm';
   const CL_GROUP_NAME = 'Cường lực (Dán MH)';
-  tbody.innerHTML = rows.map(r => {
+  tbody.innerHTML = rows.map((r, idx) => {
+    const isFirstOfGroup = idx === 0 || rows[idx - 1].group !== r.group;
+    const isLastOfGroup = idx === rows.length - 1 || rows[idx + 1].group !== r.group;
     const fob = (r.fobMonths8 && r.fobMonths8[mi]) || 0; // FOB gốc, dùng để tính HUB/Đại lý/Bán lẻ
     const fobVAT = Math.round(fob * 1.08); // FOB hiển thị đã gồm VAT 8%, dùng làm gốc tính HUB/Đại lý cho Cường lực; PK vẫn tính HUB/Đại lý/Bán lẻ từ FOB gốc chưa VAT
     const isCL = r.group === CL_GROUP_NAME;
@@ -6156,15 +6182,16 @@ function renderPriceTable(){
       hubCell = `${fmtMoneyFull(hub)} <span style="color:var(--green);font-weight:600;">(+20%)</span>`;
       daiLyCell = `${fmtMoneyFull(daiLy)} <span style="color:var(--green);font-weight:600;">(+${daiLyPct}%)</span>`;
     }
+    const rowCls = [(isCL ? 'grp-cl' : 'grp-pk'), isFirstOfGroup ? 'grp-first' : '', isLastOfGroup ? 'grp-last' : ''].filter(Boolean).join(' ');
     return `
-    <tr>
-      <td>${r.group}</td>
+    <tr class="${rowCls}">
+      <td class="grp-edge-l">${r.group}</td>
       <td>${r.sku}</td>
       <td>${r.ten || ''}</td>
       <td class="num cen">${fobCell}</td>
       <td class="num cen">${hubCell}</td>
       <td class="num cen">${daiLyCell}</td>
-      <td class="num cen">${fmtMoneyFull(banLe)}</td>
+      <td class="num cen grp-edge-r">${fmtMoneyFull(banLe)}</td>
     </tr>`;
   }).join('');
 }
@@ -6195,6 +6222,7 @@ function runDashboard(){
   setupSkuMonthlyAllPicker();
   renderSkuMonthlyAllTable();
   setupPriceTableMonthSelect();
+  setupPriceTableGroupSelect();
   renderPriceTable();
 }
 
