@@ -308,6 +308,36 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
       w.close();
     }
 
+    // --- F4a. DON MAN HINH: sale MWG khong duoc thay dau vet kenh khac
+    {
+      const { w } = moTrang({ maSan: MA_SALE, aiSan: uSale, dapTraLoi: phucVu });
+      await cho(4000);
+      // Gia lap: nguoi nay chi co kenh MWG
+      const kq = w.__donManHinh(['MWG'], 'sale');
+      const an = (id) => {
+        const e = w.document.getElementById(id);
+        return !e || e.style.display === 'none';
+      };
+      const anTab = (id) => {
+        const t = w.document.querySelector('[data-panel="' + id + '"]');
+        return !t || t.style.display === 'none';
+      };
+      ghi('Don man hinh: an panel kenh KA va IND',
+        an('panel-ka') && an('panel-ind'), JSON.stringify(kq));
+      ghi('Don man hinh: an luon TAB kenh KA va IND',
+        anTab('panel-ka') && anTab('panel-ind'),
+        'khong de sale bam vao roi thay man hinh trong');
+      ghi('Don man hinh: GIU panel kenh cua chinh minh (MWG)',
+        !an('panel-mwg') && !anTab('panel-mwg'));
+      ghi('Don man hinh: GIU tab Tong quan', !anTab('panel-overview'),
+        'tong quan ca nam la yeu cau so 1 cua anh Thai');
+      // Admin thi khong duoc don gi ca
+      const kq2 = w.__donManHinh(['MWG'], 'admin');
+      ghi('Don man hinh: admin KHONG bi an gi',
+        kq2.anTab === 0 && kq2.anThe === 0, JSON.stringify(kq2));
+      w.close();
+    }
+
     // --- F4b. ROBOT: co goi san van phai di duong cu, khong duoc dung lai hoi ma
     {
       const { w, daGoi } = moTrang({ khoaSan: 'K', laRobot: true, dapTraLoi: phucVu });
