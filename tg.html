@@ -7,6 +7,49 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+/* ===== CHIA KHOA CHO DUONG APPS SCRIPT =====================================
+   Dia chi /exec nam san trong file nay, ma file nay o tren GitHub Pages cong
+   khai. Do thu 27/08: nguoi la khong dang nhap van keo duoc toan bo sheet.
+   Tu ban nay, moi yeu cau gui len Apps Script deu kem chia khoa.
+
+   Chia khoa khong nam trong file nay. Lay theo thu tu:
+     1. window.__AS_KEY   (robot bom vao truoc khi mo trang)
+     2. localStorage      (may anh Thai, hoi mot lan roi nho)
+   Chua co thi van chay nhu cu — ben Apps Script cung mo cong khi chua dat khoa,
+   nen dan ban moi len KHONG lam hong gi.
+   ========================================================================= */
+(function () {
+  var KHO = 'dbtg_as_key';
+  window.__layKhoaAS = function () {
+    if (window.__AS_KEY) return window.__AS_KEY;
+    try { return localStorage.getItem(KHO) || ''; } catch (e) { return ''; }
+  };
+  window.__datKhoaAS = function (k) {
+    window.__AS_KEY = k || '';
+    try { k ? localStorage.setItem(KHO, k) : localStorage.removeItem(KHO); } catch (e) {}
+  };
+  var _fetch = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === 'string' && u.indexOf('script.google.com') >= 0 && u.indexOf('key=') < 0) {
+        var k = window.__layKhoaAS();
+        if (k) u += (u.indexOf('?') >= 0 ? '&' : '?') + 'key=' + encodeURIComponent(k);
+      }
+    } catch (e) {}
+    return _fetch.call(this, u, o);
+  };
+  // Apps Script tu choi -> hoi chia khoa mot lan roi tai lai. Khong bao gio
+  // de anh Thai nhin man hinh trang ma khong biet vi sao.
+  var _json = null;
+  window.__hoiChiaKhoa = function (viSao) {
+    var k = window.prompt((viSao || 'Đường dữ liệu đang khoá.') +
+      '\n\nDán chìa khoá Apps Script vào đây (chỉ hỏi một lần, máy sẽ nhớ):', '');
+    if (k && k.trim()) { window.__datKhoaAS(k.trim()); location.reload(); return true; }
+    return false;
+  };
+})();
+</script>
 <style>
 :root {
     --bg-primary: #10151d;
