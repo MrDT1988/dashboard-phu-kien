@@ -284,6 +284,33 @@ const loiJS = [];
     bam(sheet.querySelector('#sh-x')); await cho(400);
   }
 
+  // ---------- C9. HAI NGUON — HAI MOC NGAY
+  // CENTER (so OPPO) va DATA MWG (so thi truong) cap nhat khong cung nhip.
+  // App phai chay so thi truong toi ngay THUC SU co, va phai GHI RO moc cua tung the.
+  await sangTab('MWG'); await cho(700);
+  {
+    const nMkt = w.ngayMkt(), nOppo = w.D.maxDay || 0;
+    ghi('Hai moc: doc duoc ngay cuoi cua so thi truong', nMkt > 0,
+      'thi truong toi ngay ' + nMkt + ' | so OPPO toi ngay ' + nOppo +
+      (nMkt > nOppo ? ' -> LECH ' + (nMkt - nOppo) + ' ngay' : ' -> cung nhip'));
+    ghi('Hai moc: khong bao gio cat so thi truong ngan hon so OPPO', nMkt >= nOppo,
+      nMkt + ' vs ' + nOppo);
+    // Dong dau trang phai noi ro, khong duoc gop hai moc lam mot
+    const stamp = T($('#h-stamp').textContent);
+    ghi('Hai moc: dong dau trang ghi ro moc cua so OPPO',
+      /Số máy OPPO tới ngày/.test(stamp), stamp.slice(0, 90));
+    if (nMkt > nOppo) {
+      ghi('Hai moc: lech nhip thi dong dau trang phai bao thi phan toi ngay nao',
+        /thị phần tới ngày/.test(stamp), stamp.slice(0, 90));
+      const sub = T($('#dy-sub').textContent);
+      ghi('Hai moc: the theo ngay ghi moc cua chinh no',
+        /tới ngày/.test(sub), sub.slice(0, 110));
+    }
+    // "cap nhat" la GIO ROBOT CHAY, khong duoc de nguoi doc tuong la ngay so lieu
+    ghi('Hai moc: khong goi gio robot chay la "so lieu"',
+      !/Số liệu tới ngày/.test(stamp), stamp.slice(0, 90));
+  }
+
   // ---------- D0. DOI CHIEU TEN PHAN KHUC VOI 4 NHOM
   // Nut phan khuc chi hien khi co it nhat 1 cot roi vao nhom. Neu mot nhom khong
   // co nut thi khong phai app hong — la ten cot trong goi du lieu khong khop
