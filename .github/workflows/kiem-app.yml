@@ -1,0 +1,37 @@
+# Ra soat app.html bang DU LIEU THAT (124 shop MWG / 29 KA / 204 IND).
+# KHONG mo DB TG, khong dung Apps Script — chi doc goi du lieu da co trong repo.
+# Ket qua data/ket-qua-kiem-app.json chi co ten phep kiem + dat/khong dat,
+# khong co ten shop va khong co doanh thu (repo la public).
+name: Ra soat app
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  kiem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Cai jsdom
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm i --no-audit --no-fund jsdom@24
+      - name: Ra soat
+        env:
+          SALE_CODES: ${{ secrets.SALE_CODES }}
+        run: node scripts/kiem-app.mjs
+      - name: Luu ket qua
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/ket-qua-kiem-app.json || true
+          git diff --cached --quiet || git commit -m "Ket qua ra soat app bang du lieu that"
+          git push || true
