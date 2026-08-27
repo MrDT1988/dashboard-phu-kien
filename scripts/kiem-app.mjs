@@ -131,8 +131,18 @@ const loiJS = [];
     const g = chup();
     ghi('Loc Size shop: doi so may', g.may !== g0.may);
     ghi('Loc Size shop: doanh thu KHONG ve 0', String(g.dt).replace(/[^0-9]/g, '') !== '0', 'DT=' + g.dt);
+    // --- chan doan sau khi loc size
+    let mo = null;
+    try { mo = w.scope(); } catch (e) {}
+    const mk = mo && mo.mkt;
+    ghi('Chan doan sau khi loc size', true,
+      'so shop trong pham vi=' + ((mo && mo.s) ? mo.s.length : '?') +
+      ' | co mkt=' + (!!mk) +
+      (mk && mk.m ? (' | mkt.m[MI]=' + JSON.stringify(mk.m[w.MI])) : '') +
+      ' | the thang an=' + ($('#c-mm').hidden));
     ghi('Loc Size shop: 4 o KPI van hien', hien($('#o-mkt4')));
-    ghi('Loc Size shop: doi bang thi phan theo thang', g.thang !== g0.thang);
+    ghi('Loc Size shop: doi bang thi phan theo thang', g.thang !== g0.thang,
+      'do dai bang truoc=' + g0.thang.length + ' sau=' + g.thang.length);
     doi($('#f-size'), ''); await cho(700);
   }
   if (nutPK.length) {
@@ -143,7 +153,9 @@ const loiJS = [];
     ghi('Loc PK 10-20M: doi bang chi tiet theo sale', g.hang !== g0.hang);
     ghi('Loc PK 10-20M: doi bang theo ngay', g.ngay !== g0.ngay);
     ghi('Loc PK 10-20M: doi bieu do theo ngay', g.bd !== g0.bd);
-    ghi('Loc PK: the theo thang co ghi chu khong loc duoc', T($('#mm-note').textContent).indexOf('⚠') >= 0);
+    ghi('Loc PK: the theo thang co ghi chu khong loc duoc',
+      T($('#mm-note').textContent).indexOf('⚠') >= 0,
+      'the thang an=' + $('#c-mm').hidden + ' | ghi chu="' + T($('#mm-note').textContent).slice(0, 90) + '"');
     bam($$('#f-seg [data-fpk]').find((b) => b.dataset.fpk === '-1')); await cho(700);
   }
   if ($('#f-ngay').options.length > 2) {
