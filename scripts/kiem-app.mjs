@@ -250,6 +250,145 @@ const loiJS = [];
     bam(sheet.querySelector('#sh-x')); await cho(400);
   }
 
+  // ---------- D. SOI KY BO LOC PHAN KHUC
+  // Khong chi hoi "co doi khong" ma hoi "SO CO DUNG KHONG":
+  //   - chon tung nhom roi cong lai phai bang chon ca may nhom cung luc (tinh cong duoc)
+  //   - tong cac nhom phai <= tong khi khong loc (khong duoc phinh ra)
+  //   - bo chon phai ve DUNG so ban dau
+  await sangTab('MWG');
+  await cho(600);
+
+  const soMayShop = () => {
+    const t = $('#tv-shop').querySelector('table');
+    if (!t || t.rows.length < 2) return null;
+    const c = t.rows[t.rows.length - 1].cells;
+    return c.length > 2 ? (parseInt(T(c[2].textContent).replace(/[^0-9]/g, ''), 10) || 0) : null;
+  };
+  const nutS = () => $$('#s-seg [data-spk]').filter((b) => b.dataset.spk !== '-1');
+  const tatS = async () => { const b = $$('#s-seg [data-spk]').find((x) => x.dataset.spk === '-1'); if (b) { bam(b); await cho(700); } };
+
+  if (nutS().length) {
+    await tatS();
+    const goc = soMayShop();
+    ghi('PK/thẻ shop: đọc được số khi KHÔNG lọc', goc !== null && goc > 0, 'tổng = ' + goc);
+
+    // chon tung nhom
+    const rieng = {};
+    for (const k of nutS().map((b) => b.dataset.spk)) {
+      await tatS();
+      const b = $$('#s-seg [data-spk]').find((x) => x.dataset.spk === k);
+      const ten = T(b.textContent);
+      bam(b); await cho(800);
+      rieng[k] = { ten, so: soMayShop() };
+    }
+    ghi('PK/thẻ shop: từng nhóm đều ra số', Object.keys(rieng).every((k) => rieng[k].so !== null),
+      Object.keys(rieng).map((k) => rieng[k].ten + '=' + rieng[k].so).join(' | '));
+
+    const tongRieng = Object.keys(rieng).reduce((t, k) => t + (rieng[k].so || 0), 0);
+    ghi('PK/thẻ shop: tổng các nhóm KHÔNG vượt tổng chung', tongRieng <= goc,
+      'cộng 4 nhóm = ' + tongRieng + ' | tổng chung = ' + goc +
+      (tongRieng <= goc ? ' (phần chênh là phân khúc ngoài 4 nhóm)' : ' ← PHÌNH RA, SAI'));
+
+    // chon 2 nhom cung luc -> phai bang tong cua 2 nhom rieng
+    const ks = Object.keys(rieng);
+    if (ks.length >= 2) {
+      await tatS();
+      bam($$('#s-seg [data-spk]').find((x) => x.dataset.spk === ks[0])); await cho(600);
+      bam($$('#s-seg [data-spk]').find((x) => x.dataset.spk === ks[1])); await cho(800);
+      const hai = soMayShop();
+      const cong = (rieng[ks[0]].so || 0) + (rieng[ks[1]].so || 0);
+      ghi('PK/thẻ shop: chọn 2 nhóm = cộng 2 nhóm riêng', hai === cong,
+        rieng[ks[0]].ten + ' + ' + rieng[ks[1]].ten + ' → chọn cùng lúc = ' + hai + ', cộng riêng = ' + cong);
+    }
+
+    // bo chon -> ve dung so ban dau
+    await tatS();
+    ghi('PK/thẻ shop: bỏ lọc về đúng số ban đầu', soMayShop() === goc,
+      'sau khi bỏ = ' + soMayShop() + ' | ban đầu = ' + goc);
+  } else {
+    // Khong co nut -> phai noi duoc VI SAO, neu khong lan sau lai doan mo
+    const sM = (w.D.segsMkt || []).length;
+    const nhom = (w.NHOM_PK || []).map((g) => {
+      let c = 0; try { c = w.nhomMktIdx(g).length; } catch (e) { c = -1; }
+      return g.t + '=' + c;
+    }).join(' ');
+    ghi('PK/thẻ shop: có nút phân khúc', false,
+      'khong thay nut | D.segsMkt=' + sM + ' phan khuc | so cot moi nhom: ' + nhom +
+      ' | #s-seg-w an=' + $('#s-seg-w').hidden + ' | SEG=' + w.SEG);
+  }
+
+  // --- PK o the "Sell out theo ngay" (F_SEGS)
+  const nutD = () => $$('#f-seg [data-fpk]').filter((b) => b.dataset.fpk !== '-1');
+  const tatD = async () => { const b = $$('#f-seg [data-fpk]').find((x) => x.dataset.fpk === '-1'); if (b) { bam(b); await cho(700); } };
+  const soTongTT = () => {
+    const t = $('#tv-hang').querySelector('table');
+    if (!t || t.rows.length < 2) return null;
+    return parseInt(T(t.rows[t.rows.length - 1].cells[1].textContent).replace(/[^0-9]/g, ''), 10) || 0;
+  };
+  ghi('PK/theo ngày: có nút phân khúc', nutD().length > 0,
+    'co ' + nutD().length + ' nhom | scope().sgm=' + (w.scope().sgm ? 'co' : 'KHONG') +
+    ' | #f-seg-w an=' + $('#f-seg-w').hidden);
+  if (nutD().length) {
+    await tatD();
+    const gocD = soTongTT();
+    const n20 = nut1020();
+    if (n20) {
+      bam(n20); await cho(900);
+      const s20 = soTongTT();
+      ghi('PK/theo ngày: 10–20M ra số nhỏ hơn tổng', s20 !== null && gocD !== null && s20 > 0 && s20 < gocD,
+        '10–20M = ' + s20 + ' | toàn phân khúc = ' + gocD);
+      ghi('PK/theo ngày: nhãn ghi rõ đang lọc 10–20M',
+        /chỉ PK 10.20M/i.test(T($('#tvh-h').textContent)), T($('#tvh-h').textContent).slice(-60));
+    }
+    // Chon nhom KHAC 10-20M -> phai ghi canh bao vi so theo ngay khong tach duoc.
+    // CHI GIU KHOA, khong giu phan tu: tatD() se ve lai #f-seg, phan tu cu chet.
+    const khoaKhac = (nutD().find((b) => !/10\s*[-–]\s*20/.test(T(b.textContent))) || {})
+      .dataset?.fpk;
+    if (khoaKhac !== undefined) {
+      await tatD();
+      const bK = $$('#f-seg [data-fpk]').find((x) => x.dataset.fpk === khoaKhac);
+      const tenK = bK ? T(bK.textContent) : '?';
+      const conTrenCay = !!(bK && bK.isConnected);
+      if (bK) { bam(bK); await cho(900); }
+      const dangChon = (w.F_SEGS || []).length;
+      ghi('PK/theo ngày: bấm nhóm khác thì app CÓ nhận',
+        conTrenCay && dangChon > 0,
+        tenK + ' → F_SEGS = ' + dangChon + ' cot' + (conTrenCay ? '' : ' | NUT DA ROI KHOI CAY'));
+      ghi('PK/theo ngày: nhóm khác 10–20M có ghi cảnh báo',
+        dangChon > 0 && /⚠|không tách được/i.test(T($('#tvh-h').textContent)),
+        tenK + ' → ' + T($('#tvh-h').textContent).slice(-70));
+      // So theo ngay khong tach duoc phan khuc nay -> phai GIU NGUYEN tong,
+      // dung im lang doi so thanh mot con so sai.
+      ghi('PK/theo ngày: nhóm không tách được thì giữ nguyên tổng (không bịa số)',
+        dangChon === 0 || soTongTT() === gocD,
+        'sau khi chon ' + tenK + ' = ' + soTongTT() + ' | toan phan khuc = ' + gocD);
+    }
+    await tatD();
+    ghi('PK/theo ngày: bỏ lọc về đúng số ban đầu', soTongTT() === gocD,
+      'sau = ' + soTongTT() + ' | ban đầu = ' + gocD);
+  }
+
+  // --- bang phan khuc o the KA
+  if (w.D.shareKA) {
+    await sangTab('KA'); await cho(700);
+    const bP = $('#ka-pk').querySelector('table');
+    if (bP) {
+      let tOppo = 0, tTong = 0;
+      [...bP.rows].slice(1).forEach((r) => {
+        tOppo += parseInt(T(r.cells[1].textContent).replace(/[^0-9]/g, ''), 10) || 0;
+        tTong += parseInt(T(r.cells[2].textContent).replace(/[^0-9]/g, ''), 10) || 0;
+      });
+      const bT = $('#ka-thang').querySelector('table');
+      const cuoi = bT.rows[bT.rows.length - 1].cells;
+      const mOppo = parseInt(T(cuoi[1].textContent).replace(/[^0-9]/g, ''), 10) || 0;
+      const mTong = parseInt(T(cuoi[2].textContent).replace(/[^0-9]/g, ''), 10) || 0;
+      ghi('PK/thẻ KA: cộng các phân khúc khớp tổng theo tháng',
+        Math.abs(tTong - mTong) <= Math.max(2, mTong * 0.001),
+        'cộng PK = ' + tOppo + '/' + tTong + ' | cộng tháng = ' + mOppo + '/' + mTong);
+    }
+    await sangTab('MWG');
+  }
+
   // ---------- D. cac tab con lai khong vo
   for (const v of ['alert', 'rank', 'ton', 'over']) {
     const n = $$('nav [data-v]').find((b) => b.dataset.v === v);
