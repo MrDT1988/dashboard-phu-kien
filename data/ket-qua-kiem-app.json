@@ -1,14 +1,14 @@
 {
- "ban": "2026-08-27.31",
+ "ban": "2026-08-27.32",
  "tong": 80,
- "khongDat": 3,
+ "khongDat": 1,
  "loiJS": [],
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
    "ten": "Dang nhap va giai ma goi du lieu",
    "dat": true,
-   "chiTiet": "16 sale, 8 thang, ban ###-08-27.31"
+   "chiTiet": "16 sale, 8 thang, ban ###-08-27.32"
   },
   {
    "ten": "Co du tab kenh",
@@ -103,7 +103,7 @@
   {
    "ten": "Co nut nhom 10-20M",
    "dat": true,
-   "chiTiet": "Dưới 5M / 5–10M / 10–20M / 20–30M / Tất cả"
+   "chiTiet": "Dưới 5M / 5–10M / 10–20M / 20–30M / Trên 30M / Tất cả"
   },
   {
    "ten": "Loc PK 10-20M: doi bang chi tiet theo sale",
@@ -303,22 +303,22 @@
   {
    "ten": "Phân khúc/theo ngày: nhóm nào cũng bắt được ít nhất 1 cột",
    "dat": true,
-   "chiTiet": "Dưới 5M=1 5–10M=2 10–20M=2 20–30M=1 | tong 7 cot"
+   "chiTiet": "Dưới 5M=1 5–10M=2 10–20M=2 20–30M=1 Trên 30M=1 | tong 7 cot"
   },
   {
    "ten": "Phân khúc/theo ngày: không cột nào bị bỏ rơi",
-   "dat": false,
-   "chiTiet": "bo roi: > 30M"
+   "dat": true,
+   "chiTiet": "tat ca deu vao nhom"
   },
   {
    "ten": "Phân khúc/thị phần: nhóm nào cũng bắt được ít nhất 1 cột",
-   "dat": false,
-   "chiTiet": "Dưới 5M=0 5–10M=2 10–20M=2 20–30M=1 | tong 9 cot"
+   "dat": true,
+   "chiTiet": "Dưới 5M=2 5–10M=2 10–20M=2 20–30M=1 Trên 30M=1 | tong 9 cot"
   },
   {
    "ten": "Phân khúc/thị phần: không cột nào bị bỏ rơi",
-   "dat": false,
-   "chiTiet": "bo roi: <3M / 3-5M / >20M / >30M"
+   "dat": true,
+   "chiTiet": "tat ca deu vao nhom | cot cong don bo qua co chu dich: >20M"
   },
   {
    "ten": "PK/thẻ shop: đọc được số khi KHÔNG lọc",
@@ -328,17 +328,17 @@
   {
    "ten": "PK/thẻ shop: từng nhóm đều ra số",
    "dat": true,
-   "chiTiet": "5–10M=### | 10–20M=### | 20–30M=48"
+   "chiTiet": "Dưới 5M=### | 5–10M=### | 10–20M=### | 20–30M=48 | Trên 30M=1"
   },
   {
    "ten": "PK/thẻ shop: tổng các nhóm KHÔNG vượt tổng chung",
-   "dat": true,
-   "chiTiet": "cộng 4 nhóm = ### | tổng chung = ### (phần chênh là phân khúc ngoài 4 nhóm)"
+   "dat": false,
+   "chiTiet": "cộng 4 nhóm = ### | tổng chung = ### ← PHÌNH RA, SAI"
   },
   {
    "ten": "PK/thẻ shop: chọn 2 nhóm = cộng 2 nhóm riêng",
    "dat": true,
-   "chiTiet": "5–10M + 10–20M → chọn cùng lúc = ###, cộng riêng = ###"
+   "chiTiet": "Dưới 5M + 5–10M → chọn cùng lúc = ###, cộng riêng = ###"
   },
   {
    "ten": "PK/thẻ shop: bỏ lọc về đúng số ban đầu",
@@ -348,7 +348,7 @@
   {
    "ten": "PK/theo ngày: có nút phân khúc",
    "dat": true,
-   "chiTiet": "co 4 nhom | scope().sgm=co | #f-seg-w an=false"
+   "chiTiet": "co 5 nhom | scope().sgm=co | #f-seg-w an=false"
   },
   {
    "ten": "PK/theo ngày: 10–20M ra số nhỏ hơn tổng",
