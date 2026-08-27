@@ -1,0 +1,101 @@
+{
+ "nguon": {
+  "__exportDataMwg": [
+   "kpi  [object 6 khoa]",
+   "month_labels  [mang 8 dong]",
+   "months_sorted  [mang 8 dong]",
+   "channels_list  [mang 3 dong]",
+   "series_list  [mang 4 dong]",
+   "segments_list  [mang 7 dong]",
+   "models_list  [mang 74 dong]",
+   "sales_list  [mang 15 dong]",
+   "crosstab  [mang 12087 dong]",
+   "series_detail_crosstab  [mang 1091 dong]",
+   "week_channel_units  [object 34 khoa]",
+   "week_revenue  [object 34 khoa]",
+   "week_channel_models  [object 34 khoa]",
+   "ind_daily_by_date  [object 235 khoa]",
+   "overview_daily_by_date  [object 235 khoa]",
+   "store_rows  [mang 357 dong]",
+   "store_month_lookup  [object 357 khoa]",
+   "channel_month_headcount  [object 3 khoa]",
+   "debug_target  [object 4 khoa]",
+   "sell_in_rows  [mang 6598 dong]",
+   "shop_sale_map  [object 201 khoa]",
+   "shop_level_map  [object 201 khoa]"
+  ],
+  "__exportDataMain": [
+   "kpi  [object 10 khoa]",
+   "brand_ranking  [mang 12 dong]",
+   "month_labels  [mang 8 dong]",
+   "months_sorted  [mang 8 dong]",
+   "segment_order  [mang 9 dong]",
+   "segments_list  [mang 9 dong]",
+   "sales_list  [mang 6 dong]",
+   "size_shop_list  [mang 6 dong]",
+   "top_brands  [mang 6 dong]",
+   "channels_list  [mang 0 dong]",
+   "series_list  [mang 0 dong]",
+   "models_list  [mang 0 dong]",
+   "crosstab  [mang 7725 dong]",
+   "shop_segment_crosstab  [mang 25301 dong]",
+   "daily  [object 6 khoa]",
+   "shop_rows_brand4  [mang 125 dong]",
+   "shop_day_data  [object 125 khoa]",
+   "shop_model_data  [object 125 khoa]",
+   "shop_staff_pk1020  [object 125 khoa]",
+   "shop_segment_all_brand  [object 125 khoa]",
+   "shop_hour_all_brand  [object 125 khoa]",
+   "mwg_target_map  [object 221 khoa]"
+  ]
+ },
+ "kenh": [
+  "KA",
+  "IND",
+  "MWG"
+ ],
+ "ungVien": [
+  {
+   "nguon": "__exportDataMwg",
+   "khoa": "crosstab",
+   "viSao": "co ten doi thu trong du lieu",
+   "kieu": "mang",
+   "soDong": 12087,
+   "dangDong": "object",
+   "cot": [
+    "m",
+    "channel",
+    "store",
+    "model",
+    "series",
+    "segment",
+    "sales",
+    "sellout",
+    "activated",
+    "rev"
+   ],
+   "khoaDau": []
+  },
+  {
+   "nguon": "__exportDataMwg",
+   "khoa": "store_rows",
+   "viSao": "co ten doi thu trong du lieu",
+   "kieu": "mang",
+   "soDong": 357,
+   "dangDong": "object",
+   "cot": [
+    "store",
+    "channel",
+    "level",
+    "sale",
+    "store_id",
+    "target",
+    "sellout",
+    "activated",
+    "revenue",
+    "activation_rate"
+   ],
+   "khoaDau": []
+  }
+ ]
+}
