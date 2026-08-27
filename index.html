@@ -5605,6 +5605,17 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   mergeRegionInto(regionsMap, 'THANH HOA', 'HAI DUONG');
   mergeRegionInto(regionsMap, 'HO CHI MINH', 'BINH DUONG');
   Object.keys(regionsMap).forEach(name => { regionsMap[name].mien = MIEN_MAP[name] || ''; });
+  // Target khu vực = target hiện tại (lấy từ Sheet) x 60%. Áp dụng SAU khi gộp khu vực (merge)
+  // để không nhân đôi ở các khu vực đã gộp (TIEN GIANG+LONG AN, THANH HOA+HAI DUONG, HO CHI MINH+BINH DUONG).
+  // %HT (tien_do) luôn tính lại = Doanh thu Sell-in / Target mới cho MỌI khu vực — không dùng % có sẵn
+  // trong Sheet nữa, vì % đó tính trên target gốc (100%), sẽ sai ngay khi target đổi còn 60%.
+  const TARGET_SCALE = 0.6;
+  Object.keys(regionsMap).forEach(name => {
+    const r = regionsMap[name];
+    r.target_nam = Math.round(r.target_nam * TARGET_SCALE);
+    r.target_thang = Math.round(r.target_thang * TARGET_SCALE);
+    r.tien_do = r.target_nam ? Math.round((r.si_hub_total / r.target_nam) * 1000) / 10 : 0;
+  });
   const regions = Object.values(regionsMap);
 
   const mienAgg = {};
