@@ -1,5 +1,5 @@
 {
- "tong": 15,
+ "tong": 30,
  "khongDat": 0,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
@@ -77,6 +77,81 @@
    "ten": "Nap trang khong co loi JS nang",
    "dat": true,
    "chiTiet": "sach"
+  },
+  {
+   "ten": "Goi ma hoa: con tro cong khai khong lo so lieu",
+   "dat": true,
+   "chiTiet": "{\"id\":\"ecf25a49cd7bb6c8\",\"updated\":\"###-08-27T16:00:00Z\",\"maxDay\":23,\"months\":[1,2,3],\"it"
+  },
+  {
+   "ten": "Goi ma hoa: file goi khong lo so lieu",
+   "dat": true,
+   "chiTiet": "da ma hoa that, khong doc duoc bang mat thuong"
+  },
+  {
+   "ten": "Goi + ma dung: DB TG ve tu goi (khoi CENTER)",
+   "dat": true,
+   "chiTiet": "nhan duoc: \"TOI-LA-CENTER\""
+  },
+  {
+   "ten": "Goi + ma dung: DB TG ve tu goi (khoi DATA MWG)",
+   "dat": true,
+   "chiTiet": "nhan duoc: \"TOI-LA-DATAMWG\""
+  },
+  {
+   "ten": "Goi + ma dung: khoi dong bang goi, KHONG dung duong cu",
+   "dat": true,
+   "chiTiet": "nhan=\"TOI-LA-CENTER\" | co quay ve duong cu=false"
+  },
+  {
+   "ten": "Ham ve nem loi: tu quay ve duong cu",
+   "dat": true,
+   "chiTiet": "day la luoi an toan cuoi cung"
+  },
+  {
+   "ten": "Goi + ma dung: khong hoi chia khoa Apps Script nua",
+   "dat": true,
+   "chiTiet": "da co goi thi khong bat nho hai thu"
+  },
+  {
+   "ten": "Khong co goi: tu quay ve goi Apps Script nhu cu",
+   "dat": true,
+   "chiTiet": "6 loi goi — duong lui con nguyen"
+  },
+  {
+   "ten": "Goi hong: co hien o nhap lai (khong im lang)",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Goi hong: loi noi RO la co the do goi hong, khong do loi ma sai",
+   "dat": true,
+   "chiTiet": "DB Tiền GiangĐăng nhậpNhập mã của anh — cùng mã dùng bên app. Chỉ nhập một lần, máy này sẽ nhớ.Không"
+  },
+  {
+   "ten": "Goi hong: co nut thoat ra duong cu",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Goi hong: bam \"Bo qua\" thi quay ve duong cu that",
+   "dat": true,
+   "chiTiet": "6 loi goi Apps Script — duong lui chay"
+  },
+  {
+   "ten": "Goi hong: co bang bao dang chay duong cham",
+   "dat": true,
+   "chiTiet": "khong de anh Thai tuong dashboard van dang nhanh"
+  },
+  {
+   "ten": "Ma sai: hien o nhap lai",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Ma sai: xoa ma hong di, khong giu lai",
+   "dat": true,
+   "chiTiet": "con lai: null"
   }
  ]
 }
