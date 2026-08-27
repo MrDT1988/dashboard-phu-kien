@@ -530,9 +530,10 @@ body{
     <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
       <div class="dot"></div>
       <div>
-        <b>Công thức (áp dụng cho mã PK, không gồm Cường lực):</b> Giá HUB = Giá FOB × 1,20 (FOB lãi 20%) &nbsp;·&nbsp; Giá Đại lý = Giá HUB × 1,15 (HUB lãi 15%) &nbsp;·&nbsp; Giá bán lẻ = Giá FOB × 2,5, làm tròn về đơn vị 5.000đ.
+        <b>Công thức (áp dụng cho mã PK, không gồm Cường lực):</b> Giá HUB = Giá FOB (gốc, chưa VAT) × 1,20 (FOB lãi 20%) &nbsp;·&nbsp; Giá Đại lý = Giá HUB × 1,15 (HUB lãi 15%) &nbsp;·&nbsp; Giá bán lẻ = Giá FOB (gốc) × 2,5, làm tròn về đơn vị 5.000đ.
         % hiển thị ngay sau mỗi giá là lợi nhuận so với giá kế tiếp: FOB → HUB, HUB → Đại lý, Đại lý → Bán lẻ.
         Riêng nhóm <b>Cường lực</b>: giá cố định — Bán lẻ 50.000đ, HUB 6.000đ, Đại lý 8.000đ (không áp công thức trên, không hiển thị %).
+        <b>Lưu ý VAT:</b> Cột Giá FOB hiển thị đã <b>+10% VAT</b> mặc định (để tiện tính VAT), nhưng HUB/Đại lý/Bán lẻ vẫn tính từ giá FOB gốc chưa VAT, không đổi.
         Chọn tháng ở trên để xem giá FOB đúng tháng đó (T8.26 là giá tạm tính, dùng giá FOB T7.26 do Sheet chưa cập nhật).
       </div>
     </div>
@@ -6131,13 +6132,14 @@ function renderPriceTable(){
   if(info) info.textContent = rows.length + ' mã sản phẩm';
   const CL_GROUP_NAME = 'Cường lực (Dán MH)';
   tbody.innerHTML = rows.map(r => {
-    const fob = (r.fobMonths8 && r.fobMonths8[mi]) || 0;
+    const fob = (r.fobMonths8 && r.fobMonths8[mi]) || 0; // FOB gốc, dùng để tính HUB/Đại lý/Bán lẻ
+    const fobVAT = Math.round(fob * 1.10); // FOB hiển thị đã gồm VAT 10%, chỉ để tham khảo, không dùng để tính giá tiếp theo
     const isCL = r.group === CL_GROUP_NAME;
     let banLe, hub, daiLy, fobCell, hubCell, daiLyCell;
     if(isCL){
       // Cường lực: giá cố định theo quy định, không tính theo công thức % dưới đây
       banLe = 50000; hub = 6000; daiLy = 8000;
-      fobCell = fmtMoneyFull(fob);
+      fobCell = fmtMoneyFull(fobVAT);
       hubCell = fmtMoneyFull(hub);
       daiLyCell = fmtMoneyFull(daiLy);
     } else {
@@ -6146,7 +6148,7 @@ function renderPriceTable(){
       const banLeRaw = fob * 2.5;
       banLe = Math.round(banLeRaw / 5000) * 5000; // làm tròn về đơn vị 5.000đ
       const daiLyPct = daiLy ? Math.round(((banLe - daiLy) / daiLy) * 1000) / 10 : 0;
-      fobCell = `${fmtMoneyFull(fob)} <span style="color:var(--green);font-weight:600;">(+20%)</span>`;
+      fobCell = `${fmtMoneyFull(fobVAT)} <span style="color:var(--green);font-weight:600;">(+20%)</span>`;
       hubCell = `${fmtMoneyFull(hub)} <span style="color:var(--green);font-weight:600;">(+15%)</span>`;
       daiLyCell = `${fmtMoneyFull(daiLy)} <span style="color:var(--green);font-weight:600;">(+${daiLyPct}%)</span>`;
     }
