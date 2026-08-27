@@ -1,0 +1,82 @@
+{
+ "tong": 15,
+ "khongDat": 0,
+ "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
+ "pheps": [
+  {
+   "ten": "Chua co chia khoa: hien man hinh nhap",
+   "dat": true,
+   "chiTiet": "co lop #as-key-lop"
+  },
+  {
+   "ten": "Man hinh nhap: co o nhap va nut bam",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Man hinh nhap: o nhap dang mat khau",
+   "dat": true,
+   "chiTiet": "type=password"
+  },
+  {
+   "ten": "Man hinh nhap: nam tren cung, khong bi che",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Man hinh nhap: co chi cho nguoi dung cach lay lai chia khoa",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Da co chia khoa: khong hien man hinh nhap nua",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Trang co that su goi Apps Script luc nap",
+   "dat": true,
+   "chiTiet": "6 loi goi"
+  },
+  {
+   "ten": "MOI loi goi Apps Script deu kem chia khoa",
+   "dat": true,
+   "chiTiet": "du 6 loi goi"
+  },
+  {
+   "ten": "KHONG dinh chia khoa vao dia chi ngoai Apps Script",
+   "dat": true,
+   "chiTiet": "da kiem 0 loi goi khac"
+  },
+  {
+   "ten": "Chia khoa sai: bat duoc va hoi lai",
+   "dat": true,
+   "chiTiet": "Apps Script tra \"Tu choi\" -> phai mo lai o nhap"
+  },
+  {
+   "ten": "Chia khoa sai: xoa chia khoa cu di, khong giu lai cai hong",
+   "dat": true,
+   "chiTiet": "con lai: null"
+  },
+  {
+   "ten": "Bat dung cau tu choi cua Apps Script",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "KHONG bat nham loi mang thong thuong",
+   "dat": true,
+   "chiTiet": "loi mang khong duoc lam mat chia khoa dang dung"
+  },
+  {
+   "ten": "KHONG bat nham khi khong co gi",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Nap trang khong co loi JS nang",
+   "dat": true,
+   "chiTiet": "sach"
+  }
+ ]
+}
