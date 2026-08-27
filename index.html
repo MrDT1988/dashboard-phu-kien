@@ -5615,6 +5615,20 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     r.target_thang = Math.round(r.target_thang * TARGET_SCALE);
     r.tien_do = r.target_nam ? Math.round((r.si_hub_total / r.target_nam) * 1000) / 10 : 0;
   });
+  // Cập nhật thủ công target/tháng theo yêu cầu (áp dụng SAU khi đã nhân 60% ở trên):
+  // khu vực nào đang có target/tháng = 72tr đổi thành 70tr; khu vực nào đang có target/tháng = 48tr đổi thành 50tr.
+  Object.keys(regionsMap).forEach(name => {
+    const r = regionsMap[name];
+    const targetThangHienTai = Math.round(r.target_nam / 12);
+    let targetThangMoi = targetThangHienTai;
+    if(targetThangHienTai === 72000000) targetThangMoi = 70000000;
+    else if(targetThangHienTai === 48000000) targetThangMoi = 50000000;
+    if(targetThangMoi !== targetThangHienTai){
+      r.target_nam = targetThangMoi * 12;
+      r.target_thang = targetThangMoi;
+      r.tien_do = r.target_nam ? Math.round((r.si_hub_total / r.target_nam) * 1000) / 10 : 0;
+    }
+  });
   const regions = Object.values(regionsMap);
 
   const mienAgg = {};
