@@ -1,6 +1,6 @@
 {
  "ban": "2026-08-27.29",
- "tong": 53,
+ "tong": 54,
  "khongDat": 4,
  "loiJS": [],
  "pheps": [
@@ -85,6 +85,11 @@
    "chiTiet": "DT=31,4 tỷ"
   },
   {
+   "ten": "Chan doan sau khi loc size",
+   "dat": true,
+   "chiTiet": "so shop trong pham vi=357 | co mkt=true | mkt.m[MI]=[2367,24853,14447,146797] | the thang an=true"
+  },
+  {
    "ten": "Loc Size shop: 4 o KPI van hien",
    "dat": false,
    "chiTiet": ""
@@ -92,7 +97,7 @@
   {
    "ten": "Loc Size shop: doi bang thi phan theo thang",
    "dat": false,
-   "chiTiet": ""
+   "chiTiet": "do dai bang truoc=303 sau=303"
   },
   {
    "ten": "Co nut nhom 10-20M",
@@ -117,7 +122,7 @@
   {
    "ten": "Loc PK: the theo thang co ghi chu khong loc duoc",
    "dat": false,
-   "chiTiet": ""
+   "chiTiet": "the thang an=true | ghi chu=\"Dùng chung bộ lọc Sale / Size shop ở thẻ trên.\""
   },
   {
    "ten": "Loc Ngay: doi bang chi tiet theo sale",
