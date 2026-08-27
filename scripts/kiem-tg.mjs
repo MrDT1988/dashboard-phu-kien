@@ -36,7 +36,7 @@ const cho = (ms) => new Promise((r) => setTimeout(r, ms));
 // ---------------------------------------------------------------- dung trang gia
 // tg.html nap Chart.js / papaparse tu CDN. jsdom khong tai script ngoai, nen
 // phai dat san vai bien gia, neu khong trang vo vi ly do khong lien quan.
-function moTrang({ khoaSan = null, maSan = null, aiSan = null, dapTraLoi = null } = {}) {
+function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, dapTraLoi = null } = {}) {
   const html = fs.readFileSync(FILE, 'utf8');
   const daGoi = [];
   const dom = new JSDOM(html, {
@@ -63,6 +63,7 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, dapTraLoi = null 
       if (khoaSan) w.localStorage.setItem('dbtg_as_key', khoaSan);
       if (maSan) w.localStorage.setItem('dbtg_ma', maSan);
       if (aiSan) w.localStorage.setItem('dbtg_ai', JSON.stringify(aiSan));
+      if (laRobot) w.__BO_QUA_GOI = true;
       // Moi loi goi ra ngoai deu bi chan lai va ghi so
       w.fetch = (u, o) => {
         daGoi.push(String(u));
@@ -304,6 +305,19 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, dapTraLoi = null 
       const nut = [...w.document.querySelectorAll('[data-ai]')];
       ghi('Man hinh chon nguoi: liet ke du nguoi', nut.length === chiMuc.users.length,
         nut.length + '/' + chiMuc.users.length);
+      w.close();
+    }
+
+    // --- F4b. ROBOT: co goi san van phai di duong cu, khong duoc dung lai hoi ma
+    {
+      const { w, daGoi } = moTrang({ khoaSan: 'K', laRobot: true, dapTraLoi: phucVu });
+      await cho(3000);
+      const goiAS = daGoi.filter((u) => u.indexOf('script.google.com') >= 0);
+      ghi('Robot: bo qua goi, di thang duong cu', goiAS.length > 0,
+        goiAS.length + ' loi goi Apps Script');
+      ghi('Robot: KHONG dung lai o man hinh chon nguoi / nhap ma',
+        !w.document.getElementById('dbtg-ai-lop') && !w.document.getElementById('dbtg-ma-lop'),
+        'neu dung lai la robot treo mai — loi da mac 27/08');
       w.close();
     }
 
