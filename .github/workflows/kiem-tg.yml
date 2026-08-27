@@ -1,0 +1,50 @@
+# Ra soat tg.html (DB TG) — KHONG mang, KHONG Apps Script, KHONG DB TG that.
+#
+# Vi sao co: 27/08 gan chia khoa cho duong Apps Script, cong dong dung nhung
+# DB TG khong co cho nao de nhap chia khoa. Bo kiem cu chi chay app.html nen
+# khong bat duoc. File nay bit lo hong do trong cach kiem.
+#
+# Chay duoc MOI LUC vi khong dung bi mat nao, khong dung mang — nen gan luon
+# vao moi lan day code, khong phai bam tay.
+name: Ra soat DB TG
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tg.html'
+      - 'scripts/kiem-tg.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  kiem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Cai jsdom
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm i --no-audit --no-fund jsdom@24
+      - name: Ra soat tg.html
+        run: node scripts/kiem-tg.mjs
+      - name: Luu ket qua
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/ket-qua-kiem-tg.json || true
+          git diff --cached --quiet && exit 0
+          git commit -m "Ket qua ra soat DB TG"
+          for i in 1 2 3 4 5; do
+            if git push; then echo "Da luu ket qua."; exit 0; fi
+            echo "Push bi tu choi (lan $i) - keo ve roi thu lai..."
+            git pull --rebase --autostash origin main || exit 1
+            sleep 5
+          done
+          echo "::warning::Khong push duoc ket qua sau 5 lan."
