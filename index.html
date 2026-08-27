@@ -503,7 +503,8 @@ body{
     <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
       <div class="dot"></div>
       <div>
-        <b>Tiêu chí:</b> Target tháng = Target năm ÷ 12. Hoàn thành ≥ 80% thưởng 2.000.000đ · ≥ 100% thưởng 4.000.000đ (tính mức cao nhất đạt được, không cộng dồn).
+        <b>Tiêu chí:</b> Target tháng = Target năm ÷ 12. Mỗi khu vực tự xét mốc riêng: Hoàn thành ≥ 80% thưởng 2.000.000đ · ≥ 100% thưởng 4.000.000đ (tính mức cao nhất đạt được, không cộng dồn).
+        Cột Thưởng ở dòng Miền = <b>tổng thưởng của các khu vực trong miền đã đạt mốc</b> (không xét theo %HT gộp của cả miền).
         Bấm vào 1 dòng Miền để xem chi tiết từng khu vực trong miền đó.
       </div>
     </div>
@@ -5748,11 +5749,18 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   const targetProgressMien = MIEN_ORDER.map(mName => {
     const mObj = mien.find(x => x.name === mName);
     const targetThang = mObj ? mObj.target_nam / 12 : 0;
+    const regionsInMien = regionTargetDetail.filter(r => r.mien === mName).sort((a,b)=>b.targetThang-a.targetThang);
+    const monthly = buildMonthlyDetail(targetThang, mienMonthlyRevenue[mName]);
+    // Thưởng của dòng Miền = TỔNG thưởng của các khu vực trong miền đã đạt mốc (mỗi khu vực tự xét mốc riêng),
+    // KHÔNG xét theo %HT gộp của cả miền — vì thưởng trả theo từng khu vực đạt, không phải theo miền đạt.
+    monthly.forEach((entry, i) => {
+      entry.bonus = regionsInMien.reduce((s,r) => s + ((r.monthly[i] && r.monthly[i].bonus) || 0), 0);
+    });
     return {
       name: mName,
       targetThang, t80: targetThang*0.8, t100: targetThang,
-      monthly: buildMonthlyDetail(targetThang, mienMonthlyRevenue[mName]),
-      regions: regionTargetDetail.filter(r => r.mien === mName).sort((a,b)=>b.targetThang-a.targetThang),
+      monthly,
+      regions: regionsInMien,
     };
   });
 
