@@ -250,6 +250,26 @@ const loiJS = [];
     bam(sheet.querySelector('#sh-x')); await cho(400);
   }
 
+  // ---------- D0. DOI CHIEU TEN PHAN KHUC VOI 4 NHOM
+  // Nut phan khuc chi hien khi co it nhat 1 cot roi vao nhom. Neu mot nhom khong
+  // co nut thi khong phai app hong — la ten cot trong goi du lieu khong khop
+  // bieu thuc cua nhom do. Phai chi ra duoc TEN NAO bi bo roi.
+  {
+    const nhom = w.NHOM_PK || [];
+    const soi = (ds, nhan) => {
+      const ten = ds || [];
+      const roi = ten.filter((x) => !nhom.some((g) => g.re.test(x)));
+      const dem = nhom.map((g) => g.t + '=' + ten.filter((x) => g.re.test(x)).length).join(' ');
+      ghi('Phân khúc/' + nhan + ': nhóm nào cũng bắt được ít nhất 1 cột',
+        nhom.every((g) => ten.some((x) => g.re.test(x))),
+        dem + ' | tong ' + ten.length + ' cot');
+      ghi('Phân khúc/' + nhan + ': không cột nào bị bỏ rơi', roi.length === 0,
+        roi.length ? ('bo roi: ' + roi.join(' / ')) : 'tat ca deu vao nhom');
+    };
+    soi(w.D.segs, 'theo ngày');
+    soi(w.D.segsMkt, 'thị phần');
+  }
+
   // ---------- D. SOI KY BO LOC PHAN KHUC
   // Khong chi hoi "co doi khong" ma hoi "SO CO DUNG KHONG":
   //   - chon tung nhom roi cong lai phai bang chon ca may nhom cung luc (tinh cong duoc)
@@ -408,10 +428,16 @@ function ketThuc() {
   console.log('Khong dat    :', hong.length);
   console.log('Loi JS       :', loiJS.length ? loiJS.slice(0, 8) : 'khong co');
   hong.forEach((x, i) => console.log('  ' + (i + 1) + '. ' + x.ten + (x.chiTiet ? '  — ' + x.chiTiet : '')));
+  // Repo la PUBLIC. Man hinh chay in day du, nhung file commit vao repo phai
+  // bit moi cum tu 3 chu so tro len — do la doanh so that. Cac phep so sanh da
+  // duoc tinh xong o tren nen dat/khong dat khong he thay doi.
+  const bit = (x) => String(x || '').replace(/\d{3,}/g, '###');
   fs.writeFileSync('data/ket-qua-kiem-app.json', JSON.stringify({
     ban: (typeof w !== 'undefined' && w.APP_VER) || null,
-    tong: KQ.length, khongDat: hong.length, loiJS,
-    pheps: KQ,
+    tong: KQ.length, khongDat: hong.length,
+    loiJS: loiJS.map(bit),
+    ghiChu: 'So tu 3 chu so tro len da duoc bit (###) vi repo la public.',
+    pheps: KQ.map((x) => ({ ten: x.ten, dat: x.dat, chiTiet: bit(x.chiTiet) })),
   }, null, 1));
   console.log('da ghi data/ket-qua-kiem-app.json');
   process.exit(0);
