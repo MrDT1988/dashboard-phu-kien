@@ -315,12 +315,90 @@
       location.reload();
     };
   };
+  /* ===== DON MAN HINH THEO PHAM VI ========================================
+     Anh Thai 27/08: sale khong duoc thay bat ky thu gi cua kenh khac, va cung
+     khong duoc de bieu do trong. Cat du lieu thoi chua du — phai an ca the.
+     ===================================================================== */
+  var KENH_PANEL = { MWG: 'panel-mwg', KA: 'panel-ka', IND: 'panel-ind' };
+
+  // Mot the co gi de ve khong? Chi tinh la CO khi bang co dong that hoac
+  // bieu do co diem that. The chi co chu (chien luoc, chinh sach) thi bo qua.
+  function theCoSo(el) {
+    var bang = el.querySelectorAll('table');
+    for (var i = 0; i < bang.length; i++) if (bang[i].rows.length > 1) return true;
+    var cv = el.querySelectorAll('canvas');
+    for (var j = 0; j < cv.length; j++) {
+      try {
+        var c = (window.Chart && window.Chart.getChart) ? window.Chart.getChart(cv[j]) : null;
+        if (c && c.data && (c.data.datasets || []).some(function (d) {
+          return (d.data || []).some(function (v) {
+            var n = (v && typeof v === 'object') ? (v.y != null ? v.y : v.v) : v;
+            return typeof n === 'number' && n !== 0;
+          });
+        })) return true;
+      } catch (e) { return true; }   // khong doc duoc thi CU GIU, tha thua con hon an nham
+    }
+    return !(bang.length || cv.length) ? true : false;   // the chi co chu -> giu
+  }
+
+  window.__donManHinh = function (kenhCuaToi, vaiTro) {
+    if (!kenhCuaToi || vaiTro === 'admin') return { anTab: 0, anThe: 0 };
+    var co = {}; kenhCuaToi.forEach(function (k) { co[k] = 1; });
+    var anTab = 0;
+
+    // 1. An tab + panel cua kenh khong phu trach
+    Object.keys(KENH_PANEL).forEach(function (k) {
+      if (co[k]) return;
+      var id = KENH_PANEL[k];
+      var p = document.getElementById(id);
+      if (p) p.style.display = 'none';
+      var t = document.querySelector('[data-panel="' + id + '"]');
+      if (t) { t.style.display = 'none'; anTab++; }
+    });
+    // Neu tab dang mo vua bi an -> quay ve Tong quan
+    var dangMo = document.querySelector('.db-tg-tab.active');
+    if (dangMo && dangMo.style.display === 'none') {
+      var tq = document.querySelector('[data-panel="panel-overview"]');
+      if (tq) tq.click();
+    }
+
+    // 2. An the khong co so gi de ve
+    var anThe = 0;
+    document.querySelectorAll('.chart-container').forEach(function (el) {
+      if (el.closest('[style*="display: none"]')) return;
+      if (!theCoSo(el)) { el.style.display = 'none'; anThe++; }
+    });
+    // Hang nao het the thi an luon hang do
+    document.querySelectorAll('section.chart-row').forEach(function (sec) {
+      var con = Array.prototype.filter.call(sec.children, function (e) {
+        return e.style.display !== 'none';
+      });
+      if (!con.length) sec.style.display = 'none';
+    });
+    return { anTab: anTab, anThe: anThe };
+  };
+
   window.__khoiDongDBTG = function (initFn, khoa, idOverlay, duongLui) {
     window.__goiDBTG.then(function (goi) {
       if (goi && goi[khoa]) {
         var ov = document.getElementById(idOverlay);
         if (ov) ov.style.display = 'none';
-        try { initFn(goi[khoa]); return; }
+        try {
+          initFn(goi[khoa]);
+          // Don man hinh SAU khi ve xong. Doi mot nhip cho bieu do kip dung.
+          var ai2 = goi.ai || window.__aiDangXem;
+          var kenh2 = (goi.center && goi.center.channels_list) ||
+                      (goi[khoa] && goi[khoa].channels_list) || null;
+          if (ai2 && ai2.r !== 'admin' && kenh2) {
+            setTimeout(function () {
+              try {
+                var kq = window.__donManHinh(kenh2, ai2.r);
+                console.log('Don man hinh theo pham vi:', kq);
+              } catch (e) { console.warn('Khong don duoc man hinh:', e && e.message); }
+            }, 1200);
+          }
+          return;
+        }
         catch (e) { console.warn('Goi mo duoc nhung ve loi:', e && e.message); }
       }
       // Pham vi cua nguoi nay khong co khoi do (vd Leader IND khong co bang MWG)
