@@ -538,7 +538,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-27.29';
+var APP_VER='2026-08-27.30';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -815,8 +815,14 @@ function buildSegbar(){
   var o=curObj();
   var chans=D.chans.filter(function(c){return chanShops(o,c).length});
   if(SEG!=='ALL'&&chans.indexOf(SEG)<0) SEG='ALL';
-  // Leader chỉ phụ trách 1 kênh -> thanh tab kênh không có tác dụng, ẩn đi
-  if(chans.length<=1){ SEG='ALL'; $('#segbar').innerHTML=''; $('#segbar').hidden=true; return }
+  // Chi con 1 kenh -> thanh tab khong co gi de chon, an di.
+  // NHUNG phai giu SEG = chinh kenh do, KHONG duoc dat 'ALL':
+  // truoc day dat 'ALL' nen khi anh dang o tab MWG ma chon mot sale chi phu trach
+  // MWG thi app tu nhay ve Tong quan, keo theo 4 o KPI / the theo thang / ghi chu
+  // phan khuc bien mat, va chon lai "Tat ca sale" cung khong quay lai duoc.
+  if(chans.length<=1){
+    SEG=chans[0]||'ALL';
+    $('#segbar').innerHTML=''; $('#segbar').hidden=true; return }
   $('#segbar').hidden=false;
   $('#segbar').innerHTML='<button data-seg="ALL"'+(SEG==='ALL'?' class="on"':'')+'>Tổng quan</button>'+
     chans.map(function(c){
