@@ -213,13 +213,47 @@ const loiJS = [];
     // Tong so shop that cua kenh nay
     let tongThuc = 0;
     w.D.sales.forEach((x) => (x.s || []).forEach((sh) => { if (sh.ch2 === ch) tongThuc++; }));
-    const coGhiChu = /Đang hiện/.test(T($('#f-list').textContent));
-    ghi('Shop ' + ch + ': liet ke du shop hoac noi ro dang cat bot',
-      ds.length >= tongThuc || coGhiChu,
-      'hien ' + ds.length + '/' + tongThuc + (coGhiChu ? ' (co ghi chu)' : ' (KHONG co ghi chu)'));
+    // Bam "Xem them" cho toi khi het -> PHAI ra du so shop that cua kenh.
+    // Truoc day app cat cung o 120 dong: IND 204 shop thi 84 shop cuoi khong co
+    // cach nao mo ra, ma do lai dung la nhom yeu nhat (danh sach xep tu cao xuong).
+    let vong = 0;
+    while ($('#f-list').querySelector('[data-fmore]') && vong < 20) {
+      bam($('#f-list').querySelector('[data-fmore]'));   // hoi lai DOM moi vong: bam xong la ve lai #f-list
+      await cho(500); vong++;
+    }
+    const duHet = $$('#f-list [data-shop]').length;
+    ghi('Shop ' + ch + ': bam "Xem them" thi ra DU shop cua kenh', duHet === tongThuc,
+      'ban dau ' + ds.length + ' dong, bam ' + vong + ' lan -> ' + duHet + '/' + tongThuc + ' shop');
+
+    // Hai nut loc nhanh: so ghi tren nut phai dung bang so dong ve ra.
+    for (const khoa of ['chua', 'giam']) {
+      const b0 = $$('#sh-loc [data-shl]').find((x) => x.dataset.shl === khoa);
+      if (!b0) continue;
+      const ten = T(b0.textContent);
+      const soTrenNut = parseInt((ten.match(/(\d+)\s*$/) || [])[1], 10);
+      bam(b0); await cho(700);
+      let v2 = 0;
+      while ($('#f-list').querySelector('[data-fmore]') && v2 < 20) {
+        bam($('#f-list').querySelector('[data-fmore]')); await cho(400); v2++;
+      }
+      const soDong = $$('#f-list [data-shop]').length;
+      ghi('Shop ' + ch + ': nut loc "' + ten.replace(/\s*\d+\s*$/, '') + '" dem dung',
+        soDong === soTrenNut,
+        'nut ghi ' + soTrenNut + ' | ve ra ' + soDong + ' dong');
+    }
+    // Bo loc -> ve dung so ban dau
+    const bAll = $$('#sh-loc [data-shl]').find((x) => x.dataset.shl === '');
+    if (bAll) { bam(bAll); await cho(700); }
+    ghi('Shop ' + ch + ': bo loc nhanh thi ve dung danh sach ban dau',
+      $$('#f-list [data-shop]').length === ds.length,
+      'sau khi bo = ' + $$('#f-list [data-shop]').length + ' | ban dau = ' + ds.length);
 
     if (!ds.length) continue;
-    bam(ds[0]); await cho(1200);
+    // Hoi lai DOM: khoi kiem tra "Xem them" / nut loc o tren da ve lai #f-list,
+    // ds[0] cu da roi khoi cay. (Bay quen thuoc — xem muc 9 file ban giao.)
+    const dsMoi = $$('#f-list [data-shop]');
+    if (!dsMoi.length) continue;
+    bam(dsMoi[0]); await cho(1200);
     const sheet = $('#sheet');
     const moRa = sheet.classList.contains('on');
     ghi('Shop ' + ch + ': bam vao shop mo duoc to chi tiet', moRa);
