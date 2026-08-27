@@ -42,6 +42,50 @@
   /* ----- MAN HINH NHAP CHIA KHOA -------------------------------------------
      Ve bang HTML chu khong dung prompt() cua trinh duyet: prompt bi chan tren
      mot so cua so, ma khi do anh Thai se ket cung khong biet nhap o dau. */
+  /* O nhap MA DANG NHAP (mo goi du lieu). Tra ve promise -> chuoi ma, hoac null. */
+  window.__hoiMaDBTG = function (loi) {
+    return new Promise(function (xong) {
+      var cu = document.getElementById('dbtg-ma-lop');
+      if (cu) cu.remove();
+      var lop = document.createElement('div');
+      lop.id = 'dbtg-ma-lop';
+      lop.style.cssText = 'position:fixed;inset:0;z-index:99998;background:#0b1017;' +
+        'display:flex;align-items:center;justify-content:center;padding:24px;' +
+        'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+      lop.innerHTML =
+        '<div style="width:100%;max-width:420px;background:#141b24;border:1px solid rgba(255,255,255,.12);' +
+          'border-radius:14px;padding:26px">' +
+          '<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d8896">DB Tiền Giang</div>' +
+          '<h2 style="margin:8px 0 6px;font-size:19px;color:#e8edf2;font-weight:800">Đăng nhập</h2>' +
+          '<p style="margin:0 0 18px;font-size:13px;line-height:1.55;color:#96a1ae">' +
+            'Nhập mã của anh — <b>cùng mã dùng bên app</b>. Chỉ nhập một lần, máy này sẽ nhớ.</p>' +
+          '<input id="dbtg-ma-o" type="password" autocomplete="off" spellcheck="false" ' +
+            'placeholder="Mã đăng nhập" ' +
+            'style="width:100%;box-sizing:border-box;padding:13px 14px;border-radius:9px;' +
+            'border:1px solid rgba(255,255,255,.18);background:#0e141c;color:#e8edf2;font-size:16px;' +
+            'letter-spacing:.14em;text-align:center;outline:none">' +
+          '<div id="dbtg-ma-loi" style="min-height:18px;margin-top:8px;font-size:12.5px;color:#ff8fa3">' +
+            (loi ? loi : '') + '</div>' +
+          '<button id="dbtg-ma-ok" style="width:100%;margin-top:8px;padding:12px;border-radius:9px;border:0;' +
+            'background:#1BB350;color:#08120b;font-size:14.5px;font-weight:800;cursor:pointer">Mở dashboard</button>' +
+          '<button id="dbtg-ma-bo" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;' +
+            'border:1px solid rgba(255,255,255,.14);background:transparent;color:#7d8896;font-size:12.5px;' +
+            'cursor:pointer">Bỏ qua — tải trực tiếp như cũ (chậm hơn)</button>' +
+        '</div>';
+      document.body.appendChild(lop);
+      var o = document.getElementById('dbtg-ma-o');
+      var xongVoi = function (v) { lop.remove(); xong(v); };
+      document.getElementById('dbtg-ma-ok').onclick = function () {
+        var v = (o.value || '').trim();
+        if (!v) { document.getElementById('dbtg-ma-loi').textContent = 'Chưa nhập gì cả.'; o.focus(); return; }
+        xongVoi(v);
+      };
+      document.getElementById('dbtg-ma-bo').onclick = function () { xongVoi(null); };
+      o.onkeydown = function (e) { if (e.key === 'Enter') document.getElementById('dbtg-ma-ok').click(); };
+      setTimeout(function () { o.focus(); }, 60);
+    });
+  };
+
   window.__hoiChiaKhoa = function (viSao) {
     if (document.getElementById('as-key-lop')) return;
     var lop = document.createElement('div');
@@ -85,11 +129,116 @@
     setTimeout(function () { o.focus(); }, 60);
   };
 
+  /* ===== NAP GOI DU LIEU DA MA HOA ========================================
+     Thay vi goi Apps Script keo 152k dong moi lan mo (vai phut, tung treo),
+     robot tinh san 1 lan/ngay roi nen + ma hoa. DB TG chi tai ve va mo khoa.
+     Do that: 27,8 MB tho -> 2,7 MB nen -> tai 2-3 giay.
+
+     Khong co goi, hoac ma sai, hoac trinh duyet cu -> tra ve null va DB TG
+     tu quay ve cach cu. Khong bao gio de anh Thai nhin man hinh trang.
+     ===================================================================== */
+  var KHO_MA = 'dbtg_ma';
+  function b64ToBytes(b64) {
+    var s2 = atob(b64), u = new Uint8Array(s2.length);
+    for (var i = 0; i < s2.length; i++) u[i] = s2.charCodeAt(i);
+    return u;
+  }
+  async function moKhoiMaHoa(blob, ma) {
+    var C = window.crypto && window.crypto.subtle;
+    if (!C || typeof DecompressionStream !== 'function') throw new Error('trinh duyet cu');
+    var km = await C.importKey('raw', new TextEncoder().encode(String(ma)), 'PBKDF2', false, ['deriveBits']);
+    var bits = await C.deriveBits(
+      { name: 'PBKDF2', salt: b64ToBytes(blob.salt), iterations: blob.it, hash: 'SHA-256' }, km, 256);
+    var key = await C.importKey('raw', bits, { name: 'AES-GCM' }, false, ['decrypt']);
+    var nen = await C.decrypt({ name: 'AES-GCM', iv: b64ToBytes(blob.iv), tagLength: 128 },
+      key, b64ToBytes(blob.ct));
+    // Da giai ma -> con lai la khoi gzip -> bung ra roi doc JSON
+    var st = new Blob([nen]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return JSON.parse(await new Response(st).text());
+  }
+  window.__goiDBTG = (async function () {
+    var idx;
+    try {
+      var r = await _fetch('data/dbtg-index.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return null;
+      idx = await r.json();
+    } catch (e) { return null; }
+    if (!idx || !idx.id) return null;
+    var r2 = await _fetch('data/dbtg-' + idx.id + '.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r2.ok) return null;
+    var goi = await r2.json();
+    // Ma mo goi = MA DANG NHAP cua anh Thai (cung ma dung ben app), khong phai
+    // chia khoa Apps Script. Hai thu khac nhau, dung lan la khong mo duoc.
+    for (var lan = 0; lan < 2; lan++) {
+      var ma = null;
+      try { ma = localStorage.getItem(KHO_MA); } catch (e) {}
+      if (!ma) ma = await window.__hoiMaDBTG(lan > 0
+        ? 'Không mở được gói — mã sai, hoặc gói dữ liệu hỏng. Thử lại một lần nữa.' : null);
+      if (!ma) { window.__goiHong = true; return null; }   // bam "Bo qua" cung la chay duong cham
+      try {
+        var kq = {
+          center: goi.center ? await moKhoiMaHoa(goi.center, ma) : null,
+          dataMwg: goi.dataMwg ? await moKhoiMaHoa(goi.dataMwg, ma) : null,
+        };
+        try { localStorage.setItem(KHO_MA, ma); } catch (e) {}
+        kq.moc = idx;
+        return kq;
+      } catch (e) {
+        try { localStorage.removeItem(KHO_MA); } catch (e2) {}
+      }
+    }
+    // Het luot ma van khong mo duoc -> KHONG bo anh Thai o man hinh chet.
+    // Quay ve duong cu (cham hon nhung chay duoc) va noi ro vi sao.
+    console.warn('Khong mo duoc goi DB TG sau 2 lan — quay ve tai truc tiep.');
+    window.__goiHong = true;
+    return null;
+  })().catch(function (e) { console.warn('Khong mo duoc goi DB TG:', e && e.message); return null; });
+
+  /* Chup lai ham initDashboard / loadAndRender NGAY TAI CHO GOI.
+     Bat buoc phai chup, vi hai khoi <script> deu khai bao trung ten o tang
+     toan cuc — khoi sau de len khoi truoc. Chup dong bo thi moi dung ham
+     cua chinh khoi dang chay. */
+  window.__bangChayCham = function () {
+    if (document.getElementById('dbtg-cham')) return;
+    var d = document.createElement('div');
+    d.id = 'dbtg-cham';
+    d.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9990;background:#3a2c10;' +
+      'border:1px solid #7a5c1c;color:#f2d9a0;border-radius:10px;padding:11px 14px;font-size:12.5px;' +
+      'font-family:system-ui,sans-serif;display:flex;gap:10px;align-items:center;justify-content:space-between';
+    d.innerHTML = '<span>Không mở được gói dữ liệu nhanh — đang tải trực tiếp (chậm hơn).</span>' +
+      '<span><button id="dbtg-cham-lai" style="padding:5px 11px;border-radius:7px;border:0;' +
+      'background:#f2d9a0;color:#3a2c10;font-weight:700;cursor:pointer">Nhập lại mã</button>' +
+      '<button id="dbtg-cham-dong" style="margin-left:6px;padding:5px 9px;border-radius:7px;' +
+      'border:1px solid #7a5c1c;background:transparent;color:#f2d9a0;cursor:pointer">Đóng</button></span>';
+    document.body.appendChild(d);
+    document.getElementById('dbtg-cham-lai').onclick = function () {
+      try { localStorage.removeItem(KHO_MA); } catch (e) {}
+      location.reload();
+    };
+    document.getElementById('dbtg-cham-dong').onclick = function () { d.remove(); };
+  };
+  window.__khoiDongDBTG = function (initFn, khoa, idOverlay, duongLui) {
+    window.__goiDBTG.then(function (goi) {
+      if (!goi && window.__goiHong) { try { window.__bangChayCham(); } catch (e) {} }
+      if (goi && goi[khoa]) {
+        var ov = document.getElementById(idOverlay);
+        if (ov) ov.style.display = 'none';
+        try { initFn(goi[khoa]); return; }
+        catch (e) { console.warn('Goi mo duoc nhung ve loi, quay ve cach cu:', e && e.message); }
+      }
+      duongLui();
+    }).catch(function () { duongLui(); });
+  };
+
   /* Lop 1 — HOI TRUOC KHI CHAY.
      Chua co chia khoa thi hien man hinh nhap ngay, khong de trang chay roi
      bao loi do ma khong co cho nhap. */
+  /* Chi hoi chia khoa Apps Script khi THUC SU phai dung duong cu.
+     Co goi ma hoa roi thi khong hoi nua — khong bat anh Thai nho hai thu. */
   document.addEventListener('DOMContentLoaded', function () {
-    if (!window.__layKhoaAS()) window.__hoiChiaKhoa();
+    window.__goiDBTG.then(function (goi) {
+      if (!goi && !window.__layKhoaAS()) window.__hoiChiaKhoa();
+    });
   });
 
   /* Lop 2 — HOI KHI BI TU CHOI.
@@ -8433,7 +8582,9 @@ async function createCheckpoint() {
     }
 }
 
-loadAndRender();
+// Co goi ma hoa thi ve thang tu goi (vai giay). Khong co thi chay cach cu.
+// initDashboard/loadAndRender phai CHUP TAI DAY vi khoi <script> sau se de len.
+window.__khoiDongDBTG(initDashboard, 'center', 'loading-overlay', loadAndRender);
 
 </script>
 
@@ -9551,7 +9702,7 @@ async function createCheckpoint() {
     }
 }
 
-loadAndRender();
+window.__khoiDongDBTG(initDashboard, 'dataMwg', 'mwg-loading-overlay', loadAndRender);
 
 
 function initDashboard(DATA) {
