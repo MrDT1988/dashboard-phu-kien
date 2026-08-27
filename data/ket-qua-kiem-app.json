@@ -1,6 +1,6 @@
 {
  "ban": "2026-08-27.31",
- "tong": 63,
+ "tong": 76,
  "khongDat": 0,
  "loiJS": [],
  "pheps": [
@@ -298,6 +298,71 @@
    "ten": "Shop IND: co khoi Ton kho",
    "dat": true,
    "chiTiet": ""
+  },
+  {
+   "ten": "PK/thẻ shop: đọc được số khi KHÔNG lọc",
+   "dat": true,
+   "chiTiet": "tổng = 2135"
+  },
+  {
+   "ten": "PK/thẻ shop: từng nhóm đều ra số",
+   "dat": true,
+   "chiTiet": "5–10M=925 | 10–20M=1044 | 20–30M=48"
+  },
+  {
+   "ten": "PK/thẻ shop: tổng các nhóm KHÔNG vượt tổng chung",
+   "dat": true,
+   "chiTiet": "cộng 4 nhóm = 2017 | tổng chung = 2135 (phần chênh là phân khúc ngoài 4 nhóm)"
+  },
+  {
+   "ten": "PK/thẻ shop: chọn 2 nhóm = cộng 2 nhóm riêng",
+   "dat": true,
+   "chiTiet": "5–10M + 10–20M → chọn cùng lúc = 1969, cộng riêng = 1969"
+  },
+  {
+   "ten": "PK/thẻ shop: bỏ lọc về đúng số ban đầu",
+   "dat": true,
+   "chiTiet": "sau khi bỏ = 2135 | ban đầu = 2135"
+  },
+  {
+   "ten": "PK/theo ngày: có nút phân khúc",
+   "dat": true,
+   "chiTiet": "co 4 nhom | scope().sgm=co | #f-seg-w an=false"
+  },
+  {
+   "ten": "PK/theo ngày: 10–20M ra số nhỏ hơn tổng",
+   "dat": true,
+   "chiTiet": "10–20M = 2621 | toàn phân khúc = 13218"
+  },
+  {
+   "ten": "PK/theo ngày: nhãn ghi rõ đang lọc 10–20M",
+   "dat": true,
+   "chiTiet": "ừng sale × từng hãng — cả tháng 8 (theo máy) · chỉ PK 10–20M"
+  },
+  {
+   "ten": "PK/theo ngày: bấm nhóm khác thì app CÓ nhận",
+   "dat": true,
+   "chiTiet": "Dưới 5M → F_SEGS = 1 cot"
+  },
+  {
+   "ten": "PK/theo ngày: nhóm khác 10–20M có ghi cảnh báo",
+   "dat": true,
+   "chiTiet": "Dưới 5M → ⚠ phân khúc này không tách được theo ngày, bảng đang là toàn phân khúc"
+  },
+  {
+   "ten": "PK/theo ngày: nhóm không tách được thì giữ nguyên tổng (không bịa số)",
+   "dat": true,
+   "chiTiet": "sau khi chon Dưới 5M = 13218 | toan phan khuc = 13218"
+  },
+  {
+   "ten": "PK/theo ngày: bỏ lọc về đúng số ban đầu",
+   "dat": true,
+   "chiTiet": "sau = 13218 | ban đầu = 13218"
+  },
+  {
+   "ten": "PK/thẻ KA: cộng các phân khúc khớp tổng theo tháng",
+   "dat": true,
+   "chiTiet": "cộng PK = 932/4921 | cộng tháng = 932/4921"
   },
   {
    "ten": "Tab alert mo duoc, khong vo",
