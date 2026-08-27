@@ -13166,7 +13166,7 @@ body.zoom-on { overflow: hidden; }
 </script>
 
 
-<!-- ===== DB TG: giao dien Sang / Toi (ban 3) ===== -->
+<!-- ===== DB TG: giao dien Sang / Toi (ban 4) ===== -->
 <style id="dbtg-light-css">
 :root[data-theme="light"]{--bg-primary:#f6f7f8;--bg-card:#ffffff;--bg-card-hover:#f0f2f4;--bg-input:#ffffff;--bg-header:#ffffff;--border-color:rgba(21,24,28,0.085);--text-primary:#15181c;--text-secondary:#5c6773;--text-on-dark:#15181c;--oppo-green:#006b33;--oppo-green-dark:#004d24;--positive:#0f7a3d;--negative:#c62828;--neutral:#5c6773;--glow-soft:0 0 12px rgba(0,107,51,0.14);--glow-strong:0 0 16px rgba(0,107,51,0.22)}
 [data-theme="light"] ::selection, [data-theme="light"]::selection{background-color:rgba(0,107,51,0.35);color:#15181c}
@@ -13378,6 +13378,72 @@ html[data-theme="light"] body{background:#f6f7f8;color:#15181c;}
 #dbtg-theme-btn button:not([aria-pressed="true"]):hover{color:var(--text-primary);background:var(--bg-card-hover);}
 @media print{#dbtg-theme-btn{display:none;}}
 @media (max-width:640px){#dbtg-theme-btn button span{display:none;} #dbtg-theme-btn button{padding:7px 9px;}}
+
+
+/* ===== Nang bo cuc — CHI ap cho che do SANG ===== */
+:root[data-theme="light"]{ --radius:12px; }
+
+/* the: vien manh + bong rat nhe, bo goc lon hon */
+[data-theme="light"] .kpi-card,
+[data-theme="light"] .table-section,
+[data-theme="light"] .table-box,
+[data-theme="light"] .db-tg-panel,
+[data-theme="light"] .notes-section,
+[data-theme="light"] .cluster-wrap{
+  border:1px solid rgba(16,24,40,.10) !important;
+  border-radius:12px !important;
+  box-shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.04) !important;
+  background:#ffffff !important;}
+[data-theme="light"] .kpi-card:hover,
+[data-theme="light"] .table-section:hover,
+[data-theme="light"] .table-box:hover{
+  box-shadow:0 2px 6px rgba(16,24,40,.07),0 6px 18px rgba(16,24,40,.06) !important;
+  border-color:rgba(16,24,40,.16) !important;}
+
+/* nhan KPI: in hoa nho, gian chu — dung kieu demo */
+[data-theme="light"] .kpi-label{
+  text-transform:uppercase;letter-spacing:.045em;font-size:11.5px !important;
+  font-weight:600 !important;color:#5c6773 !important;}
+[data-theme="light"] .kpi-value{
+  font-weight:700 !important;letter-spacing:-.02em;color:#15181c !important;}
+[data-theme="light"] .kpi-sub,[data-theme="light"] .kpi-period{color:#8a939e !important;}
+
+/* tang / giam: boc vien thuoc nen nhat thay vi chi doi mau chu */
+[data-theme="light"] .kpi-mom,
+[data-theme="light"] .kpi-ch-growth,
+[data-theme="light"] .metric-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:999px;font-weight:600;line-height:1.5;}
+[data-theme="light"] .kpi-mom[style*="0f7a3d"],[data-theme="light"] .kpi-mom[style*="15,122,61"],
+[data-theme="light"] .kpi-ch-growth[style*="0f7a3d"],[data-theme="light"] .kpi-ch-growth[style*="15,122,61"]{
+  background:#e8f4ec !important;}
+[data-theme="light"] .kpi-mom[style*="c62828"],[data-theme="light"] .kpi-mom[style*="198,40,40"],
+[data-theme="light"] .kpi-ch-growth[style*="c62828"],[data-theme="light"] .kpi-ch-growth[style*="198,40,40"]{
+  background:#fbeaea !important;}
+
+/* bang: tieu de cot in hoa, nen nhat, dong hover */
+[data-theme="light"] .data-table thead th,
+[data-theme="light"] table thead th{
+  background:#fafbfc !important;color:#5c6773 !important;
+  text-transform:uppercase;letter-spacing:.04em;font-size:11.5px !important;font-weight:600 !important;
+  border-bottom:1px solid rgba(16,24,40,.12) !important;}
+[data-theme="light"] .data-table tbody td,
+[data-theme="light"] table tbody td{
+  border-bottom:1px solid rgba(16,24,40,.06) !important;}
+[data-theme="light"] .data-table tbody tr:hover,
+[data-theme="light"] table tbody tr:hover{background:#fafbfc !important;}
+
+/* thanh xanh truoc tieu de muc: bo bong phat sang */
+[data-theme="light"] .table-section h3::before,
+[data-theme="light"] .table-box-title::before{
+  box-shadow:none !important;background:#006b33 !important;}
+
+/* nut / tab / bo loc */
+[data-theme="light"] .sale-card-btn,
+[data-theme="light"] select,[data-theme="light"] input,[data-theme="light"] button{
+  border-radius:9px;}
+[data-theme="light"] select,[data-theme="light"] input{
+  border:1px solid rgba(16,24,40,.14) !important;background:#ffffff !important;color:#15181c !important;}
 
 </style>
 <script id="dbtg-theme-core">
