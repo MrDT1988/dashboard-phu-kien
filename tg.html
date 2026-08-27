@@ -39,15 +39,75 @@
     } catch (e) {}
     return _fetch.call(this, u, o);
   };
-  // Apps Script tu choi -> hoi chia khoa mot lan roi tai lai. Khong bao gio
-  // de anh Thai nhin man hinh trang ma khong biet vi sao.
-  var _json = null;
+  /* ----- MAN HINH NHAP CHIA KHOA -------------------------------------------
+     Ve bang HTML chu khong dung prompt() cua trinh duyet: prompt bi chan tren
+     mot so cua so, ma khi do anh Thai se ket cung khong biet nhap o dau. */
   window.__hoiChiaKhoa = function (viSao) {
-    var k = window.prompt((viSao || 'Đường dữ liệu đang khoá.') +
-      '\n\nDán chìa khoá Apps Script vào đây (chỉ hỏi một lần, máy sẽ nhớ):', '');
-    if (k && k.trim()) { window.__datKhoaAS(k.trim()); location.reload(); return true; }
-    return false;
+    if (document.getElementById('as-key-lop')) return;
+    var lop = document.createElement('div');
+    lop.id = 'as-key-lop';
+    lop.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0b1017;' +
+      'display:flex;align-items:center;justify-content:center;padding:24px;' +
+      'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+    lop.innerHTML =
+      '<div style="width:100%;max-width:440px;background:#141b24;border:1px solid rgba(255,255,255,.12);' +
+        'border-radius:14px;padding:26px">' +
+        '<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d8896">DB Tiền Giang</div>' +
+        '<h2 style="margin:8px 0 6px;font-size:19px;color:#e8edf2;font-weight:800">Nhập chìa khoá</h2>' +
+        '<p style="margin:0 0 18px;font-size:13px;line-height:1.55;color:#96a1ae">' +
+          (viSao || 'Đường dữ liệu đã được khoá để người ngoài không kéo được số liệu.') +
+          '<br>Chỉ nhập một lần, máy này sẽ nhớ.</p>' +
+        '<input id="as-key-o" type="password" autocomplete="off" spellcheck="false" ' +
+          'placeholder="Dán chìa khoá vào đây" ' +
+          'style="width:100%;box-sizing:border-box;padding:13px 14px;border-radius:9px;' +
+          'border:1px solid rgba(255,255,255,.18);background:#0e141c;color:#e8edf2;font-size:15px;' +
+          'letter-spacing:.06em;outline:none">' +
+        '<div id="as-key-loi" style="min-height:18px;margin-top:8px;font-size:12.5px;color:#ff8fa3"></div>' +
+        '<button id="as-key-ok" style="width:100%;margin-top:8px;padding:12px;border-radius:9px;border:0;' +
+          'background:#1BB350;color:#08120b;font-size:14.5px;font-weight:800;cursor:pointer">Mở dashboard</button>' +
+        '<p style="margin:16px 0 0;font-size:11.5px;line-height:1.6;color:#6f7a87">' +
+          'Quên chìa khoá? Mở Apps Script, chạy hàm <b>taoChiaKhoaMoi</b> để lấy chìa mới — ' +
+          'nhớ cập nhật luôn secret <b>AS_KEY</b> bên GitHub, nếu không robot sẽ ngừng cập nhật.</p>' +
+      '</div>';
+    document.body.appendChild(lop);
+    var o = document.getElementById('as-key-o');
+    var loi = document.getElementById('as-key-loi');
+    var gui = function () {
+      var k = (o.value || '').trim();
+      if (!k) { loi.textContent = 'Chưa nhập gì cả.'; o.focus(); return; }
+      window.__datKhoaAS(k);
+      loi.style.color = '#7d8896';
+      loi.textContent = 'Đang mở lại…';
+      location.reload();
+    };
+    document.getElementById('as-key-ok').onclick = gui;
+    o.onkeydown = function (e) { if (e.key === 'Enter') gui(); };
+    setTimeout(function () { o.focus(); }, 60);
   };
+
+  /* Lop 1 — HOI TRUOC KHI CHAY.
+     Chua co chia khoa thi hien man hinh nhap ngay, khong de trang chay roi
+     bao loi do ma khong co cho nhap. */
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!window.__layKhoaAS()) window.__hoiChiaKhoa();
+  });
+
+  /* Lop 2 — HOI KHI BI TU CHOI.
+     Chia khoa sai hoac da doi -> Apps Script tra "Tu choi". Bat chuoi do o
+     moi duong bao loi cua trang roi mo lai o nhap. */
+  window.__batTuChoi = function (msg) {
+    if (!/Tu choi|thieu hoac sai chia khoa/i.test(String(msg || ''))) return false;
+    window.__datKhoaAS('');
+    window.__hoiChiaKhoa('Chìa khoá không đúng hoặc đã được đổi. Nhập lại giúp em.');
+    return true;
+  };
+  window.addEventListener('error', function (e) {
+    if (e && e.message) window.__batTuChoi(e.message);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var m = e && e.reason && (e.reason.message || e.reason);
+    window.__batTuChoi(m);
+  });
 })();
 </script>
 <style>
@@ -3019,6 +3079,7 @@ async function loadAndRender() {
         if (errorEl) {
             errorEl.style.display = 'flex';
             const msgEl = document.getElementById('error-message');
+            if (window.__batTuChoi && window.__batTuChoi(err.message)) return;
             if (msgEl) msgEl.textContent = 'Không tải được dữ liệu: ' + err.message;
         }
     }
