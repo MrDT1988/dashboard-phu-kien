@@ -73,6 +73,10 @@ async function layMotLan(lanThu) {
     // Chia khoa cho duong Apps Script. Phai bom TRUOC khi trang chay dong dau tien,
     // vi tg.html goi Apps Script ngay luc nap. Lay tu GitHub Secret AS_KEY —
     // khong nam trong repo. Chua dat secret thi bo qua, moi thu chay nhu cu.
+    // Robot KHONG duoc doc goi da dong san — no la nguoi di dong goi do.
+    // Khong co dong nay thi tu lan chay thu hai, robot dung o man hinh nhap ma
+    // roi treo cho toi khi het gio.
+    await page.addInitScript(() => { window.__BO_QUA_GOI = true; });
     if (process.env.AS_KEY) {
       await page.addInitScript((k) => { window.__AS_KEY = k; }, process.env.AS_KEY);
       log('da bom chia khoa Apps Script vao trang');
