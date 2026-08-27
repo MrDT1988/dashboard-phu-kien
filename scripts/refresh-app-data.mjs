@@ -87,14 +87,35 @@ async function layMotLan(lanThu) {
     log(`trang xong sau ${Math.round((Date.now() - bd) / 1000)}s`);
     await page.waitForTimeout(8000); // de cac phan tinh sau cung kip chay
 
+    // Sheet "Share KA" (thi phan FPT + Viettel) chua duoc Apps Script day ra bien export,
+    // nhung doGet da co san ?sheet=<ten>&mode=data nen goi thang duoc.
+    log('lay them sheet "Share KA" (thi phan FPT + Viettel)');
+    let shareKA = null;
+    try {
+      shareKA = await page.evaluate(async () => {
+        const U = (typeof APPS_SCRIPT_URL !== 'undefined' && APPS_SCRIPT_URL) ||
+          (document.documentElement.innerHTML.match(
+            /https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec/) || [])[0];
+        if (!U) throw new Error('khong tim thay duong dan Apps Script');
+        const q = U + '?sheet=' + encodeURIComponent('Share KA') + '&mode=data&start=1&count=20000';
+        const r = await fetch(q, { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return await r.json();
+      });
+      log(`  -> Share KA: ${Array.isArray(shareKA) ? shareKA.length : 0} dong`);
+    } catch (e) {
+      log('  -> KHONG lay duoc Share KA: ' + e.message + ' (app se bo qua phan nay)');
+      shareKA = null;
+    }
+
     log('chay bo trich xuat build-app-data.js');
-    const data = await page.evaluate(async (site) => {
+    const data = await page.evaluate(async ([site, ka]) => {
       const src = await fetch(site + '/scripts/build-app-data.js?t=' + Date.now())
         .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
       (0, eval)(src);
       if (typeof window.buildAppData !== 'function') throw new Error('khong nap duoc buildAppData');
-      return window.buildAppData(window.__exportDataMwg, window.__exportDataMain);
-    }, SITE);
+      return window.buildAppData(window.__exportDataMwg, window.__exportDataMain, ka);
+    }, [SITE, shareKA]);
 
     return data;
   } finally {

@@ -180,6 +180,7 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     segs: D.segs, sers: D.sers,
     chans: kenh ? [kenh] : D.chans,
     v: D.v, segsMkt: D.segsMkt || [], nhomPK: D.nhomPK || null,
+    shareKA: D.shareKA || null,
     src: D.src || null, tkMonths: D.tkMonths || [],
     tgK: D.tgK || null, sizes: D.sizes || [],
     tkLe: (vaiTro === 'admin' || vaiTro === 'leader') ? (D.tkLe || null) : null,

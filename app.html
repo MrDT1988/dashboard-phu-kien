@@ -340,6 +340,20 @@ h4.dh:first-child{margin-top:0}
       <div id="t-chan"></div>
     </div>
 
+    <div class="card" id="c-ka" hidden>
+      <h2>Thị phần kênh KA</h2>
+      <div class="pills" id="p-kanh"></div>
+      <p class="sub" id="ka-sub"></p>
+      <div class="kpis" id="ka-kpi"></div>
+      <div class="note" id="ka-note"></div>
+      <div class="subhead">Thị phần OPPO theo tháng</div>
+      <div class="tvwrap" id="ka-thang"></div>
+      <div class="subhead">Thị phần OPPO theo phân khúc giá</div>
+      <div class="tvwrap" id="ka-pk"></div>
+      <div class="subhead">Các hãng bán ra</div>
+      <div class="hb" id="ka-hang"></div>
+    </div>
+
     <div class="card">
       <h2>Sell out theo ngày</h2>
       <div class="filt" id="filt" hidden>
@@ -538,7 +552,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-27.30';
+var APP_VER='2026-08-27.31';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -1008,7 +1022,7 @@ function renderOver(){
 
   renderHero(o); renderTarget(o);
   renderDaily(o); renderMonthly(o); renderMonth(o); renderChan(o); renderSeg(o);
-  renderShopTable();
+  renderShopTable(); renderKA();
   renderModel(o); renderAct(o); renderSellin(o); renderTon();
   renderAlerts(o); renderFind(o); renderRank(o);
 }
@@ -1771,6 +1785,93 @@ function renderShopTable(){
     }).join('')+'</table>'+
     '<div class="note">Bấm vào một dòng để xem chi tiết shop: số bán theo ngày, thị phần, top model mọi hãng, '+
     'khung giờ bán và <b>nhân viên bán tốt nhất</b> của shop đó.</div>';
+}
+
+/* =========================================================
+   THE: THI PHAN KENH KA (FPT + Viettel)
+   Nguon: sheet "Share KA" trong OVERVIEW TG 2026.
+   CHI CO SO MAY — sheet khong co cot doanh thu, nen khong co share doanh thu.
+   Lay o MUC KENH, khong ghep xuong tung shop (anh Thai chot 27/08).
+   ========================================================= */
+var KA_KENH='ca';        // 'fpt' | 'viettel' | 'ca'
+function kaGop(a,b){
+  if(!a) return b; if(!b) return a;
+  var m=a.m.map(function(x,i){ return [x[0]+((b.m[i]||[0,0])[0]), x[1]+((b.m[i]||[0,0])[1])] });
+  var pk=a.pk.map(function(x,i){ return [x[0]+((b.pk[i]||[0,0])[0]), x[1]+((b.pk[i]||[0,0])[1])] });
+  var h={}; [a,b].forEach(function(o){ (o.hang||[]).forEach(function(x){ h[x[0]]=(h[x[0]]||0)+x[1] }) });
+  return {m:m,pk:pk,shops:a.shops+b.shops,dong:a.dong+b.dong,
+    hang:Object.keys(h).map(function(k){return [k,h[k]]}).sort(function(x,y){return y[1]-x[1]})};
+}
+function renderKA(){
+  var c=$('#c-ka'), K=D.shareKA;
+  if(SEG!=='KA'||!K||(!K.fpt&&!K.viettel)){ c.hidden=true; return }
+  c.hidden=false;
+
+  var co=[];
+  if(K.fpt) co.push(['fpt','FPT']);
+  if(K.viettel) co.push(['viettel','Viettel']);
+  if(co.length>1) co.push(['ca','Cả hai']);
+  if(!co.some(function(x){return x[0]===KA_KENH})) KA_KENH=co[co.length-1][0];
+  $('#p-kanh').innerHTML=co.map(function(x){
+    return '<button data-kak="'+x[0]+'"'+(KA_KENH===x[0]?' class="on"':'')+'>'+safe(x[1])+'</button>'}).join('');
+  $('#p-kanh').hidden=co.length<2;
+
+  var o=(KA_KENH==='ca')?kaGop(K.fpt,K.viettel):K[KA_KENH];
+  if(!o){ c.hidden=true; return }
+  var tenK=(KA_KENH==='ca')?'FPT + Viettel':(KA_KENH==='fpt'?'FPT':'Viettel');
+
+  // --- KPI: thang nay + ca nam
+  var iNay=-1;
+  for(var i=D.months.length-1;i>=0;i--) if(o.m[i]&&o.m[i][1]){ iNay=i; break }
+  var nay=iNay>=0?o.m[iNay]:[0,0];
+  var cn=[0,0]; o.m.forEach(function(x){ cn[0]+=x[0]; cn[1]+=x[1] });
+  var mau=function(p){ return p>=25?'var(--green)':p>=15?'var(--amber)':'var(--red)' };
+  var sNay=nay[1]?nay[0]/nay[1]*100:0, sCn=cn[1]?cn[0]/cn[1]*100:0;
+  var i1020=2;
+  var pk=o.pk[i1020]||[0,0];
+  $('#ka-kpi').innerHTML=
+    '<div>Share T'+(iNay>=0?D.months[iNay]:'—')+'<b style="color:'+mau(sNay)+'">'+pct(sNay)+'</b></div>'+
+    '<div>Share cả năm<b style="color:'+mau(sCn)+'">'+pct(sCn)+'</b></div>'+
+    '<div>PK 10–20M<b style="color:'+(pk[1]?mau(pk[0]/pk[1]*100):'var(--muted)')+'">'+
+      (pk[1]?pct(pk[0]/pk[1]*100):'—')+'</b></div>';
+  $('#ka-sub').textContent='Kênh '+tenK+' — '+n0(cn[0])+'/'+n0(cn[1])+' máy cả năm, '+
+    o.shops+' điểm bán có số.';
+
+  // --- theo thang
+  var rowsT=D.months.map(function(mm,i){
+    var v=o.m[i]||[0,0];
+    if(!v[1]) return ['T'+mm,'—','—','<b style="color:var(--muted)">—</b>'];
+    var p=v[0]/v[1]*100;
+    return ['T'+mm, n0(v[0]), n0(v[1]),
+      '<b style="color:'+mau(p)+'">'+pct(p,0)+'</b>'];
+  });
+  rowsT.push(['<b>Cả năm</b>','<b>'+n0(cn[0])+'</b>','<b>'+n0(cn[1])+'</b>',
+    cn[1]?('<b style="color:'+mau(sCn)+'">'+pct(sCn,0)+'</b>'):'—']);
+  $('#ka-thang').innerHTML=tvTableHtml(['Tháng','OPPO','Cả thị trường','Share'],rowsT);
+
+  // --- theo phan khuc
+  var ten=K.nhomTen||['Dưới 5M','5–10M','10–20M','20–30M','Trên 30M'];
+  var rowsP=ten.map(function(t,i){
+    var v=o.pk[i]||[0,0];
+    if(!v[1]) return [safe(t),'—','—','<b style="color:var(--muted)">—</b>'];
+    var p=v[0]/v[1]*100;
+    return [safe(t), n0(v[0]), n0(v[1]), '<b style="color:'+mau(p)+'">'+pct(p,0)+'</b>'];
+  });
+  $('#ka-pk').innerHTML=tvTableHtml(['Phân khúc','OPPO','Cả thị trường','Share'],rowsP);
+
+  // --- cac hang
+  var tongH=0; (o.hang||[]).forEach(function(x){ tongH+=x[1] });
+  hbars($('#ka-hang'),(o.hang||[]).slice(0,8).map(function(x){
+    return {n:x[0], v:x[1], c:(x[0]==='OPPO')?'var(--green)':'var(--neutral)',
+      txt:n0(x[1])+' máy · '+(tongH?(x[1]/tongH*100).toFixed(0):0)+'%'}}));
+
+  // --- noi ro gioi han, khong de anh tuong nhieu hon thuc te
+  var soShopKA=(scope().s||[]).length;
+  $('#ka-note').innerHTML='Số này lấy từ sheet <b>Share KA</b> trong OVERVIEW TG 2026. '+
+    '<b>Chỉ có số máy</b> — sheet không có cột doanh thu nên không tính được share doanh thu.<br>'+
+    '<b style="color:var(--amber)">Chỉ phủ '+o.shops+' điểm bán</b>'+
+    (soShopKA?(' trong tổng '+soShopKA+' shop kênh KA'):'')+
+    ' — các shop còn lại không có số thị trường, không phải bằng 0.';
 }
 
 /* ---- THẺ: Sell out theo tháng — bố cục y hệt thẻ theo ngày ---- */
@@ -2890,6 +2991,8 @@ document.addEventListener('click',function(e){
     }
     renderShopTable(); return;
   }
+  var kak=e.target.closest('[data-kak]');
+  if(kak){ KA_KENH=kak.dataset.kak; renderKA(); return }
   var shm=e.target.closest('[data-shm]');
   if(shm){ shMode=shm.dataset.shm; renderShopTable(); return }
   var mv2=e.target.closest('[data-mmm]');

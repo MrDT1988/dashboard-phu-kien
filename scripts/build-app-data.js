@@ -18,7 +18,106 @@
 (function () {
   'use strict';
 
-  function build(MWG, MAIN) {
+  /* ============ THI PHAN KENH FPT + VIETTEL (sheet "Share KA") ============
+     Sheet gom HAI bang canh nhau, chi co SO MAY (khong co doanh thu):
+       FPT     cot 0-7 : Ngay | Ma Shop | Ten Shop | Brand2 | So Luong | PK | AREA | Mien
+       VIETTEL cot 12-18: SHOP | KV | MIEN | HANG | SL | PK | THANG
+     Ten hang viet lung tung (SAMSUNG / Samsung, XIAOMI / Xiaomi) -> gom khong phan biet
+     hoa thuong. FPT viet tat (OP, IP, SS, XM, HO) -> doi ve ten day du.
+     Phan khuc hai bang ghi khac nhau -> quy ve 4 nhom gia chung.
+     Anh Thai chot: chi lay o MUC KENH, khong ghep xuong tung shop. */
+  function tinhShareKA(rows, MONTHS) {
+    if (!Array.isArray(rows) || rows.length < 2) return null;
+
+    var TEN_HANG = {
+      op: 'OPPO', oppo: 'OPPO', ip: 'Apple', apple: 'Apple',
+      ss: 'Samsung', samsung: 'Samsung', xm: 'Xiaomi', xiaomi: 'Xiaomi',
+      ho: 'Honor', honor: 'Honor', vivo: 'vivo', fp: 'Khác', others: 'Khác',
+      other: 'Khác', khac: 'Khác',
+    };
+    function chuanHang(x) {
+      var k = String(x || '').trim().toLowerCase();
+      return TEN_HANG[k] || (k ? (k.charAt(0).toUpperCase() + k.slice(1)) : 'Khác');
+    }
+    // 4 nhom gia chung, nhan dien theo con SO trong chuoi nen ca hai kieu ghi deu trung
+    function nhomGia(x) {
+      var t = String(x || '').replace(/\s+/g, '').toUpperCase();
+      if (/(^|[^0-9])(<3M|<5M|1_)/.test(t) || /^\D*[0-4]M?-5M/.test(t)) return 0;   // duoi 5M
+      if (/3M-5M/.test(t)) return 0;
+      if (/5M-7M|7M-10M|2_|3_/.test(t)) return 1;                                    // 5-10M
+      if (/10M-15M|15M-20M|4_|5_/.test(t)) return 2;                                 // 10-20M
+      if (/20M-30M|6_/.test(t)) return 3;                                            // 20-30M
+      if (/>30M|7_/.test(t)) return 4;                                               // tren 30M
+      return -1;
+    }
+    function thangCuaNgay(x) {
+      var t = String(x || '').trim();
+      var m = t.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);   // 01.01.2026
+      if (m) return parseInt(m[2], 10);
+      var d = new Date(t);
+      return isNaN(d.getTime()) ? 0 : (d.getMonth() + 1);
+    }
+    function thangCuaChu(x) {
+      var m = String(x || '').match(/(\d{1,2})/);
+      return m ? parseInt(m[1], 10) : 0;
+    }
+    function soCua(x) {
+      var n = parseFloat(String(x == null ? '' : x).replace(/[^0-9.-]/g, ''));
+      return isNaN(n) ? 0 : n;
+    }
+
+    var NM = MONTHS.length;
+    function honKhoi() {
+      return { m: MONTHS.map(function () { return [0, 0]; }),      // [oppo, tong] tung thang
+               pk: [0, 1, 2, 3, 4].map(function () { return [0, 0]; }),
+               hang: {}, shop: {}, dong: 0 };
+    }
+    var K = { fpt: honKhoi(), viettel: honKhoi() };
+
+    function nap(o, thang, hang, sl, pk, shop) {
+      if (!sl) return;
+      o.dong++;
+      var laOppo = (hang === 'OPPO');
+      var i = MONTHS.indexOf(thang);
+      if (i >= 0) { o.m[i][1] += sl; if (laOppo) o.m[i][0] += sl; }
+      var g = nhomGia(pk);
+      if (g >= 0) { o.pk[g][1] += sl; if (laOppo) o.pk[g][0] += sl; }
+      o.hang[hang] = (o.hang[hang] || 0) + sl;
+      if (shop) o.shop[shop] = 1;
+    }
+
+    for (var r = 1; r < rows.length; r++) {           // bo dong tieu de
+      var v = rows[r] || [];
+      // --- FPT: cot 0..7
+      if (v[2] && soCua(v[4])) {
+        nap(K.fpt, thangCuaNgay(v[0]), chuanHang(v[3]), soCua(v[4]), v[5], String(v[2]).trim());
+      }
+      // --- VIETTEL: cot 12..18
+      if (v[12] && soCua(v[16])) {
+        nap(K.viettel, thangCuaChu(v[18]), chuanHang(v[15]), soCua(v[16]), v[17], String(v[12]).trim());
+      }
+    }
+
+    function goi(o) {
+      if (!o.dong) return null;
+      var hg = Object.keys(o.hang).map(function (h) { return [h, Math.round(o.hang[h])]; })
+        .sort(function (a, b) { return b[1] - a[1]; });
+      return {
+        m: o.m.map(function (x) { return [Math.round(x[0]), Math.round(x[1])]; }),
+        pk: o.pk.map(function (x) { return [Math.round(x[0]), Math.round(x[1])]; }),
+        hang: hg, shops: Object.keys(o.shop).length, dong: o.dong,
+      };
+    }
+    var fpt = goi(K.fpt), vt = goi(K.viettel);
+    if (!fpt && !vt) return null;
+    return {
+      fpt: fpt, viettel: vt,
+      nhomTen: ['Dưới 5M', '5–10M', '10–20M', '20–30M', 'Trên 30M'],
+      chiSoMay: true,          // sheet nay KHONG co doanh thu — app phai noi ro
+    };
+  }
+
+  function build(MWG, MAIN, SHARE_KA) {
     if (!MWG) throw new Error('Chua co __exportDataMwg');
     MAIN = MAIN || {};
 
@@ -854,6 +953,9 @@
       segs: SEGS, sers: SERS, chans: CHANS,
       segsMkt: SEGA,
       nhomPK: nhomPKTen,
+      shareKA: (function () {
+        try { return tinhShareKA(SHARE_KA, MONTHS); } catch (e) { return null; }
+      })(),
       sizes: (function(){var z={};shopOrder.forEach(function(st){if(shops[st].size)z[shops[st].size]=1});
         return ['S','A','B','C','D','Chưa xếp size'].filter(function(x){return z[x]})
           .concat(Object.keys(z).filter(function(x){return ['S','A','B','C','D','Chưa xếp size'].indexOf(x)<0}).sort())})(),
