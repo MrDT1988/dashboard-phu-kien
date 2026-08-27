@@ -71,7 +71,9 @@ const loiJS = [];
   if (zs.length) doi($('#f-size'), zs[0]);
   await cho(600);
   const nutPK = $$('#f-seg [data-fpk]').filter((b) => b.dataset.fpk !== '-1');
-  if (nutPK.length) bam(nutPK.find((b) => /10/.test(T(b.textContent))) || nutPK[0]);
+  // Phai chon DUNG nhom 10-20M. Truoc day dung /10/ nen khop nham "5-10M".
+  const nut1020 = () => $$('#f-seg [data-fpk]').find((b) => /10\s*[-–]\s*20/.test(T(b.textContent)));
+  if (nut1020()) bam(nut1020()); else if (nutPK.length) bam(nutPK[0]);
   await cho(600);
   if ($('#f-ngay').options.length > 2) doi($('#f-ngay'), '10');
   await cho(600);
@@ -110,8 +112,22 @@ const loiJS = [];
     ghi('Loc Sale: doi so may o the dau', g.may !== g0.may);
     doi($('#f-sale'), '__ALL__'); await cho(700);
   }
+  // Chan doan: moi size co bao nhieu shop MWG va bao nhieu shop co so thi truong (mkm)
+  const dem = {};
+  w.D.sales.forEach((x) => (x.s || []).forEach((sh) => {
+    if (sh.ch2 !== 'MWG') return;
+    const k = sh.size || '(chua xep)';
+    dem[k] = dem[k] || [0, 0];
+    dem[k][0]++; if (sh.mkm) dem[k][1]++;
+  }));
+  ghi('Chan doan size shop MWG', true,
+    Object.keys(dem).map((k) => k + ': ' + dem[k][0] + ' shop (' + dem[k][1] + ' co so thi truong)').join(' | '));
+  // Chon size CO shop MWG de phep kiem co y nghia
+  const zTot = Object.keys(dem).filter((k) => dem[k][1] > 0).sort((a, b) => dem[b][1] - dem[a][1])[0];
+  if (zTot && zs.indexOf(zTot) < 0) zs.unshift(zTot);
   if (zs.length) {
-    doi($('#f-size'), zs[0]); await cho(800);
+    doi($('#f-size'), zTot || zs[0]); await cho(800);
+    ghi('Dang thu voi size', true, String(zTot || zs[0]));
     const g = chup();
     ghi('Loc Size shop: doi so may', g.may !== g0.may);
     ghi('Loc Size shop: doanh thu KHONG ve 0', String(g.dt).replace(/[^0-9]/g, '') !== '0', 'DT=' + g.dt);
@@ -120,7 +136,9 @@ const loiJS = [];
     doi($('#f-size'), ''); await cho(700);
   }
   if (nutPK.length) {
-    bam($$('#f-seg [data-fpk]').find((b) => /10/.test(T(b.textContent)))); await cho(900);
+    const n20 = nut1020();
+    ghi('Co nut nhom 10-20M', !!n20, $$('#f-seg [data-fpk]').map(b=>T(b.textContent)).join(' / '));
+    if (n20) bam(n20); await cho(900);
     const g = chup();
     ghi('Loc PK 10-20M: doi bang chi tiet theo sale', g.hang !== g0.hang);
     ghi('Loc PK 10-20M: doi bang theo ngay', g.ngay !== g0.ngay);
@@ -144,6 +162,13 @@ const loiJS = [];
     const ds = $$('#f-list [data-shop]');
     const sai = ds.filter((x) => { const s = w.findShop(x.dataset.shop); return s && s.ch2 !== ch; }).length;
     ghi('Shop ' + ch + ': chi liet ke shop dung kenh', sai === 0, 'liet ke ' + ds.length + ' shop, sai ' + sai);
+    // Tong so shop that cua kenh nay
+    let tongThuc = 0;
+    w.D.sales.forEach((x) => (x.s || []).forEach((sh) => { if (sh.ch2 === ch) tongThuc++; }));
+    const coGhiChu = /Đang hiện/.test(T($('#f-list').textContent));
+    ghi('Shop ' + ch + ': liet ke du shop hoac noi ro dang cat bot',
+      ds.length >= tongThuc || coGhiChu,
+      'hien ' + ds.length + '/' + tongThuc + (coGhiChu ? ' (co ghi chu)' : ' (KHONG co ghi chu)'));
 
     if (!ds.length) continue;
     bam(ds[0]); await cho(1200);
