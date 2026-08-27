@@ -518,6 +518,40 @@ body{
     </div>
   </section>
 
+  <div class="section-title">Bảng giá sản phẩm</div>
+  <section class="table-section">
+    <div class="table-head">
+      <h3>Giá FOB &amp; giá suy ra theo tháng</h3>
+      <div class="table-controls">
+        <select id="priceMonthSelect"></select>
+        <span id="priceTableInfo" style="margin-left:10px;color:var(--text-secondary);font-size:13px;"></span>
+      </div>
+    </div>
+    <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
+      <div class="dot"></div>
+      <div>
+        <b>Công thức:</b> Giá bán lẻ = Giá FOB × 2,5 &nbsp;·&nbsp; Giá Đại lý = Giá bán lẻ × 60% &nbsp;·&nbsp; Giá HUB = Giá bán lẻ × 45%.
+        Chọn tháng ở trên để xem giá FOB đúng tháng đó (T8.26 là giá tạm tính, dùng giá FOB T7.26 do Sheet chưa cập nhật).
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+    <table class="data-table" id="priceTable">
+      <thead>
+        <tr>
+          <th>Nhóm</th>
+          <th>Mã sản phẩm</th>
+          <th>Tên sản phẩm</th>
+          <th class="num cen">Giá FOB</th>
+          <th class="num cen">Giá HUB</th>
+          <th class="num cen">Giá Đại lý</th>
+          <th class="num cen">Giá bán lẻ</th>
+        </tr>
+      </thead>
+      <tbody id="priceTableBody"></tbody>
+    </table>
+    </div>
+  </section>
+
   <footer class="dashboard-footer">
     Dữ liệu: Nam Phong — Nhập &amp; bán hàng · Chi tiết bán hàng khu vực · Lũy kế T1–T7.2026 &nbsp;|&nbsp; Dashboard tạo bởi AI Chief of Staff
   </footer>
@@ -4127,6 +4161,708 @@ body{
       ],
       "total": 1000180
     }
+  ],
+  "priceTable": [
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-175a )",
+      "ten": "Cáp sạc REMARK RC-175a(6972174158600)",
+      "fobMonths8": [
+        24313,
+        24311,
+        24307,
+        24306,
+        24305,
+        24304,
+        24300,
+        24300
+      ]
+    },
+    {
+      "group": "Cable",
+      "sku": "20W - ( RC-C010 )",
+      "ten": "Cáp sạc REMARK RC-C010-C-C(6954851294566)",
+      "fobMonths8": [
+        16734,
+        16733,
+        16732,
+        16733,
+        16733,
+        16732,
+        16732,
+        16732
+      ]
+    },
+    {
+      "group": "Cable",
+      "sku": "30W - ( CB16 ) (Màu cam & xám)",
+      "ten": "Cáp sạc REMARK CB16-C-L(6954851253549)",
+      "fobMonths8": [
+        16734,
+        16733,
+        16732,
+        16733,
+        21489,
+        21872,
+        21872,
+        21872
+      ]
+    },
+    {
+      "group": "Cable",
+      "sku": "30W - ( CB16 ) (Màu xanh & hồng)",
+      "ten": "Cáp sạc REMARK CB16-C-L(6954851253556)",
+      "fobMonths8": [
+        26258,
+        26248,
+        26248,
+        26248,
+        23824,
+        24249,
+        24249,
+        24249
+      ]
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 ) (A-C)",
+      "ten": "Cáp sạc REMARK CB10 A-C(6954851255802)",
+      "fobMonths8": [
+        37958,
+        37959,
+        37957,
+        37956,
+        37955,
+        37954,
+        37954,
+        37954
+      ]
+    },
+    {
+      "group": "Cable",
+      "sku": "65W - ( CB10 ) (C-C)",
+      "ten": "Cáp sạc REMARK CB10 C-C(6954851255840)",
+      "fobMonths8": [
+        37958,
+        37959,
+        37957,
+        37956,
+        37955,
+        37954,
+        37954,
+        37954
+      ]
+    },
+    {
+      "group": "Adapter",
+      "sku": "10W - ( RP - U196 )",
+      "ten": "Adapter sạc REMARK RP-U196(6972174151618)",
+      "fobMonths8": [
+        20761,
+        20761,
+        20761,
+        20761,
+        20761,
+        20761,
+        20761,
+        20761
+      ]
+    },
+    {
+      "group": "Adapter",
+      "sku": "20W - ( CA 08 )",
+      "ten": "Adapter sạc REMARK CA08(C20W)(6954851252047)",
+      "fobMonths8": [
+        34260,
+        34260,
+        34259,
+        34258,
+        34494,
+        35094,
+        35094,
+        35094
+      ]
+    },
+    {
+      "group": "Adapter",
+      "sku": "33W - ( U187 )",
+      "ten": "Adapter sạc REMARK U187-C30W(6954851247197)",
+      "fobMonths8": [
+        69275,
+        69274,
+        69264,
+        69263,
+        69262,
+        69261,
+        69259,
+        69259
+      ]
+    },
+    {
+      "group": "Adapter",
+      "sku": "18W ( U119)",
+      "ten": "Bộ sạc REMARK RP-U119(6954851245728)",
+      "fobMonths8": [
+        35877,
+        35878,
+        35876,
+        35880,
+        35884,
+        35884,
+        35891,
+        35891
+      ]
+    },
+    {
+      "group": "Adapter",
+      "sku": "30W ( U120 )",
+      "ten": "Adapter sạc REMAX RP-U120(6954851245803)",
+      "fobMonths8": [
+        61321,
+        61321,
+        61321,
+        61321,
+        61321,
+        61321,
+        61321,
+        61321
+      ]
+    },
+    {
+      "group": "Adapter",
+      "sku": "30W ( RP - U71 )",
+      "ten": "Bộ sạc REMARK RP-U71(6954851236764)",
+      "fobMonths8": [
+        75367,
+        75365,
+        75355,
+        75358,
+        75357,
+        75356,
+        75356,
+        75356
+      ]
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT560",
+      "ten": "Bluetooth Headset PD-BT560(6954851218302)",
+      "fobMonths8": [
+        99464,
+        99464,
+        99465,
+        99465,
+        98230,
+        99979,
+        99983,
+        99983
+      ]
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "PD-BT260",
+      "ten": "Tai nghe không dây REMAX PD-BT260",
+      "fobMonths8": [
+        83983,
+        83983,
+        83983,
+        83983,
+        84272,
+        85773,
+        85773,
+        85773
+      ]
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20S",
+      "ten": "Tai nghe dây OLIKE E20S",
+      "fobMonths8": [
+        11184,
+        11184,
+        11184,
+        11184,
+        11061,
+        11215,
+        11215,
+        11215
+      ]
+    },
+    {
+      "group": "Tai nghe",
+      "sku": "E20C",
+      "ten": "Tai nghe dây OLIKE E20C",
+      "fobMonths8": [
+        19095,
+        19095,
+        19095,
+        19095,
+        18973,
+        19188,
+        19188,
+        19188
+      ]
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "22.5 W - ( P200 ) (Màu đen)",
+      "ten": "Sạc pin dự phòng P200",
+      "fobMonths8": [
+        0,
+        0,
+        0,
+        0,
+        117683,
+        117683,
+        117680,
+        117680
+      ]
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "22.5 W - ( P200 ) (Màu trắng)",
+      "ten": "",
+      "fobMonths8": [
+        0,
+        0,
+        0,
+        0,
+        117683,
+        117683,
+        117680,
+        117680
+      ]
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "22.5 W - ( P200 ) (Màu Xanh lá)",
+      "ten": "",
+      "fobMonths8": [
+        0,
+        0,
+        0,
+        0,
+        117683,
+        117683,
+        117680,
+        117680
+      ]
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "22.5 W - ( P200 ) (Null)",
+      "ten": "",
+      "fobMonths8": [
+        97911,
+        97911,
+        97911,
+        97911,
+        117683,
+        117683,
+        117680,
+        117680
+      ]
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "10.000Mah - ( RPP 10 )",
+      "ten": "Sạc pin dự phòng REMAX RPP-10 (6954851218821)",
+      "fobMonths8": [
+        91715,
+        91715,
+        91715,
+        91715,
+        91715,
+        91715,
+        91715,
+        91715
+      ]
+    },
+    {
+      "group": "Powerbank (SDP)",
+      "sku": "20.000Mah - ( RPP 11 ) (Có dây)",
+      "ten": "Sạc pin dự phòng REMAX RPP-11(6954851218845)",
+      "fobMonths8": [
+        149037,
+        149037,
+        149037,
+        149037,
+        149037,
+        149037,
+        149037,
+        149037
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-A11X",
+      "ten": "Miếng dán cường lực điện thoại A11X",
+      "fobMonths8": [
+        3669,
+        3669,
+        3669,
+        3669,
+        3669,
+        3669,
+        3669,
+        3669
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-OPPOA6T-2025",
+      "ten": "Miếng dán cường lực điện thoại OPPOA6T-2025",
+      "fobMonths8": [
+        0,
+        0,
+        0,
+        3727,
+        3727,
+        3798,
+        3663,
+        3663
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP17Promax",
+      "ten": "Miếng dán cường lực điện thoại IPhone 17 Pro max",
+      "fobMonths8": [
+        0,
+        0,
+        3809,
+        3809,
+        3809,
+        3809,
+        3809,
+        3809
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP15Promax",
+      "ten": "Miếng dán cường lực điện thoại IPhone 15Promax",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3670,
+        3670,
+        3798,
+        3798,
+        3798
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP16Promax (Keo 280AB)",
+      "ten": "Miếng dán cường lực điện thoại IPhone 16Promax",
+      "fobMonths8": [
+        3666,
+        3666,
+        3666,
+        3666,
+        3666,
+        3666,
+        3631,
+        3631
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL380AB-IP16ProMax (Keo 380AB)",
+      "ten": "Miếng dán cường lực điện thoại IPhone 16 Pro Max",
+      "fobMonths8": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3631,
+        3631
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP14Promax",
+      "ten": "Miếng dán cường lực điện thoại IPhone 14Promax",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3670,
+        3670,
+        3798,
+        3798,
+        3798
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP12",
+      "ten": "Miếng dán cường lực điện thoại IPhone 12",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3670,
+        3670,
+        3758,
+        3758,
+        3758
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP12Promax",
+      "ten": "Miếng dán cường lực điện thoại IPhone 12Promax",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3742,
+        3742,
+        3742,
+        3742,
+        3742
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP13Promax",
+      "ten": "Miếng dán cường lực điện thoại IPhone 13Promax",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3789,
+        3790,
+        3790,
+        3790,
+        3790
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-30Plus",
+      "ten": "Miếng dán cường lực điện thoại 30Plus",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3802,
+        3793,
+        3798,
+        3696,
+        3696
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IPX",
+      "ten": "Miếng dán cường lực điện thoại Iphone X",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3670,
+        3670,
+        3770,
+        3770,
+        3770
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IPXR",
+      "ten": "Miếng dán cường lực điện thoại IPhone XR",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3670,
+        3670,
+        3752,
+        3752,
+        3752
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IPXSmax",
+      "ten": "Miếng dán cường lực điện thoại IPhone XSmax",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3819,
+        3819,
+        3807,
+        3807,
+        3807
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP7Plus",
+      "ten": "Miếng dán cường lực điện thoại IPhone 7Plus",
+      "fobMonths8": [
+        3667,
+        3667,
+        3667,
+        3667,
+        3667,
+        3667,
+        3667,
+        3667
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP15",
+      "ten": "Miếng dán cường lực điện thoại IPhone 15",
+      "fobMonths8": [
+        3670,
+        3670,
+        3805,
+        3797,
+        3797,
+        3797,
+        3797,
+        3797
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP15Pro",
+      "ten": "Miếng dán cường lực điện thoại IPhone 15Pro",
+      "fobMonths8": [
+        3670,
+        3670,
+        3809,
+        3809,
+        3809,
+        3809,
+        3809,
+        3809
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP16Pro",
+      "ten": "Miếng dán cường lực điện thoại IPhone 16Pro",
+      "fobMonths8": [
+        3670,
+        3670,
+        3785,
+        3750,
+        3750,
+        3750,
+        3750,
+        3750
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP13",
+      "ten": "Miếng dán cường lực điện thoại IPhone 13",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3727,
+        3727,
+        3727,
+        3727,
+        3727
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-IP14Pro",
+      "ten": "Miếng dán cường lực điện thoại IPhone 14Pro",
+      "fobMonths8": [
+        3668,
+        3668,
+        3668,
+        3808,
+        3808,
+        3808,
+        3808,
+        3808
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-Reno5",
+      "ten": "Miếng dán cường lực điện thoại Reno5",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3727,
+        3727,
+        3727,
+        3671,
+        3671
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-Honor50Se",
+      "ten": "Miếng dán cường lực điện thoại Honor 50Se",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3776,
+        3778,
+        3791,
+        3791,
+        3791
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-OPPOA1-5G",
+      "ten": "Miếng dán cường lực điện thoại OPPOA1-5G",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3727,
+        3727,
+        3727,
+        3727,
+        3727
+      ]
+    },
+    {
+      "group": "Cường lực (Dán MH)",
+      "sku": "MDCL280AB-FindX8",
+      "ten": "Miếng dán cường lực điện thoại Find X8",
+      "fobMonths8": [
+        3670,
+        3670,
+        3670,
+        3819,
+        3819,
+        3819,
+        3819,
+        3819
+      ]
+    }
+  ],
+  "priceMonthLabels": [
+    "T1.26",
+    "T2.26",
+    "T3.26",
+    "T4.26",
+    "T5.26",
+    "T6.26",
+    "T7.26",
+    "T8.26*"
   ]
 }
 </script>
@@ -4299,6 +5035,7 @@ function parseNhapXuatSheet(rows, fobMap){
       tenHeThong: r[2] ? String(r[2]).trim() : '',
       hubSI: hubSI,
       fobLatest: fobLatest,
+      fobMonths7: fobMonths7,
       nhap2026: numFloat(r[13]),
       tonKho: numFloat(r[19]),
       siPerDay: numDecimal(r[20]),
@@ -4436,6 +5173,14 @@ function buildDashboardData(skus, regionsRaw, theoThang){
       if(tag) d.dispSuffix = tag;
     }
   });
+
+  // ---- Bảng giá sản phẩm: FOB theo tháng + giá HUB/Đại lý/Bán lẻ suy ra ----
+  const priceTable = skus.map(d => ({
+    group: d.group,
+    sku: skuLabel(d),
+    ten: d.tenHeThong,
+    fobMonths8: (d.fobMonths7 || [0,0,0,0,0,0,0]).concat([d.fobLatest || 0]),
+  }));
 
   const groupsAgg = {};
   GROUP_ORDER.forEach(g => groupsAgg[g] = { nhap2026:0, ban2026:0, tonKho:0, siPerDaySum:0, profitCum:0, invValue:0, skus:0 });
@@ -4681,6 +5426,8 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     profitMonthLabels12, monthlyProfitPk12, monthlyProfitCl12,
     bonusMatrix,
     targetProgressMonths, targetProgressMien,
+    priceTable,
+    priceMonthLabels: MONTHS8_LABELS,
   };
 }
 
@@ -5356,6 +6103,48 @@ function renderSkuMonthlyAllTable(){
 
 
 
+let priceMonthIdx = null; // index into DATA.priceMonthLabels
+
+function setupPriceTableMonthSelect(){
+  const sel = document.getElementById('priceMonthSelect');
+  if(!sel) return;
+  const months = DATA.priceMonthLabels || [];
+  sel.innerHTML = months.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  if(priceMonthIdx === null || priceMonthIdx >= months.length){
+    priceMonthIdx = Math.max(0, months.length - 2); // mặc định: tháng thực tế gần nhất (bỏ qua tháng tạm tính *)
+  }
+  sel.value = String(priceMonthIdx);
+  sel.addEventListener('change', () => {
+    priceMonthIdx = parseInt(sel.value, 10);
+    renderPriceTable();
+  });
+}
+
+function renderPriceTable(){
+  const tbody = document.getElementById('priceTableBody');
+  const info = document.getElementById('priceTableInfo');
+  if(!tbody) return;
+  const rows = DATA.priceTable || [];
+  const mi = priceMonthIdx == null ? rows.length : priceMonthIdx;
+  if(info) info.textContent = rows.length + ' mã sản phẩm';
+  tbody.innerHTML = rows.map(r => {
+    const fob = (r.fobMonths8 && r.fobMonths8[mi]) || 0;
+    const banLe = Math.round(fob * 2.5);
+    const daiLy = Math.round(banLe * 0.6);
+    const hub = Math.round(banLe * 0.45);
+    return `
+    <tr>
+      <td>${r.group}</td>
+      <td>${r.sku}</td>
+      <td>${r.ten || ''}</td>
+      <td class="num cen">${fmtMoneyFull(fob)}</td>
+      <td class="num cen">${fmtMoneyFull(hub)}</td>
+      <td class="num cen">${fmtMoneyFull(daiLy)}</td>
+      <td class="num cen">${fmtMoneyFull(banLe)}</td>
+    </tr>`;
+  }).join('');
+}
+
 // ===================== INIT =====================
 function runDashboard(){
   computeDerivedConsts();
@@ -5381,6 +6170,8 @@ function runDashboard(){
   renderTargetProgressTable();
   setupSkuMonthlyAllPicker();
   renderSkuMonthlyAllTable();
+  setupPriceTableMonthSelect();
+  renderPriceTable();
 }
 
 function setLoadingState(msg){
