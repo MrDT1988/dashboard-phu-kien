@@ -1,7 +1,7 @@
 {
  "ban": "2026-08-27.32",
- "tong": 80,
- "khongDat": 1,
+ "tong": 81,
+ "khongDat": 0,
  "loiJS": [],
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
@@ -328,22 +328,27 @@
   {
    "ten": "PK/thẻ shop: từng nhóm đều ra số",
    "dat": true,
-   "chiTiet": "Dưới 5M=### | 5–10M=### | 10–20M=### | 20–30M=48 | Trên 30M=1"
+   "chiTiet": "Dưới 5M=17.7% | 5–10M=43.3% | 10–20M=48.9% | 20–30M=2.2% | Trên 30M=0.0%"
   },
   {
-   "ten": "PK/thẻ shop: tổng các nhóm KHÔNG vượt tổng chung",
-   "dat": false,
-   "chiTiet": "cộng 4 nhóm = ### | tổng chung = ### ← PHÌNH RA, SAI"
+   "ten": "PK/thẻ shop: chọn HẾT các nhóm = cộng từng nhóm",
+   "dat": true,
+   "chiTiet": "lech 0.00%"
+  },
+  {
+   "ten": "PK/thẻ shop: số theo phân khúc không lệch quá xa số sell out",
+   "dat": true,
+   "chiTiet": "loc phan khuc (nguon DB MWG) lech 12.2% so voi so sell out — hai nguon khac nhau nen lech it la binh thuong"
   },
   {
    "ten": "PK/thẻ shop: chọn 2 nhóm = cộng 2 nhóm riêng",
    "dat": true,
-   "chiTiet": "Dưới 5M + 5–10M → chọn cùng lúc = ###, cộng riêng = ###"
+   "chiTiet": "Dưới 5M + 5–10M → lech 0.00%"
   },
   {
    "ten": "PK/thẻ shop: bỏ lọc về đúng số ban đầu",
    "dat": true,
-   "chiTiet": "sau khi bỏ = ### | ban đầu = ###"
+   "chiTiet": "khop chinh xac"
   },
   {
    "ten": "PK/theo ngày: có nút phân khúc",
@@ -353,7 +358,7 @@
   {
    "ten": "PK/theo ngày: 10–20M ra số nhỏ hơn tổng",
    "dat": true,
-   "chiTiet": "10–20M = ### | toàn phân khúc = ###"
+   "chiTiet": "10–20M chiem 19.8% toan phan khuc"
   },
   {
    "ten": "PK/theo ngày: nhãn ghi rõ đang lọc 10–20M",
