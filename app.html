@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-27.33';
+var APP_VER='2026-08-27.34';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -594,6 +594,29 @@ function segColor(i,n){return SEG_RAMP[Math.round(i/(Math.max(1,n-1))*(SEG_RAMP.
 /* ---------- số ngày & tiến độ ---------- */
 function DIM(){return D.dimCur||30}
 function PACE(){var dim=DIM(),d=Math.min(D.maxDay||dim,dim);return d/dim*100}
+/* HAI NGUON — HAI NHIP CAP NHAT (anh Thai chi ra 27/08)
+   D.maxDay lay tu sheet CENTER (so noi bo OPPO, ca 3 kenh).
+   Rieng so THI TRUONG theo ngay (sh.dk) lay tu sheet DATA MWG va thuong moi hon
+   vai ngay. Truoc day app cat het theo D.maxDay nen vut di phan moi hon do.
+   ngayMkt() = ngay cuoi cung THUC SU co so trong sh.dk. */
+var _ngayMkt=null;
+function ngayMkt(){
+  if(_ngayMkt!==null) return _ngayMkt;
+  var d=0;
+  (D.sales||[]).forEach(function(x){ (x.s||[]).forEach(function(sh){
+    if(!sh.dk||!sh.dk.length) return;
+    for(var i=sh.dk.length-1;i>=0;i--){
+      var c=sh.dk[i]||[];
+      if((c[8]||0)||(c[0]||0)){ if(i+1>d) d=i+1; break }
+    }
+  })});
+  _ngayMkt=d||(D.maxDay||DIM());
+  return _ngayMkt;
+}
+// Hai nguon co lech nhip khong (chi hoi o kenh MWG vi IND/KA khong co sh.dk)
+function lechNhip(){ return SEG==='MWG' && ngayMkt()>(D.maxDay||0) }
+function mocMkt(){ return 'thị trường tới ngày '+ngayMkt()+'/'+D.months[MI] }
+function mocOppo(){ return 'OPPO tới ngày '+(D.maxDay||DIM())+'/'+D.months[MI] }
 
 /* ---------- lấy đối tượng đang xem ---------- */
 function allShops(){
@@ -1023,7 +1046,11 @@ function renderOver(){
   var dim=DIM(), day=D.maxDay||dim, pace=PACE();
 
   $('#h-name').textContent=o.n+(SEG!=='ALL'?' · '+SEG:'');
-  $('#h-stamp').textContent='Số liệu tới ngày '+day+'/'+M[MI]+'/'+D.year+' · cập nhật '+
+  // Ghi RO hai moc khi hai nguon lech nhip, va noi ro "cap nhat" la GIO ROBOT CHAY
+  // chu khong phai ngay cua so lieu — truoc day hai cai nay de bi doc nham lam mot.
+  $('#h-stamp').innerHTML='Số máy OPPO tới ngày <b>'+day+'/'+M[MI]+'</b>'+
+    (lechNhip()?(' · <b style="color:var(--amber)">thị phần tới ngày '+ngayMkt()+'/'+M[MI]+'</b>'):'')+
+    ' · robot chạy lúc '+
     new Date(D.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})+
     ' · bản '+APP_VER;
 
@@ -1423,7 +1450,8 @@ function saleTheoHang(saleObj,ngay,isU){
     var soCot=(sh.dk[0]||[]).length; if(soCot<10) return;
     if(pk&&soCot<14) return;
     co=true;
-    var d1=ngay?ngay:1, d2=ngay?ngay:Math.min(dim,D.maxDay||dim);
+    // Bang nay doc sh.dk (nguon DATA MWG) nen chay toi ngayMkt(), khong phai D.maxDay
+    var d1=ngay?ngay:1, d2=ngay?ngay:Math.min(dim,ngayMkt());
     for(var d=d1;d<=d2;d++){
       var c=sh.dk[d-1]; if(!c) continue;
       if(pk){ v[0]+=c[10]||0; v[1]+=c[11]||0; v[8]+=c[12]||0; v[9]+=c[13]||0 }
@@ -1580,25 +1608,28 @@ function renderDaily(o){
   var duocDT=mk&&(isU||mk.coDT);
   if(mk&&duocDT&&mk.cu4){
     $('#dy-sub').textContent='Thị phần 4 hãng chính theo ngày tháng '+m+
+      ' ('+mocMkt()+')'+
       ' — mỗi cột là 100% thị trường ngày đó, số trên cột là % của OPPO. '+
       (isU?'Đang chia theo số máy.':'Đang chia theo doanh thu.')+' Xám là các hãng còn lại.';
-    drawShare100($('#ch-day'),labels,mk,isU,day);
+    drawShare100($('#ch-day'),labels,mk,isU,ngayMkt());
     $('#lg-day').innerHTML=HANG4.map(function(h){
       return '<span><i style="background:'+h.c+'"></i>'+h.k+'</span>'}).join('')+
       '<span><i style="background:#3a4553"></i>Khác</span>';
   } else if(mk&&duocDT){
     var mo2=isU?mk.oU:mk.oR, mt=isU?mk.tU:mk.tR;
     $('#dy-sub').textContent='Thị phần theo ngày tháng '+m+
+      ' ('+mocMkt()+')'+
       (mk.laPK?' — CHỈ phân khúc 10–20M':'')+
       ' — cột xám là cả thị trường, phần xanh là OPPO. '+
       (isU?'Đang xem số máy.':'Đang xem doanh thu.')+
       (mk.laPK?' Khoảng 10–20M không có số tách theo từng hãng nên biểu đồ để dạng OPPO / cả thị trường.':'');
-    drawStack($('#ch-day'),labels,mo2.slice(0,dim),mt.slice(0,dim),
+    drawStack($('#ch-day'),labels,mo2.slice(0,ngayMkt()),mt.slice(0,ngayMkt()),
       {colorA:'var(--c1)',colorB:'#3a4553',h:186,fmt:function(a2,t2){return isU?n0(t2):money(t2)}});
     $('#lg-day').innerHTML='<span><i style="background:var(--c1)"></i>OPPO</span>'+
       '<span><i style="background:#3a4553"></i>Toàn thị trường</span>';
   } else {
     $('#dy-sub').textContent=(isU?'Số máy bán ra':'Doanh thu')+' từng ngày tháng '+m+
+      ' ('+mocOppo()+')'+
       ' — số ghi ngay trên mỗi cột.'+(mk&&!mk.coDT?' (Chưa có doanh thu thị trường theo ngày nên tạm hiện số của OPPO.)':'');
     drawBars($('#ch-day'),labels,vals,{color:'var(--c1)',dimAfter:day-1,lastIdx:day-1,h:186,
       moiCot:true,fmt:isU?n0:money});
@@ -1608,11 +1639,12 @@ function renderDaily(o){
   var hdr=$('#tv-week').previousElementSibling;
   if(SEG==='MWG'){
     // Anh Thái 26/08: bảng mini theo TỪNG NGÀY, không gộp tuần nữa
-    var ngay=[]; for(var q2=0;q2<day;q2++) ngay.push({a:a+q2,b:a+q2,label:String(q2+1)});
+    // Bang nay cung doc sh.dk -> chay toi ngayMkt()
+    var ngay=[]; for(var q2=0;q2<ngayMkt();q2++) ngay.push({a:a+q2,b:a+q2,label:String(q2+1)});
     PK_DA_AP=false;
     var coTP=miniTableSale($('#tv-week'),ngay,'Sale',isU);
     if(hdr&&hdr.className==='subhead'){
-      var nhan='Thị phần từng ngày — từng sale ('+(isU?'theo máy':'theo doanh thu')+')';
+      var nhan='Thị phần từng ngày — từng sale ('+(isU?'theo máy':'theo doanh thu')+') · '+mocMkt();
       if(F_SIZE) nhan+=' · size '+F_SIZE;
       if(F_SEGS.length){
         if(PK_DA_AP) nhan+=' · chỉ PK 10–20M';
@@ -1638,7 +1670,7 @@ function renderDaily(o){
       : (F_SEGS.length ? ' · <b style="color:var(--amber)">⚠ phân khúc này không tách được theo ngày, bảng đang là toàn phân khúc</b>'
                        : '');
     if(coH) hH.innerHTML='Chi tiết từng sale × từng hãng — '+
-      (F_NGAY?('ngày '+F_NGAY+'/'+m):('cả tháng '+m))+
+      (F_NGAY?('ngày '+F_NGAY+'/'+m):('cả tháng '+m+' <small style="color:var(--muted)">('+mocMkt()+')</small>'))+
       ' ('+(isU?'theo máy':'theo doanh thu')+')'+(F_SIZE?(' · size '+F_SIZE):'')+nhanPK;
   } else { hH.hidden=true; $('#tv-hang').innerHTML='' }
 }
@@ -3095,7 +3127,7 @@ function toast(html,giay){
 function moc(d){
   if(!d) return '';
   var m=d.months[d.months.length-1];
-  return 'tới ngày '+d.maxDay+'/'+m+' · làm mới '+
+  return 'OPPO tới ngày '+d.maxDay+'/'+m+' · làm mới '+
     new Date(d.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
 }
 /* Trình duyệt (nhất là app đã thêm vào màn hình chính) hay giữ app.html cũ trong bộ nhớ.
