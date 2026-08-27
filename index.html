@@ -454,16 +454,16 @@ body{
     </div>
   </section>
 
-  <div class="section-title">Chương trình thưởng bán hàng theo tháng</div>
+  <div class="section-title">Chương trình thưởng Sell in theo tháng</div>
   <section class="table-section">
     <div class="table-head">
-      <h3>Bảng thưởng theo khu vực</h3>
+      <h3>Bảng thưởng Sell in theo khu vực</h3>
       <div class="table-controls" id="bonusInfo"></div>
     </div>
     <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
       <div class="dot"></div>
       <div>
-        <b>Tiêu chí:</b> Khu vực có doanh thu Sell-in tháng &gt; 50 triệu thưởng 2% doanh thu · &gt; 100 triệu thưởng 3% doanh thu · &gt; 150 triệu thưởng 4% doanh thu.
+        <b>Tiêu chí:</b> Khu vực có doanh thu Sell-in tháng ≥ 50 triệu thưởng 3% doanh thu · ≥ 100 triệu thưởng 5% doanh thu.
         Mỗi tháng tính độc lập theo doanh thu tháng đó. Bảng chỉ hiển thị khu vực có ít nhất 1 tháng đạt thưởng.
       </div>
     </div>
@@ -5694,9 +5694,8 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   const monthlyProfitCl12 = [profit2025ClT11, profit2025ClT12].concat(monthlyProfitCl7).concat([null,null,null,null]);
 
   function getRate(rev){
-    if(rev > 150000000) return 0.04;
-    if(rev > 100000000) return 0.03;
-    if(rev > 50000000) return 0.02;
+    if(rev >= 100000000) return 0.05;
+    if(rev >= 50000000) return 0.03;
     return null;
   }
   const bonusMatrix = [];
