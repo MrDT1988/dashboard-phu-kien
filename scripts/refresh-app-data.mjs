@@ -145,9 +145,21 @@ async function layMotLan(lanThu) {
           }).sort((a, b) => b[1] - a[1]).slice(0, 8);
           return { ten, co: true, tho: txt.length, nen: await nen(txt), nangNhat: truong };
         };
+        // Lay luon hai khoi DA NEN ve, khoi phai mo trang them lan nua.
+        // Nen ngay trong trang: 27,8 MB tho -> 2,7 MB, nhe hon nhieu khi chuyen ra.
+        const nenB64 = async (o) => {
+          if (!o || typeof CompressionStream !== 'function') return '';
+          const st = new Blob([JSON.stringify(o)]).stream().pipeThrough(new CompressionStream('gzip'));
+          const buf = new Uint8Array(await (await new Response(st)).arrayBuffer());
+          let s2 = ''; const B = 0x8000;
+          for (let i = 0; i < buf.length; i += B) s2 += String.fromCharCode.apply(null, buf.subarray(i, i + B));
+          return btoa(s2);
+        };
         return {
           center: await soi(window.__exportDataMwg, 'CENTER (so noi bo OPPO, 3 kenh)'),
           dataMwg: await soi(window.__exportDataMain, 'DATA MWG (so thi truong)'),
+          centerGz: await nenB64(window.__exportDataMwg),
+          dataMwgGz: await nenB64(window.__exportDataMain),
         };
       });
       const mb = (n) => (n == null ? '?' : (n / 1048576).toFixed(1) + ' MB');
@@ -253,6 +265,19 @@ async function layMotLan(lanThu) {
       }, null, 1));
       log('da ghi data/do-goi-dbtg.json');
     } catch (e) { log('khong ghi duoc ket qua do:', e.message); }
+  }
+
+  // Dong goi DB TG: nen (da lam trong trang) -> ma hoa -> data/dbtg-<id>.json
+  if (doGoiChung && (doGoiChung.centerGz || doGoiChung.dataMwgGz)) {
+    try {
+      const { dongGoiDBTG } = await import('./build-dbtg-vault.mjs');
+      const r = dongGoiDBTG(doGoiChung, {
+        updated: data.updated, maxDay: data.maxDay, months: data.months,
+      });
+      log(`da dong goi DB TG: ${Math.round(r.bytes / 1024)} KB`);
+    } catch (e) { log('CANH BAO: khong dong goi duoc DB TG:', String(e.message)); }
+  } else {
+    log('CANH BAO: khong co khoi nen nao — DB TG se van goi Apps Script nhu cu');
   }
 
   const kb = Math.round(fs.statSync(OUT).size / 1024);
