@@ -57,6 +57,10 @@ function soVoiBanCu(moi, cu) {
   return canh;
 }
 
+// Ket qua do kich thuoc goi DB TG. Phai o TANG NGOAI CUNG vi duoc gan trong
+// layMotLan() nhung doc o ham chinh — de trong ham chinh la ReferenceError.
+let doGoiChung = null;
+
 async function layMotLan(lanThu) {
   const browser = await chromium.launch({
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
@@ -115,6 +119,44 @@ async function layMotLan(lanThu) {
     } catch (e) {
       log('  -> KHONG lay duoc Share KA: ' + e.message + ' (app se bo qua phan nay)');
       shareKA = null;
+    }
+
+    /* ---------------------------------------------------------------------
+       DO KICH THUOC GOI DU LIEU CUA DB TG.
+       Cau hoi phai tra loi truoc khi lam buoc "DB TG doc goi ma hoa":
+       hai khoi DATA cua tg.html nang bao nhieu, nen lai con bao nhieu?
+         duoi 10 MB (sau nen) -> lam duoc, DB TG mo trong vai giay
+         tren 30 MB           -> phai chia nho theo thang
+       Chi la CON SO KICH THUOC, khong phai so lieu kinh doanh -> ghi ra repo duoc.
+       --------------------------------------------------------------------- */
+    try {
+      doGoiChung = await page.evaluate(async () => {
+        const nen = async (txt) => {
+          if (typeof CompressionStream !== 'function') return null;
+          const st = new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'));
+          return (await new Response(st).blob()).size;
+        };
+        const soi = async (o, ten) => {
+          if (!o) return { ten, co: false };
+          const txt = JSON.stringify(o);
+          const truong = Object.keys(o).map((k) => {
+            let n = 0; try { n = JSON.stringify(o[k]).length; } catch (e) { n = -1; }
+            return [k, n];
+          }).sort((a, b) => b[1] - a[1]).slice(0, 8);
+          return { ten, co: true, tho: txt.length, nen: await nen(txt), nangNhat: truong };
+        };
+        return {
+          center: await soi(window.__exportDataMwg, 'CENTER (so noi bo OPPO, 3 kenh)'),
+          dataMwg: await soi(window.__exportDataMain, 'DATA MWG (so thi truong)'),
+        };
+      });
+      const mb = (n) => (n == null ? '?' : (n / 1048576).toFixed(1) + ' MB');
+      [doGoiChung.center, doGoiChung.dataMwg].forEach((x) => {
+        if (!x || !x.co) return;
+        log(`  do goi ${x.ten}: tho ${mb(x.tho)} -> nen ${mb(x.nen)}`);
+      });
+    } catch (e) {
+      log('  -> khong do duoc kich thuoc goi: ' + e.message);
     }
 
     log('chay bo trich xuat build-app-data.js');
@@ -193,6 +235,25 @@ async function layMotLan(lanThu) {
     fs.writeFileSync(MOC, JSON.stringify({ it, salt: salt.toString('base64'),
       iv: iv.toString('base64'), ct: ct.toString('base64') }));
   } catch (e) { log('CANH BAO: khong ghi duoc moc so sanh:', String(e.message)); }
+
+  // Ghi ket qua do kich thuoc goi DB TG. Day la CON SO KICH THUOC (byte), khong
+  // phai so lieu kinh doanh, nen ghi thang vao repo public duoc.
+  if (doGoiChung) {
+    try {
+      const mb = (n) => (n == null ? null : Math.round(n / 1048576 * 10) / 10);
+      const gon = (x) => (!x || !x.co) ? { co: false } : {
+        ten: x.ten, thoMB: mb(x.tho), nenMB: mb(x.nen),
+        tiLeNen: x.nen ? Math.round(x.nen / x.tho * 1000) / 10 + '%' : null,
+        truongNangNhat: (x.nangNhat || []).map(([k, n]) => k + ' ' + mb(n) + ' MB'),
+      };
+      fs.writeFileSync('data/do-goi-dbtg.json', JSON.stringify({
+        doLuc: data.updated,
+        ghiChu: 'Chi la kich thuoc (MB) de tinh buoc "DB TG doc goi ma hoa". Khong co so lieu kinh doanh.',
+        center: gon(doGoiChung.center), dataMwg: gon(doGoiChung.dataMwg),
+      }, null, 1));
+      log('da ghi data/do-goi-dbtg.json');
+    } catch (e) { log('khong ghi duoc ket qua do:', e.message); }
+  }
 
   const kb = Math.round(fs.statSync(OUT).size / 1024);
   log(`XONG: ${data.sales.length} sale · ${data.all.shops} shop · thang ${data.months.join(',')}` +
