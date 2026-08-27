@@ -533,7 +533,7 @@ body{
         <b>Công thức (áp dụng cho mã PK, không gồm Cường lực):</b> Giá HUB = Giá FOB (gốc, chưa VAT) × 1,20 (FOB lãi 20%) &nbsp;·&nbsp; Giá Đại lý = Giá HUB × 1,15 (HUB lãi 15%) &nbsp;·&nbsp; Giá bán lẻ = Giá FOB (gốc) × 2,5, làm tròn về đơn vị 5.000đ.
         % hiển thị ngay sau mỗi giá là lợi nhuận so với giá kế tiếp: FOB → HUB, HUB → Đại lý, Đại lý → Bán lẻ.
         Riêng nhóm <b>Cường lực</b>: Bán lẻ cố định 50.000đ &nbsp;·&nbsp; Giá HUB = FOB (gồm VAT) × 1,25 (FOB lãi 25%) &nbsp;·&nbsp; Giá Đại lý = Giá HUB × 1,20 (HUB lãi 20%) — làm tròn về đơn vị 1.000đ.
-        <b>Lưu ý VAT:</b> Cột Giá FOB hiển thị đã <b>+10% VAT</b> mặc định (để tiện tính VAT), nhưng HUB/Đại lý/Bán lẻ vẫn tính từ giá FOB gốc chưa VAT, không đổi.
+        <b>Lưu ý VAT:</b> Cột Giá FOB hiển thị đã <b>+8% VAT</b> mặc định (để tiện tính VAT). Với mã PK, HUB/Đại lý/Bán lẻ vẫn tính từ giá FOB gốc chưa VAT, không đổi. Riêng nhóm Cường lực, Giá HUB tính trực tiếp từ FOB đã gồm 8% VAT này (xem công thức bên dưới).
         Chọn tháng ở trên để xem giá FOB đúng tháng đó (T8.26 là giá tạm tính, dùng giá FOB T7.26 do Sheet chưa cập nhật).
       </div>
     </div>
@@ -6133,7 +6133,7 @@ function renderPriceTable(){
   const CL_GROUP_NAME = 'Cường lực (Dán MH)';
   tbody.innerHTML = rows.map(r => {
     const fob = (r.fobMonths8 && r.fobMonths8[mi]) || 0; // FOB gốc, dùng để tính HUB/Đại lý/Bán lẻ
-    const fobVAT = Math.round(fob * 1.10); // FOB hiển thị đã gồm VAT 10%, chỉ để tham khảo, không dùng để tính giá tiếp theo
+    const fobVAT = Math.round(fob * 1.08); // FOB hiển thị đã gồm VAT 8%, dùng làm gốc tính HUB/Đại lý cho Cường lực; PK vẫn tính HUB/Đại lý/Bán lẻ từ FOB gốc chưa VAT
     const isCL = r.group === CL_GROUP_NAME;
     let banLe, hub, daiLy, fobCell, hubCell, daiLyCell;
     if(isCL){
