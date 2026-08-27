@@ -5630,6 +5630,14 @@ function buildDashboardData(skus, regionsRaw, theoThang){
       r.tien_do = r.target_nam ? Math.round((r.si_hub_total / r.target_nam) * 1000) / 10 : 0;
     }
   });
+  // Cập nhật riêng theo tên khu vực: TIEN GIANG, BINH DINH -> target/tháng = 120.000.000đ
+  ['TIEN GIANG', 'BINH DINH'].forEach(name => {
+    const r = regionsMap[name];
+    if(!r) return;
+    r.target_thang = 120000000;
+    r.target_nam = 120000000 * 12;
+    r.tien_do = r.target_nam ? Math.round((r.si_hub_total / r.target_nam) * 1000) / 10 : 0;
+  });
   const regions = Object.values(regionsMap);
 
   const mienAgg = {};
@@ -6193,6 +6201,7 @@ function setupTargetProgressFilter(){
   sel.addEventListener('change', () => {
     targetProgressMonthIdx = sel.value === '' ? null : parseInt(sel.value,10);
     renderTargetProgressTable();
+    renderTargetBonusSummary();
   });
 }
 
@@ -6215,9 +6224,14 @@ function targetProgressRowHtml(name, rowClass, dataAttr, monthlyEntry, targetTha
 function renderTargetBonusSummary(){
   const el = document.getElementById('targetBonusSummary');
   if(!el || !DATA.targetProgressMien) return;
+  if(targetProgressMonthIdx === null){
+    el.innerHTML = `<div class="kpi-card" style="grid-column:1/-1;"><div class="kpi-sub" style="text-align:center;">Chọn 1 tháng ở trên để xem tổng thưởng theo tháng đó</div></div>`;
+    return;
+  }
+  const mi = targetProgressMonthIdx;
   const rows = DATA.targetProgressMien.map(m => ({
     name: m.name,
-    total: m.monthly.reduce((s,e)=>s+e.bonus,0),
+    total: (m.monthly[mi] && m.monthly[mi].bonus) || 0,
   }));
   const grandTotal = rows.reduce((s,r)=>s+r.total,0);
   const cards = [...rows.map(r => ({...r, label: 'Tổng thưởng ' + r.name})), { total: grandTotal, isTotal: true, label: 'Tổng thưởng cả 3 Miền' }];
@@ -6225,7 +6239,7 @@ function renderTargetBonusSummary(){
     <div class="kpi-card ${c.isTotal ? 'c-orange' : 'c-green'}">
       <div class="kpi-label">${c.label}</div>
       <div class="kpi-value">${fmtMoneyShort(c.total)}</div>
-      <div class="kpi-sub">Lũy kế các tháng đã có doanh thu</div>
+      <div class="kpi-sub">Theo tháng đang chọn — khớp với dòng Tổng (3 Miền) trong bảng</div>
     </div>`).join('');
 }
 
