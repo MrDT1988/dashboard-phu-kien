@@ -213,6 +213,12 @@
     return JSON.parse(await new Response(st).text());
   }
   window.__goiDBTG = (async function () {
+    /* ROBOT PHAI DI DUONG CU.
+       Robot mo dung trang nay de LAY SO LIEU MOI ve roi dong goi lai. Neu no
+       cung doc goi cu thi thanh vong tron, va te hon: no se dung o man hinh
+       chon nguoi / nhap ma roi treo mai, vi khong co ai go gi ca.
+       Loi nay chi lo ra tu LAN CHAY THU HAI — lan dau chua co goi nen khong thay. */
+    if (window.__BO_QUA_GOI) return null;
     var idx;
     try {
       var r = await _fetch('data/dbtg-index.json?t=' + Date.now(), { cache: 'no-store' });
