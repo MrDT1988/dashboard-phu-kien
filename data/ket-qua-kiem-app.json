@@ -1,7 +1,7 @@
 {
  "ban": "2026-08-27.30",
  "tong": 54,
- "khongDat": 1,
+ "khongDat": 0,
  "loiJS": [],
  "pheps": [
   {
@@ -87,7 +87,7 @@
   {
    "ten": "Chan doan sau khi loc size",
    "dat": true,
-   "chiTiet": "so shop trong pham vi=57 | co mkt=true | mkt.m[MI]=[350,3497,2463,23291] | the thang an=false"
+   "chiTiet": "so shop trong pham vi=57 | co mkt=true | mkt.m[MI]=[358,3567,2524,23879] | the thang an=false"
   },
   {
    "ten": "Loc Size shop: 4 o KPI van hien",
@@ -162,7 +162,7 @@
   {
    "ten": "Shop MWG: bang thang co cot Hang may + Hang DT",
    "dat": true,
-   "chiTiet": "Tháng | Máy | Doanh thu | Đơn giá | Hạng máy | Hạng DT | Share DS | Share DT"
+   "chiTiet": "Tháng | Máy | Doanh thu | Đơn giá | Hạng máy | Hạng DT | Share DS | Share DT | PK 10–20M"
   },
   {
    "ten": "Shop MWG: bang thang co Share DS + Share DT",
@@ -186,8 +186,8 @@
   },
   {
    "ten": "Shop MWG: cot PK 10-20M theo thang (can robot chay lai)",
-   "dat": false,
-   "chiTiet": "chua co sgmS — dung nhu du bao"
+   "dat": true,
+   "chiTiet": ""
   },
   {
    "ten": "Shop KA: chi liet ke shop dung kenh",
