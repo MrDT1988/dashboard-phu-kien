@@ -66,6 +66,15 @@ async function layMotLan(lanThu) {
   try {
     const ctx = await browser.newContext({ viewport: { width: 1400, height: 1000 } });
     const page = await ctx.newPage();
+    // Chia khoa cho duong Apps Script. Phai bom TRUOC khi trang chay dong dau tien,
+    // vi tg.html goi Apps Script ngay luc nap. Lay tu GitHub Secret AS_KEY —
+    // khong nam trong repo. Chua dat secret thi bo qua, moi thu chay nhu cu.
+    if (process.env.AS_KEY) {
+      await page.addInitScript((k) => { window.__AS_KEY = k; }, process.env.AS_KEY);
+      log('da bom chia khoa Apps Script vao trang');
+    } else {
+      log('CHUA co AS_KEY — neu Apps Script da dat chia khoa thi buoc nay se that bai');
+    }
     page.on('console', (m) => {
       const t = m.text();
       if (/error|Error|LOI|không|khong/.test(t)) log('  [trang]', t.slice(0, 200));
