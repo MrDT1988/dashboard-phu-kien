@@ -1,13 +1,14 @@
 {
  "ban": "2026-08-27.31",
- "tong": 76,
- "khongDat": 0,
+ "tong": 80,
+ "khongDat": 3,
  "loiJS": [],
+ "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
    "ten": "Dang nhap va giai ma goi du lieu",
    "dat": true,
-   "chiTiet": "16 sale, 8 thang, ban 2026-08-27.31"
+   "chiTiet": "16 sale, 8 thang, ban ###-08-27.31"
   },
   {
    "ten": "Co du tab kenh",
@@ -87,7 +88,7 @@
   {
    "ten": "Chan doan sau khi loc size",
    "dat": true,
-   "chiTiet": "so shop trong pham vi=57 | co mkt=true | mkt.m[MI]=[358,3567,2524,23879] | the thang an=false"
+   "chiTiet": "so shop trong pham vi=57 | co mkt=true | mkt.m[MI]=[###,###,###,###] | the thang an=false"
   },
   {
    "ten": "Loc Size shop: 4 o KPI van hien",
@@ -97,7 +98,7 @@
   {
    "ten": "Loc Size shop: doi bang thi phan theo thang",
    "dat": true,
-   "chiTiet": "do dai bang truoc=303 sau=303"
+   "chiTiet": "do dai bang truoc=### sau=###"
   },
   {
    "ten": "Co nut nhom 10-20M",
@@ -132,7 +133,7 @@
   {
    "ten": "Goi du lieu co shareKA",
    "dat": true,
-   "chiTiet": "FPT 6414 dong/11 shop | Viettel 3232 dong/7 shop"
+   "chiTiet": "FPT ### dong/11 shop | Viettel ### dong/7 shop"
   },
   {
    "ten": "Tab KA: the thi phan hien",
@@ -167,7 +168,7 @@
   {
    "ten": "Tab KA: doi kenh thi so doi",
    "dat": true,
-   "chiTiet": "Kênh Viettel — 932/4.921 máy cả năm, 7 điểm bán có số."
+   "chiTiet": "Kênh Viettel — ###/4.### máy cả năm, 7 điểm bán có số."
   },
   {
    "ten": "Chan doan share KA",
@@ -182,12 +183,12 @@
   {
    "ten": "Shop MWG: chi liet ke shop dung kenh",
    "dat": true,
-   "chiTiet": "liet ke 120 shop, sai 0"
+   "chiTiet": "liet ke ### shop, sai 0"
   },
   {
    "ten": "Shop MWG: liet ke du shop hoac noi ro dang cat bot",
    "dat": true,
-   "chiTiet": "hien 120/124 (co ghi chu)"
+   "chiTiet": "hien ###/### (co ghi chu)"
   },
   {
    "ten": "Shop MWG: bam vao shop mo duoc to chi tiet",
@@ -267,12 +268,12 @@
   {
    "ten": "Shop IND: chi liet ke shop dung kenh",
    "dat": true,
-   "chiTiet": "liet ke 120 shop, sai 0"
+   "chiTiet": "liet ke ### shop, sai 0"
   },
   {
    "ten": "Shop IND: liet ke du shop hoac noi ro dang cat bot",
    "dat": true,
-   "chiTiet": "hien 120/204 (co ghi chu)"
+   "chiTiet": "hien ###/### (co ghi chu)"
   },
   {
    "ten": "Shop IND: bam vao shop mo duoc to chi tiet",
@@ -300,29 +301,49 @@
    "chiTiet": ""
   },
   {
+   "ten": "Phân khúc/theo ngày: nhóm nào cũng bắt được ít nhất 1 cột",
+   "dat": true,
+   "chiTiet": "Dưới 5M=1 5–10M=2 10–20M=2 20–30M=1 | tong 7 cot"
+  },
+  {
+   "ten": "Phân khúc/theo ngày: không cột nào bị bỏ rơi",
+   "dat": false,
+   "chiTiet": "bo roi: > 30M"
+  },
+  {
+   "ten": "Phân khúc/thị phần: nhóm nào cũng bắt được ít nhất 1 cột",
+   "dat": false,
+   "chiTiet": "Dưới 5M=0 5–10M=2 10–20M=2 20–30M=1 | tong 9 cot"
+  },
+  {
+   "ten": "Phân khúc/thị phần: không cột nào bị bỏ rơi",
+   "dat": false,
+   "chiTiet": "bo roi: <3M / 3-5M / >20M / >30M"
+  },
+  {
    "ten": "PK/thẻ shop: đọc được số khi KHÔNG lọc",
    "dat": true,
-   "chiTiet": "tổng = 2135"
+   "chiTiet": "tổng = ###"
   },
   {
    "ten": "PK/thẻ shop: từng nhóm đều ra số",
    "dat": true,
-   "chiTiet": "5–10M=925 | 10–20M=1044 | 20–30M=48"
+   "chiTiet": "5–10M=### | 10–20M=### | 20–30M=48"
   },
   {
    "ten": "PK/thẻ shop: tổng các nhóm KHÔNG vượt tổng chung",
    "dat": true,
-   "chiTiet": "cộng 4 nhóm = 2017 | tổng chung = 2135 (phần chênh là phân khúc ngoài 4 nhóm)"
+   "chiTiet": "cộng 4 nhóm = ### | tổng chung = ### (phần chênh là phân khúc ngoài 4 nhóm)"
   },
   {
    "ten": "PK/thẻ shop: chọn 2 nhóm = cộng 2 nhóm riêng",
    "dat": true,
-   "chiTiet": "5–10M + 10–20M → chọn cùng lúc = 1969, cộng riêng = 1969"
+   "chiTiet": "5–10M + 10–20M → chọn cùng lúc = ###, cộng riêng = ###"
   },
   {
    "ten": "PK/thẻ shop: bỏ lọc về đúng số ban đầu",
    "dat": true,
-   "chiTiet": "sau khi bỏ = 2135 | ban đầu = 2135"
+   "chiTiet": "sau khi bỏ = ### | ban đầu = ###"
   },
   {
    "ten": "PK/theo ngày: có nút phân khúc",
@@ -332,7 +353,7 @@
   {
    "ten": "PK/theo ngày: 10–20M ra số nhỏ hơn tổng",
    "dat": true,
-   "chiTiet": "10–20M = 2621 | toàn phân khúc = 13218"
+   "chiTiet": "10–20M = ### | toàn phân khúc = ###"
   },
   {
    "ten": "PK/theo ngày: nhãn ghi rõ đang lọc 10–20M",
@@ -352,17 +373,17 @@
   {
    "ten": "PK/theo ngày: nhóm không tách được thì giữ nguyên tổng (không bịa số)",
    "dat": true,
-   "chiTiet": "sau khi chon Dưới 5M = 13218 | toan phan khuc = 13218"
+   "chiTiet": "sau khi chon Dưới 5M = ### | toan phan khuc = ###"
   },
   {
    "ten": "PK/theo ngày: bỏ lọc về đúng số ban đầu",
    "dat": true,
-   "chiTiet": "sau = 13218 | ban đầu = 13218"
+   "chiTiet": "sau = ### | ban đầu = ###"
   },
   {
    "ten": "PK/thẻ KA: cộng các phân khúc khớp tổng theo tháng",
    "dat": true,
-   "chiTiet": "cộng PK = 932/4921 | cộng tháng = 932/4921"
+   "chiTiet": "cộng PK = ###/### | cộng tháng = ###/###"
   },
   {
    "ten": "Tab alert mo duoc, khong vo",
