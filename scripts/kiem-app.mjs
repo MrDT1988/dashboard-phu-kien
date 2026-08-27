@@ -164,6 +164,42 @@ const loiJS = [];
     doi($('#f-ngay'), '0'); await cho(700);
   }
 
+  // ---------- B2. THE THI PHAN KENH KA (FPT + Viettel)
+  await sangTab('KA');
+  const K = w.D.shareKA;
+  ghi('Goi du lieu co shareKA', !!K,
+    K ? ('FPT ' + (K.fpt ? K.fpt.dong + ' dong/' + K.fpt.shops + ' shop' : 'khong co') +
+         ' | Viettel ' + (K.viettel ? K.viettel.dong + ' dong/' + K.viettel.shops + ' shop' : 'khong co'))
+      : 'chua co - robot chua chay lai hoac khong doc duoc sheet Share KA');
+  if (K) {
+    ghi('Tab KA: the thi phan hien', hien($('#c-ka')));
+    const nut = $$('#p-kanh [data-kak]').map((b) => b.dataset.kak);
+    ghi('Tab KA: co nut chon kenh', nut.length >= 2, nut.join(' / '));
+    const bT = $('#ka-thang').querySelector('table');
+    ghi('Tab KA: co bang theo thang', !!bT,
+      bT ? [...bT.rows[0].cells].map((c) => T(c.textContent)).join(' | ') : '');
+    const bP = $('#ka-pk').querySelector('table');
+    ghi('Tab KA: co bang theo phan khuc', !!bP);
+    ghi('Tab KA: khong o nao in HTML tho',
+      [...$('#c-ka').querySelectorAll('table.tv td')].filter((c) => /<b |<small|style=/.test(c.textContent)).length === 0);
+    ghi('Tab KA: co ghi ro chi co so may',
+      /Chỉ có số máy/.test(T($('#ka-note').textContent)));
+    // doi qua tung kenh xem so co doi khong
+    const chup2 = () => T($('#ka-sub').textContent);
+    const g1 = chup2();
+    const bV = $$('#p-kanh [data-kak]').find((b) => b.dataset.kak === 'viettel');
+    if (bV) { bam(bV); await cho(500); ghi('Tab KA: doi kenh thi so doi', chup2() !== g1, chup2()); }
+    // chan doan share thuc te
+    const tinh = (o) => { let a = 0, b = 0; (o.m || []).forEach((x) => { a += x[0]; b += x[1]; }); return b ? (a / b * 100).toFixed(1) + '%' : '—'; };
+    ghi('Chan doan share KA', true,
+      'FPT ' + (K.fpt ? tinh(K.fpt) : '—') + ' | Viettel ' + (K.viettel ? tinh(K.viettel) : '—'));
+  }
+  for (const sg of ['ALL', 'MWG', 'IND']) {
+    await sangTab(sg);
+    if (hien($('#c-ka'))) ghi('Tab ' + sg + ': the KA phai an', false, 'van hien');
+  }
+  await sangTab('MWG');
+
   // ---------- C. muc Shop
   bam($$('nav [data-v]').find((b) => b.dataset.v === 'find')); await cho(800);
   const pil = $$('#sh-chan [data-shc]').map((b) => b.dataset.shc);
