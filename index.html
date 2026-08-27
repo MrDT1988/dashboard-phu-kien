@@ -6103,7 +6103,7 @@ function renderSkuMonthlyAllTable(){
       <td>${r.group}</td>
       <td>${r.sku}</td>
       ${r.months.map(v => `<td class="num">${v ? fmtInt(v) : '<span style="color:var(--text-secondary)">–</span>'}</td>`).join('')}
-      ${[0,0,0,0,0].map(()=>`<td class="num"><span style="color:var(--text-secondary)">–</span></td>`).join('')}
+      ${[0,0,0,0].map(()=>`<td class="num"><span style="color:var(--text-secondary)">–</span></td>`).join('')}
       <td class="num"><b>${fmtInt(r.total)}</b></td>
       <td class="num">${fmtInt(r.avgMonth)}</td>
       <td class="num">${fmtInt(r.tonKho)}</td>
