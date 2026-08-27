@@ -1,6 +1,6 @@
 {
  "ban": "2026-08-27.31",
- "tong": 54,
+ "tong": 63,
  "khongDat": 0,
  "loiJS": [],
  "pheps": [
@@ -128,6 +128,51 @@
    "ten": "Loc Ngay: doi bang chi tiet theo sale",
    "dat": true,
    "chiTiet": ""
+  },
+  {
+   "ten": "Goi du lieu co shareKA",
+   "dat": true,
+   "chiTiet": "FPT 6414 dong/11 shop | Viettel 3232 dong/7 shop"
+  },
+  {
+   "ten": "Tab KA: the thi phan hien",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab KA: co nut chon kenh",
+   "dat": true,
+   "chiTiet": "fpt / viettel / ca"
+  },
+  {
+   "ten": "Tab KA: co bang theo thang",
+   "dat": true,
+   "chiTiet": "Tháng | OPPO | Cả thị trường | Share"
+  },
+  {
+   "ten": "Tab KA: co bang theo phan khuc",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab KA: khong o nao in HTML tho",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab KA: co ghi ro chi co so may",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab KA: doi kenh thi so doi",
+   "dat": true,
+   "chiTiet": "Kênh Viettel — 932/4.921 máy cả năm, 7 điểm bán có số."
+  },
+  {
+   "ten": "Chan doan share KA",
+   "dat": true,
+   "chiTiet": "FPT 20.2% | Viettel 18.9%"
   },
   {
    "ten": "Muc Shop: co muc con theo kenh",
