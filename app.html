@@ -538,7 +538,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-27.27';
+var APP_VER='2026-08-27.28';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -961,6 +961,14 @@ function drawStack(el,labels,aVals,tVals,opts){
   el.innerHTML=s;
 }
 
+// Ban KHONG escape o — chi dung cho bang do chinh app dung, moi phan du lieu
+// (ten shop, ten model, ten nhan vien...) da phai qua safe() truoc khi ghep vao.
+// tvTable() ben duoi van escape nhu cu de khong ai lo tay.
+function tvTableHtml(head,rows){
+  return '<table class="tv"><tr>'+head.map(function(h){return '<th>'+safe(h)+'</th>'}).join('')+'</tr>'+
+    rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join('')+
+    '</table>';
+}
 function tvTable(head,rows){
   return '<table class="tv"><tr>'+head.map(function(h){return '<th>'+safe(h)+'</th>'}).join('')+'</tr>'+
     rows.map(function(r){return '<tr>'+r.map(function(c,i){return (i?'<td>':'<td>')+safe(c)+'</td>'}).join('')+'</tr>'}).join('')+
@@ -2357,12 +2365,56 @@ function iNhom1020(){
   for(var i=0;i<t.length;i++) if(/10.*20/.test(t[i])) return i;
   return 2;
 }
+// Xep hang shop trong CHINH KENH cua no, tung thang mot, theo ca doanh so lan doanh thu.
+// Tra ve mang theo thang [[hangMay, hangDT], ...], kem .tong = so shop dem duoc
+// va .caNam = hang luy ke ca nam. Duoi 2 shop thi khong xep hang.
+// Luu y: chi xep trong pham vi nguoi dang xem duoc thay (sale chi thay shop cua minh).
+function hangShopTheoThang(s){
+  var NM=D.months.length, ds=[];
+  D.sales.forEach(function(x){ (x.s||[]).forEach(function(y){ if(y.ch2===s.ch2) ds.push(y) }) });
+  if(ds.length<2) return null;
+  var viTri=function(list,ten){
+    for(var k=0;k<list.length;k++) if(list[k].n===ten) return k+1;
+    return 0;
+  };
+  var out=[];
+  for(var i=0;i<NM;i++){
+    var mu=ds.map(function(y){
+      var v=(y.m&&y.m[i])?y.m[i]:[0,0];
+      return {n:y.n,u:v[0]||0,r:v[1]||0};
+    });
+    out.push([
+      viTri(mu.slice().sort(function(a,b){return b.u-a.u}), s.n),
+      viTri(mu.slice().sort(function(a,b){return b.r-a.r}), s.n)
+    ]);
+  }
+  var ny=ds.map(function(y){
+    var u=0,r=0; (y.m||[]).forEach(function(v){u+=v[0]||0;r+=v[1]||0});
+    return {n:y.n,u:u,r:r};
+  });
+  out.caNam=[
+    viTri(ny.slice().sort(function(a,b){return b.u-a.u}), s.n),
+    viTri(ny.slice().sort(function(a,b){return b.r-a.r}), s.n)
+  ];
+  out.tong=ds.length;
+  return out;
+}
+// O hien thi hang: top 20% xanh, tren nua bang vang, duoi nua bang do.
+function oHang(h,tong){
+  if(!h||!tong) return '<b style="color:var(--muted)">—</b>';
+  var p=h/tong;
+  var c=p<=0.2?'var(--green)':p<=0.5?'var(--amber)':'var(--red)';
+  return '<b style="color:'+c+'">#'+h+'</b><small>/'+tong+'</small>';
+}
+
 // Bang "theo tung thang" cua 1 shop. Co so thi truong thi them cot share.
 function bangThangShop(s){
   var M=D.months, coMkt=!!(s.mkm||(s.mkt&&s.mkt.m));
   var i1020=iNhom1020();
   var coPK=!!(s.sgmS&&s.sgmS.length);
+  var hang=hangShopTheoThang(s);
   var head=['Tháng','Máy','Doanh thu','Đơn giá'];
+  if(hang) head=head.concat(['Hạng máy','Hạng DT']);
   if(coMkt) head=head.concat(['Share DS','Share DT']);
   if(coPK) head.push('PK 10–20M');
   var mau=function(p){ return p>=25?'var(--green)':p>=15?'var(--amber)':'var(--red)' };
@@ -2370,6 +2422,7 @@ function bangThangShop(s){
     var cur=(s.m&&s.m[i])?s.m[i]:[0,0];
     var dg=cur[0]?Math.round(cur[1]/cur[0]*10)/10:0;
     var r=['T'+mm, n0(cur[0]), money(cur[1]), dg?money(dg):'—'];
+    if(hang){ r.push(oHang(hang[i][0],hang.tong)); r.push(oHang(hang[i][1],hang.tong)) }
     if(coMkt){
       var v=s.mkm?s.mkm[i]:null, mk=(!v&&s.mkt&&s.mkt.m)?s.mkt.m[i]:null;
       var oU=v?v[0]:(mk?mk[0]:0), tU=v?v[8]:(mk?mk[2]:0);
@@ -2388,6 +2441,7 @@ function bangThangShop(s){
   var tU2=0,tR2=0; (s.m||[]).forEach(function(v){tU2+=v[0];tR2+=v[1]});
   var rt=['<b>Cả năm</b>','<b>'+n0(tU2)+'</b>','<b>'+money(tR2)+'</b>',
     tU2?money(Math.round(tR2/tU2*10)/10):'—'];
+  if(hang){ rt.push(oHang(hang.caNam[0],hang.tong)); rt.push(oHang(hang.caNam[1],hang.tong)) }
   if(coMkt){
     var a=0,b=0,c=0,d=0;
     M.forEach(function(mm,i){
@@ -2404,7 +2458,10 @@ function bangThangShop(s){
     rt.push(f1?('<b style="color:'+mau(e1/f1*100)+'">'+pct(e1/f1*100,0)+'</b>'):'—');
   }
   rows.push(rt);
-  var h='<div class="tvwrap">'+tvTable(head,rows)+'</div>';
+  var h='<div class="tvwrap">'+tvTableHtml(head,rows)+'</div>';
+  if(hang) h+='<div class="note"><b>Hạng</b> là thứ hạng của shop này trong '+hang.tong+
+    ' shop kênh '+safe(s.ch2)+' của tháng đó — xanh là nhóm 20% dẫn đầu, đỏ là nửa dưới. '+
+    'Nhìn dọc cột hạng thấy ngay shop đang lên hay đang tụt.</div>';
   if(!coPK&&s.ch2==='MWG')
     h+='<div class="note"><b>Chưa có cột PK 10–20M theo từng tháng.</b> Số phân khúc theo tháng ở cấp shop '+
        'đang được lấy thêm về từ DB TG, lần chạy robot tới sẽ có. Hiện chỉ xem được phân khúc của '+
@@ -2426,7 +2483,7 @@ function top3PhanKhuc(s){
   if(!ds.length) return '';
   var tong=0; LSG.forEach(function(nm,i){ tong+=(sg[i]||[0,0,0,0])[2] });
   return '<h4 class="dh">Top 3 phân khúc bán tốt nhất tại shop — tháng '+D.months[MI]+'</h4>'+
-    '<div class="tvwrap">'+tvTable(['#','Phân khúc','Shop bán','% của shop','OPPO','Share OPPO'],
+    '<div class="tvwrap">'+tvTableHtml(['#','Phân khúc','Shop bán','% của shop','OPPO','Share OPPO'],
       ds.map(function(x,i){
         var p=x.t?x.o/x.t*100:0;
         return [String(i+1), safe(x.n), n0(x.t)+' máy',
@@ -2471,11 +2528,11 @@ function khoiTonKho(s){
       '<div>Đã nhập<b>'+n0(dlCua.nhap)+' máy</b></div>'+
       '<div>Đã bán<b>'+n0(dlCua.ban)+' máy</b></div>'+
       '<div>Tồn ước tính<b style="color:'+(dlCua.ton>0?'var(--amber)':'var(--green)')+'">'+n0(dlCua.ton)+' máy</b></div></div>'+
-      '<div class="tvwrap">'+tvTable(['Model','Nhập','Bán','Tồn','Còn bán được'],
+      '<div class="tvwrap">'+tvTableHtml(['Model','Nhập','Bán','Tồn','Còn bán được'],
         gg.map(function(r){
-          if(r.ton<0) return [tenModel(r.n),n0(r.nhap),n0(r.ban),
+          if(r.ton<0) return [safe(tenModel(r.n)),n0(r.nhap),n0(r.ban),
             '<b style="color:var(--amber)">⚠</b><small>bán nhiều hơn nhập</small>','—'];
-          return [tenModel(r.n),n0(r.nhap),n0(r.ban),n0(r.ton),tkNgay(r.ton,gNgay?r.ban/gNgay:0)]}))+'</div>';
+          return [safe(tenModel(r.n)),n0(r.nhap),n0(r.ban),n0(r.ton),tkNgay(r.ton,gNgay?r.ban/gNgay:0)]}))+'</div>';
     var dong=gg.filter(function(r){return r.ton>0})[0];
     if(dong) h+='<div class="note">Đọng nhiều nhất: <b>'+safe(tenModel(dong.n))+'</b> — nhập '+n0(dong.nhap)+
       ', bán '+n0(dong.ban)+', còn <b style="color:var(--amber)">'+n0(dong.ton)+' máy</b>. '+
