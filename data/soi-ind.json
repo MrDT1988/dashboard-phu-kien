@@ -1,0 +1,155 @@
+{
+ "ban": "2026-08-27.33",
+ "thang": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8
+ ],
+ "thangDangXem": 8,
+ "ngayChotCuaGoi": 23,
+ "ghiChu": "Repo PUBLIC — file nay chi ghi TI LE (%) va so ngay. Khong co so may / doanh thu tuyet doi.",
+ "kenh": {
+  "MWG": {
+   "soShop": 124,
+   "tyLeShopCoBanTheoThang": [
+    {
+     "thang": 1,
+     "tyLe": 100
+    },
+    {
+     "thang": 2,
+     "tyLe": 100
+    },
+    {
+     "thang": 3,
+     "tyLe": 100
+    },
+    {
+     "thang": 4,
+     "tyLe": 100
+    },
+    {
+     "thang": 5,
+     "tyLe": 100
+    },
+    {
+     "thang": 6,
+     "tyLe": 100
+    },
+    {
+     "thang": 7,
+     "tyLe": 98.4
+    },
+    {
+     "thang": 8,
+     "tyLe": 100
+    }
+   ],
+   "chuaBanThangNay": {
+    "tyLeSoShop": 0
+   },
+   "tyLeChuaBanBatKyThangNao": 0,
+   "ngayCuoiCoSoTrongThang": 23,
+   "coCotKichHoat": true
+  },
+  "IND": {
+   "soShop": 204,
+   "tyLeShopCoBanTheoThang": [
+    {
+     "thang": 1,
+     "tyLe": 79.4
+    },
+    {
+     "thang": 2,
+     "tyLe": 61.3
+    },
+    {
+     "thang": 3,
+     "tyLe": 55.4
+    },
+    {
+     "thang": 4,
+     "tyLe": 44.1
+    },
+    {
+     "thang": 5,
+     "tyLe": 44.1
+    },
+    {
+     "thang": 6,
+     "tyLe": 48
+    },
+    {
+     "thang": 7,
+     "tyLe": 49
+    },
+    {
+     "thang": 8,
+     "tyLe": 46.6
+    }
+   ],
+   "chuaBanThangNay": {
+    "tyLeSoShop": 53.4,
+    "tyLeDoanhThuCaNam": 31.8,
+    "tyLeChuaBanCaNam": 0,
+    "tyLeVuaRotTuThangTruoc": 23.9,
+    "tyLeCoKichHoatNhungKhongCoBan": 0
+   },
+   "tyLeChuaBanBatKyThangNao": 0,
+   "ngayCuoiCoSoTrongThang": 23,
+   "coCotKichHoat": true
+  },
+  "KA": {
+   "soShop": 29,
+   "tyLeShopCoBanTheoThang": [
+    {
+     "thang": 1,
+     "tyLe": 65.5
+    },
+    {
+     "thang": 2,
+     "tyLe": 65.5
+    },
+    {
+     "thang": 3,
+     "tyLe": 69
+    },
+    {
+     "thang": 4,
+     "tyLe": 79.3
+    },
+    {
+     "thang": 5,
+     "tyLe": 82.8
+    },
+    {
+     "thang": 6,
+     "tyLe": 79.3
+    },
+    {
+     "thang": 7,
+     "tyLe": 72.4
+    },
+    {
+     "thang": 8,
+     "tyLe": 79.3
+    }
+   ],
+   "chuaBanThangNay": {
+    "tyLeSoShop": 20.7,
+    "tyLeDoanhThuCaNam": 0.4,
+    "tyLeChuaBanCaNam": 0,
+    "tyLeVuaRotTuThangTruoc": 16.7,
+    "tyLeCoKichHoatNhungKhongCoBan": 0
+   },
+   "tyLeChuaBanBatKyThangNao": 0,
+   "ngayCuoiCoSoTrongThang": 23,
+   "coCotKichHoat": true
+  }
+ }
+}
