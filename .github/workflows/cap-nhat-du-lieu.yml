@@ -63,7 +63,23 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A data/
           git commit -m "Tu dong cap nhat so lieu app ($(TZ=Asia/Ho_Chi_Minh date '+%d/%m/%Y %H:%M'))"
-          git push
+          # Trong luc robot chay (vai phut) co the co commit khac day len -> push bi tu choi.
+          # Da tung hong vi ly do nay: so lieu tinh xong roi ma khong luu duoc.
+          # Nen keo ve roi xep lai, thu toi 5 lan.
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "Da luu so lieu moi."
+              exit 0
+            fi
+            echo "Push bi tu choi (lan $i) - co commit khac chen vao. Keo ve roi thu lai..."
+            git pull --rebase --autostash origin main || {
+              echo "::error::Keo ve that bai - co the dang dung do file. Dung lai de nguoi kiem tra."
+              exit 1
+            }
+            sleep 5
+          done
+          echo "::error::Thu 5 lan van khong push duoc so lieu moi."
+          exit 1
 
       - name: Bao loi ro rang
         if: failure()
