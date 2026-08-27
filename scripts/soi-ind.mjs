@@ -109,9 +109,34 @@ for (const ch of Object.keys(theoKenh)) {
   bao[ch] = o;
 }
 
+/* ---------------------------------------------------------------
+   DO TRE GIUA HAI NGUON — anh Thai chi ra 27/08:
+     CENTER   = so noi bo OPPO, ca 3 kenh  -> nuoi sh.d (may OPPO theo ngay) + maxDay
+     DATA MWG = so thi truong tai shop MWG -> nuoi sh.dk (thi phan theo ngay, moi hang)
+   Hai sheet cap nhat KHONG cung nhip. Neu sh.dk co ngay ma sh.d khong co thi
+   app dang hien hai moc thoi gian khac nhau tren cung mot man hinh.
+   --------------------------------------------------------------- */
+let ngayCuoiD = 0, ngayCuoiDK = 0, soShopCoDK = 0;
+D.sales.forEach((x) => (x.s || []).forEach((sh) => {
+  (sh.d || []).forEach((u, i) => { if (u > 0 && i + 1 > ngayCuoiD) ngayCuoiD = i + 1; });
+  if (sh.dk && sh.dk.length) {
+    soShopCoDK++;
+    sh.dk.forEach((c, i) => {
+      const t = (c[8] || 0) + (c[0] || 0);
+      if (t > 0 && i + 1 > ngayCuoiDK) ngayCuoiDK = i + 1;
+    });
+  }
+}));
+
 const kq = {
   ban: w.APP_VER, thang: D.months, thangDangXem: D.months[MI],
   ngayChotCuaGoi: D.maxDay || null,
+  doTre: {
+    ngayCuoi_mayOPPO_tuCENTER: ngayCuoiD,
+    ngayCuoi_thiPhan_tuDATAMWG: ngayCuoiDK,
+    soShopCoSoThiPhanTheoNgay: soShopCoDK,
+    lechBaoNhieuNgay: ngayCuoiDK - ngayCuoiD,
+  },
   ghiChu: 'Repo PUBLIC — file nay chi ghi TI LE (%) va so ngay. Khong co so may / doanh thu tuyet doi.',
   kenh: bao,
 };
