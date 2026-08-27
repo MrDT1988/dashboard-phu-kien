@@ -12,6 +12,12 @@
  ],
  "thangDangXem": 8,
  "ngayChotCuaGoi": 23,
+ "doTre": {
+  "ngayCuoi_mayOPPO_tuCENTER": 23,
+  "ngayCuoi_thiPhan_tuDATAMWG": 26,
+  "soShopCoSoThiPhanTheoNgay": 119,
+  "lechBaoNhieuNgay": 3
+ },
  "ghiChu": "Repo PUBLIC — file nay chi ghi TI LE (%) va so ngay. Khong co so may / doanh thu tuyet doi.",
  "kenh": {
   "MWG": {
