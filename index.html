@@ -234,6 +234,8 @@ body{
 .data-table tbody tr.grp-last td{border-bottom:2px solid var(--navy);}
 .data-table tbody tr td.grp-edge-l{border-left:2px solid var(--navy);}
 .data-table tbody tr td.grp-edge-r{border-right:2px solid var(--navy);}
+.data-table tbody tr.price-up{background:rgba(214,69,69,.08);}
+.data-table tbody tr.price-up:hover{background:rgba(214,69,69,.15);}
 
 /* Region table — 3 color clusters */
 #regionTable th:nth-child(-n+4), #regionTable td:nth-child(-n+4){ background:#EBF1FC; }
@@ -570,10 +572,10 @@ body{
     </div>
   </section>
 
-  <div class="section-title">Bảng giá sản phẩm</div>
+  <div class="section-title">Bảng giá PK</div>
   <section class="table-section">
     <div class="table-head">
-      <h3>Giá FOB &amp; giá suy ra theo tháng</h3>
+      <h3>Bảng giá PK theo tháng</h3>
       <div class="table-controls">
         <select id="priceMonthSelect"></select>
         <select id="priceGroupSelect" style="margin-left:8px;"></select>
@@ -587,6 +589,7 @@ body{
         % hiển thị ngay sau mỗi giá là lợi nhuận so với giá kế tiếp: FOB → HUB, HUB → Đại lý, Đại lý → Bán lẻ.
         Riêng nhóm <b>Cường lực</b>: giá CỐ ĐỊNH, không áp công thức trên — Bán lẻ 50.000đ, HUB 6.000đ, Đại lý 8.000đ; % hiển thị chỉ để tham khảo mức lãi thực tế, không dùng để tính lại giá.
         <b>Lưu ý VAT:</b> Cột Giá FOB hiển thị đã <b>+8% VAT</b> mặc định. Với mã PK, Giá HUB tính từ FOB đã gồm VAT này; Giá bán lẻ vẫn tính từ FOB gốc chưa VAT.
+        <b style="color:var(--red);">Tăng giá FOB gốc:</b> P200 +12% &nbsp;·&nbsp; CB16 +10% &nbsp;·&nbsp; CB10 +5% &nbsp;·&nbsp; U119 +3% — tăng trên FOB gốc trước, sau đó mới cộng 8% VAT và tính tiếp HUB/Đại lý/Bán lẻ. Các mã này tô đỏ trong bảng.
         Chọn tháng ở trên để xem giá FOB đúng tháng đó (T8.26 là giá tạm tính, dùng giá FOB T7.26 do Sheet chưa cập nhật).
       </div>
     </div>
@@ -8298,6 +8301,16 @@ function setupPriceTableGroupSelect(){
   });
 }
 
+// Các mẫu tăng giá FOB gốc theo yêu cầu — áp dụng % tăng lên FOB gốc TRƯỚC khi cộng VAT 8%
+function priceIncreasePct(sku){
+  if(!sku) return 0;
+  if(sku.includes('P200')) return 0.12;
+  if(sku.includes('CB16')) return 0.10;
+  if(sku.includes('CB10')) return 0.05;
+  if(sku.includes('U119')) return 0.03;
+  return 0;
+}
+
 function renderPriceTable(){
   const tbody = document.getElementById('priceTableBody');
   const info = document.getElementById('priceTableInfo');
@@ -8310,8 +8323,10 @@ function renderPriceTable(){
   tbody.innerHTML = rows.map((r, idx) => {
     const isFirstOfGroup = idx === 0 || rows[idx - 1].group !== r.group;
     const isLastOfGroup = idx === rows.length - 1 || rows[idx + 1].group !== r.group;
-    const fob = (r.fobMonths8 && r.fobMonths8[mi]) || 0; // FOB gốc, dùng để tính HUB/Đại lý/Bán lẻ
-    const fobVAT = Math.round(fob * 1.08); // FOB hiển thị đã gồm VAT 8%, dùng làm gốc tính HUB/Đại lý cho Cường lực; PK vẫn tính HUB/Đại lý/Bán lẻ từ FOB gốc chưa VAT
+    const fobGoc0 = (r.fobMonths8 && r.fobMonths8[mi]) || 0; // FOB gốc theo Sheet, trước khi áp tăng giá
+    const incPct = priceIncreasePct(r.sku); // % tăng giá FOB gốc riêng cho 1 số mẫu (P200/CB16/CB10/U119)
+    const fob = incPct ? Math.round(fobGoc0 * (1 + incPct)) : fobGoc0; // FOB gốc SAU khi tăng giá, dùng để tính HUB/Đại lý/Bán lẻ
+    const fobVAT = Math.round(fob * 1.08); // FOB gốc (đã tăng giá nếu có) x 1.08 VAT — làm gốc tính HUB/Đại lý cho mã PK
     const isCL = r.group === CL_GROUP_NAME;
     let banLe, hub, daiLy, fobCell, hubCell, daiLyCell;
     if(isCL){
@@ -8330,11 +8345,14 @@ function renderPriceTable(){
       const banLeRaw = fob * 2.5;
       banLe = Math.round(banLeRaw / 5000) * 5000; // làm tròn về đơn vị 5.000đ
       const daiLyPct = daiLy ? Math.round(((banLe - daiLy) / daiLy) * 1000) / 10 : 0;
-      fobCell = `${fmtMoneyFull(fobVAT)} <span style="color:var(--green);font-weight:600;">(+25%)</span>`;
+      const fobPriceHtml = incPct
+        ? `<span style="color:var(--red);font-weight:700;">${fmtMoneyFull(fobVAT)}</span> <span style="color:var(--red);font-weight:700;">(▲${Math.round(incPct*100)}%)</span>`
+        : fmtMoneyFull(fobVAT);
+      fobCell = `${fobPriceHtml} <span style="color:var(--green);font-weight:600;">(+25%)</span>`;
       hubCell = `${fmtMoneyFull(hub)} <span style="color:var(--green);font-weight:600;">(+20%)</span>`;
       daiLyCell = `${fmtMoneyFull(daiLy)} <span style="color:var(--green);font-weight:600;">(+${daiLyPct}%)</span>`;
     }
-    const rowCls = [(isCL ? 'grp-cl' : 'grp-pk'), isFirstOfGroup ? 'grp-first' : '', isLastOfGroup ? 'grp-last' : ''].filter(Boolean).join(' ');
+    const rowCls = [(isCL ? 'grp-cl' : 'grp-pk'), isFirstOfGroup ? 'grp-first' : '', isLastOfGroup ? 'grp-last' : '', incPct ? 'price-up' : ''].filter(Boolean).join(' ');
     return `
     <tr class="${rowCls}">
       <td class="grp-edge-l">${r.group}</td>
