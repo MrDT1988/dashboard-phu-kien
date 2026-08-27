@@ -666,8 +666,8 @@ body{
               <th>Nhóm</th>
               <th>Mã sản phẩm</th>
               <th>Tên sản phẩm</th>
-              <th class="num cen">Giá FOB gốc mặc định</th>
               <th class="num cen">Giá FOB gốc tự chỉnh</th>
+              <th class="num cen">Giá FOB gồm VAT (+8%)</th>
               <th class="cen">Thao tác</th>
             </tr>
           </thead>
@@ -8602,18 +8602,22 @@ function renderPriceEditRows(){
     const defaultResolved = resolveFobGoc(r, miRef, {}); // giá mặc định hệ thống, chưa tính override tự chỉnh
     const hasManual = Object.prototype.hasOwnProperty.call(pePendingOverrides, r.sku) && pePendingOverrides[r.sku] !== '' && pePendingOverrides[r.sku] !== null && pePendingOverrides[r.sku] !== undefined;
     const manualVal = hasManual ? pePendingOverrides[r.sku] : '';
+    const baseForVat = hasManual ? Number(manualVal) : defaultResolved.fobGoc;
+    const vatVal = Math.round((isNaN(baseForVat) ? 0 : baseForVat) * 1.08);
     let defaultTag = '';
-    if(defaultResolved.source === 'fixed') defaultTag = '<div class="pe-default-tag">Giá cố định</div>';
-    else if(defaultResolved.source === 'pct') defaultTag = `<div class="pe-default-tag">Đã +${Math.round(defaultResolved.incPct*100)}%</div>`;
+    if(defaultResolved.source === 'fixed') defaultTag = '<div class="pe-default-tag">Mặc định: giá cố định ' + fmtInt(defaultResolved.fobGoc) + 'đ</div>';
+    else if(defaultResolved.source === 'pct') defaultTag = `<div class="pe-default-tag">Mặc định: ${fmtInt(defaultResolved.fobGoc)}đ (đã +${Math.round(defaultResolved.incPct*100)}%)</div>`;
+    else defaultTag = `<div class="pe-default-tag">Mặc định: ${fmtInt(defaultResolved.fobGoc)}đ</div>`;
     return `
     <tr>
       <td>${r.group}</td>
       <td>${r.sku}</td>
       <td>${r.ten || ''}</td>
-      <td class="num cen">${fmtInt(defaultResolved.fobGoc)}đ${defaultTag}</td>
       <td class="cen">
         <input type="number" min="0" step="1000" class="pe-input${hasManual ? ' pe-dirty' : ''}" data-sku="${encodeURIComponent(r.sku)}" placeholder="${fmtInt(defaultResolved.fobGoc)}" value="${manualVal}" />
+        ${defaultTag}
       </td>
+      <td class="num cen"><span class="pe-vat-cell" data-vat-sku="${encodeURIComponent(r.sku)}">${fmtInt(vatVal)}đ</span></td>
       <td class="cen">
         <button type="button" class="pe-row-clear" data-sku="${encodeURIComponent(r.sku)}" ${hasManual ? '' : 'disabled'}>Xóa</button>
       </td>
@@ -8633,6 +8637,15 @@ function renderPriceEditRows(){
       }
       const clearBtn = tbody.querySelector(`.pe-row-clear[data-sku="${inp.getAttribute('data-sku')}"]`);
       if(clearBtn) clearBtn.disabled = !(v !== '' && v !== null);
+      // Cập nhật ngay cột Giá FOB gồm VAT khi đang gõ, +8% trên giá vừa nhập (hoặc giá mặc định nếu để trống)
+      const vatCell = tbody.querySelector(`.pe-vat-cell[data-vat-sku="${inp.getAttribute('data-sku')}"]`);
+      if(vatCell){
+        const r = (DATA.priceTable || []).find(x => x.sku === sku);
+        const defResolved = r ? resolveFobGoc(r, miRef, {}) : { fobGoc: 0 };
+        const base = (v === '' || v === null) ? defResolved.fobGoc : Number(v);
+        const vat = Math.round((isNaN(base) ? 0 : base) * 1.08);
+        vatCell.textContent = fmtInt(vat) + 'đ';
+      }
     });
   });
   tbody.querySelectorAll('.pe-row-clear').forEach(btn => {
