@@ -527,6 +527,39 @@ body{
     </div>
   </section>
 
+  <div class="section-title">Bảng tổng hợp chi phí chương trình tháng</div>
+  <section class="table-section">
+    <div class="table-head">
+      <h3>Tổng hợp Thưởng Sell in + Thưởng HT Target</h3>
+      <div class="table-controls">
+        <select id="programCostMonthSelect"><option value="">— Chọn tháng —</option></select>
+      </div>
+    </div>
+    <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
+      <div class="dot"></div>
+      <div>
+        <b>Ghi chú:</b> Gộp 2 chương trình thưởng đang chạy — Thưởng Sell in (Sell-in ≥50tr thưởng 3%, ≥100tr thưởng 5%) và Thưởng HT Target (≥80% thưởng 2.000.000đ, ≥100% thưởng 4.000.000đ).
+        Tổng thưởng = Thưởng Sell in + Thưởng HT Target. % Thưởng/DT = Tổng thưởng ÷ Doanh thu tháng đó.
+        Bấm vào 1 dòng Miền để xem chi tiết từng khu vực trong miền đó.
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+    <table class="data-table" id="programCostTable">
+      <thead>
+        <tr>
+          <th>Khu vực / Miền</th>
+          <th class="num cen">Thưởng Sell in</th>
+          <th class="num cen">Thưởng HT Target</th>
+          <th class="num cen">Tổng thưởng</th>
+          <th class="num cen">Doanh thu</th>
+          <th class="num cen">% Thưởng/DT</th>
+        </tr>
+      </thead>
+      <tbody id="programCostBody"></tbody>
+    </table>
+    </div>
+  </section>
+
   <div class="section-title">Bảng giá sản phẩm</div>
   <section class="table-section">
     <div class="table-head">
@@ -5763,6 +5796,36 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     };
   });
 
+  // ===== Bảng tổng hợp chi phí chương trình tháng (Sell in + HT Target) =====
+  const programCostRegions = regions.map(r => {
+    const monthly = regionMonthly[r.name] || new Array(8).fill(0);
+    const rtd = regionTargetDetail.find(x => x.name === r.name);
+    const monthsData = [];
+    for(let i=0;i<8;i++){
+      const revenue = monthly[i] || 0;
+      const rate = getRate(revenue);
+      const sellInBonus = rate ? Math.round(revenue * rate) : 0;
+      const targetBonus = (rtd && rtd.monthly[i]) ? rtd.monthly[i].bonus : 0;
+      const totalBonus = sellInBonus + targetBonus;
+      const pctBonusRev = revenue ? Math.round((totalBonus / revenue) * 1000) / 10 : 0;
+      monthsData.push({ revenue, sellInBonus, targetBonus, totalBonus, pctBonusRev });
+    }
+    return { name: r.name, mien: r.mien, monthly: monthsData };
+  });
+  const programCostMien = MIEN_ORDER.map(mName => {
+    const regionsInMien = programCostRegions.filter(r => r.mien === mName);
+    const monthly = [];
+    for(let i=0;i<8;i++){
+      const revenue = regionsInMien.reduce((s,r)=>s+r.monthly[i].revenue,0);
+      const sellInBonus = regionsInMien.reduce((s,r)=>s+r.monthly[i].sellInBonus,0);
+      const targetBonus = regionsInMien.reduce((s,r)=>s+r.monthly[i].targetBonus,0);
+      const totalBonus = sellInBonus + targetBonus;
+      const pctBonusRev = revenue ? Math.round((totalBonus / revenue) * 1000) / 10 : 0;
+      monthly.push({ revenue, sellInBonus, targetBonus, totalBonus, pctBonusRev });
+    }
+    return { name: mName, monthly, regions: regionsInMien };
+  });
+
   const nhap2026 = groups.reduce((s,g)=>s+g.nhap2026,0);
   const ban2026 = groups.reduce((s,g)=>s+g.ban2026,0);
   const tonKho = groups.reduce((s,g)=>s+g.tonKho,0);
@@ -5806,6 +5869,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     profitMonthLabels12, monthlyProfitPk12, monthlyProfitCl12,
     bonusMatrix,
     targetProgressMonths, targetProgressMien,
+    programCostMien,
     priceTable,
     priceMonthLabels: MONTHS8_LABELS,
   };
@@ -6291,6 +6355,69 @@ function renderTargetProgressTable(){
   });
 }
 
+let programCostMonthIdx = null;
+let programCostExpanded = new Set();
+
+function setupProgramCostFilter(){
+  const sel = document.getElementById('programCostMonthSelect');
+  if(!sel) return;
+  const months = DATA.targetProgressMonths || [];
+  sel.innerHTML = '<option value="">— Chọn tháng —</option>' + months.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+  sel.addEventListener('change', () => {
+    programCostMonthIdx = sel.value === '' ? null : parseInt(sel.value,10);
+    renderProgramCostTable();
+  });
+}
+
+function programCostRowHtml(name, rowClass, dataAttr, entry){
+  return `
+  <tr class="${rowClass}" ${dataAttr}>
+    <td>${name}</td>
+    <td class="num cen">${fmtMoneyShort(entry.sellInBonus)}</td>
+    <td class="num cen">${fmtMoneyShort(entry.targetBonus)}</td>
+    <td class="num cen"><b>${fmtMoneyShort(entry.totalBonus)}</b></td>
+    <td class="num cen">${fmtMoneyShort(entry.revenue)}</td>
+    <td class="num cen">${entry.pctBonusRev}%</td>
+  </tr>`;
+}
+
+function renderProgramCostTable(){
+  const tbody = document.getElementById('programCostBody');
+  if(!tbody) return;
+  if(programCostMonthIdx === null || !DATA.programCostMien){
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:24px;">Chọn 1 tháng phía trên để xem tổng hợp chi phí chương trình</td></tr>`;
+    return;
+  }
+  const mi = programCostMonthIdx;
+  const rowsHtml = DATA.programCostMien.map(m => {
+    const isExpanded = programCostExpanded.has(m.name);
+    let html = programCostRowHtml(m.name, 'mien-row' + (isExpanded ? ' expanded' : ''), `data-mien="${m.name}"`, m.monthly[mi]);
+    if(isExpanded){
+      html += m.regions.map(r => programCostRowHtml(r.name, 'region-row', '', r.monthly[mi])).join('');
+    }
+    return html;
+  }).join('');
+
+  const totalSellIn = DATA.programCostMien.reduce((s,m)=>s+m.monthly[mi].sellInBonus,0);
+  const totalTargetBonus = DATA.programCostMien.reduce((s,m)=>s+m.monthly[mi].targetBonus,0);
+  const totalBonus = totalSellIn + totalTargetBonus;
+  const totalRevenue = DATA.programCostMien.reduce((s,m)=>s+m.monthly[mi].revenue,0);
+  const totalPct = totalRevenue ? Math.round((totalBonus/totalRevenue)*1000)/10 : 0;
+  const totalEntry = { sellInBonus: totalSellIn, targetBonus: totalTargetBonus, totalBonus, revenue: totalRevenue, pctBonusRev: totalPct };
+  const totalRow = programCostRowHtml('Tổng (3 Miền)', 'total-row', '', totalEntry);
+
+  tbody.innerHTML = rowsHtml + totalRow;
+
+  tbody.querySelectorAll('tr.mien-row').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const name = tr.dataset.mien;
+      if(programCostExpanded.has(name)) programCostExpanded.delete(name);
+      else programCostExpanded.add(name);
+      renderProgramCostTable();
+    });
+  });
+}
+
 // ===================== REVENUE BY MONTH CHART (2025-2026) =====================
 const ALL_12_MONTHS = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26*','T8.26','T9.26','T10.26','T11.26','T12.26'];
 
@@ -6609,6 +6736,8 @@ function runDashboard(){
   setupTargetProgressFilter();
   renderTargetProgressTable();
   renderTargetBonusSummary();
+  setupProgramCostFilter();
+  renderProgramCostTable();
   setupSkuMonthlyAllPicker();
   renderSkuMonthlyAllTable();
   setupPriceTableMonthSelect();
