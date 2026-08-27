@@ -538,7 +538,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-27.28';
+var APP_VER='2026-08-27.29';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -756,7 +756,11 @@ function buildFilt(){
     // Truoc day chi an di ma bien F_SIZE/F_SEGS/F_NGAY van giu nguyen -> Tong quan, KA, IND
     // bi loc ngam theo lua chon ben MWG ma khong co gi bao. Gio roi khoi MWG la xoa sach.
     F_SIZE=''; F_SEGS=[]; F_NGAY=0;
-    box.hidden=true; nt.hidden=true; return }
+    box.hidden=true; nt.hidden=true;
+    // Khoi phan khuc nam NGOAI #filt nen phai an rieng. Truoc day quen dong nay
+    // -> sang tab IND/KA/Tong quan van thay hang nut phan khuc, bam vao khong an gi.
+    $('#f-seg-w').hidden=true;
+    return }
   box.hidden=false; nt.hidden=false;
   var sh0=(D.sales[0]&&(D.sales[0].s||[]).find(function(x){return x.dk}));
   var coPKNgay=!!(sh0&&sh0.dk&&sh0.dk[0]&&sh0.dk[0].length>=14);
