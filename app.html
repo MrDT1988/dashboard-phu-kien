@@ -97,6 +97,12 @@ main{padding:14px 14px 4px;max-width:760px;margin:0 auto}
 .pills.sm button{flex:none;padding:4px 11px;font-size:11px;border-radius:7px}
 .pills.sm.ky button.on{color:#eaf2ff;background:#2f5c9e;border-color:#3f74c2}
 .pills.sm.ser button.on{color:#1a1405;background:#c08420;border-color:#c08420}
+.pills.sm button em{font-style:normal;opacity:.65;margin-left:3px;font-weight:700}
+.xem-them{width:100%;margin-top:8px;padding:11px;border-radius:10px;font-size:13px;
+  font-weight:700;color:var(--green);background:color-mix(in srgb,var(--green) 10%,transparent);
+  border:1px solid color-mix(in srgb,var(--green) 32%,transparent);cursor:pointer}
+.xem-them small{display:block;margin-top:2px;font-size:11px;font-weight:600;
+  color:var(--muted)}
 .subhead{margin:16px 0 6px;font-size:12px;font-weight:700;color:var(--ink2)}
 /* Hàng bộ lọc ngay trên trang */
 .filt{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
@@ -488,6 +494,7 @@ h4.dh:first-child{margin-top:0}
     <div class="card">
       <h2>Shop</h2>
       <div class="pills" id="sh-chan"></div>
+      <div class="pills sm" id="sh-loc"></div>
       <p class="sub" id="f-sub"></p>
       <input type="search" id="f-q" placeholder="Gõ tên shop, mã shop hoặc địa chỉ…" autocomplete="off">
       <div id="f-list"></div>
@@ -552,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-27.32';
+var APP_VER='2026-08-27.33';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -2400,6 +2407,15 @@ function fallback(txt,done){
    ========================================================= */
 var FIND_SRC=[];
 var SHOP_CH='';        // muc con dang xem trong tab Shop: MWG / KA / IND
+var FIND_N=120;        // dang ve bao nhieu dong — bam "Xem them" thi cong len
+var FIND_LOC='';       // '' | 'chua' (chua ban thang nay) | 'giam' (giam so thang truoc)
+// Hai cau hoi anh hoi nhieu nhat khi mo danh sach shop.
+function shChuaBan(x){ return !((x.m&&x.m[MI])?(x.m[MI][0]||0):0) }
+function shGiam(x){
+  if(MI<1) return false;
+  var nay=(x.m&&x.m[MI])?(x.m[MI][0]||0):0, truoc=(x.m&&x.m[MI-1])?(x.m[MI-1][0]||0):0;
+  return truoc>0&&nay<truoc;
+}
 function renderFind(o){
   // Luon lay TOAN BO shop cua nguoi dang xem, khong phu thuoc tab kenh o Tong quan
   FIND_SRC=(curObj().s||[]).slice();
@@ -2411,16 +2427,35 @@ function renderFind(o){
     return '<button data-shc="'+c+'"'+(SHOP_CH===c?' class="on"':'')+'>Shop '+c+
       ' <em>'+cos[c]+'</em></button>'}).join(''):'';
   $('#sh-chan').hidden=chans.length<2;
+  FIND_N=120;
   drawFind($('#f-q')?$('#f-q').value:'');
 }
 function drawFind(q){
   q=(q||'').trim().toLowerCase();
-  var list=FIND_SRC.filter(function(x){return !SHOP_CH||x.ch2===SHOP_CH});
+  var kenh=FIND_SRC.filter(function(x){return !SHOP_CH||x.ch2===SHOP_CH});
+
+  // Hai nut loc nhanh — GHI SAN SO DEM tren nut, chua bam da biet co bao nhieu shop.
+  var nChua=kenh.filter(shChuaBan).length, nGiam=kenh.filter(shGiam).length;
+  var nutLoc=[['','Tất cả',kenh.length],['chua','Chưa bán tháng '+D.months[MI],nChua]];
+  if(MI>=1) nutLoc.push(['giam','Giảm so tháng '+D.months[MI-1],nGiam]);
+  $('#sh-loc').innerHTML=nutLoc.map(function(x){
+    return '<button data-shl="'+x[0]+'"'+(FIND_LOC===x[0]?' class="on"':'')+'>'+
+      safe(x[1])+' <em>'+x[2]+'</em></button>'}).join('');
+
+  var list=kenh;
+  if(FIND_LOC==='chua') list=list.filter(shChuaBan);
+  else if(FIND_LOC==='giam') list=list.filter(shGiam);
   $('#f-sub').textContent=list.length+' shop kênh '+(SHOP_CH||'—')+
+    (FIND_LOC?(' · '+(FIND_LOC==='chua'?'chưa bán tháng này':'giảm so tháng trước')):'')+
     ' — bấm vào một shop để xem chi tiết đầy đủ của shop đó.';
   if(q) list=list.filter(function(s){return s.n.toLowerCase().indexOf(q)>=0});
-  list=list.slice().sort(function(a,b){return b.m[MI][1]-a.m[MI][1]});
-  $('#f-list').innerHTML=list.length? list.slice(0,120).map(function(s){
+  // Loc "chua ban" thi xep theo doanh thu CA NAM — thang nay ai cung 0, xep theo
+  // thang nay se ra thu tu ngau nhien, nhin khong biet shop nao dang tiec nhat.
+  list=list.slice().sort(FIND_LOC==='chua'
+    ? function(a,b){ return sumPair(b.m,1)-sumPair(a.m,1) }
+    : function(a,b){ return b.m[MI][1]-a.m[MI][1] });
+  if(FIND_N>list.length) FIND_N=Math.max(120,Math.ceil(list.length/100)*100);
+  $('#f-list').innerHTML=list.length? list.slice(0,FIND_N).map(function(s){
     var yU=sumPair(s.m,0), cur=s.m[MI];
     return '<button class="shop" data-shop="'+safe(s.n)+'"><span class="bd">'+
       '<span class="t">'+safe(s.n)+'</span><span class="d">'+
@@ -2428,8 +2463,19 @@ function drawFind(q){
       (s.lv?safe(s.lv)+' · ':'')+'cả năm '+n0(yU)+' máy'+(s.tg?' · target '+money(s.tg)+'/tháng':'')+
       '</span></span><span class="r">'+n0(cur[0])+' máy<small>'+money(cur[1])+'</small></span>'+
       '<span class="chev">›</span></button>';
-  }).join(''):'<div class="empty">Không tìm thấy shop nào</div>';
-  if(list.length>120)$('#f-list').innerHTML+='<div class="note">Đang hiện 120/'+list.length+' shop. Gõ thêm để lọc hẹp lại.</div>';
+  }).join(''):'<div class="empty">'+
+    (FIND_LOC==='chua'?'Không có shop nào chưa bán trong tháng này. Rất tốt.'
+     :FIND_LOC==='giam'?'Không có shop nào giảm so với tháng trước. Rất tốt.'
+     :'Không tìm thấy shop nào')+'</div>';
+  // Con shop chua ve -> phai co NUT bam ra tiep. Truoc day chi ghi mot dong chu
+  // "Đang hiện 120/204", 84 shop con lai khong co cach nao mo ra tren app.
+  if(list.length>FIND_N){
+    var conLai=list.length-FIND_N, them=Math.min(100,conLai);
+    $('#f-list').innerHTML+='<button class="xem-them" data-fmore="1">'+
+      'Xem thêm '+them+' shop <small>còn '+conLai+' shop chưa hiện</small></button>';
+  } else if(list.length>120){
+    $('#f-list').innerHTML+='<div class="note">Đang hiện đủ '+list.length+' shop.</div>';
+  }
 }
 
 /* =========================================================
@@ -2991,7 +3037,12 @@ document.addEventListener('click',function(e){
   var tt=e.target.closest('[data-tr]');
   if(tt){TR=tt.dataset.tr;renderMonth(scope());return}
   var shc=e.target.closest('[data-shc]');
-  if(shc){ SHOP_CH=shc.dataset.shc; renderFind(scope()); window.scrollTo(0,0); return }
+  if(shc){ SHOP_CH=shc.dataset.shc; FIND_LOC=''; FIND_N=120; renderFind(scope()); window.scrollTo(0,0); return }
+  var shl=e.target.closest('[data-shl]');
+  if(shl){ FIND_LOC=shl.dataset.shl; FIND_N=120;
+    drawFind($('#f-q')?$('#f-q').value:''); window.scrollTo(0,0); return }
+  var fmo=e.target.closest('[data-fmore]');
+  if(fmo){ FIND_N+=100; drawFind($('#f-q')?$('#f-q').value:''); return }
   var tk=e.target.closest('[data-tks]');
   if(tk){TK_SALE=tk.dataset.tks;renderTon();window.scrollTo(0,0);return}
   var sv=e.target.closest('[data-ser]');
@@ -3114,7 +3165,7 @@ $('#r-tog').addEventListener('click',function(){rankMode=rankMode==='y'?'m':'y';
 $('#a-copy').addEventListener('click',copyAlerts);
 $('#tk-copy').addEventListener('click',copyTon);
 $('#tk-tog').addEventListener('click',function(){TK_SORT=TK_SORT==='ton'?'ngay':'ton';renderTon()});
-$('#f-q').addEventListener('input',function(){drawFind(this.value)});
+$('#f-q').addEventListener('input',function(){FIND_N=120;drawFind(this.value)});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet()});
 
 /* =========================================================
