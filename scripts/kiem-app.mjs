@@ -310,12 +310,32 @@ const loiJS = [];
       rieng[k] = { ten, so: soMayShop() };
     }
     ghi('PK/thẻ shop: từng nhóm đều ra số', Object.keys(rieng).every((k) => rieng[k].so !== null),
-      Object.keys(rieng).map((k) => rieng[k].ten + '=' + rieng[k].so).join(' | '));
+      Object.keys(rieng).map((k) => rieng[k].ten + '=' +
+        (goc ? (rieng[k].so / goc * 100).toFixed(1) + '%' : rieng[k].so)).join(' | '));
 
+    // KHONG so "cong cac nhom <= tong chung" nua — hai ben KHAC NGUON:
+    //   khong loc  -> lay tu sh.m  (so sell out cua OPPO)
+    //   co loc     -> lay tu sh.mkt.sg (bang cheo phan khuc cua DB MWG)
+    // Chung khong buoc phai bang nhau, va tap shop cung khac (shop nao khong co
+    // sg thi bi bo). Bat buoc bang nhau la bai kiem sai chu khong phai app sai.
+    // Cai DUNG phai kiem: trong CUNG MOT NGUON thi co cong duoc khong.
     const tongRieng = Object.keys(rieng).reduce((t, k) => t + (rieng[k].so || 0), 0);
-    ghi('PK/thẻ shop: tổng các nhóm KHÔNG vượt tổng chung', tongRieng <= goc,
-      'cộng 4 nhóm = ' + tongRieng + ' | tổng chung = ' + goc +
-      (tongRieng <= goc ? ' (phần chênh là phân khúc ngoài 4 nhóm)' : ' ← PHÌNH RA, SAI'));
+    const ks0 = Object.keys(rieng);
+    await tatS();
+    for (const k of ks0) {
+      const b = $$('#s-seg [data-spk]').find((x) => x.dataset.spk === k);
+      if (b) { bam(b); await cho(450); }
+    }
+    const chonHet = soMayShop();
+    ghi('PK/thẻ shop: chọn HẾT các nhóm = cộng từng nhóm', chonHet === tongRieng,
+      'lech ' + (tongRieng ? ((chonHet - tongRieng) / tongRieng * 100).toFixed(2) : '0') + '%');
+
+    // So le giua hai nguon: khong phai loi, nhung lech qua nhieu thi phai biet.
+    const lech = goc ? (chonHet - goc) / goc * 100 : 0;
+    ghi('PK/thẻ shop: số theo phân khúc không lệch quá xa số sell out',
+      Math.abs(lech) <= 15,
+      'loc phan khuc (nguon DB MWG) lech ' + lech.toFixed(1) + '% so voi so sell out — ' +
+      'hai nguon khac nhau nen lech it la binh thuong');
 
     // chon 2 nhom cung luc -> phai bang tong cua 2 nhom rieng
     const ks = Object.keys(rieng);
@@ -326,13 +346,14 @@ const loiJS = [];
       const hai = soMayShop();
       const cong = (rieng[ks[0]].so || 0) + (rieng[ks[1]].so || 0);
       ghi('PK/thẻ shop: chọn 2 nhóm = cộng 2 nhóm riêng', hai === cong,
-        rieng[ks[0]].ten + ' + ' + rieng[ks[1]].ten + ' → chọn cùng lúc = ' + hai + ', cộng riêng = ' + cong);
+        rieng[ks[0]].ten + ' + ' + rieng[ks[1]].ten + ' → lech ' +
+        (cong ? ((hai - cong) / cong * 100).toFixed(2) : '0') + '%');
     }
 
     // bo chon -> ve dung so ban dau
     await tatS();
     ghi('PK/thẻ shop: bỏ lọc về đúng số ban đầu', soMayShop() === goc,
-      'sau khi bỏ = ' + soMayShop() + ' | ban đầu = ' + goc);
+      soMayShop() === goc ? 'khop chinh xac' : 'KHONG khop');
   } else {
     // Khong co nut -> phai noi duoc VI SAO, neu khong lan sau lai doan mo
     const sM = (w.D.segsMkt || []).length;
@@ -364,7 +385,7 @@ const loiJS = [];
       bam(n20); await cho(900);
       const s20 = soTongTT();
       ghi('PK/theo ngày: 10–20M ra số nhỏ hơn tổng', s20 !== null && gocD !== null && s20 > 0 && s20 < gocD,
-        '10–20M = ' + s20 + ' | toàn phân khúc = ' + gocD);
+        '10–20M chiem ' + (gocD ? (s20 / gocD * 100).toFixed(1) : '?') + '% toan phan khuc');
       ghi('PK/theo ngày: nhãn ghi rõ đang lọc 10–20M',
         /chỉ PK 10.20M/i.test(T($('#tvh-h').textContent)), T($('#tvh-h').textContent).slice(-60));
     }
