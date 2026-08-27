@@ -166,6 +166,31 @@ body{
   background:var(--navy);color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
 }
 .btn-export:hover{background:var(--navy-dark);}
+.pe-overlay{position:fixed;inset:0;background:rgba(20,24,45,.55);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.pe-modal{background:#fff;border-radius:14px;width:100%;max-width:900px;max-height:86vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.pe-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 10px;}
+.pe-modal-head h3{margin:0;font-size:17px;color:var(--navy-dark);}
+.pe-close{border:none;background:none;font-size:24px;line-height:1;cursor:pointer;color:var(--text-secondary);padding:0 4px;}
+.pe-close:hover{color:var(--red);}
+.pe-modal-sub{padding:0 22px 12px;font-size:12.5px;color:var(--text-secondary);}
+.pe-modal-controls{display:flex;align-items:center;gap:10px;padding:0 22px 12px;}
+.pe-modal-controls input{flex:1;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;}
+.pe-count{font-size:12px;color:var(--text-secondary);white-space:nowrap;}
+.pe-modal-body{overflow-y:auto;padding:0 22px;flex:1;}
+.pe-modal-body table.data-table{width:100%;}
+.pe-modal-body .pe-input{width:110px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;text-align:right;}
+.pe-modal-body .pe-input.pe-dirty{border-color:var(--orange);background:#FFF6EC;}
+.pe-modal-body .pe-input.pe-fixed-default{background:#F3F5FB;}
+.pe-row-clear{border:none;background:none;color:var(--red);cursor:pointer;font-size:12px;text-decoration:underline;}
+.pe-row-clear:disabled{color:var(--line);cursor:default;text-decoration:none;}
+.pe-modal-foot{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line);}
+.pe-save-msg{margin-right:auto;font-size:12.5px;color:var(--green);font-weight:600;}
+.pe-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;}
+.pe-btn-ghost{background:#F0F1F5;color:var(--text-primary);}
+.pe-btn-ghost:hover{background:#E4E6EE;}
+.pe-btn-primary{background:var(--green);color:#fff;}
+.pe-btn-primary:hover{filter:brightness(0.95);}
+.pe-default-tag{font-size:11px;color:var(--text-secondary);}
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
 .badge.good{background:#E4F5EC;color:var(--green);}
 .badge.warn{background:#FFEFE6;color:var(--orange);}
@@ -586,6 +611,7 @@ body{
         <select id="priceMonthSelect"></select>
         <select id="priceGroupSelect" style="margin-left:8px;"></select>
         <button id="exportPriceTableBtn" type="button" class="btn-export" style="margin-left:8px;">⭳ Xuất Excel</button>
+        <button id="editPriceBtn" type="button" class="btn-export" style="margin-left:8px;background:var(--orange);">✎ Chỉnh giá</button>
         <span id="priceTableInfo" style="margin-left:10px;color:var(--text-secondary);font-size:13px;"></span>
       </div>
     </div>
@@ -596,8 +622,10 @@ body{
         % hiển thị ngay sau mỗi giá là lợi nhuận so với giá kế tiếp: FOB → HUB, HUB → Đại lý, Đại lý → Bán lẻ.
         Riêng nhóm <b>Cường lực</b>: giá CỐ ĐỊNH, không áp công thức trên — Bán lẻ 50.000đ, HUB 6.000đ, Đại lý 8.000đ; % hiển thị chỉ để tham khảo mức lãi thực tế, không dùng để tính lại giá.
         <b>Lưu ý VAT:</b> Cột Giá FOB hiển thị đã <b>+8% VAT</b> mặc định. Với mã PK, Giá HUB tính từ FOB đã gồm VAT này; Giá bán lẻ vẫn tính từ FOB gốc chưa VAT.
-        <b style="color:var(--red);">Tăng giá FOB gốc:</b> P200 +12% &nbsp;·&nbsp; CB16 +10% &nbsp;·&nbsp; CB10 +5% &nbsp;·&nbsp; U119 +3% — tăng trên FOB gốc trước, sau đó mới cộng 8% VAT và tính tiếp HUB/Đại lý/Bán lẻ. Các mã này tô đỏ trong bảng.
+        <b style="color:var(--red);">Tăng giá FOB gốc:</b> P200 +12% &nbsp;·&nbsp; CB10 +5% &nbsp;·&nbsp; U119 +3% — tăng trên FOB gốc trước, sau đó mới cộng 8% VAT và tính tiếp HUB/Đại lý/Bán lẻ. Các mã này tô đỏ trong bảng.
+        <b style="color:var(--navy-dark);">CB16 (2 màu):</b> gộp về 1 giá FOB gốc cố định <b>27.000đ</b> cho cả 2 mã, không lấy giá từ Sheet nữa.
         Chọn tháng ở trên để xem giá FOB đúng tháng đó (T8.26 là giá tạm tính, dùng giá FOB T7.26 do Sheet chưa cập nhật).
+        <b style="color:var(--orange);">Chỉnh giá tay:</b> bấm nút "✎ Chỉnh giá" để tự sửa giá FOB gốc từng mã và lưu lại — giá HUB/Đại lý/Bán lẻ sẽ tự tính lại theo đúng công thức trên. Giá tự chỉnh chỉ lưu trên trình duyệt đang dùng.
       </div>
     </div>
     <div style="overflow-x:auto;">
@@ -617,6 +645,43 @@ body{
     </table>
     </div>
   </section>
+
+  <div id="priceEditModal" class="pe-overlay" style="display:none;">
+    <div class="pe-modal">
+      <div class="pe-modal-head">
+        <h3>Chỉnh giá FOB gốc</h3>
+        <button id="peCloseBtn" type="button" class="pe-close">&times;</button>
+      </div>
+      <div class="pe-modal-sub">
+        Sửa giá FOB gốc (chưa VAT) cho từng mã, để trống = dùng giá mặc định của hệ thống. Bấm <b>Lưu thay đổi</b> để áp dụng — giá HUB/Đại lý/Bán lẻ sẽ tự tính lại. Giá tự chỉnh lưu trên trình duyệt này.
+      </div>
+      <div class="pe-modal-controls">
+        <input type="text" id="peSearchInput" placeholder="Tìm theo mã sản phẩm / tên..." />
+        <span id="peCountInfo" class="pe-count"></span>
+      </div>
+      <div class="pe-modal-body">
+        <table class="data-table" id="peTable">
+          <thead>
+            <tr>
+              <th>Nhóm</th>
+              <th>Mã sản phẩm</th>
+              <th>Tên sản phẩm</th>
+              <th class="num cen">Giá FOB gốc mặc định</th>
+              <th class="num cen">Giá FOB gốc tự chỉnh</th>
+              <th class="cen">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="peTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pe-modal-foot">
+        <span id="peSaveMsg" class="pe-save-msg"></span>
+        <button id="peResetAllBtn" type="button" class="pe-btn pe-btn-ghost">Xóa hết chỉnh tay</button>
+        <button id="peCancelBtn" type="button" class="pe-btn pe-btn-ghost">Đóng</button>
+        <button id="peSaveBtn" type="button" class="pe-btn pe-btn-primary">💾 Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
 
   <footer class="dashboard-footer">
     Dữ liệu: Nam Phong — Nhập &amp; bán hàng · Chi tiết bán hàng khu vực · Lũy kế T1–T7.2026 &nbsp;|&nbsp; Dashboard tạo bởi AI Chief of Staff
@@ -8312,10 +8377,50 @@ function setupPriceTableGroupSelect(){
 function priceIncreasePct(sku){
   if(!sku) return 0;
   if(sku.includes('P200')) return 0.12;
-  if(sku.includes('CB16')) return 0.10;
   if(sku.includes('CB10')) return 0.05;
   if(sku.includes('U119')) return 0.03;
   return 0;
+}
+
+// Các mẫu chốt giá FOB gốc CỐ ĐỊNH (thay vì tính theo Sheet) — vd CB16 (2 màu) gộp về 1 giá
+const DEFAULT_FOB_OVERRIDES = [
+  { match: function(sku){ return (sku||'').includes('CB16'); }, value: 27000, label: 'CB16' }
+];
+
+const PE_STORAGE_KEY = 'pk_price_manual_overrides_v1';
+
+function getManualPriceOverrides(){
+  try{
+    const raw = localStorage.getItem(PE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+
+function setManualPriceOverrides(obj){
+  try{ localStorage.setItem(PE_STORAGE_KEY, JSON.stringify(obj)); }catch(e){}
+}
+
+function getDefaultFobOverride(sku){
+  for(let i=0;i<DEFAULT_FOB_OVERRIDES.length;i++){
+    if(DEFAULT_FOB_OVERRIDES[i].match(sku)) return DEFAULT_FOB_OVERRIDES[i];
+  }
+  return null;
+}
+
+// Quyết định giá FOB gốc cuối cùng cho 1 SKU tại 1 tháng, theo thứ tự ưu tiên:
+// 1) Giá tự chỉnh tay (lưu trên trình duyệt) → 2) Giá cố định mặc định (vd CB16=27.000) → 3) % tăng giá theo mẫu → 4) Giá gốc theo Sheet
+function resolveFobGoc(r, mi, manualOverrides){
+  const raw = (r.fobMonths8 && r.fobMonths8[mi]) || 0;
+  const mo = manualOverrides || {};
+  if(Object.prototype.hasOwnProperty.call(mo, r.sku) && mo[r.sku] !== null && mo[r.sku] !== undefined && mo[r.sku] !== ''){
+    const v = Number(mo[r.sku]);
+    if(!isNaN(v) && v > 0) return { fobGoc: Math.round(v), source: 'manual', incPct: 0 };
+  }
+  const fixedOv = getDefaultFobOverride(r.sku);
+  if(fixedOv) return { fobGoc: fixedOv.value, source: 'fixed', incPct: 0 };
+  const incPct = priceIncreasePct(r.sku);
+  if(incPct) return { fobGoc: Math.round(raw * (1 + incPct)), source: 'pct', incPct: incPct };
+  return { fobGoc: raw, source: 'raw', incPct: 0 };
 }
 
 function setupExportPriceTableButton(){
@@ -8335,10 +8440,10 @@ function exportPriceTable(){
   const monthLabel = (DATA.priceMonthLabels && DATA.priceMonthLabels[mi]) || 'Tat_ca';
   const CL_GROUP_NAME = 'Cường lực (Dán MH)';
 
+  const manualOverrides = getManualPriceOverrides();
   const exportRows = rows.map(r => {
-    const fobGoc0 = (r.fobMonths8 && r.fobMonths8[mi]) || 0;
-    const incPct = priceIncreasePct(r.sku);
-    const fob = incPct ? Math.round(fobGoc0 * (1 + incPct)) : fobGoc0;
+    const resolved = resolveFobGoc(r, mi, manualOverrides);
+    const fob = resolved.fobGoc;
     const fobVAT = Math.round(fob * 1.08);
     const isCL = r.group === CL_GROUP_NAME;
     let banLe, hub, daiLy;
@@ -8349,6 +8454,10 @@ function exportPriceTable(){
       daiLy = Math.round((hub * 1.20) / 1000) * 1000;
       banLe = Math.round((fob * 2.5) / 5000) * 5000;
     }
+    let ghiChu = '';
+    if(resolved.source === 'manual') ghiChu = 'Giá FOB gốc tự chỉnh tay';
+    else if(resolved.source === 'fixed') ghiChu = 'Giá FOB gốc cố định';
+    else if(resolved.source === 'pct') ghiChu = `Tăng giá FOB gốc +${Math.round(resolved.incPct*100)}%`;
     return {
       'Nhóm': r.group,
       'Mã sản phẩm': r.sku,
@@ -8357,7 +8466,7 @@ function exportPriceTable(){
       'Giá HUB': hub,
       'Giá Đại lý': daiLy,
       'Giá bán lẻ': banLe,
-      'Ghi chú': incPct ? `Tăng giá FOB gốc +${Math.round(incPct*100)}%` : '',
+      'Ghi chú': ghiChu,
     };
   });
 
@@ -8378,13 +8487,14 @@ function renderPriceTable(){
   const mi = priceMonthIdx == null ? allRows.length : priceMonthIdx;
   if(info) info.textContent = rows.length + ' / ' + allRows.length + ' mã sản phẩm';
   const CL_GROUP_NAME = 'Cường lực (Dán MH)';
+  const manualOverrides = getManualPriceOverrides();
   tbody.innerHTML = rows.map((r, idx) => {
     const isFirstOfGroup = idx === 0 || rows[idx - 1].group !== r.group;
     const isLastOfGroup = idx === rows.length - 1 || rows[idx + 1].group !== r.group;
-    const fobGoc0 = (r.fobMonths8 && r.fobMonths8[mi]) || 0; // FOB gốc theo Sheet, trước khi áp tăng giá
-    const incPct = priceIncreasePct(r.sku); // % tăng giá FOB gốc riêng cho 1 số mẫu (P200/CB16/CB10/U119)
-    const fob = incPct ? Math.round(fobGoc0 * (1 + incPct)) : fobGoc0; // FOB gốc SAU khi tăng giá, dùng để tính HUB/Đại lý/Bán lẻ
-    const fobVAT = Math.round(fob * 1.08); // FOB gốc (đã tăng giá nếu có) x 1.08 VAT — làm gốc tính HUB/Đại lý cho mã PK
+    const resolved = resolveFobGoc(r, mi, manualOverrides); // FOB gốc cuối cùng: ưu tiên tự chỉnh tay > cố định (vd CB16) > % tăng giá > giá Sheet
+    const fob = resolved.fobGoc;
+    const incPct = resolved.incPct;
+    const fobVAT = Math.round(fob * 1.08); // FOB gốc (đã áp override nếu có) x 1.08 VAT — làm gốc tính HUB/Đại lý cho mã PK
     const isCL = r.group === CL_GROUP_NAME;
     let banLe, hub, daiLy, fobCell, hubCell, daiLyCell;
     if(isCL){
@@ -8403,14 +8513,19 @@ function renderPriceTable(){
       const banLeRaw = fob * 2.5;
       banLe = Math.round(banLeRaw / 5000) * 5000; // làm tròn về đơn vị 5.000đ
       const daiLyPct = daiLy ? Math.round(((banLe - daiLy) / daiLy) * 1000) / 10 : 0;
-      const fobPriceHtml = incPct
-        ? `<span style="color:var(--red);font-weight:700;">${fmtMoneyFull(fobVAT)}</span> <span style="color:var(--red);font-weight:700;">(▲${Math.round(incPct*100)}%)</span>`
+      let fobTag = '';
+      if(resolved.source === 'manual') fobTag = ' <span style="color:var(--orange);font-weight:700;">(tự chỉnh)</span>';
+      else if(resolved.source === 'fixed') fobTag = ' <span style="color:var(--navy-dark);font-weight:700;">(cố định)</span>';
+      else if(resolved.source === 'pct') fobTag = ` <span style="color:var(--red);font-weight:700;">(▲${Math.round(incPct*100)}%)</span>`;
+      const fobColor = (resolved.source === 'manual') ? 'var(--orange)' : (resolved.source === 'fixed' ? 'var(--navy-dark)' : (resolved.source === 'pct' ? 'var(--red)' : 'inherit'));
+      const fobPriceHtml = resolved.source !== 'raw'
+        ? `<span style="color:${fobColor};font-weight:700;">${fmtMoneyFull(fobVAT)}</span>${fobTag}`
         : fmtMoneyFull(fobVAT);
       fobCell = `${fobPriceHtml} <span style="color:var(--green);font-weight:600;">(+25%)</span>`;
       hubCell = `${fmtMoneyFull(hub)} <span style="color:var(--green);font-weight:600;">(+20%)</span>`;
       daiLyCell = `${fmtMoneyFull(daiLy)} <span style="color:var(--green);font-weight:600;">(+${daiLyPct}%)</span>`;
     }
-    const rowCls = [(isCL ? 'grp-cl' : 'grp-pk'), isFirstOfGroup ? 'grp-first' : '', isLastOfGroup ? 'grp-last' : '', incPct ? 'price-up' : ''].filter(Boolean).join(' ');
+    const rowCls = [(isCL ? 'grp-cl' : 'grp-pk'), isFirstOfGroup ? 'grp-first' : '', isLastOfGroup ? 'grp-last' : '', resolved.source !== 'raw' ? 'price-up' : ''].filter(Boolean).join(' ');
     return `
     <tr class="${rowCls}">
       <td class="grp-edge-l">${r.group}</td>
@@ -8422,6 +8537,126 @@ function renderPriceTable(){
       <td class="num cen grp-edge-r">${fmtMoneyFull(banLe)}</td>
     </tr>`;
   }).join('');
+}
+
+// ===================== CHỈNH GIÁ TAY (FOB GỐC) =====================
+let pePendingOverrides = {};
+let peSearchText = '';
+
+function setupPriceEditButton(){
+  const openBtn = document.getElementById('editPriceBtn');
+  const closeBtn = document.getElementById('peCloseBtn');
+  const cancelBtn = document.getElementById('peCancelBtn');
+  const saveBtn = document.getElementById('peSaveBtn');
+  const resetAllBtn = document.getElementById('peResetAllBtn');
+  const searchInput = document.getElementById('peSearchInput');
+  const overlay = document.getElementById('priceEditModal');
+  if(!openBtn || !overlay) return;
+
+  openBtn.addEventListener('click', openPriceEditModal);
+  if(closeBtn) closeBtn.addEventListener('click', closePriceEditModal);
+  if(cancelBtn) cancelBtn.addEventListener('click', closePriceEditModal);
+  if(saveBtn) saveBtn.addEventListener('click', savePriceEditsAndClose);
+  if(resetAllBtn) resetAllBtn.addEventListener('click', () => {
+    if(!confirm('Xóa hết toàn bộ giá tự chỉnh tay? (Chỉ áp dụng khi bạn bấm Lưu thay đổi)')) return;
+    pePendingOverrides = {};
+    renderPriceEditRows();
+  });
+  if(searchInput) searchInput.addEventListener('input', () => {
+    peSearchText = searchInput.value || '';
+    renderPriceEditRows();
+  });
+  overlay.addEventListener('click', (e) => {
+    if(e.target === overlay) closePriceEditModal();
+  });
+}
+
+function openPriceEditModal(){
+  pePendingOverrides = Object.assign({}, getManualPriceOverrides());
+  peSearchText = '';
+  const searchInput = document.getElementById('peSearchInput');
+  if(searchInput) searchInput.value = '';
+  const msg = document.getElementById('peSaveMsg');
+  if(msg) msg.textContent = '';
+  renderPriceEditRows();
+  const overlay = document.getElementById('priceEditModal');
+  if(overlay) overlay.style.display = 'flex';
+}
+
+function closePriceEditModal(){
+  const overlay = document.getElementById('priceEditModal');
+  if(overlay) overlay.style.display = 'none';
+}
+
+function renderPriceEditRows(){
+  const tbody = document.getElementById('peTableBody');
+  const countInfo = document.getElementById('peCountInfo');
+  if(!tbody) return;
+  const all = DATA.priceTable || [];
+  const q = (peSearchText || '').trim().toLowerCase();
+  const rows = q ? all.filter(r => (r.sku||'').toLowerCase().includes(q) || (r.ten||'').toLowerCase().includes(q) || (r.group||'').toLowerCase().includes(q)) : all;
+  const miRef = priceMonthIdx == null ? (all.length - 1) : priceMonthIdx;
+  if(countInfo) countInfo.textContent = rows.length + ' / ' + all.length + ' mã';
+
+  tbody.innerHTML = rows.map(r => {
+    const defaultResolved = resolveFobGoc(r, miRef, {}); // giá mặc định hệ thống, chưa tính override tự chỉnh
+    const hasManual = Object.prototype.hasOwnProperty.call(pePendingOverrides, r.sku) && pePendingOverrides[r.sku] !== '' && pePendingOverrides[r.sku] !== null && pePendingOverrides[r.sku] !== undefined;
+    const manualVal = hasManual ? pePendingOverrides[r.sku] : '';
+    let defaultTag = '';
+    if(defaultResolved.source === 'fixed') defaultTag = '<div class="pe-default-tag">Giá cố định</div>';
+    else if(defaultResolved.source === 'pct') defaultTag = `<div class="pe-default-tag">Đã +${Math.round(defaultResolved.incPct*100)}%</div>`;
+    return `
+    <tr>
+      <td>${r.group}</td>
+      <td>${r.sku}</td>
+      <td>${r.ten || ''}</td>
+      <td class="num cen">${fmtInt(defaultResolved.fobGoc)}đ${defaultTag}</td>
+      <td class="cen">
+        <input type="number" min="0" step="1000" class="pe-input${hasManual ? ' pe-dirty' : ''}" data-sku="${encodeURIComponent(r.sku)}" placeholder="${fmtInt(defaultResolved.fobGoc)}" value="${manualVal}" />
+      </td>
+      <td class="cen">
+        <button type="button" class="pe-row-clear" data-sku="${encodeURIComponent(r.sku)}" ${hasManual ? '' : 'disabled'}>Xóa</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.pe-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const sku = decodeURIComponent(inp.getAttribute('data-sku'));
+      const v = inp.value;
+      if(v === '' || v === null){
+        delete pePendingOverrides[sku];
+        inp.classList.remove('pe-dirty');
+      } else {
+        pePendingOverrides[sku] = v;
+        inp.classList.add('pe-dirty');
+      }
+      const clearBtn = tbody.querySelector(`.pe-row-clear[data-sku="${inp.getAttribute('data-sku')}"]`);
+      if(clearBtn) clearBtn.disabled = !(v !== '' && v !== null);
+    });
+  });
+  tbody.querySelectorAll('.pe-row-clear').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sku = decodeURIComponent(btn.getAttribute('data-sku'));
+      delete pePendingOverrides[sku];
+      renderPriceEditRows();
+    });
+  });
+}
+
+function savePriceEditsAndClose(){
+  // Loại bỏ các giá trị rỗng / không hợp lệ trước khi lưu
+  const cleaned = {};
+  Object.keys(pePendingOverrides).forEach(sku => {
+    const v = Number(pePendingOverrides[sku]);
+    if(!isNaN(v) && v > 0) cleaned[sku] = v;
+  });
+  setManualPriceOverrides(cleaned);
+  const msg = document.getElementById('peSaveMsg');
+  const count = Object.keys(cleaned).length;
+  if(msg) msg.textContent = `Đã lưu ${count} giá tự chỉnh.`;
+  renderPriceTable();
+  setTimeout(closePriceEditModal, 500);
 }
 
 // ===================== INIT =====================
@@ -8455,6 +8690,7 @@ function runDashboard(){
   setupPriceTableMonthSelect();
   setupPriceTableGroupSelect();
   setupExportPriceTableButton();
+  setupPriceEditButton();
   renderPriceTable();
 }
 
