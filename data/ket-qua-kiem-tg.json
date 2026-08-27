@@ -1,6 +1,6 @@
 {
- "tong": 28,
- "khongDat": 7,
+ "tong": 33,
+ "khongDat": 0,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
@@ -95,7 +95,7 @@
   },
   {
    "ten": "Admin: mo duoc goi cua minh",
-   "dat": false,
+   "dat": true,
    "chiTiet": ""
   },
   {
@@ -105,7 +105,17 @@
   },
   {
    "ten": "Sale: mo duoc goi cua minh",
-   "dat": false,
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Sale: chi thay shop cua chinh minh",
+   "dat": true,
+   "chiTiet": "thay: [\"CS-SALE-A-1\"]"
+  },
+  {
+   "ten": "Sale: KHONG thay dau vet nguoi khac trong trang",
+   "dat": true,
    "chiTiet": ""
   },
   {
@@ -114,29 +124,44 @@
    "chiTiet": "nut do chi danh cho admin"
   },
   {
+   "ten": "Sale: co duong thoat lanh manh (chon ten khac)",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
    "ten": "Sale: goi hong thi KHONG tai toan bo du lieu vung",
-   "dat": false,
-   "chiTiet": "co quay ve duong cu=true"
+   "dat": true,
+   "chiTiet": "co quay ve duong cu=false"
   },
   {
    "ten": "Sale: goi hong van co man hinh de nguoi dung xu ly",
-   "dat": false,
+   "dat": true,
    "chiTiet": "khong bo ho truoc man hinh chet"
   },
   {
    "ten": "Sale: khong mot loi goi Apps Script nao",
-   "dat": false,
-   "chiTiet": "6 loi goi — LO HONG"
+   "dat": true,
+   "chiTiet": "sach"
   },
   {
    "ten": "Chua chon ai: hien man hinh chon nguoi",
-   "dat": false,
+   "dat": true,
    "chiTiet": ""
   },
   {
    "ten": "Man hinh chon nguoi: liet ke du nguoi",
-   "dat": false,
-   "chiTiet": "0/2"
+   "dat": true,
+   "chiTiet": "2/2"
+  },
+  {
+   "ten": "Robot: bo qua goi, di thang duong cu",
+   "dat": true,
+   "chiTiet": "6 loi goi Apps Script"
+  },
+  {
+   "ten": "Robot: KHONG dung lai o man hinh chon nguoi / nhap ma",
+   "dat": true,
+   "chiTiet": "neu dung lai la robot treo mai — loi da mac 27/08"
   },
   {
    "ten": "Khong co goi: tu quay ve duong cu",
