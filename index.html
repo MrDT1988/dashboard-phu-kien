@@ -530,8 +530,9 @@ body{
     <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
       <div class="dot"></div>
       <div>
-        <b>Công thức:</b> Giá bán lẻ = Giá FOB × 2,5, làm tròn về đơn vị 5.000đ &nbsp;·&nbsp; Giá Đại lý = Giá bán lẻ × 60% &nbsp;·&nbsp; Giá HUB = Giá bán lẻ × 45% &nbsp;·&nbsp; Lợi nhuận/sp = Giá HUB − Giá FOB &nbsp;·&nbsp; Biên LN % = Lợi nhuận / Giá FOB.
-        Riêng nhóm <b>Cường lực</b>: giá cố định — Bán lẻ 50.000đ, HUB 6.000đ, Đại lý 8.000đ (không áp công thức trên).
+        <b>Công thức (áp dụng cho mã PK, không gồm Cường lực):</b> Giá HUB = Giá FOB × 1,20 (FOB lãi 20%) &nbsp;·&nbsp; Giá Đại lý = Giá HUB × 1,15 (HUB lãi 15%) &nbsp;·&nbsp; Giá bán lẻ = Giá FOB × 2,5, làm tròn về đơn vị 5.000đ.
+        % hiển thị ngay sau mỗi giá là lợi nhuận so với giá kế tiếp: FOB → HUB, HUB → Đại lý, Đại lý → Bán lẻ.
+        Riêng nhóm <b>Cường lực</b>: giá cố định — Bán lẻ 50.000đ, HUB 6.000đ, Đại lý 8.000đ (không áp công thức trên, không hiển thị %).
         Chọn tháng ở trên để xem giá FOB đúng tháng đó (T8.26 là giá tạm tính, dùng giá FOB T7.26 do Sheet chưa cập nhật).
       </div>
     </div>
@@ -544,8 +545,6 @@ body{
           <th>Tên sản phẩm</th>
           <th class="num cen">Giá FOB</th>
           <th class="num cen">Giá HUB</th>
-          <th class="num cen">Lợi nhuận (HUB-FOB)</th>
-          <th class="num cen">Biên LN %</th>
           <th class="num cen">Giá Đại lý</th>
           <th class="num cen">Giá bán lẻ</th>
         </tr>
@@ -6133,29 +6132,32 @@ function renderPriceTable(){
   const CL_GROUP_NAME = 'Cường lực (Dán MH)';
   tbody.innerHTML = rows.map(r => {
     const fob = (r.fobMonths8 && r.fobMonths8[mi]) || 0;
-    let banLe, daiLy, hub;
-    if(r.group === CL_GROUP_NAME){
-      // Cường lực: giá cố định theo quy định, không tính theo công thức FOB
+    const isCL = r.group === CL_GROUP_NAME;
+    let banLe, hub, daiLy, fobCell, hubCell, daiLyCell;
+    if(isCL){
+      // Cường lực: giá cố định theo quy định, không tính theo công thức % dưới đây
       banLe = 50000; hub = 6000; daiLy = 8000;
+      fobCell = fmtMoneyFull(fob);
+      hubCell = fmtMoneyFull(hub);
+      daiLyCell = fmtMoneyFull(daiLy);
     } else {
+      hub = Math.round(fob * 1.20);       // FOB lãi 20% -> HUB
+      daiLy = Math.round(hub * 1.15);     // HUB lãi 15% -> Đại lý
       const banLeRaw = fob * 2.5;
       banLe = Math.round(banLeRaw / 5000) * 5000; // làm tròn về đơn vị 5.000đ
-      daiLy = Math.round(banLe * 0.6);
-      hub = Math.round(banLe * 0.45);
+      const daiLyPct = daiLy ? Math.round(((banLe - daiLy) / daiLy) * 1000) / 10 : 0;
+      fobCell = `${fmtMoneyFull(fob)} <span style="color:var(--green);font-weight:600;">(+20%)</span>`;
+      hubCell = `${fmtMoneyFull(hub)} <span style="color:var(--green);font-weight:600;">(+15%)</span>`;
+      daiLyCell = `${fmtMoneyFull(daiLy)} <span style="color:var(--green);font-weight:600;">(+${daiLyPct}%)</span>`;
     }
-    const loiNhuan = hub - fob;
-    const bienLN = fob ? Math.round((loiNhuan / fob) * 1000) / 10 : 0;
-    const lnColor = loiNhuan >= 0 ? 'var(--green)' : 'var(--red)';
     return `
     <tr>
       <td>${r.group}</td>
       <td>${r.sku}</td>
       <td>${r.ten || ''}</td>
-      <td class="num cen">${fmtMoneyFull(fob)}</td>
-      <td class="num cen">${fmtMoneyFull(hub)}</td>
-      <td class="num cen" style="color:${lnColor};font-weight:600;">${fmtMoneyFull(loiNhuan)}</td>
-      <td class="num cen" style="color:${lnColor};font-weight:600;">${bienLN}%</td>
-      <td class="num cen">${fmtMoneyFull(daiLy)}</td>
+      <td class="num cen">${fobCell}</td>
+      <td class="num cen">${hubCell}</td>
+      <td class="num cen">${daiLyCell}</td>
       <td class="num cen">${fmtMoneyFull(banLe)}</td>
     </tr>`;
   }).join('');
