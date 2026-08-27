@@ -1,5 +1,5 @@
 {
- "tong": 33,
+ "tong": 38,
  "khongDat": 0,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
@@ -152,6 +152,31 @@
    "ten": "Man hinh chon nguoi: liet ke du nguoi",
    "dat": true,
    "chiTiet": "2/2"
+  },
+  {
+   "ten": "Don man hinh: an panel kenh KA va IND",
+   "dat": true,
+   "chiTiet": "{\"anTab\":2,\"anThe\":14}"
+  },
+  {
+   "ten": "Don man hinh: an luon TAB kenh KA va IND",
+   "dat": true,
+   "chiTiet": "khong de sale bam vao roi thay man hinh trong"
+  },
+  {
+   "ten": "Don man hinh: GIU panel kenh cua chinh minh (MWG)",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Don man hinh: GIU tab Tong quan",
+   "dat": true,
+   "chiTiet": "tong quan ca nam la yeu cau so 1 cua anh Thai"
+  },
+  {
+   "ten": "Don man hinh: admin KHONG bi an gi",
+   "dat": true,
+   "chiTiet": "{\"anTab\":0,\"anThe\":0}"
   },
   {
    "ten": "Robot: bo qua goi, di thang duong cu",
