@@ -1,6 +1,6 @@
 {
  "ban": "2026-08-27.29",
- "tong": 47,
+ "tong": 53,
  "khongDat": 4,
  "loiJS": [],
  "pheps": [
@@ -17,7 +17,7 @@
   {
    "ten": "Bat duoc bo loc o tab MWG",
    "dat": true,
-   "chiTiet": "size=S PK=[1,2] ngay=10"
+   "chiTiet": "size=S PK=[3,4] ngay=10"
   },
   {
    "ten": "Tab ALL: bo loc tu tat khi roi MWG",
@@ -65,6 +65,16 @@
    "chiTiet": ""
   },
   {
+   "ten": "Chan doan size shop MWG",
+   "dat": true,
+   "chiTiet": "S: 11 shop (11 co so thi truong) | A: 11 shop (11 co so thi truong) | B: 12 shop (12 co so thi truong) | C: 29 shop (29 co so thi truong) | D: 57 shop (57 co so thi truong) | (chua xep): 4 shop (0 co so thi truong)"
+  },
+  {
+   "ten": "Dang thu voi size",
+   "dat": true,
+   "chiTiet": "D"
+  },
+  {
    "ten": "Loc Size shop: doi so may",
    "dat": true,
    "chiTiet": ""
@@ -83,6 +93,11 @@
    "ten": "Loc Size shop: doi bang thi phan theo thang",
    "dat": false,
    "chiTiet": ""
+  },
+  {
+   "ten": "Co nut nhom 10-20M",
+   "dat": true,
+   "chiTiet": "Dưới 5M / 5–10M / 10–20M / 20–30M / Tất cả"
   },
   {
    "ten": "Loc PK 10-20M: doi bang chi tiet theo sale",
@@ -118,6 +133,11 @@
    "ten": "Shop MWG: chi liet ke shop dung kenh",
    "dat": true,
    "chiTiet": "liet ke 120 shop, sai 0"
+  },
+  {
+   "ten": "Shop MWG: liet ke du shop hoac noi ro dang cat bot",
+   "dat": true,
+   "chiTiet": "hien 120/124 (co ghi chu)"
   },
   {
    "ten": "Shop MWG: bam vao shop mo duoc to chi tiet",
@@ -170,6 +190,11 @@
    "chiTiet": "liet ke 29 shop, sai 0"
   },
   {
+   "ten": "Shop KA: liet ke du shop hoac noi ro dang cat bot",
+   "dat": true,
+   "chiTiet": "hien 29/29 (KHONG co ghi chu)"
+  },
+  {
    "ten": "Shop KA: bam vao shop mo duoc to chi tiet",
    "dat": true,
    "chiTiet": ""
@@ -193,6 +218,11 @@
    "ten": "Shop IND: chi liet ke shop dung kenh",
    "dat": true,
    "chiTiet": "liet ke 120 shop, sai 0"
+  },
+  {
+   "ten": "Shop IND: liet ke du shop hoac noi ro dang cat bot",
+   "dat": true,
+   "chiTiet": "hien 120/204 (co ghi chu)"
   },
   {
    "ten": "Shop IND: bam vao shop mo duoc to chi tiet",
