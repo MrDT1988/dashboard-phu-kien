@@ -42,8 +42,52 @@
   /* ----- MAN HINH NHAP CHIA KHOA -------------------------------------------
      Ve bang HTML chu khong dung prompt() cua trinh duyet: prompt bi chan tren
      mot so cua so, ma khi do anh Thai se ket cung khong biet nhap o dau. */
+  /* Man hinh CHON NGUOI. Tra ve promise -> {id,n,r} hoac null. */
+  window.__chonNguoiDBTG = function (ds) {
+    return new Promise(function (xong) {
+      var cu = document.getElementById('dbtg-ai-lop');
+      if (cu) cu.remove();
+      var nhom = { admin: 'Quản lý vùng', leader: 'Leader kênh', sale: 'Sale' };
+      var thuTu = ['admin', 'leader', 'sale'];
+      var html = '';
+      thuTu.forEach(function (vt) {
+        var co = ds.filter(function (u) { return u.r === vt });
+        if (!co.length) return;
+        html += '<div style="padding:9px 15px;font-size:10.5px;letter-spacing:.08em;' +
+          'text-transform:uppercase;color:#7d8896;background:#0e141c">' + nhom[vt] + '</div>';
+        co.forEach(function (u) {
+          html += '<button data-ai="' + u.id + '" style="display:block;width:100%;text-align:left;' +
+            'padding:13px 15px;font-size:14px;color:#e8edf2;background:transparent;border:0;' +
+            'border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer">' +
+            String(u.n).replace(/[&<>"]/g, '') + '</button>';
+        });
+      });
+      var lop = document.createElement('div');
+      lop.id = 'dbtg-ai-lop';
+      lop.style.cssText = 'position:fixed;inset:0;z-index:99998;background:#0b1017;overflow-y:auto;' +
+        'display:flex;align-items:center;justify-content:center;padding:24px;' +
+        'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+      lop.innerHTML =
+        '<div style="width:100%;max-width:420px">' +
+          '<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d8896">DB Tiền Giang</div>' +
+          '<h2 style="margin:8px 0 6px;font-size:19px;color:#e8edf2;font-weight:800">Anh/chị là ai?</h2>' +
+          '<p style="margin:0 0 18px;font-size:13px;line-height:1.55;color:#96a1ae">' +
+            'Mỗi người xem đúng phần mình phụ trách. Chọn tên rồi nhập mã.</p>' +
+          '<div style="border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;' +
+            'background:#141b24">' + html + '</div>' +
+        '</div>';
+      document.body.appendChild(lop);
+      lop.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-ai]');
+        if (!b) return;
+        var u = ds.filter(function (x) { return x.id === b.dataset.ai })[0];
+        lop.remove(); xong(u || null);
+      });
+    });
+  };
+
   /* O nhap MA DANG NHAP (mo goi du lieu). Tra ve promise -> chuoi ma, hoac null. */
-  window.__hoiMaDBTG = function (loi) {
+  window.__hoiMaDBTG = function (ai, loi) {
     return new Promise(function (xong) {
       var cu = document.getElementById('dbtg-ma-lop');
       if (cu) cu.remove();
@@ -56,9 +100,10 @@
         '<div style="width:100%;max-width:420px;background:#141b24;border:1px solid rgba(255,255,255,.12);' +
           'border-radius:14px;padding:26px">' +
           '<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d8896">DB Tiền Giang</div>' +
-          '<h2 style="margin:8px 0 6px;font-size:19px;color:#e8edf2;font-weight:800">Đăng nhập</h2>' +
+          '<h2 style="margin:8px 0 6px;font-size:19px;color:#e8edf2;font-weight:800">' +
+            String((ai && ai.n) || 'Đăng nhập').replace(/[&<>"]/g, '') + '</h2>' +
           '<p style="margin:0 0 18px;font-size:13px;line-height:1.55;color:#96a1ae">' +
-            'Nhập mã của anh — <b>cùng mã dùng bên app</b>. Chỉ nhập một lần, máy này sẽ nhớ.</p>' +
+            'Nhập mã của anh/chị — <b>cùng mã dùng bên app</b>. Chỉ nhập một lần, máy này sẽ nhớ.</p>' +
           '<input id="dbtg-ma-o" type="password" autocomplete="off" spellcheck="false" ' +
             'placeholder="Mã đăng nhập" ' +
             'style="width:100%;box-sizing:border-box;padding:13px 14px;border-radius:9px;' +
@@ -68,9 +113,14 @@
             (loi ? loi : '') + '</div>' +
           '<button id="dbtg-ma-ok" style="width:100%;margin-top:8px;padding:12px;border-radius:9px;border:0;' +
             'background:#1BB350;color:#08120b;font-size:14.5px;font-weight:800;cursor:pointer">Mở dashboard</button>' +
-          '<button id="dbtg-ma-bo" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;' +
+          ((ai && ai.r === 'admin')
+            ? ('<button id="dbtg-ma-bo" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;' +
+               'border:1px solid rgba(255,255,255,.14);background:transparent;color:#7d8896;font-size:12.5px;' +
+               'cursor:pointer">Bỏ qua — tải trực tiếp như cũ (chậm hơn)</button>')
+            : '') +
+          '<button id="dbtg-ma-doi" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;' +
             'border:1px solid rgba(255,255,255,.14);background:transparent;color:#7d8896;font-size:12.5px;' +
-            'cursor:pointer">Bỏ qua — tải trực tiếp như cũ (chậm hơn)</button>' +
+            'cursor:pointer">← Chọn tên khác</button>' +
         '</div>';
       document.body.appendChild(lop);
       var o = document.getElementById('dbtg-ma-o');
@@ -80,7 +130,12 @@
         if (!v) { document.getElementById('dbtg-ma-loi').textContent = 'Chưa nhập gì cả.'; o.focus(); return; }
         xongVoi(v);
       };
-      document.getElementById('dbtg-ma-bo').onclick = function () { xongVoi(null); };
+      var nutBo = document.getElementById('dbtg-ma-bo');
+      if (nutBo) nutBo.onclick = function () { xongVoi(null); };
+      document.getElementById('dbtg-ma-doi').onclick = function () {
+        try { localStorage.removeItem(KHO_AI); localStorage.removeItem(KHO_MA); } catch (e) {}
+        location.reload();
+      };
       o.onkeydown = function (e) { if (e.key === 'Enter') document.getElementById('dbtg-ma-ok').click(); };
       setTimeout(function () { o.focus(); }, 60);
     });
@@ -138,6 +193,7 @@
      tu quay ve cach cu. Khong bao gio de anh Thai nhin man hinh trang.
      ===================================================================== */
   var KHO_MA = 'dbtg_ma';
+  var KHO_AI = 'dbtg_ai';     // nho lai dang dang nhap la ai
   function b64ToBytes(b64) {
     var s2 = atob(b64), u = new Uint8Array(s2.length);
     for (var i = 0; i < s2.length; i++) u[i] = s2.charCodeAt(i);
@@ -163,33 +219,42 @@
       if (!r.ok) return null;
       idx = await r.json();
     } catch (e) { return null; }
-    if (!idx || !idx.id) return null;
-    var r2 = await _fetch('data/dbtg-' + idx.id + '.json?t=' + Date.now(), { cache: 'no-store' });
-    if (!r2.ok) return null;
-    var goi = await r2.json();
-    // Ma mo goi = MA DANG NHAP cua anh Thai (cung ma dung ben app), khong phai
-    // chia khoa Apps Script. Hai thu khac nhau, dung lan la khong mo duoc.
+    var ds = (idx && idx.users) || (idx && idx.id ? [{ id: idx.id, n: 'Toàn Tiền Giang', r: 'admin' }] : null);
+    if (!ds || !ds.length) return null;
+
     for (var lan = 0; lan < 2; lan++) {
+      // Ai dang xem? Nho lai lan truoc, chua co thi hoi.
+      var ai = null;
+      try { ai = JSON.parse(localStorage.getItem(KHO_AI) || 'null'); } catch (e) {}
+      if (ai && !ds.some(function (u) { return u.id === ai.id })) ai = null;   // goi da doi
+      if (!ai) {
+        ai = await window.__chonNguoiDBTG(ds);
+        if (!ai) { window.__goiHong = true; window.__aiDangXem = null; return null; }
+      }
+      window.__aiDangXem = ai;
+
       var ma = null;
       try { ma = localStorage.getItem(KHO_MA); } catch (e) {}
-      if (!ma) ma = await window.__hoiMaDBTG(lan > 0
+      if (!ma) ma = await window.__hoiMaDBTG(ai, lan > 0
         ? 'Không mở được gói — mã sai, hoặc gói dữ liệu hỏng. Thử lại một lần nữa.' : null);
-      if (!ma) { window.__goiHong = true; return null; }   // bam "Bo qua" cung la chay duong cham
+      if (!ma) { window.__goiHong = true; return null; }
+
+      var r2 = await _fetch('data/dbtg-' + ai.id + '.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r2.ok) { window.__goiHong = true; return null; }
+      var goi = await r2.json();
       try {
         var kq = {
           center: goi.center ? await moKhoiMaHoa(goi.center, ma) : null,
           dataMwg: goi.dataMwg ? await moKhoiMaHoa(goi.dataMwg, ma) : null,
         };
-        try { localStorage.setItem(KHO_MA, ma); } catch (e) {}
-        kq.moc = idx;
+        try { localStorage.setItem(KHO_MA, ma); localStorage.setItem(KHO_AI, JSON.stringify(ai)); } catch (e) {}
+        kq.moc = idx; kq.ai = ai;
         return kq;
       } catch (e) {
         try { localStorage.removeItem(KHO_MA); } catch (e2) {}
       }
     }
-    // Het luot ma van khong mo duoc -> KHONG bo anh Thai o man hinh chet.
-    // Quay ve duong cu (cham hon nhung chay duoc) va noi ro vi sao.
-    console.warn('Khong mo duoc goi DB TG sau 2 lan — quay ve tai truc tiep.');
+    console.warn('Khong mo duoc goi DB TG sau 2 lan.');
     window.__goiHong = true;
     return null;
   })().catch(function (e) { console.warn('Khong mo duoc goi DB TG:', e && e.message); return null; });
@@ -217,17 +282,55 @@
     };
     document.getElementById('dbtg-cham-dong').onclick = function () { d.remove(); };
   };
+  /* DUONG LUI = goi thang Apps Script = LAY TOAN BO du lieu ca vung.
+     Chi ADMIN moi duoc phep. Leader/sale ma roi xuong duong nay la ho thay ca
+     tinh — dung cai ma chang B sinh ra de ngan. Nen phai chan cung o day. */
+  function duocPhepLui() {
+    var ai = window.__aiDangXem;
+    if (!ai) { try { ai = JSON.parse(localStorage.getItem(KHO_AI) || 'null'); } catch (e) {} }
+    return !ai || ai.r === 'admin';
+  }
+  window.__chanDuongLui = function () {
+    if (document.getElementById('dbtg-chan')) return;
+    var d = document.createElement('div');
+    d.id = 'dbtg-chan';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99997;background:#0b1017;display:flex;' +
+      'align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif';
+    d.innerHTML = '<div style="max-width:400px;text-align:center;color:#e8edf2">' +
+      '<div style="font-size:34px">🔒</div>' +
+      '<h2 style="margin:10px 0 8px;font-size:18px;font-weight:800">Chưa mở được dữ liệu</h2>' +
+      '<p style="margin:0 0 18px;font-size:13.5px;line-height:1.6;color:#96a1ae">' +
+        'Gói dữ liệu của anh/chị chưa mở được. Thử nhập lại mã; nếu vẫn không được thì nhắn anh Thái cấp lại mã.</p>' +
+      '<button id="dbtg-chan-lai" style="padding:11px 20px;border-radius:9px;border:0;background:#1BB350;' +
+        'color:#08120b;font-weight:800;font-size:14px;cursor:pointer">Nhập lại mã</button></div>';
+    document.body.appendChild(d);
+    document.getElementById('dbtg-chan-lai').onclick = function () {
+      try { localStorage.removeItem(KHO_MA); localStorage.removeItem(KHO_AI); } catch (e) {}
+      location.reload();
+    };
+  };
   window.__khoiDongDBTG = function (initFn, khoa, idOverlay, duongLui) {
     window.__goiDBTG.then(function (goi) {
-      if (!goi && window.__goiHong) { try { window.__bangChayCham(); } catch (e) {} }
       if (goi && goi[khoa]) {
         var ov = document.getElementById(idOverlay);
         if (ov) ov.style.display = 'none';
         try { initFn(goi[khoa]); return; }
-        catch (e) { console.warn('Goi mo duoc nhung ve loi, quay ve cach cu:', e && e.message); }
+        catch (e) { console.warn('Goi mo duoc nhung ve loi:', e && e.message); }
       }
+      // Pham vi cua nguoi nay khong co khoi do (vd Leader IND khong co bang MWG)
+      // -> an man hinh cho, khong goi Apps Script, khong bao loi.
+      if (goi && !goi[khoa]) {
+        var ov2 = document.getElementById(idOverlay);
+        if (ov2) ov2.style.display = 'none';
+        return;
+      }
+      if (!duocPhepLui()) { try { window.__chanDuongLui(); } catch (e) {} return; }
+      if (window.__goiHong) { try { window.__bangChayCham(); } catch (e) {} }
       duongLui();
-    }).catch(function () { duongLui(); });
+    }).catch(function () {
+      if (!duocPhepLui()) { try { window.__chanDuongLui(); } catch (e) {} return; }
+      duongLui();
+    });
   };
 
   /* Lop 1 — HOI TRUOC KHI CHAY.
@@ -237,7 +340,10 @@
      Co goi ma hoa roi thi khong hoi nua — khong bat anh Thai nho hai thu. */
   document.addEventListener('DOMContentLoaded', function () {
     window.__goiDBTG.then(function (goi) {
-      if (!goi && !window.__layKhoaAS()) window.__hoiChiaKhoa();
+      if (goi) return;
+      var ai = window.__aiDangXem;
+      if (ai && ai.r !== 'admin') return;      // khong phai admin thi khong co duong cu
+      if (!window.__layKhoaAS()) window.__hoiChiaKhoa();
     });
   });
 
