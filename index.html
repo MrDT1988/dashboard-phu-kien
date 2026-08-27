@@ -246,13 +246,23 @@ body{
 #mienBonusTable th:last-child, #mienBonusTable td:last-child{ background:#E9F7F0; }
 #targetProgressTable th:nth-child(n+2), #targetProgressTable td:nth-child(n+2){ text-align:center; }
 #targetProgressTable th:last-child, #targetProgressTable td:last-child{ background:#E9F7F0; }
-#targetProgressTable tr.mien-row{ cursor:pointer; font-weight:700; background:var(--ice-bg); }
-#targetProgressTable tr.mien-row:hover{ filter:brightness(0.97); }
-#targetProgressTable tr.mien-row td:first-child::before{ content:'▸ '; }
-#targetProgressTable tr.mien-row.expanded td:first-child::before{ content:'▾ '; }
-#targetProgressTable tr.region-row td:first-child{ padding-left:28px; color:var(--text-secondary); font-weight:400; }
-#targetProgressTable tr.total-row{ font-weight:800; background:#1E276108; border-top:2px solid var(--navy); }
-#targetProgressTable tr.total-row td{ color:var(--navy); }
+#targetProgressTable tr.mien-row, #programCostTable tr.mien-row{ cursor:pointer; font-weight:700; background:var(--ice-bg); }
+#targetProgressTable tr.mien-row:hover, #programCostTable tr.mien-row:hover{ filter:brightness(0.97); }
+#targetProgressTable tr.mien-row td:first-child::before, #programCostTable tr.mien-row td:first-child::before{ content:'▸ '; }
+#targetProgressTable tr.mien-row.expanded td:first-child::before, #programCostTable tr.mien-row.expanded td:first-child::before{ content:'▾ '; }
+#targetProgressTable tr.region-row td:first-child, #programCostTable tr.region-row td:first-child{ padding-left:28px; color:var(--text-secondary); font-weight:400; }
+
+/* Line màu theo từng Miền (Bắc/Trung/Nam) — áp dụng cho cả dòng Miền và các dòng Khu vực con bên trong */
+#targetProgressTable tr.mien-mb, #programCostTable tr.mien-mb{ background:rgba(30,39,97,.07); border-left:4px solid var(--navy); }
+#targetProgressTable tr.region-row.mien-mb, #programCostTable tr.region-row.mien-mb{ background:rgba(30,39,97,.03); border-left:4px solid rgba(30,39,97,.35); }
+#targetProgressTable tr.mien-mt, #programCostTable tr.mien-mt{ background:rgba(255,107,53,.09); border-left:4px solid var(--orange); }
+#targetProgressTable tr.region-row.mien-mt, #programCostTable tr.region-row.mien-mt{ background:rgba(255,107,53,.04); border-left:4px solid rgba(255,107,53,.4); }
+#targetProgressTable tr.mien-mn, #programCostTable tr.mien-mn{ background:rgba(30,142,90,.09); border-left:4px solid var(--green); }
+#targetProgressTable tr.region-row.mien-mn, #programCostTable tr.region-row.mien-mn{ background:rgba(30,142,90,.04); border-left:4px solid rgba(30,142,90,.4); }
+
+/* Highlight dòng Tổng Miền (mien-row, đã có màu riêng ở trên) và dòng Tổng toàn quốc (total-row, nổi bật nhất) */
+#targetProgressTable tr.total-row, #programCostTable tr.total-row{ font-weight:800; background:#FFF6DD; border-top:3px solid var(--navy); border-left:4px solid var(--navy); }
+#targetProgressTable tr.total-row td, #programCostTable tr.total-row td{ color:var(--navy-dark); }
 .table-pagination{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:var(--text-secondary);}
 .table-pagination button{
   border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;margin-left:6px;
@@ -7893,12 +7903,20 @@ function setupTargetProgressFilter(){
   });
 }
 
-function targetProgressRowHtml(name, rowClass, dataAttr, monthlyEntry, targetThang, t80, t100){
+function mienColorClass(mienName){
+  if(mienName === 'Miền Bắc') return 'mien-mb';
+  if(mienName === 'Miền Trung') return 'mien-mt';
+  if(mienName === 'Miền Nam') return 'mien-mn';
+  return '';
+}
+
+function targetProgressRowHtml(name, rowClass, dataAttr, monthlyEntry, targetThang, t80, t100, mienName){
   const bonusCell = monthlyEntry.bonus > 0
     ? `<span class="badge ${monthlyEntry.bonus>=4000000?'bad':'warn'}">${fmtMoneyShort(monthlyEntry.bonus)}</span>`
     : '<span style="color:var(--text-secondary)">-</span>';
+  const cls = [rowClass, mienColorClass(mienName)].filter(Boolean).join(' ');
   return `
-  <tr class="${rowClass}" ${dataAttr}>
+  <tr class="${cls}" ${dataAttr}>
     <td>${name}</td>
     <td class="num cen">${fmtMoneyShort(targetThang)}</td>
     <td class="num cen">${fmtMoneyShort(t80)}</td>
@@ -7943,11 +7961,11 @@ function renderTargetProgressTable(){
     const isExpanded = targetProgressExpanded.has(m.name);
     let html = targetProgressRowHtml(
       m.name, 'mien-row' + (isExpanded ? ' expanded' : ''), `data-mien="${m.name}"`,
-      m.monthly[mi], m.targetThang, m.t80, m.t100
+      m.monthly[mi], m.targetThang, m.t80, m.t100, m.name
     );
     if(isExpanded){
       html += m.regions.map(r => targetProgressRowHtml(
-        r.name, 'region-row', '', r.monthly[mi], r.targetThang, r.t80, r.t100
+        r.name, 'region-row', '', r.monthly[mi], r.targetThang, r.t80, r.t100, r.mien
       )).join('');
     }
     return html;
@@ -7986,9 +8004,10 @@ function setupProgramCostFilter(){
   });
 }
 
-function programCostRowHtml(name, rowClass, dataAttr, entry){
+function programCostRowHtml(name, rowClass, dataAttr, entry, mienName){
+  const cls = [rowClass, mienColorClass(mienName)].filter(Boolean).join(' ');
   return `
-  <tr class="${rowClass}" ${dataAttr}>
+  <tr class="${cls}" ${dataAttr}>
     <td>${name}</td>
     <td class="num cen">${fmtMoneyShort(entry.sellInBonus)}</td>
     <td class="num cen">${fmtMoneyShort(entry.targetBonus)}</td>
@@ -8008,9 +8027,9 @@ function renderProgramCostTable(){
   const mi = programCostMonthIdx;
   const rowsHtml = DATA.programCostMien.map(m => {
     const isExpanded = programCostExpanded.has(m.name);
-    let html = programCostRowHtml(m.name, 'mien-row' + (isExpanded ? ' expanded' : ''), `data-mien="${m.name}"`, m.monthly[mi]);
+    let html = programCostRowHtml(m.name, 'mien-row' + (isExpanded ? ' expanded' : ''), `data-mien="${m.name}"`, m.monthly[mi], m.name);
     if(isExpanded){
-      html += m.regions.map(r => programCostRowHtml(r.name, 'region-row', '', r.monthly[mi])).join('');
+      html += m.regions.map(r => programCostRowHtml(r.name, 'region-row', '', r.monthly[mi], r.mien)).join('');
     }
     return html;
   }).join('');
