@@ -1,0 +1,243 @@
+{
+ "ban": "2026-08-27.29",
+ "tong": 47,
+ "khongDat": 4,
+ "loiJS": [],
+ "pheps": [
+  {
+   "ten": "Dang nhap va giai ma goi du lieu",
+   "dat": true,
+   "chiTiet": "16 sale, 8 thang, ban 2026-08-27.29"
+  },
+  {
+   "ten": "Co du tab kenh",
+   "dat": true,
+   "chiTiet": "ALL / MWG / KA / IND"
+  },
+  {
+   "ten": "Bat duoc bo loc o tab MWG",
+   "dat": true,
+   "chiTiet": "size=S PK=[1,2] ngay=10"
+  },
+  {
+   "ten": "Tab ALL: bo loc tu tat khi roi MWG",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab ALL: moi khoi chi-danh-cho-MWG deu an",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab KA: bo loc tu tat khi roi MWG",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab KA: moi khoi chi-danh-cho-MWG deu an",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab IND: bo loc tu tat khi roi MWG",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab IND: moi khoi chi-danh-cho-MWG deu an",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab MWG: 4 o KPI dau the co hien",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc Sale: doi bang chi tiet theo sale",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc Sale: doi so may o the dau",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc Size shop: doi so may",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc Size shop: doanh thu KHONG ve 0",
+   "dat": true,
+   "chiTiet": "DT=31,4 tỷ"
+  },
+  {
+   "ten": "Loc Size shop: 4 o KPI van hien",
+   "dat": false,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc Size shop: doi bang thi phan theo thang",
+   "dat": false,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc PK 10-20M: doi bang chi tiet theo sale",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc PK 10-20M: doi bang theo ngay",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc PK 10-20M: doi bieu do theo ngay",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc PK: the theo thang co ghi chu khong loc duoc",
+   "dat": false,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Loc Ngay: doi bang chi tiet theo sale",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Muc Shop: co muc con theo kenh",
+   "dat": true,
+   "chiTiet": "MWG / KA / IND"
+  },
+  {
+   "ten": "Shop MWG: chi liet ke shop dung kenh",
+   "dat": true,
+   "chiTiet": "liet ke 120 shop, sai 0"
+  },
+  {
+   "ten": "Shop MWG: bam vao shop mo duoc to chi tiet",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop MWG: khong o nao in ra HTML tho",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop MWG: co bang Chi tiet theo tung thang",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop MWG: bang thang co cot Hang may + Hang DT",
+   "dat": true,
+   "chiTiet": "Tháng | Máy | Doanh thu | Đơn giá | Hạng máy | Hạng DT | Share DS | Share DT"
+  },
+  {
+   "ten": "Shop MWG: bang thang co Share DS + Share DT",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop MWG: co Top 3 phan khuc",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop MWG: co Top 3 khung gio",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop MWG: co Nhan vien ban tot nhat",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop MWG: cot PK 10-20M theo thang (can robot chay lai)",
+   "dat": false,
+   "chiTiet": "chua co sgmS — dung nhu du bao"
+  },
+  {
+   "ten": "Shop KA: chi liet ke shop dung kenh",
+   "dat": true,
+   "chiTiet": "liet ke 29 shop, sai 0"
+  },
+  {
+   "ten": "Shop KA: bam vao shop mo duoc to chi tiet",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop KA: khong o nao in ra HTML tho",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop KA: co bang Chi tiet theo tung thang",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop KA: bang thang co cot Hang may + Hang DT",
+   "dat": true,
+   "chiTiet": "Tháng | Máy | Doanh thu | Đơn giá | Hạng máy | Hạng DT"
+  },
+  {
+   "ten": "Shop IND: chi liet ke shop dung kenh",
+   "dat": true,
+   "chiTiet": "liet ke 120 shop, sai 0"
+  },
+  {
+   "ten": "Shop IND: bam vao shop mo duoc to chi tiet",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop IND: khong o nao in ra HTML tho",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop IND: co bang Chi tiet theo tung thang",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Shop IND: bang thang co cot Hang may + Hang DT",
+   "dat": true,
+   "chiTiet": "Tháng | Máy | Doanh thu | Đơn giá | Hạng máy | Hạng DT"
+  },
+  {
+   "ten": "Shop IND: co khoi Ton kho",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab alert mo duoc, khong vo",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab rank mo duoc, khong vo",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab ton mo duoc, khong vo",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Tab over mo duoc, khong vo",
+   "dat": true,
+   "chiTiet": ""
+  }
+ ]
+}
