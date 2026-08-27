@@ -532,7 +532,7 @@ body{
       <div>
         <b>Công thức (áp dụng cho mã PK, không gồm Cường lực):</b> Giá HUB = Giá FOB (gốc, chưa VAT) × 1,20 (FOB lãi 20%) &nbsp;·&nbsp; Giá Đại lý = Giá HUB × 1,15 (HUB lãi 15%) &nbsp;·&nbsp; Giá bán lẻ = Giá FOB (gốc) × 2,5, làm tròn về đơn vị 5.000đ.
         % hiển thị ngay sau mỗi giá là lợi nhuận so với giá kế tiếp: FOB → HUB, HUB → Đại lý, Đại lý → Bán lẻ.
-        Riêng nhóm <b>Cường lực</b>: giá cố định — Bán lẻ 50.000đ, HUB 6.000đ, Đại lý 8.000đ; % hiển thị chỉ để tham khảo mức lãi thực tế, không dùng để tính lại giá.
+        Riêng nhóm <b>Cường lực</b>: Bán lẻ cố định 50.000đ &nbsp;·&nbsp; Giá HUB = FOB (gồm 8% VAT) × 1,25 (FOB lãi 25%) &nbsp;·&nbsp; Giá Đại lý = Giá HUB × 1,20 (HUB lãi 20%) — làm tròn về đơn vị 1.000đ.
         <b>Lưu ý VAT:</b> Cột Giá FOB hiển thị đã <b>+8% VAT</b> mặc định (để tiện tính VAT). HUB/Đại lý/Bán lẻ (mã PK) vẫn tính từ giá FOB gốc chưa VAT, không đổi.
         Chọn tháng ở trên để xem giá FOB đúng tháng đó (T8.26 là giá tạm tính, dùng giá FOB T7.26 do Sheet chưa cập nhật).
       </div>
@@ -6137,13 +6137,13 @@ function renderPriceTable(){
     const isCL = r.group === CL_GROUP_NAME;
     let banLe, hub, daiLy, fobCell, hubCell, daiLyCell;
     if(isCL){
-      // Cường lực: giá cố định — Bán lẻ 50.000đ, HUB 6.000đ, Đại lý 8.000đ; % chỉ tính để tham khảo, không đổi giá
-      banLe = 50000; hub = 6000; daiLy = 8000;
-      const fobPctCL = fobVAT ? Math.round(((hub - fobVAT) / fobVAT) * 1000) / 10 : 0;
-      const hubPctCL = hub ? Math.round(((daiLy - hub) / hub) * 1000) / 10 : 0;
+      // Cường lực: Bán lẻ cố định 50.000đ; HUB & Đại lý tính theo % lãi từ FOB (đã gồm 8% VAT), làm tròn về đơn vị 1.000đ
+      banLe = 50000;
+      hub = Math.round((fobVAT * 1.25) / 1000) * 1000;  // FOB (gồm 8% VAT) lãi 25% -> HUB
+      daiLy = Math.round((hub * 1.20) / 1000) * 1000;   // HUB lãi 20% -> Đại lý
       const daiLyPctCL = daiLy ? Math.round(((banLe - daiLy) / daiLy) * 1000) / 10 : 0;
-      fobCell = `${fmtMoneyFull(fobVAT)} <span style="color:var(--green);font-weight:600;">(+${fobPctCL}%)</span>`;
-      hubCell = `${fmtMoneyFull(hub)} <span style="color:var(--green);font-weight:600;">(+${hubPctCL}%)</span>`;
+      fobCell = `${fmtMoneyFull(fobVAT)} <span style="color:var(--green);font-weight:600;">(+25%)</span>`;
+      hubCell = `${fmtMoneyFull(hub)} <span style="color:var(--green);font-weight:600;">(+20%)</span>`;
       daiLyCell = `${fmtMoneyFull(daiLy)} <span style="color:var(--green);font-weight:600;">(+${daiLyPctCL}%)</span>`;
     } else {
       hub = Math.round(fob * 1.20);       // FOB lãi 20% -> HUB
