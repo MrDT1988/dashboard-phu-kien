@@ -6220,10 +6220,10 @@ function renderTargetBonusSummary(){
     total: m.monthly.reduce((s,e)=>s+e.bonus,0),
   }));
   const grandTotal = rows.reduce((s,r)=>s+r.total,0);
-  const cards = [...rows, { name: 'Tổng 3 Miền', total: grandTotal, isTotal: true }];
+  const cards = [...rows.map(r => ({...r, label: 'Tổng thưởng ' + r.name})), { total: grandTotal, isTotal: true, label: 'Tổng thưởng cả 3 Miền' }];
   el.innerHTML = cards.map(c => `
     <div class="kpi-card ${c.isTotal ? 'c-orange' : 'c-green'}">
-      <div class="kpi-label">Tổng thưởng ${c.name}</div>
+      <div class="kpi-label">${c.label}</div>
       <div class="kpi-value">${fmtMoneyShort(c.total)}</div>
       <div class="kpi-sub">Lũy kế các tháng đã có doanh thu</div>
     </div>`).join('');
