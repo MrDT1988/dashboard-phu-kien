@@ -33,5 +33,15 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f data/ket-qua-kiem-app.json || true
-          git diff --cached --quiet || git commit -m "Ket qua ra soat app bang du lieu that"
-          git push || true
+          git diff --cached --quiet && exit 0
+          git commit -m "Ket qua ra soat app bang du lieu that"
+          # Anh Thai van day commit tay trong luc bai kiem chay -> push bi tu choi.
+          # Truoc day nuot loi bang "|| true", ket qua cu nam lai lam nguoi doc tuong
+          # bai kiem chua chay. Gio keo ve roi thu lai.
+          for i in 1 2 3 4 5; do
+            if git push; then echo "Da luu ket qua ra soat."; exit 0; fi
+            echo "Push bi tu choi (lan $i) - keo ve roi thu lai..."
+            git pull --rebase --autostash origin main || exit 1
+            sleep 5
+          done
+          echo "::warning::Khong push duoc ket qua ra soat sau 5 lan."
