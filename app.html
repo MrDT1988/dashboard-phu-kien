@@ -552,7 +552,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-27.31';
+var APP_VER='2026-08-27.32';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -1646,9 +1646,7 @@ var SH_TH=null, SH_SALE='__ALL__', SH_SIZE='', SH_SEGS=[], shMode='u';
 
 // Nhom phan khuc theo danh muc cua ben THI TRUONG (D.segsMkt) — khac danh muc OPPO (D.segs)
 function nhomMktIdx(g){
-  var out=[];
-  (D.segsMkt||[]).forEach(function(x,i){ if(g.re.test(x)) out.push(i) });
-  return out;
+  return pkChiaNhom(D.segsMkt)[NHOM_PK.indexOf(g)]||[];
 }
 function nhomMktDangChon(g){
   var idx=nhomMktIdx(g);
@@ -2141,14 +2139,47 @@ function tkNgay(ton,nhip){
   var d=Math.round(ton/nhip);
   return d>365?'trên 1 năm':n0(d)+' ngày';
 }
-// 4 nhóm phân khúc anh Thái dùng để nhìn nhanh. Nhận diện theo TÊN khoảng nên
-// đổi nhãn bên DB TG cũng không vỡ.
+// 5 nhóm phân khúc anh Thái dùng để nhìn nhanh.
+// KHÔNG khớp theo tên nữa mà ĐỌC RA CON SỐ: bảng theo ngày ghi "< 5 / 5 - 7 / > 30",
+// bảng thị phần ghi "<3M / 3-5M / >20M / >30M" — hai kiểu viết khác nhau, khớp tên
+// thì nhóm "Dưới 5M" rỗng và không đâu lọc được "Trên 30M".
 var NHOM_PK=[
-  {t:'Dưới 5M', re:/^\s*<\s*5/},
-  {t:'5–10M',   re:/^\s*5\s*-\s*7|^\s*7\s*-\s*10/},
-  {t:'10–20M',  re:/^\s*10\s*-\s*15|^\s*15\s*-\s*20/},
-  {t:'20–30M',  re:/^\s*20\s*-\s*30/}
+  {t:'Dưới 5M',  lo:0,  hi:5},
+  {t:'5–10M',    lo:5,  hi:10},
+  {t:'10–20M',   lo:10, hi:20},
+  {t:'20–30M',   lo:20, hi:30},
+  {t:'Trên 30M', lo:30, hi:Infinity}
 ];
+// Đọc một nhãn khoảng giá ra [từ, đến] triệu đồng. Viết kiểu nào cũng đọc được.
+function pkKhoang(ten){
+  var t=String(ten==null?'':ten).toUpperCase()
+    .replace(/TRIỆU|TRIEU/g,'M').replace(/\s+/g,'')
+    .replace(/^DƯỚI|^DUOI/,'<').replace(/^TRÊN|^TREN/,'>');
+  var so=function(x){ return parseFloat(String(x).replace(',','.')) };
+  var m=t.match(/^<=?(\d+(?:[.,]\d+)?)M?$/);
+  if(m) return [0, so(m[1])];
+  m=t.match(/^>=?(\d+(?:[.,]\d+)?)M?$/);
+  if(m) return [so(m[1]), Infinity];
+  m=t.match(/^(\d+(?:[.,]\d+)?)M?[-–—](\d+(?:[.,]\d+)?)M?$/);
+  if(m) return [so(m[1]), so(m[2])];
+  return null;
+}
+// Chia danh sách nhãn phân khúc vào 5 nhóm, trả về mảng chỉ số cột theo từng nhóm.
+// Bỏ qua CỘT CỘNG DỒN: nhãn mở kiểu ">20M" mà đã có một khoảng khác bắt đầu đúng
+// tại 20 thì nó là cột cộng dồn, gộp vào sẽ đếm hai lần.
+function pkChiaNhom(ds){
+  var kh=(ds||[]).map(pkKhoang), batDau={};
+  kh.forEach(function(k){ if(k&&k[1]!==Infinity) batDau[k[0]]=1 });
+  var out=NHOM_PK.map(function(){return []});
+  kh.forEach(function(k,i){
+    if(!k) return;
+    if(k[1]===Infinity&&batDau[k[0]]) return;
+    for(var j=0;j<NHOM_PK.length;j++){
+      if(k[0]>=NHOM_PK[j].lo&&k[0]<NHOM_PK[j].hi){ out[j].push(i); return }
+    }
+  });
+  return out;
+}
 /* ---- Thu tu Sale: LAM Y NHU DB MWG ----------------------------------------
    DB MWG (ham mcComputeSaleOrder) xep hang Sale DUY NHAT 1 LAN theo DOANH SO
    (so may OPPO ban ra trong ky dang xem) roi dung CHUNG thu tu do cho moi the,
@@ -2175,9 +2206,7 @@ function sapSale(ds){
   });
 }
 function nhomPKIdx(g){
-  var out=[];
-  (D.segs||[]).forEach(function(x,i){ if(g.re.test(x)) out.push(i) });
-  return out;
+  return pkChiaNhom(D.segs)[NHOM_PK.indexOf(g)]||[];
 }
 function nhomDangChon(g){
   var idx=nhomPKIdx(g);
