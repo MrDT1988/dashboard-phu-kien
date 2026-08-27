@@ -57,7 +57,10 @@ jobs:
       - name: Luu lai neu co thay doi
         run: |
           rm -f app-data.json          # tuyet doi khong day ban chua ma hoa len
-          if git diff --quiet -- data/ && git diff --cached --quiet -- data/; then
+          # DUNG "git diff": no CHI thay file da duoc theo doi. Goi DB TG moi
+          # (data/dbtg-<id>.json) la file MOI TINH nen git diff khong thay ->
+          # workflow tuong "khong co gi doi" roi bo qua. Phai dung git status.
+          if [ -z "$(git status --porcelain -- data/)" ]; then
             echo "So lieu khong doi - khong can luu."
             exit 0
           fi
@@ -65,7 +68,17 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A data/
           git commit -m "Tu dong cap nhat so lieu app ($(TZ=Asia/Ho_Chi_Minh date '+%d/%m/%Y %H:%M'))"
-          git push
+          # Bo ra soat DB TG cung ghi ket qua vao data/ nen hai ben hay dam nhau.
+          # Truoc day day thang, bi tu choi la ca lan chay coi nhu vut di.
+          for i in 1 2 3 4 5; do
+            if git push; then echo "Da luu so lieu moi."; exit 0; fi
+            echo "Push bi tu choi (lan $i) - keo ve roi thu lai..."
+            git pull --rebase --autostash origin main || {
+              echo "::error::Keo ve that bai - dung lai de khong lam hong lich su."; exit 1; }
+            sleep 5
+          done
+          echo "::error::Khong push duoc sau 5 lan."
+          exit 1
 
       - name: Bao loi ro rang
         if: failure()
