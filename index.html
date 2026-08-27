@@ -503,7 +503,7 @@ body{
     <div class="insight-box" style="margin-top:0;margin-bottom:16px;">
       <div class="dot"></div>
       <div>
-        <b>Tiêu chí:</b> Target tháng = Target năm ÷ 12. Hoàn thành ≥ 60% thưởng 3.000.000đ · ≥ 80% thưởng 5.000.000đ · ≥ 100% thưởng 7.000.000đ (tính mức cao nhất đạt được, không cộng dồn).
+        <b>Tiêu chí:</b> Target tháng = Target năm ÷ 12. Hoàn thành ≥ 80% thưởng 2.000.000đ · ≥ 100% thưởng 4.000.000đ (tính mức cao nhất đạt được, không cộng dồn).
         Bấm vào 1 dòng Miền để xem chi tiết từng khu vực trong miền đó.
       </div>
     </div>
@@ -513,7 +513,6 @@ body{
         <tr>
           <th>Miền / Khu vực</th>
           <th class="num cen">Target/tháng</th>
-          <th class="num cen">Mốc 60%</th>
           <th class="num cen">Mốc 80%</th>
           <th class="num cen">Mốc 100%</th>
           <th class="num cen">Doanh thu tháng</th>
@@ -5693,7 +5692,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   bonusMatrix.sort((a,b) => b.total - a.total);
 
   // ---- Target theo Miền & Khu vực, dựa trên % hoàn thành Target tháng (target năm / 12) ----
-  // Mốc: >=60% HT thưởng 3.000.000/miền · >=80% thưởng 5.000.000/miền · >=100% thưởng 7.000.000/miền
+  // Mốc: >=80% HT thưởng 2.000.000/miền · >=100% thưởng 4.000.000/miền
   // (chỉ tính mức cao nhất đạt được trong tháng đó, không cộng dồn 3 mốc)
   const MIEN_ORDER = ['Miền Bắc','Miền Trung','Miền Nam'];
   const targetProgressMonths = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26'];
@@ -5705,9 +5704,8 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     for(let i=0;i<8;i++) mienMonthlyRevenue[r.mien][i] += monthly[i] || 0;
   });
   function targetTierBonus(pct){
-    if(pct >= 1.0) return 7000000;
-    if(pct >= 0.8) return 5000000;
-    if(pct >= 0.6) return 3000000;
+    if(pct >= 1.0) return 4000000;
+    if(pct >= 0.8) return 2000000;
     return 0;
   }
   function buildMonthlyDetail(targetThang, revArr){
@@ -5720,7 +5718,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     const targetThang = r.target_nam / 12;
     return {
       name: r.name, mien: r.mien,
-      targetThang, t60: targetThang*0.6, t80: targetThang*0.8, t100: targetThang,
+      targetThang, t80: targetThang*0.8, t100: targetThang,
       monthly: buildMonthlyDetail(targetThang, regionMonthly[r.name] || new Array(8).fill(0)),
     };
   });
@@ -5729,7 +5727,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     const targetThang = mObj ? mObj.target_nam / 12 : 0;
     return {
       name: mName,
-      targetThang, t60: targetThang*0.6, t80: targetThang*0.8, t100: targetThang,
+      targetThang, t80: targetThang*0.8, t100: targetThang,
       monthly: buildMonthlyDetail(targetThang, mienMonthlyRevenue[mName]),
       regions: regionTargetDetail.filter(r => r.mien === mName).sort((a,b)=>b.targetThang-a.targetThang),
     };
@@ -6183,15 +6181,14 @@ function setupTargetProgressFilter(){
   });
 }
 
-function targetProgressRowHtml(name, rowClass, dataAttr, monthlyEntry, targetThang, t60, t80, t100){
+function targetProgressRowHtml(name, rowClass, dataAttr, monthlyEntry, targetThang, t80, t100){
   const bonusCell = monthlyEntry.bonus > 0
-    ? `<span class="badge ${monthlyEntry.bonus>=7000000?'bad':(monthlyEntry.bonus>=5000000?'warn':'good')}">${fmtMoneyShort(monthlyEntry.bonus)}</span>`
+    ? `<span class="badge ${monthlyEntry.bonus>=4000000?'bad':'warn'}">${fmtMoneyShort(monthlyEntry.bonus)}</span>`
     : '<span style="color:var(--text-secondary)">-</span>';
   return `
   <tr class="${rowClass}" ${dataAttr}>
     <td>${name}</td>
     <td class="num cen">${fmtMoneyShort(targetThang)}</td>
-    <td class="num cen">${fmtMoneyShort(t60)}</td>
     <td class="num cen">${fmtMoneyShort(t80)}</td>
     <td class="num cen">${fmtMoneyShort(t100)}</td>
     <td class="num cen">${fmtMoneyShort(monthlyEntry.revenue)}</td>
@@ -6204,7 +6201,7 @@ function renderTargetProgressTable(){
   const tbody = document.getElementById('targetProgressBody');
   if(!tbody) return;
   if(targetProgressMonthIdx === null){
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:24px;">Chọn 1 tháng phía trên để xem chi tiết Target &amp; % hoàn thành</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:24px;">Chọn 1 tháng phía trên để xem chi tiết Target &amp; % hoàn thành</td></tr>`;
     return;
   }
   const mi = targetProgressMonthIdx;
@@ -6212,11 +6209,11 @@ function renderTargetProgressTable(){
     const isExpanded = targetProgressExpanded.has(m.name);
     let html = targetProgressRowHtml(
       m.name, 'mien-row' + (isExpanded ? ' expanded' : ''), `data-mien="${m.name}"`,
-      m.monthly[mi], m.targetThang, m.t60, m.t80, m.t100
+      m.monthly[mi], m.targetThang, m.t80, m.t100
     );
     if(isExpanded){
       html += m.regions.map(r => targetProgressRowHtml(
-        r.name, 'region-row', '', r.monthly[mi], r.targetThang, r.t60, r.t80, r.t100
+        r.name, 'region-row', '', r.monthly[mi], r.targetThang, r.t80, r.t100
       )).join('');
     }
     return html;
@@ -6227,7 +6224,7 @@ function renderTargetProgressTable(){
   const totalBonus = DATA.targetProgressMien.reduce((s,m)=>s+m.monthly[mi].bonus,0);
   const totalPct = totalTarget ? Math.round((totalRevenue/totalTarget)*1000)/10 : 0;
   const totalEntry = { revenue: totalRevenue, pct: totalPct, bonus: totalBonus };
-  const totalRow = targetProgressRowHtml('Tổng (3 Miền)', 'total-row', '', totalEntry, totalTarget, totalTarget*0.6, totalTarget*0.8, totalTarget);
+  const totalRow = targetProgressRowHtml('Tổng (3 Miền)', 'total-row', '', totalEntry, totalTarget, totalTarget*0.8, totalTarget);
 
   tbody.innerHTML = rowsHtml + totalRow;
 
