@@ -13701,6 +13701,8 @@ function spark(arr,xuong){
 }
 
 function bd(id){try{if(!window.Chart)return null;var I=Chart.instances,k;for(k in I){var c=I[k];if(c&&c.canvas&&c.canvas.id===id)return c;}}catch(e){}return null;}
+function catDuoi(a){var i=a.length-1; while(i>0&&!a[i])i--; return a.slice(0,i+1);}
+function sach(d){var o=[],i;d=d||[];for(i=0;i<d.length;i++){if(typeof d[i]==='number'&&isFinite(d[i]))o.push(d[i]);}return o;}
 function cong(c){
  if(!c||!c.data||!c.data.datasets||!c.data.labels)return null;
  var n=c.data.labels.length,out=[],i,j;
@@ -13708,11 +13710,14 @@ function cong(c){
   for(j=0;j<c.data.datasets.length;j++){var v=c.data.datasets[j].data[i];
    if(typeof v==='number'&&isFinite(v)){s+=v;m++;}}
   if(m)out.push(s);}
+ out=catDuoi(out);
  return out.length>1?out:null;
 }
 function duLieu(){
- var may=cong(bd('chart-channel-month-units')),dt=cong(bd('chart-channel-month-revenue')),asp=null,i;
- if(may&&dt&&may.length===dt.length){asp=[];for(i=0;i<may.length;i++)asp.push(may[i]?dt[i]/may[i]:0);}
+ var may=cong(bd('chart-channel-month-units')),dt=cong(bd('chart-channel-month-revenue')),asp=null,i,n;
+ if(may&&dt){n=Math.min(may.length,dt.length); may=may.slice(0,n); dt=dt.slice(0,n);
+  asp=[];for(i=0;i<n;i++)asp.push(may[i]?dt[i]/may[i]:0);
+  asp=catDuoi(asp); if(asp.length<2)asp=null;}
  return {may:may,dt:dt,asp:asp};
 }
 function veSpark(){
@@ -13743,13 +13748,13 @@ function mom(el){
 function pt(x){ if(x===null||x===undefined||!isFinite(x))return '';
  return '<span class="'+(x>=0?'dbtg-up':'dbtg-dn')+'">'+(x>=0?'+':'')+x.toFixed(1).replace('.',',')+'%</span>';}
 function num(x){return x.toFixed(1).replace('.',',');}
+function laThang(lb){lb=String(lb); if(lb.charAt(0)!=='T')return false; var n=parseInt(lb.slice(1),10); return n>=1&&n<=12&&lb.length<=3;}
 function theKenh(){
  var c=bd('chart-channel-month-units'); if(!c||!c.data||!c.data.datasets)return null;
- var ds=c.data.datasets,r=[],i,j;
+ var ds=c.data.datasets,r=[],i;
  for(i=0;i<ds.length;i++){
-  var a=[],dd=ds[i].data||[];
-  for(j=0;j<dd.length;j++){if(typeof dd[j]==='number'&&isFinite(dd[j]))a.push(dd[j]);}
-  if(a.length>1&&a[a.length-2])r.push({t:ds[i].label||('Kenh '+(i+1)),p:(a[a.length-1]/a[a.length-2]-1)*100});
+  var a=catDuoi(sach(ds[i].data));
+  if(a.length>1&&a[a.length-2]>0)r.push({t:ds[i].label||('Kênh '+(i+1)),p:(a[a.length-1]/a[a.length-2]-1)*100});
  }
  if(r.length<2)return null;
  r.sort(function(a,b){return b.p-a.p});
@@ -13757,16 +13762,19 @@ function theKenh(){
 }
 function theHang(){
  var c=bd('chart-monthly-brand'); if(!c||!c.data||!c.data.datasets||!c.data.labels)return null;
- var ds=c.data.datasets,n=c.data.labels.length; if(!n)return null;
- function sh(idx){var s=0,o=null,i;
-  for(i=0;i<ds.length;i++){var v=ds[i].data[idx];
+ var ds=c.data.datasets,L=c.data.labels,n=L.length,i,idx=[];
+ for(i=0;i<n;i++){if(laThang(L[i]))idx.push(i);}
+ if(idx.length<2){idx=[];for(i=0;i<n;i++)idx.push(i);}
+ function sh(k){var s=0,o=null,j;
+  for(j=0;j<ds.length;j++){var v=ds[j].data[k];
    if(typeof v==='number'&&isFinite(v)){s+=v;
-    if((ds[i].label||'').toLowerCase().indexOf('oppo')>=0)o=v;}}
-  return (s&&o!==null)?o/s*100:null;}
- var a=null,b=null,i;
- for(i=0;i<n;i++){var x=sh(i); if(x!==null){ if(a===null)a={i:i,v:x}; b={i:i,v:x}; }}
- if(!a||!b||a.i===b.i)return null;
- return {dau:a.v,cuoi:b.v,tenDau:String(c.data.labels[a.i]),tenCuoi:String(c.data.labels[b.i])};
+    if((ds[j].label||'').toLowerCase().indexOf('oppo')>=0)o=v;}}
+  return (s>0&&o!==null&&o>0)?o/s*100:null;}
+ var ok=[];
+ for(i=0;i<idx.length;i++){var x=sh(idx[i]); if(x!==null)ok.push({i:idx[i],v:x});}
+ if(ok.length<2)return null;
+ var a=ok[0],b=ok[ok.length-1];
+ return {dau:a.v,cuoi:b.v,tenDau:String(L[a.i]),tenCuoi:String(L[b.i])};
 }
 
 function veIns(){
@@ -13776,7 +13784,7 @@ function veIns(){
  var the=[].slice.call(p.querySelectorAll('.kpi-row .kpi-card')).slice(0,4);
  var ds=mom(the[0]),dt=mom(the[1]),asp=mom(the[2]),o=[];
  if(ds!==null&&dt!==null&&asp!==null){
-  var t = (asp<0&&ds>0)
+  var t=(asp<0&&ds>0)
    ? 'Bán nhiều hơn nhưng giá thấp hơn. Sản lượng '+pt(ds)+', ASP '+pt(asp)+' nên doanh thu chỉ '+pt(dt)+'.'
    : 'Sản lượng '+pt(ds)+' &middot; Doanh thu '+pt(dt)+' &middot; ASP '+pt(asp)+'.';
   o.push({h:'Sản lượng và giá bán',t:t});
@@ -13794,23 +13802,29 @@ function veIns(){
  row.parentNode.insertBefore(box,row.nextSibling);
  return o.length;
 }
+function demHienCo(){
+ var b=document.getElementById('dbtg-tq-ins');
+ return document.querySelectorAll('#panel-overview .dbtg-spark svg').length + (b?b.children.length:0);
+}
+var TOT=6, best=0;
 function chay(){
  if(tat()){
   var b=document.getElementById('dbtg-tq-ins'); if(b&&b.parentNode)b.parentNode.removeChild(b);
   var e=document.querySelectorAll('#panel-overview .dbtg-spark'),i;
   for(i=0;i<e.length;i++){if(e[i].parentNode)e[i].parentNode.removeChild(e[i]);}
-  return 0;}
+  best=0; return 0;}
  var a=0,c=0;
  try{a=veSpark()}catch(err){}
  try{c=veIns()}catch(err){}
+ if(a+c>best)best=a+c;
  return a+c;
 }
 window.__dbtgTongQuan=chay;
 window.__dbtgTongQuanTat=function(){try{localStorage.setItem(KEY,'off')}catch(e){} return chay();};
 window.__dbtgTongQuanBat=function(){try{localStorage.removeItem(KEY)}catch(e){} return chay();};
-var dem=0, iv=setInterval(function(){dem++;var n=0;try{n=chay()}catch(e){} if(n>0||dem>40)clearInterval(iv);},1500);
+var dem=0, iv=setInterval(function(){dem++;var n=0;try{n=chay()}catch(e){} if(n>=TOT||dem>40)clearInterval(iv);},1500);
 setInterval(function(){try{ if(tat())return;
- if(!document.getElementById('dbtg-tq-ins')||!document.querySelector('#panel-overview .dbtg-spark'))chay();
+ if(best>0&&demHienCo()<best)chay();
 }catch(e){}},3000);
 try{new MutationObserver(function(){setTimeout(chay,60)}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(chay,300)});
