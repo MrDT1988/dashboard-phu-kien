@@ -335,8 +335,16 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
         'khong de sale bam vao roi thay man hinh trong');
       ghi('Don man hinh: GIU panel kenh cua chinh minh (MWG)',
         !an('panel-mwg') && !anTab('panel-mwg'));
-      ghi('Don man hinh: GIU tab Tong quan', !anTab('panel-overview'),
-        'tong quan ca nam la yeu cau so 1 cua anh Thai');
+      /* 28/08 anh Thai DAO NGUOC yeu cau 27/08: sale BO HAN Tong quan,
+         chi giu chi tiet theo kenh phu trach. Leader van giu Tong quan. */
+      ghi('Sale: BO HAN tab + panel Tong quan', anTab('panel-overview') && an('panel-overview'),
+        'anh Thai 28/08 — tong quan gom so ca 3 kenh, vua thua vua de lo');
+      const tabDangMo = w.document.querySelector('.db-tg-tab.active');
+      ghi('Sale: sau khi an Tong quan thi nhay sang tab CON HIEN',
+        !!tabDangMo && tabDangMo.style.display !== 'none'
+          && tabDangMo.dataset.panel !== 'panel-overview',
+        'tab dang mo: ' + (tabDangMo ? tabDangMo.dataset.panel : 'khong co')
+          + ' — khong duoc tro ve tab vua bi an');
       // --- Khoi HTML TINH cua kenh khac (soi tai khoan that 28/08)
       // Cac the nay khong phai .chart-container nen bo quet cu khong dung toi.
       const anId = (id) => {
@@ -355,8 +363,6 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
       ghi('Don man hinh: cau mo ta khong con liet ke kenh khac',
         !!mo && !/KA \/ IND/.test(mo.textContent || ''),
         mo ? (mo.textContent || '').slice(0, 70) : 'khong co');
-      ghi('Don man hinh: GIU "Chuong trinh MWG" cua chinh minh',
-        !anId('channel-program-mwg-result'));
       // "Chien luoc theo Kenh": ba the, moi the mot <h4> ghi ten kenh
       const theCL = (ten) => {
         const cl = w.document.getElementById('channel-strategy-section');
@@ -373,6 +379,28 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
       const kq2 = w.__donManHinh(['MWG'], 'admin');
       ghi('Don man hinh: admin KHONG bi an gi',
         kq2.anTab === 0 && kq2.anThe === 0 && kq2.anTinh === 0, JSON.stringify(kq2));
+      w.close();
+    }
+
+    // --- F4a2. LEADER van GIU Tong quan (chi 'sale' moi bi bo)
+    {
+      const { w } = moTrang({ maSan: MA_SALE, aiSan: uSale, dapTraLoi: phucVu });
+      await cho(4000);
+      w.__donManHinh(['MWG'], 'leader');
+      const t = w.document.querySelector('[data-panel="panel-overview"]');
+      const p = w.document.getElementById('panel-overview');
+      ghi('Leader: VAN GIU Tong quan',
+        !!t && t.style.display !== 'none' && !!p && p.style.display !== 'none',
+        '27/08 anh Thai chot "Leader thi full thi truong"');
+      // Phep nay phai kiem o vai LEADER: voi sale thi ca Tong quan da bi bo,
+      // nen "Chuong trinh MWG" bi an theo la DUNG, khong phai loi.
+      const conMWG = w.document.getElementById('channel-program-mwg-result');
+      let anMWG = false;
+      for (let x = conMWG; x && x !== w.document.body; x = x.parentElement) {
+        if (x.style.display === 'none') { anMWG = true; break; }
+      }
+      ghi('Leader: GIU "Chuong trinh MWG" cua chinh minh', !anMWG,
+        'chi an chuong trinh cua kenh KHONG phu trach');
       w.close();
     }
 
