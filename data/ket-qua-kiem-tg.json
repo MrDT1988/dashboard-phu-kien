@@ -1,6 +1,6 @@
 {
- "tong": 58,
- "khongDat": 0,
+ "tong": 62,
+ "khongDat": 3,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
@@ -194,6 +194,16 @@
    "chiTiet": ""
   },
   {
+   "ten": "Don man hinh: an the \"Chien luoc theo Kenh\" cua KA va IND",
+   "dat": false,
+   "chiTiet": "HTML tinh — bo quet the rong khong dung toi"
+  },
+  {
+   "ten": "Don man hinh: GIU the chien luoc kenh MWG cua chinh minh",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
    "ten": "Don man hinh: admin KHONG bi an gi",
    "dat": true,
    "chiTiet": "{\"anTab\":0,\"anThe\":0,\"anTinh\":0}"
@@ -242,6 +252,16 @@
    "ten": "Thu hep: admin KHONG bi dong vao target/danh sach kenh",
    "dat": true,
    "chiTiet": "anh Thai phai thay nguyen target toan vung"
+  },
+  {
+   "ten": "Id goi doi: KHONG bat chon lai ten",
+   "dat": false,
+   "chiTiet": "robot doi id moi ngay — nho theo id la ngay nao cung bi day ra"
+  },
+  {
+   "ten": "Id goi doi: van mo duoc dung goi cua nguoi do",
+   "dat": false,
+   "chiTiet": "phai lay id MOI trong con tro, khong dung id cu da luu — thay: []"
   },
   {
    "ten": "Dang xuat: co the nguoi dang xem sau khi mo goi",
