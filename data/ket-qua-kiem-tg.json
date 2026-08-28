@@ -1,6 +1,6 @@
 {
- "tong": 54,
- "khongDat": 6,
+ "tong": 58,
+ "khongDat": 0,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
@@ -156,7 +156,7 @@
   {
    "ten": "Don man hinh: an panel kenh KA va IND",
    "dat": true,
-   "chiTiet": "{\"anTab\":2,\"anThe\":14}"
+   "chiTiet": "{\"anTab\":2,\"anThe\":0,\"anTinh\":5}"
   },
   {
    "ten": "Don man hinh: an luon TAB kenh KA va IND",
@@ -175,18 +175,18 @@
   },
   {
    "ten": "Don man hinh: an \"Chuong trinh KA\" va \"Chuong trinh IND\"",
-   "dat": false,
+   "dat": true,
    "chiTiet": "the HTML tinh — bo quet the rong khong dung toi"
   },
   {
    "ten": "Don man hinh: an tong chi phi CA VUNG",
-   "dat": false,
+   "dat": true,
    "chiTiet": "so toan vung, sale khong duoc thay"
   },
   {
    "ten": "Don man hinh: cau mo ta khong con liet ke kenh khac",
-   "dat": false,
-   "chiTiet": "Tổng quan + Chi tiết MWG / KA / IND — Toàn bộ dữ liệu là sản phẩm OPPO"
+   "dat": true,
+   "chiTiet": "Dữ liệu sản phẩm OPPO trong phạm vi phụ trách của anh/chị — kênh MWG."
   },
   {
    "ten": "Don man hinh: GIU \"Chuong trinh MWG\" cua chinh minh",
@@ -195,12 +195,12 @@
   },
   {
    "ten": "Don man hinh: admin KHONG bi an gi",
-   "dat": false,
-   "chiTiet": "{\"anTab\":0,\"anThe\":0}"
+   "dat": true,
+   "chiTiet": "{\"anTab\":0,\"anThe\":0,\"anTinh\":0}"
   },
   {
    "ten": "The CHO THAO TAC (canvas chua ve) duoc GIU",
-   "dat": false,
+   "dat": true,
    "chiTiet": "chua ve khac rong — an di la cuop mat chi tiet theo ngay cua sale"
   },
   {
@@ -215,8 +215,28 @@
   },
   {
    "ten": "Thu hep: co chay khi nguoi xem la sale",
-   "dat": false,
-   "chiTiet": "KHONG chay"
+   "dat": true,
+   "chiTiet": "[\"MWG\"]"
+  },
+  {
+   "ten": "Thu hep: danh sach kenh chi con kenh cua minh",
+   "dat": true,
+   "chiTiet": "[\"MWG\"]"
+  },
+  {
+   "ten": "Thu hep: BO han target cua kenh khong phu trach",
+   "dat": true,
+   "chiTiet": "[\"MWG\"]"
+  },
+  {
+   "ten": "Thu hep: target NHAN ti trong that, khong om tron ca kenh",
+   "dat": true,
+   "chiTiet": "ky vong ### (### x 25%), nhan duoc ###"
+  },
+  {
+   "ten": "Thu hep: target doanh thu cung nhan ti trong",
+   "dat": true,
+   "chiTiet": "###"
   },
   {
    "ten": "Thu hep: admin KHONG bi dong vao target/danh sach kenh",
