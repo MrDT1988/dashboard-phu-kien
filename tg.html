@@ -330,7 +330,12 @@
     for (var j = 0; j < cv.length; j++) {
       try {
         var c = (window.Chart && window.Chart.getChart) ? window.Chart.getChart(cv[j]) : null;
-        if (c && c.data && (c.data.datasets || []).some(function (d) {
+        /* CHUA VE khac RONG — day la loi da mac 28/08.
+           "Doanh so theo ngay" chi ve sau khi nguoi dung chon Thang. Truoc do
+           canvas chua co bieu do nao gan vao. An no di la cuop mat mot chuc nang
+           dang chay tot, va sale khong con duong nao tim lai. */
+        if (!c) return true;
+        if (c.data && (c.data.datasets || []).some(function (d) {
           return (d.data || []).some(function (v) {
             var n = (v && typeof v === 'object') ? (v.y != null ? v.y : v.v) : v;
             return typeof n === 'number' && n !== 0;
@@ -341,10 +346,52 @@
     return !(bang.length || cv.length) ? true : false;   // the chi co chu -> giu
   }
 
+  /* Khoi HTML TINH cua tung kenh — khong phai .chart-container nen bo quet
+     ben duoi khong dung toi. Phai chi mat tung cai. */
+  var KHOI_TINH = {
+    KA:  ['#channel-program-ka-result'],
+    IND: ['#channel-program-ind-result'],
+  };
+
+  function anKhoiTinh(co) {
+    var n = 0;
+    Object.keys(KHOI_TINH).forEach(function (k) {
+      if (co[k]) return;
+      KHOI_TINH[k].forEach(function (sel) {
+        var e = document.querySelector(sel);
+        var the = e && e.closest('div[style*="border"]');
+        if (the) { the.style.display = 'none'; n++; }
+        else if (e && e.parentElement) { e.parentElement.style.display = 'none'; n++; }
+      });
+    });
+    // Tong chi phi CA VUNG — sale khong duoc thay
+    var tong = document.getElementById('channel-program-total');
+    if (tong) { tong.style.display = 'none'; n++; }
+    // The "PG MWG & KA" — chinh sach cua kenh khac
+    if (!co.KA) {
+      document.querySelectorAll('#panel-overview div').forEach(function (d) {
+        if (d.children.length) return;
+        if (/^PG MWG\s*&\s*KA\b/.test((d.textContent || '').trim())) {
+          var box = d.parentElement;
+          if (box) { box.style.display = 'none'; n++; }
+        }
+      });
+    }
+    // Cau mo ta dau trang con liet ke ca 3 kenh
+    var mo = document.querySelector('.dashboard-container p');
+    if (mo && /Chi ti\u1ebft MWG \/ KA \/ IND/.test(mo.textContent || '')) {
+      mo.textContent = 'D\u1eef li\u1ec7u s\u1ea3n ph\u1ea9m OPPO trong ph\u1ea1m vi ph\u1ee5 tr\u00e1ch c\u1ee7a anh/ch\u1ecb \u2014 k\u00eanh '
+        + Object.keys(co).join(' / ') + '.';
+      n++;
+    }
+    return n;
+  }
+
   window.__donManHinh = function (kenhCuaToi, vaiTro) {
-    if (!kenhCuaToi || vaiTro === 'admin') return { anTab: 0, anThe: 0 };
+    if (!kenhCuaToi || vaiTro === 'admin') return { anTab: 0, anThe: 0, anTinh: 0 };
     var co = {}; kenhCuaToi.forEach(function (k) { co[k] = 1; });
     var anTab = 0;
+    var anTinh = anKhoiTinh(co);
 
     // 1. An tab + panel cua kenh khong phu trach
     Object.keys(KENH_PANEL).forEach(function (k) {
@@ -375,7 +422,7 @@
       });
       if (!con.length) sec.style.display = 'none';
     });
-    return { anTab: anTab, anThe: anThe };
+    return { anTab: anTab, anThe: anThe, anTinh: anTinh };
   };
 
   /* ===== THE NGUOI DANG XEM + NUT DANG XUAT ===============================
@@ -3658,6 +3705,55 @@ const CHANNEL_TARGETS = {
 const PRODUCT_TARGETS = {
     'reno16': { label: 'Reno16 Series', MWG: 1100, KA: 125, IND: 275 },
 };
+
+/* ===== THU HEP THEO PHAM VI NGUOI DANG XEM (28/08) ========================
+   Doc ky truoc khi sua:
+
+   1) CHANNEL_GROUP_ORDER va CHANNEL_TARGETS la HAI HANG SO. Moi bang/bieu do
+      theo kenh deu lap qua chung, KHONG lap qua du lieu. Cat du lieu thoi thi
+      man hinh van de ra dong "IND 0 / KA 0". Thu hep tai day thi 12 cho dung
+      CHANNEL_GROUP_ORDER va moi cho dung CHANNEL_TARGETS tu dung theo.
+
+   2) TARGET PHAI NHAN TI TRONG. computeSaleTargetAllocation() chia target kenh
+      theo ti trong cua sale TRONG CHINH DATA.crosstab. Goi cua sale chi con
+      minh ho -> ti trong = 100% -> ho om tron target ca kenh. Robot da tinh san
+      ti trong that (mau so toan vung) va bo vao goi. Nhan vao day mot lan la
+      moi cho tinh sau do deu dung.
+
+   3) Sua TAI CHO (mutate) chu khong gan lai: CHANNEL_GROUP_ORDER la const o
+      tang tren, cac ham khac da tham chieu toi chinh o nho do.
+
+   Admin khong co target_share -> khong dong gi.
+   ======================================================================== */
+(function thuHepTheoPhamVi() {
+    var ds = DATA.channels_list;
+    if (!ds || !ds.length) return;                 // khong biet pham vi -> de nguyen
+    if (ds.length >= CHANNEL_GROUP_ORDER.length && !DATA.target_share) return;   // admin
+
+    var co = {}; ds.forEach(function (c) { co[c] = 1; });
+
+    // (a) thu hep thu tu kenh — sua tai cho de moi noi da tham chieu deu thay
+    var giu = CHANNEL_GROUP_ORDER.filter(function (c) { return co[c]; });
+    if (giu.length) CHANNEL_GROUP_ORDER.splice(0, CHANNEL_GROUP_ORDER.length, ...giu);
+
+    // (b) bo target cua kenh khong phu trach
+    Object.keys(CHANNEL_TARGETS).forEach(function (c) {
+        if (!co[c]) { delete CHANNEL_TARGETS[c]; delete PRODUCT_TARGETS.reno16[c]; }
+    });
+
+    // (c) nhan ti trong THAT — day la cho sua so sai
+    var ts = DATA.target_share;
+    if (!ts) return;
+    Object.keys(CHANNEL_TARGETS).forEach(function (c) {
+        var p = ts[c];
+        if (!p) { CHANNEL_TARGETS[c].sellout = 0; CHANNEL_TARGETS[c].revenue = 0;
+                  PRODUCT_TARGETS.reno16[c] = 0; return; }
+        CHANNEL_TARGETS[c].sellout = Math.round(CHANNEL_TARGETS[c].sellout * (p.sellout || 0));
+        CHANNEL_TARGETS[c].revenue = Math.round(CHANNEL_TARGETS[c].revenue * (p.revenue || 0));
+        PRODUCT_TARGETS.reno16[c]  = Math.round((PRODUCT_TARGETS.reno16[c] || 0) * (p.sellout || 0));
+    });
+    window.__daThuHepKenh = { kenh: giu, target: JSON.parse(JSON.stringify(CHANNEL_TARGETS)) };
+})();
 const channelColor = CHANNEL_GROUP_COLORS_JS;
 
 function fmtVND(v) {
