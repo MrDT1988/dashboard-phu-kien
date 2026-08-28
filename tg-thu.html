@@ -13729,7 +13729,10 @@ function veSpark(){
   var cu=k.querySelector('.dbtg-spark'); if(cu&&cu.parentNode)cu.parentNode.removeChild(cu);
   var a=bo[i];
   var d=document.createElement('div'); d.className='dbtg-spark';
-  if(a&&a.length>1){d.innerHTML=spark(a,a[a.length-1]<a[0]); n++;} else d.innerHTML='';
+  if(a&&a.length>1){
+   var m=mom(k), xuong=(m!==null)?(m<0):(a[a.length-1]<a[0]);
+   d.innerHTML=spark(a,xuong); n++;
+  } else d.innerHTML='';
   var ch=k.querySelector('.kpi-channels');
   if(ch)k.insertBefore(d,ch); else k.appendChild(d);
  });
@@ -13747,18 +13750,29 @@ function mom(el){
 }
 function pt(x){ if(x===null||x===undefined||!isFinite(x))return '';
  return '<span class="'+(x>=0?'dbtg-up':'dbtg-dn')+'">'+(x>=0?'+':'')+x.toFixed(1).replace('.',',')+'%</span>';}
+function diem(x){ if(x===null||x===undefined||!isFinite(x))return '';
+ return '<span class="'+(x>=0?'dbtg-up':'dbtg-dn')+'">'+(x>=0?'+':'')+x.toFixed(1).replace('.',',')+' điểm</span>';}
 function num(x){return x.toFixed(1).replace('.',',');}
 function laThang(lb){lb=String(lb); if(lb.charAt(0)!=='T')return false; var n=parseInt(lb.slice(1),10); return n>=1&&n<=12&&lb.length<=3;}
 function theKenh(){
- var c=bd('chart-channel-month-units'); if(!c||!c.data||!c.data.datasets)return null;
- var ds=c.data.datasets,r=[],i;
- for(i=0;i<ds.length;i++){
-  var a=catDuoi(sach(ds[i].data));
-  if(a.length>1&&a[a.length-2]>0)r.push({t:ds[i].label||('Kênh '+(i+1)),p:(a[a.length-1]/a[a.length-2]-1)*100});
+ var c=bd('chart-channel-month-units'); if(!c||!c.data||!c.data.datasets||!c.data.labels)return null;
+ var ds=c.data.datasets,L=c.data.labels,n=L.length,i,j,tot=[];
+ for(i=0;i<n;i++){var s=0;
+  for(j=0;j<ds.length;j++){var v=ds[j].data[i]; if(typeof v==='number'&&isFinite(v))s+=v;}
+  tot.push(s);}
+ var A=-1,B=-1;
+ for(i=n-1;i>=0;i--){if(tot[i]>0){A=i;break;}}
+ for(i=A-1;i>=0;i--){if(tot[i]>0){B=i;break;}}
+ if(A<0||B<0)return null;
+ var r=[];
+ for(j=0;j<ds.length;j++){
+  var a=ds[j].data[A], b=ds[j].data[B];
+  if(typeof a!=='number'||typeof b!=='number')continue;
+  r.push({t:ds[j].label||('Kênh '+(j+1)), nay:a/tot[A]*100, truoc:b/tot[B]*100, d:a/tot[A]*100-b/tot[B]*100});
  }
  if(r.length<2)return null;
- r.sort(function(a,b){return b.p-a.p});
- return {top:r[0],bot:r[r.length-1]};
+ r.sort(function(x,y){return y.d-x.d});
+ return {top:r[0], bot:r[r.length-1], nay:String(L[A]), truoc:String(L[B])};
 }
 function theHang(){
  var c=bd('chart-monthly-brand'); if(!c||!c.data||!c.data.datasets||!c.data.labels)return null;
@@ -13790,7 +13804,7 @@ function veIns(){
   o.push({h:'Sản lượng và giá bán',t:t});
  }
  var k=theKenh();
- if(k)o.push({h:'Kênh dẫn và kênh hụt',t:'<b>'+k.top.t+'</b> '+pt(k.top.p)+' so với tháng trước, trong khi <b>'+k.bot.t+'</b> '+pt(k.bot.p)+'. Ưu tiên dồn lực vào kênh đang hụt.'});
+ if(k)o.push({h:'Cơ cấu kênh',t:'Tỉ trọng sản lượng <b>'+k.nay+'</b> so với <b>'+k.truoc+'</b>: <b>'+k.top.t+'</b> '+diem(k.top.d)+' (nay '+num(k.top.nay)+'%), <b>'+k.bot.t+'</b> '+diem(k.bot.d)+' (nay '+num(k.bot.nay)+'%).'});
  var h=theHang();
  if(h){var d=h.cuoi-h.dau;
   o.push({h:'Thị phần OPPO',t:'Từ <b>'+h.tenDau+'</b> đến <b>'+h.tenCuoi+'</b>, thị phần OPPO đi từ <b>'+num(h.dau)+'%</b> về <b>'+num(h.cuoi)+'%</b> ('+(d>=0?'<span class="dbtg-up">+':'<span class="dbtg-dn">')+num(d)+' điểm</span>).'});}
