@@ -59,6 +59,24 @@ jobs:
           SALE_CODES: ${{ secrets.SALE_CODES }}
         run: node scripts/kiem-goi-that.mjs
 
+      # Bo kiem hong thi so lieu KHONG duoc luu (dung y muon — khong day goi ro ri
+      # len repo). Nhung ket qua kiem thi VAN phai luu, neu khong khong ai biet
+      # vi sao hong: log Action doc khong duoc tu may anh Thai.
+      - name: Luu ket qua soi goi (du hong hay khong)
+        if: always()
+        run: |
+          if [ ! -f data/ket-qua-kiem-goi.json ]; then exit 0; fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/ket-qua-kiem-goi.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Ket qua soi goi that"
+          for i in 1 2 3; do
+            git push && exit 0
+            git pull --rebase --autostash origin main || exit 0
+            sleep 4
+          done
+
       - name: Luu lai neu co thay doi
         run: |
           rm -f app-data.json          # tuyet doi khong day ban chua ma hoa len
