@@ -184,7 +184,13 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
       months_sorted: [1], month_labels: ['T1'], channels_list: ['MWG', 'IND'],
       sales_list: ['SALE-A', 'SALE-B'], models_list: [], segments_list: [], series_list: [],
       store_rows: [shopC('SALE-A', 1, 'MWG'), shopC('SALE-B', 1, 'MWG'), shopC('SALE-B', 2, 'IND')],
-      crosstab: [], series_detail_crosstab: [], sell_in_rows: [],
+      // crosstab la MAU SO de tinh ti trong target — de rong thi khong kiem duoc
+      crosstab: [
+        { m: 1, channel: 'MWG', store: 'CS-SALE-A-1', sales: 'SALE-A', sellout: 10, rev: 1000 },
+        { m: 1, channel: 'MWG', store: 'CS-SALE-B-1', sales: 'SALE-B', sellout: 30, rev: 3000 },
+        { m: 1, channel: 'IND', store: 'CS-SALE-B-2', sales: 'SALE-B', sellout: 20, rev: 2000 },
+      ],
+      series_detail_crosstab: [], sell_in_rows: [],
       shop_sale_map: {}, shop_level_map: {}, store_month_lookup: {},
       ind_daily_by_date: {}, overview_daily_by_date: {}, channel_month_headcount: {},
       kpi: {}, week_channel_units: {}, week_revenue: {}, week_channel_models: {},
@@ -331,10 +337,95 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
         !an('panel-mwg') && !anTab('panel-mwg'));
       ghi('Don man hinh: GIU tab Tong quan', !anTab('panel-overview'),
         'tong quan ca nam la yeu cau so 1 cua anh Thai');
+      // --- Khoi HTML TINH cua kenh khac (soi tai khoan that 28/08)
+      // Cac the nay khong phai .chart-container nen bo quet cu khong dung toi.
+      const anId = (id) => {
+        const e = w.document.getElementById(id);
+        if (!e) return true;
+        let x = e;
+        while (x && x !== w.document.body) { if (x.style.display === 'none') return true; x = x.parentElement; }
+        return false;
+      };
+      ghi('Don man hinh: an "Chuong trinh KA" va "Chuong trinh IND"',
+        anId('channel-program-ka-result') && anId('channel-program-ind-result'),
+        'the HTML tinh — bo quet the rong khong dung toi');
+      ghi('Don man hinh: an tong chi phi CA VUNG',
+        anId('channel-program-total'), 'so toan vung, sale khong duoc thay');
+      const mo = w.document.querySelector('.dashboard-container p');
+      ghi('Don man hinh: cau mo ta khong con liet ke kenh khac',
+        !!mo && !/KA \/ IND/.test(mo.textContent || ''),
+        mo ? (mo.textContent || '').slice(0, 70) : 'khong co');
+      ghi('Don man hinh: GIU "Chuong trinh MWG" cua chinh minh',
+        !anId('channel-program-mwg-result'));
+
       // Admin thi khong duoc don gi ca
       const kq2 = w.__donManHinh(['MWG'], 'admin');
       ghi('Don man hinh: admin KHONG bi an gi',
-        kq2.anTab === 0 && kq2.anThe === 0, JSON.stringify(kq2));
+        kq2.anTab === 0 && kq2.anThe === 0 && kq2.anTinh === 0, JSON.stringify(kq2));
+      w.close();
+    }
+
+    // --- F4e. THE CHO THAO TAC phai duoc GIU (loi da mac 28/08)
+    // "Doanh so theo ngay" chi ve sau khi nguoi dung chon Thang. Truoc do canvas
+    // chua co bieu do nao gan vao. Bo quet cu ket luan la RONG roi an mat luon —
+    // sale mat han phan chi tiet theo ngay.
+    {
+      const { w } = moTrang({ maSan: MA_SALE, aiSan: uSale, dapTraLoi: phucVu });
+      await cho(4000);
+      const d = w.document;
+      const lam = (id, ben) => {
+        const el = d.createElement('div');
+        el.className = 'chart-container'; el.id = id;
+        el.innerHTML = '<h3>' + id + '</h3><p>Vui lòng chọn ít nhất 1 Tháng.</p>' + ben;
+        d.getElementById('panel-mwg').appendChild(el);
+      };
+      lam('the-cho', '<canvas></canvas>');            // canvas CHUA dung bieu do
+      lam('the-chi-chu', '');                          // the chi co chu
+      lam('the-that-rong', '<canvas id="cv-rong"></canvas>');
+      // Gan mot bieu do TOAN SO 0 vao the-that-rong
+      const cv = d.getElementById('cv-rong');
+      w.Chart.getChart = (x) => (x === cv
+        ? { data: { datasets: [{ data: [0, 0, 0] }] } } : null);
+      w.__donManHinh(['MWG'], 'sale');
+      const an = (id) => d.getElementById(id).style.display === 'none';
+      ghi('The CHO THAO TAC (canvas chua ve) duoc GIU', !an('the-cho'),
+        'chua ve khac rong — an di la cuop mat chi tiet theo ngay cua sale');
+      ghi('The chi co chu duoc GIU', !an('the-chi-chu'));
+      ghi('The THAT SU rong (bieu do da ve, toan so 0) van bi an', an('the-that-rong'),
+        'khong duoc de bieu do trong cho sale nhin');
+      w.close();
+    }
+
+    // --- F4f. TARGET va DANH SACH KENH phai thu hep dung (soi tai khoan that 28/08)
+    // Day la phep kiem cho SO SAI, khong phai cho giao dien: sale tung nhan
+    // target 3.500 may cua CA KENH vi ti trong tinh ra 100%.
+    {
+      const { w } = moTrang({ maSan: MA_SALE, aiSan: uSale, dapTraLoi: phucVu });
+      await cho(4000);
+      const th = w.__daThuHepKenh;
+      ghi('Thu hep: co chay khi nguoi xem la sale', !!th, th ? JSON.stringify(th.kenh) : 'KHONG chay');
+      if (th) {
+        ghi('Thu hep: danh sach kenh chi con kenh cua minh',
+          th.kenh.length === 1 && th.kenh[0] === 'MWG', JSON.stringify(th.kenh));
+        ghi('Thu hep: BO han target cua kenh khong phu trach',
+          !th.target.IND && !th.target.KA, JSON.stringify(Object.keys(th.target)));
+        // SALE-A chiem 10/(10+30) = 25% kenh MWG -> 3500 x 0.25 = 875
+        ghi('Thu hep: target NHAN ti trong that, khong om tron ca kenh',
+          th.target.MWG && th.target.MWG.sellout === 875,
+          'ky vong 875 (3500 x 25%), nhan duoc ' + (th.target.MWG || {}).sellout);
+        ghi('Thu hep: target doanh thu cung nhan ti trong',
+          th.target.MWG && th.target.MWG.revenue === Math.round(33000000000 * 0.25),
+          String((th.target.MWG || {}).revenue));
+      }
+      w.close();
+    }
+
+    // --- F4g. ADMIN thi KHONG duoc dong vao target
+    {
+      const { w } = moTrang({ maSan: MA_AD, aiSan: uAd, dapTraLoi: phucVu });
+      await cho(4000);
+      ghi('Thu hep: admin KHONG bi dong vao target/danh sach kenh',
+        !w.__daThuHepKenh, 'anh Thai phai thay nguyen target toan vung');
       w.close();
     }
 
