@@ -357,6 +357,17 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
         mo ? (mo.textContent || '').slice(0, 70) : 'khong co');
       ghi('Don man hinh: GIU "Chuong trinh MWG" cua chinh minh',
         !anId('channel-program-mwg-result'));
+      // "Chien luoc theo Kenh": ba the, moi the mot <h4> ghi ten kenh
+      const theCL = (ten) => {
+        const cl = w.document.getElementById('channel-strategy-section');
+        if (!cl) return null;
+        const h = [...cl.querySelectorAll('h4')].find((x) => (x.textContent || '').trim() === ten);
+        return h ? h.closest('div[style*="border"]') : null;
+      };
+      const anCL = (ten) => { const t = theCL(ten); return !t || t.style.display === 'none'; };
+      ghi('Don man hinh: an the "Chien luoc theo Kenh" cua KA va IND',
+        anCL('KA') && anCL('IND'), 'HTML tinh — bo quet the rong khong dung toi');
+      ghi('Don man hinh: GIU the chien luoc kenh MWG cua chinh minh', !anCL('MWG'));
 
       // Admin thi khong duoc don gi ca
       const kq2 = w.__donManHinh(['MWG'], 'admin');
@@ -426,6 +437,35 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
       await cho(4000);
       ghi('Thu hep: admin KHONG bi dong vao target/danh sach kenh',
         !w.__daThuHepKenh, 'anh Thai phai thay nguyen target toan vung');
+      w.close();
+    }
+
+    // --- F4h. NHO NGUOI THEO TEN, KHONG THEO ID (soi that 28/08)
+    // Robot dat id ngau nhien MOI cho tung goi sau moi lan chay. Nho theo id thi
+    // NGAY NAO ca 20 nguoi cung bi day ve man hinh chon ten.
+    {
+      // con tro gia: dung ten/vai tro cua uSale nhung ID DA DOI
+      const idKhac = JSON.parse(JSON.stringify(chiMuc));
+      const cu = idKhac.users.find((u) => u.n === uSale.n);
+      const idMoi = 'ffffffffffffffff';
+      const idCu = cu.id; cu.id = idMoi;
+      const phucVu2 = (u) => {
+        if (u.indexOf('dbtg-index.json') >= 0) return JSON.stringify(idKhac);
+        if (u.indexOf('dbtg-' + idMoi) >= 0) return doc(idCu);   // goi cu, ten file moi
+        return phucVu(u);
+      };
+      const { w } = moTrang({ maSan: MA_SALE, aiSan: uSale, dapTraLoi: phucVu2 });
+      await cho(4000);
+      ghi('Id goi doi: KHONG bat chon lai ten',
+        !w.document.getElementById('dbtg-ai-lop'),
+        'robot doi id moi ngay — nho theo id la ngay nao cung bi day ra');
+      // Doi chieu bang SHOP, khong bang danhDau: catPhamVi CO Y khong chep
+      // danhDau sang goi da cat, nen goi cua sale khong bao gio co truong do.
+      const C2 = w.__exportDataMwg;
+      const ten2 = C2 ? (C2.store_rows || []).map((r) => r.store) : [];
+      ghi('Id goi doi: van mo duoc dung goi cua nguoi do',
+        ten2.length === 1 && ten2[0] === 'CS-SALE-A-1',
+        'phai lay id MOI trong con tro, khong dung id cu da luu — thay: ' + JSON.stringify(ten2));
       w.close();
     }
 
