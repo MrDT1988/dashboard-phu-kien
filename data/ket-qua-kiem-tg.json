@@ -1,6 +1,6 @@
 {
  "tong": 64,
- "khongDat": 2,
+ "khongDat": 0,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
@@ -156,7 +156,7 @@
   {
    "ten": "Don man hinh: an panel kenh KA va IND",
    "dat": true,
-   "chiTiet": "{\"anTab\":2,\"anThe\":0,\"anTinh\":7}"
+   "chiTiet": "{\"anTab\":3,\"anThe\":0,\"anTinh\":7}"
   },
   {
    "ten": "Don man hinh: an luon TAB kenh KA va IND",
@@ -170,13 +170,13 @@
   },
   {
    "ten": "Sale: BO HAN tab + panel Tong quan",
-   "dat": false,
+   "dat": true,
    "chiTiet": "anh Thai 28/08 — tong quan gom so ca 3 kenh, vua thua vua de lo"
   },
   {
    "ten": "Sale: sau khi an Tong quan thi nhay sang tab CON HIEN",
-   "dat": false,
-   "chiTiet": "tab dang mo: panel-overview — khong duoc tro ve tab vua bi an"
+   "dat": true,
+   "chiTiet": "tab dang mo: panel-mwg — khong duoc tro ve tab vua bi an"
   },
   {
    "ten": "Don man hinh: an \"Chuong trinh KA\" va \"Chuong trinh IND\"",
