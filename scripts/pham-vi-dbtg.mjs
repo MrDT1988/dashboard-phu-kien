@@ -145,6 +145,40 @@ export function catPhamVi(A, B, ai) {
   C.week_revenue = tuanR;
   C.week_channel_models = tuanM;
 
+  /* ---------- 2b. TI TRONG TARGET — phai tinh voi MAU SO TOAN VUNG
+     Loi da mac, lo ra 28/08 khi soi tai khoan CAO CHI BAO:
+       tg.html chia target kenh theo ti trong cua sale trong chinh DATA.crosstab:
+           target_sale = target_kenh x (doanh so sale / doanh so CA KENH)
+       Trong goi da cat, DATA.crosstab CHI CON MINH HO -> mau so = tu so
+       -> ti trong 100% -> ho om tron target ca kenh (3.500 may). % HT sai gap 4 lan.
+
+     Khong sua duoc o tg.html mot minh, vi mau so toan vung DA BI CAT MAT roi.
+     Nen tinh o day — noi con giu ban day du — roi gui theo goi mot con so.
+
+     CHI GUI TI TRONG, khong gui target tuyet doi: hang so target van nam DUY NHAT
+     mot cho trong tg.html, khong nhan doi sang file nay de roi lech nhau. */
+  {
+    const tuSo = {}, mauSo = {};
+    (A.crosstab || []).forEach((r) => {
+      const ch = r.channel; if (!ch) return;
+      mauSo[ch] = mauSo[ch] || { sellout: 0, rev: 0 };
+      mauSo[ch].sellout += r.sellout || 0;
+      mauSo[ch].rev += r.rev || 0;
+      if (!shopC.has(r.store)) return;
+      tuSo[ch] = tuSo[ch] || { sellout: 0, rev: 0 };
+      tuSo[ch].sellout += r.sellout || 0;
+      tuSo[ch].rev += r.rev || 0;
+    });
+    C.target_share = {};
+    Object.keys(tuSo).forEach((ch) => {
+      const m = mauSo[ch] || { sellout: 0, rev: 0 };
+      C.target_share[ch] = {
+        sellout: m.sellout ? tuSo[ch].sellout / m.sellout : 0,
+        revenue: m.rev ? tuSo[ch].rev / m.rev : 0,
+      };
+    });
+  }
+
   // ---------- 3. DATA MWG (chi co nghia khi pham vi con kenh MWG)
   let M = null;
   if (coMWG && B) {
