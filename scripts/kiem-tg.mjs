@@ -338,6 +338,55 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
       w.close();
     }
 
+    // --- F4c. NUT DANG XUAT (anh Thai 28/08)
+    // "No luu thong tin cua anh roi sao a vao sale khac dc" — dang nhap xong la
+    // ket, khong con cua nao ra. Nut "Chon ten khac" cu chi hien khi CHUA dang
+    // nhap nen vo dung. Kiem: the co hien, bam co xoa dung thu, va KHONG duoc
+    // xoa nham chia khoa Apps Script.
+    {
+      const { w } = moTrang({ khoaSan: 'KHOA-AS-CUA-ANH-THAI', maSan: MA_SALE, aiSan: uSale, dapTraLoi: phucVu });
+      await cho(4000);
+      const the = w.document.getElementById('dbtg-the-ai');
+      ghi('Dang xuat: co the nguoi dang xem sau khi mo goi', !!the,
+        the ? 'hien ten + nut' : 'KHONG co the — dang nhap xong la ket');
+      if (the) {
+        ghi('Dang xuat: the ghi dung ten nguoi dang xem',
+          the.textContent.indexOf(uSale.n) >= 0, the.textContent.trim().slice(0, 60));
+        // Buoc 1: bam Dang xuat -> phai hoi lai, CHUA duoc xoa gi
+        w.document.getElementById('dbtg-thoat').click();
+        const con = w.document.getElementById('dbtg-the-ai');   // innerHTML da doi, phai hoi lai DOM
+        ghi('Dang xuat: bam mot cai thi HOI LAI, chua xoa gi',
+          !!(con && con.querySelector('#dbtg-thoat-ok') && con.querySelector('#dbtg-thoat-huy'))
+          && w.localStorage.getItem('dbtg_ma') === MA_SALE,
+          'tranh bam nham roi mat phien');
+        // Huy -> tro ve nhu cu
+        w.document.getElementById('dbtg-thoat-huy').click();
+        ghi('Dang xuat: bam Huy thi tro lai binh thuong',
+          !!w.document.getElementById('dbtg-thoat')
+          && w.localStorage.getItem('dbtg_ma') === MA_SALE);
+        // Buoc 2: xac nhan -> xoa tai khoan, GIU chia khoa Apps Script
+        w.document.getElementById('dbtg-thoat').click();
+        try { w.document.getElementById('dbtg-thoat-ok').click(); } catch (e) {}
+        ghi('Dang xuat: xac nhan thi xoa CA ten LAN ma',
+          !w.localStorage.getItem('dbtg_ma') && !w.localStorage.getItem('dbtg_ai'),
+          'ma=' + w.localStorage.getItem('dbtg_ma') + ' ai=' + w.localStorage.getItem('dbtg_ai'));
+        ghi('Dang xuat: KHONG xoa nham chia khoa Apps Script',
+          w.localStorage.getItem('dbtg_as_key') === 'KHOA-AS-CUA-ANH-THAI',
+          'chia khoa la cua may, khong phai cua tai khoan');
+      }
+      w.close();
+    }
+
+    // --- F4d. Dang xuat xong, mo lai thi phai ra man hinh chon nguoi
+    {
+      const { w } = moTrang({ khoaSan: 'K', dapTraLoi: phucVu });   // khong co dbtg_ai/dbtg_ma
+      await cho(3000);
+      ghi('Dang xuat: mo lai ra man hinh chon nguoi (doi duoc tai khoan)',
+        !!w.document.getElementById('dbtg-ai-lop'),
+        'day la ca cai anh Thai can: vao thu tung sale de nghiem thu');
+      w.close();
+    }
+
     // --- F4b. ROBOT: co goi san van phai di duong cu, khong duoc dung lai hoi ma
     {
       const { w, daGoi } = moTrang({ khoaSan: 'K', laRobot: true, dapTraLoi: phucVu });
