@@ -1,6 +1,6 @@
 {
- "tong": 62,
- "khongDat": 0,
+ "tong": 64,
+ "khongDat": 2,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
@@ -169,9 +169,14 @@
    "chiTiet": ""
   },
   {
-   "ten": "Don man hinh: GIU tab Tong quan",
-   "dat": true,
-   "chiTiet": "tong quan ca nam la yeu cau so 1 cua anh Thai"
+   "ten": "Sale: BO HAN tab + panel Tong quan",
+   "dat": false,
+   "chiTiet": "anh Thai 28/08 — tong quan gom so ca 3 kenh, vua thua vua de lo"
+  },
+  {
+   "ten": "Sale: sau khi an Tong quan thi nhay sang tab CON HIEN",
+   "dat": false,
+   "chiTiet": "tab dang mo: panel-overview — khong duoc tro ve tab vua bi an"
   },
   {
    "ten": "Don man hinh: an \"Chuong trinh KA\" va \"Chuong trinh IND\"",
@@ -189,11 +194,6 @@
    "chiTiet": "Dữ liệu sản phẩm OPPO trong phạm vi phụ trách của anh/chị — kênh MWG."
   },
   {
-   "ten": "Don man hinh: GIU \"Chuong trinh MWG\" cua chinh minh",
-   "dat": true,
-   "chiTiet": ""
-  },
-  {
    "ten": "Don man hinh: an the \"Chien luoc theo Kenh\" cua KA va IND",
    "dat": true,
    "chiTiet": "HTML tinh — bo quet the rong khong dung toi"
@@ -207,6 +207,16 @@
    "ten": "Don man hinh: admin KHONG bi an gi",
    "dat": true,
    "chiTiet": "{\"anTab\":0,\"anThe\":0,\"anTinh\":0}"
+  },
+  {
+   "ten": "Leader: VAN GIU Tong quan",
+   "dat": true,
+   "chiTiet": "27/08 anh Thai chot \"Leader thi full thi truong\""
+  },
+  {
+   "ten": "Leader: GIU \"Chuong trinh MWG\" cua chinh minh",
+   "dat": true,
+   "chiTiet": "chi an chuong trinh cua kenh KHONG phu trach"
   },
   {
    "ten": "The CHO THAO TAC (canvas chua ve) duoc GIU",
