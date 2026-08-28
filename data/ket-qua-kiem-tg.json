@@ -1,5 +1,5 @@
 {
- "tong": 38,
+ "tong": 45,
  "khongDat": 0,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
@@ -177,6 +177,41 @@
    "ten": "Don man hinh: admin KHONG bi an gi",
    "dat": true,
    "chiTiet": "{\"anTab\":0,\"anThe\":0}"
+  },
+  {
+   "ten": "Dang xuat: co the nguoi dang xem sau khi mo goi",
+   "dat": true,
+   "chiTiet": "hien ten + nut"
+  },
+  {
+   "ten": "Dang xuat: the ghi dung ten nguoi dang xem",
+   "dat": true,
+   "chiTiet": "SALE-ASaleĐăng xuất"
+  },
+  {
+   "ten": "Dang xuat: bam mot cai thi HOI LAI, chua xoa gi",
+   "dat": true,
+   "chiTiet": "tranh bam nham roi mat phien"
+  },
+  {
+   "ten": "Dang xuat: bam Huy thi tro lai binh thuong",
+   "dat": true,
+   "chiTiet": ""
+  },
+  {
+   "ten": "Dang xuat: xac nhan thi xoa CA ten LAN ma",
+   "dat": true,
+   "chiTiet": "ma=null ai=null"
+  },
+  {
+   "ten": "Dang xuat: KHONG xoa nham chia khoa Apps Script",
+   "dat": true,
+   "chiTiet": "chia khoa la cua may, khong phai cua tai khoan"
+  },
+  {
+   "ten": "Dang xuat: mo lai ra man hinh chon nguoi (doi duoc tai khoan)",
+   "dat": true,
+   "chiTiet": "day la ca cai anh Thai can: vao thu tung sale de nghiem thu"
   },
   {
    "ten": "Robot: bo qua goi, di thang duong cu",
