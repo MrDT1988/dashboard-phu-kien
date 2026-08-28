@@ -133,6 +133,29 @@ ghi('So theo tuan duoc tinh lai',
   JSON.stringify(kq.center.week_channel_units) !== JSON.stringify(A.week_channel_units),
   JSON.stringify(kq.center.week_channel_units));
 
+/* --- 3b. TI TRONG TARGET: phai la ti trong THAT tren mau so TOAN VUNG.
+   Loi da mac, lo ra 28/08 khi soi tai khoan CAO CHI BAO: tg.html chia target
+   kenh theo ti trong cua sale trong chinh DATA.crosstab. Goi da cat chi con
+   minh ho -> mau so = tu so -> ti trong 100% -> sale om tron target ca kenh
+   (3.500 may thay vi phan cua minh). Ra 1.0 tuc la loi do da quay lai. */
+{
+  const ts = kq.center.target_share || {};
+  // MWG: SALE-A-1 (sellout 11, rev 2000) tren tong MWG (them SALE-B-1: 11 / 2000)
+  const mwgOk = ts.MWG && Math.abs(ts.MWG.sellout - 11 / 22) < 1e-9
+                       && Math.abs(ts.MWG.revenue - 2000 / 4000) < 1e-9;
+  // IND: SALE-A-2 (12 / 3000) tren tong IND (them SALE-C-1: 11 / 2000)
+  const indOk = ts.IND && Math.abs(ts.IND.sellout - 12 / 23) < 1e-9
+                       && Math.abs(ts.IND.revenue - 3000 / 5000) < 1e-9;
+  ghi('Ti trong target tinh tren MAU SO TOAN VUNG', !!(mwgOk && indOk),
+    'MWG ' + JSON.stringify(ts.MWG) + ' · IND ' + JSON.stringify(ts.IND));
+  const mot = Object.keys(ts).filter((k) => ts[k].sellout === 1 || ts[k].revenue === 1);
+  ghi('KHONG kenh nao ra ti trong 100% (dau hieu mau so bi cat mat)', mot.length === 0,
+    mot.length ? ('kenh ' + mot.join(',') + ' — sale se om tron target ca kenh')
+               : ('da xet ' + Object.keys(ts).length + ' kenh'));
+  ghi('KHONG co ti trong cua kenh nguoi do khong phu trach', !ts.KA,
+    'SALE-A khong co shop KA');
+}
+
 // --- 4. Cau truc phai con nguyen, neu khong DB TG se vo khi ve
 const thieuC = Object.keys(A).filter((k) => k !== 'debug_target' && kq.center[k] === undefined);
 ghi('CENTER: khong thieu truong nao (tru debug)', thieuC.length === 0,
