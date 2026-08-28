@@ -422,11 +422,29 @@
       var t = document.querySelector('[data-panel="' + id + '"]');
       if (t) { t.style.display = 'none'; anTab++; }
     });
-    // Neu tab dang mo vua bi an -> quay ve Tong quan
+
+    /* 1b. SALE: bo han Tong quan (anh Thai 28/08).
+       Tong quan gom so ca 3 kenh — voi sale thi vua thua vua de lo.
+       Chi tiet theo kenh von da dung pham vi cua ho roi.
+       Leader VAN GIU Tong quan: 27/08 anh Thai chot "Leader thi full thi truong". */
+    if (vaiTro === 'sale') {
+      var pTQ = document.getElementById('panel-overview');
+      if (pTQ) pTQ.style.display = 'none';
+      var tTQ = document.querySelector('[data-panel="panel-overview"]');
+      if (tTQ) { tTQ.style.display = 'none'; anTab++; }
+    }
+
+    /* Tab dang mo co the vua bi an -> chuyen sang tab CON HIEN dau tien.
+       KHONG duoc tro thang ve Tong quan nua: voi sale thi chinh no vua bi an,
+       bam vao la ra man hinh trong. */
     var dangMo = document.querySelector('.db-tg-tab.active');
-    if (dangMo && dangMo.style.display === 'none') {
-      var tq = document.querySelector('[data-panel="panel-overview"]');
-      if (tq) tq.click();
+    if (!dangMo || dangMo.style.display === 'none') {
+      var conHien = null;
+      var moiTab = document.querySelectorAll('.db-tg-tab[data-panel]');
+      for (var z = 0; z < moiTab.length; z++) {
+        if (moiTab[z].style.display !== 'none') { conHien = moiTab[z]; break; }
+      }
+      if (conHien) conHien.click();
     }
 
     // 2. An the khong co so gi de ve
