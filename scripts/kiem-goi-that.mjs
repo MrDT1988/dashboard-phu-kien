@@ -72,7 +72,11 @@ const shopCuaKenh = {};   // kenh -> Set(shop)
   (shopCuaSale[r.sale] = shopCuaSale[r.sale] || new Set()).add(r.store);
   (shopCuaKenh[r.channel] = shopCuaKenh[r.channel] || new Set()).add(r.store);
 });
-const truongGoc = Object.keys(AD).sort();
+// 'debug_target' bi catPhamVi CO Y bo di (chi la so lieu go roi cua admin),
+// nen khong duoc tinh la "thieu truong". Test dung du lieu gia khong co truong
+// nay nen lan dau chay that moi lo ra.
+const BO_CO_Y = new Set(['debug_target']);
+const truongGoc = Object.keys(AD).filter((k) => !BO_CO_Y.has(k)).sort();
 
 let soMo = 0, soThieuTruong = 0, soRoRi = 0, soKhongMo = 0;
 const chiTietRoRi = [];
@@ -114,7 +118,11 @@ ghi('KHONG goi nao chua shop ngoai pham vi', soRoRi === 0,
   soRoRi ? (soRoRi + ' goi bi ro ri') : 'da soi tung shop trong tung goi');
 ghi('KHONG goi nao thieu truong (DB TG se khong vo khi ve)', soThieuTruong === 0,
   soThieuTruong ? (soThieuTruong + ' goi thieu truong') : ('du ' + truongGoc.length + ' truong'));
-if (chiTietRoRi.length) ghi('Chi tiet cho hong', false, chiTietRoRi.slice(0, 6).join(' | '));
+if (chiTietRoRi.length) {
+  console.log('  >>> CHI TIET:');
+  chiTietRoRi.forEach((x) => console.log('      - ' + x));
+  ghi('Chi tiet cho hong', false, chiTietRoRi.slice(0, 6).join(' | '));
+}
 
 // 3. So tong cua nguoi khac phai KHAC so toan vung (da tinh lai, khong bung nguyen)
 {
