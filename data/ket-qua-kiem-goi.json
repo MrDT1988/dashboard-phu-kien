@@ -1,0 +1,37 @@
+{
+ "tong": 6,
+ "khongDat": 0,
+ "ghiChu": "Mo goi THAT cua tung nguoi bang ma cua chinh ho. So 3 chu so tro len da bit.",
+ "pheps": [
+  {
+   "ten": "Doc duoc con tro goi",
+   "dat": true,
+   "ct": "20 nguoi"
+  },
+  {
+   "ten": "Mo duoc goi quan ly vung",
+   "dat": true,
+   "ct": "### shop"
+  },
+  {
+   "ten": "Mo duoc goi cua MOI nguoi bang ma cua chinh ho",
+   "dat": true,
+   "ct": "19/19 goi mo duoc"
+  },
+  {
+   "ten": "KHONG goi nao chua shop ngoai pham vi",
+   "dat": true,
+   "ct": "da soi tung shop trong tung goi"
+  },
+  {
+   "ten": "KHONG goi nao thieu truong (DB TG se khong vo khi ve)",
+   "dat": true,
+   "ct": "du 21 truong"
+  },
+  {
+   "ten": "So tong cua tung nguoi da duoc TINH LAI, khong bung so toan vung",
+   "dat": true,
+   "ct": "da xet 19 goi"
+  }
+ ]
+}
