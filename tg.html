@@ -378,11 +378,74 @@
     return { anTab: anTab, anThe: anThe };
   };
 
+  /* ===== THE NGUOI DANG XEM + NUT DANG XUAT ===============================
+     Anh Thai 28/08: dang nhap xong la ket, khong doi duoc tai khoan.
+     The nay co dinh goc duoi trai, hien tren MOI tab.
+     ===================================================================== */
+  var TEN_VAI = { admin: 'Quản lý vùng', leader: 'Leader kênh', sale: 'Sale' };
+
+  window.__thoatDBTG = function () {
+    try { localStorage.removeItem(KHO_AI); localStorage.removeItem(KHO_MA); } catch (e) {}
+    // KHONG dung toi dbtg_as_key — chia khoa Apps Script khong phai tai khoan.
+    location.reload();
+  };
+
+  window.__theNguoiDung = function (ai) {
+    if (!ai) return;
+    var cu = document.getElementById('dbtg-the-ai');
+    if (cu) cu.remove();
+    var d = document.createElement('div');
+    d.id = 'dbtg-the-ai';
+    d.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9985;' +
+      'background:#141b24;border:1px solid rgba(255,255,255,.14);border-radius:11px;' +
+      'padding:8px 10px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;' +
+      'font-size:12.5px;color:#e8edf2;box-shadow:0 6px 22px rgba(0,0,0,.42);' +
+      'max-width:calc(100vw - 24px)';
+    function veThuong() {
+      d.innerHTML =
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div style="min-width:0">' +
+            '<div style="font-weight:700;white-space:nowrap;overflow:hidden;' +
+              'text-overflow:ellipsis;max-width:190px">' + (ai.n || '') + '</div>' +
+            '<div style="font-size:10.5px;color:#7d8896;letter-spacing:.04em">' +
+              (TEN_VAI[ai.r] || ai.r || '') + '</div>' +
+          '</div>' +
+          '<button id="dbtg-thoat" style="flex:0 0 auto;padding:6px 11px;border-radius:8px;' +
+            'border:1px solid rgba(255,255,255,.16);background:transparent;color:#96a1ae;' +
+            'font:inherit;font-size:12px;font-weight:600;cursor:pointer">Đăng xuất</button>' +
+        '</div>';
+      d.querySelector('#dbtg-thoat').onclick = veHoi;
+    }
+    // Hoi lai NGAY TAI CHO. Khong dung confirm() cua trinh duyet.
+    function veHoi() {
+      d.innerHTML =
+        '<div style="max-width:250px">' +
+          '<div style="font-size:12.5px;line-height:1.5;margin-bottom:9px">' +
+            'Đăng xuất khỏi <b>' + (ai.n || '') + '</b>? Lần sau vào sẽ phải chọn tên và nhập lại mã.' +
+          '</div>' +
+          '<div style="display:flex;gap:7px">' +
+            '<button id="dbtg-thoat-ok" style="flex:1;padding:7px 10px;border-radius:8px;border:0;' +
+              'background:#1BB350;color:#08120b;font:inherit;font-size:12px;font-weight:800;' +
+              'cursor:pointer">Đăng xuất</button>' +
+            '<button id="dbtg-thoat-huy" style="flex:1;padding:7px 10px;border-radius:8px;' +
+              'border:1px solid rgba(255,255,255,.16);background:transparent;color:#96a1ae;' +
+              'font:inherit;font-size:12px;font-weight:600;cursor:pointer">Huỷ</button>' +
+          '</div>' +
+        '</div>';
+      d.querySelector('#dbtg-thoat-ok').onclick = window.__thoatDBTG;
+      d.querySelector('#dbtg-thoat-huy').onclick = veThuong;
+    }
+    veThuong();
+    document.body.appendChild(d);
+  };
+
   window.__khoiDongDBTG = function (initFn, khoa, idOverlay, duongLui) {
     window.__goiDBTG.then(function (goi) {
       if (goi && goi[khoa]) {
         var ov = document.getElementById(idOverlay);
         if (ov) ov.style.display = 'none';
+        // Ve the TRUOC khi ve bieu do: neu ve bieu do loi thi van con duong ra.
+        try { window.__theNguoiDung(goi.ai || window.__aiDangXem); } catch (e) {}
         try {
           initFn(goi[khoa]);
           // Don man hinh SAU khi ve xong. Doi mot nhip cho bieu do kip dung.
