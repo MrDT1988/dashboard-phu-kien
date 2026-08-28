@@ -1,6 +1,6 @@
 {
  "tong": 62,
- "khongDat": 3,
+ "khongDat": 0,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
@@ -156,7 +156,7 @@
   {
    "ten": "Don man hinh: an panel kenh KA va IND",
    "dat": true,
-   "chiTiet": "{\"anTab\":2,\"anThe\":0,\"anTinh\":5}"
+   "chiTiet": "{\"anTab\":2,\"anThe\":0,\"anTinh\":7}"
   },
   {
    "ten": "Don man hinh: an luon TAB kenh KA va IND",
@@ -195,7 +195,7 @@
   },
   {
    "ten": "Don man hinh: an the \"Chien luoc theo Kenh\" cua KA va IND",
-   "dat": false,
+   "dat": true,
    "chiTiet": "HTML tinh — bo quet the rong khong dung toi"
   },
   {
@@ -255,13 +255,13 @@
   },
   {
    "ten": "Id goi doi: KHONG bat chon lai ten",
-   "dat": false,
+   "dat": true,
    "chiTiet": "robot doi id moi ngay — nho theo id la ngay nao cung bi day ra"
   },
   {
    "ten": "Id goi doi: van mo duoc dung goi cua nguoi do",
-   "dat": false,
-   "chiTiet": "phai lay id MOI trong con tro, khong dung id cu da luu — thay: []"
+   "dat": true,
+   "chiTiet": "phai lay id MOI trong con tro, khong dung id cu da luu — thay: [\"CS-SALE-A-1\"]"
   },
   {
    "ten": "Dang xuat: co the nguoi dang xem sau khi mo goi",
