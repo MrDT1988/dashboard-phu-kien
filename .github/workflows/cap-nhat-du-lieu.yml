@@ -54,6 +54,11 @@ jobs:
           AS_KEY: ${{ secrets.AS_KEY }}
         run: node scripts/build-vault.mjs
 
+      - name: Soi goi that cua tung nguoi (chong ro ri)
+        env:
+          SALE_CODES: ${{ secrets.SALE_CODES }}
+        run: node scripts/kiem-goi-that.mjs
+
       - name: Luu lai neu co thay doi
         run: |
           rm -f app-data.json          # tuyet doi khong day ban chua ma hoa len
