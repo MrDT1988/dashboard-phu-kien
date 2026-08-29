@@ -61,6 +61,19 @@
   }
   function p1(n) { return Number(n).toFixed(1).replace('.', ','); }
 
+  /* RUT GON SO TIEN.
+     BAY DA DINH 29/08 (chi lo ra khi chay SO THAT, bo so dung thu trong may
+     khong bat duoc vi em khong mo dung bieu do do): bieu do "Doanh thu theo
+     kenh theo thang" ghi tho 59.129.780.000 tren dinh moi cot — tam con so dai
+     de chong len nhau thanh mot mang chu, khong doc duoc gi.
+     Ban demo ghi doanh thu bang TY (59,1). Lam dung nhu vay. */
+  function rutGon(v, dec) {
+    var a = Math.abs(v);
+    if (a >= 1e9) return p1(v / 1e9) + 'B';
+    if (a >= 1e6) return p1(v / 1e6) + 'M';
+    return f(v, dec || 0);
+  }
+
   /* Chu tren nen mau: TU CHON den hay trang theo do sang cua nen.
      Ban demo luon ghi chu trang trong mang mau. Dung voi mau dam, nhung hang
      Apple mau #EDEFF2 gan trang — chu trang tren do KHONG DOC DUOC (do tuong
@@ -155,6 +168,8 @@
     var bw = Math.min(opt.bw || 999, iw / nhan.length * (opt.ke || 0.94));
     var dai = nhan.length > 20;
     var cs = opt.cs || (dai ? 9.5 : 13);
+    // opt.rutGon = so tien -> ghi "59,1B" thay vi "59.129.780.000"
+    var ghi = function (v) { return opt.rutGon ? rutGon(v, opt.dec) : f(v, opt.dec || 0); };
     var s = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
     for (var g = 1; g <= 4; g++) {
       var y0 = PT + ih - ih * g / 4;
@@ -170,12 +185,12 @@
           + '" height="' + Math.max(hg - 1.5, 1).toFixed(1) + '" rx="2.5" fill="' + cv(sr.c) + '"'
           + ' data-tip="' + ('<div style=&quot;margin-bottom:4px&quot;>' + t
             + '</div><div class=&quot;r&quot;><span><i style=&quot;background:' + cv(sr.c) + '&quot;></i>'
-            + sr.t + '</span><b>' + f(v, opt.dec || 0) + (opt.dv || '')
+            + sr.t + '</span><b>' + ghi(v) + (opt.dv || '')
             + '</b></div><div class=&quot;r&quot; style=&quot;opacity:.7&quot;><span>Tổng</span><b>'
-            + f(tong[i], opt.dec || 0) + (opt.dv || '') + '</b></div>') + '"/>';
+            + ghi(tong[i]) + (opt.dv || '') + '</b></div>') + '"/>';
         if (!dai && hg > 17 && series.length > 1) {
           s += '<text x="' + cx + '" y="' + (y + hg / 2 + 3.8) + '" text-anchor="middle" style="font:700 11px '
-            + DP['--font'] + ';fill:' + chuTren(cv(sr.c)) + ';pointer-events:none">' + f(v, opt.dec || 0) + '</text>';
+            + DP['--font'] + ';fill:' + chuTren(cv(sr.c)) + ';pointer-events:none">' + ghi(v) + '</text>';
         }
       });
       if (tong[i] > 0 && opt.tong !== false) {
@@ -183,10 +198,10 @@
         if (dai) {
           s += '<text transform="translate(' + cx.toFixed(1) + ',' + yt.toFixed(1)
             + ') rotate(-90)" text-anchor="start" style="font:700 ' + cs + 'px ' + DP['--font']
-            + ';fill:' + cv('--ink') + '">' + f(tong[i], opt.dec || 0) + '</text>';
+            + ';fill:' + cv('--ink') + '">' + ghi(tong[i]) + '</text>';
         } else {
           s += '<text x="' + cx + '" y="' + yt.toFixed(1) + '" text-anchor="middle" style="font:700 ' + cs
-            + 'px ' + DP['--font'] + ';fill:' + cv('--ink') + '">' + f(tong[i], opt.dec || 0) + '</text>';
+            + 'px ' + DP['--font'] + ';fill:' + cv('--ink') + '">' + ghi(tong[i]) + '</text>';
         }
       }
       s += '<text x="' + cx + '" y="' + (H - 7) + '" text-anchor="middle" style="font:600 '
