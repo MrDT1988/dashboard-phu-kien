@@ -603,12 +603,23 @@
     }
     var tong = than.querySelector(':scope > tr.total-row.row-revenue');
     if (!tong || tong.children.length < 2) { demGan(nhan, null); return; }
-    var tb = docSo((tong.children[1].querySelector('.pct-sub') || {}).textContent);
+    /* BAY DA DINH 29/08 — DEM RA 37 MA TO NHAT CHI 34 SHOP.
+       Huy hieu nay viet TRONG NGOAC: "(43.6%)". docSo() dung lai doc() ben
+       trong, ma doc() coi ngoac tron la dau AM kieu ke toan -> ca hai con so
+       deu ra AM. Luc do phep so sanh "duoi trung binh" bi LAT NGUOC: no dem
+       nham cac shop TREN trung binh. demo-bang.js da bo ngoac truoc khi doc
+       (nen to nhat dung 34 shop), tep nay thi quen -> hai ben lech nhau 3 shop.
+       Nut noi 37 ma tren bang chi thay 34 dong mo la nguoi dung mat tin ngay.
+       Bo ngoac truoc khi doc, giong het demo-bang.js. */
+    function pct(el) {
+      var x = el ? (el.querySelector('.pct-sub') || {}).textContent : null;
+      return x == null ? null : docSo(String(x).replace(/[()]/g, ''));
+    }
+    var tb = pct(tong.children[1]);
     if (tb == null) { demGan(nhan, null); return; }
     var dem = 0;
     for (var i = 0; i < dongShop.length; i++) {
-      var oo = dongShop[i].children[1];
-      var v = oo ? docSo((oo.querySelector('.pct-sub') || {}).textContent) : null;
+      var v = pct(dongShop[i].children[1]);
       if (v != null && v < tb) dem++;
     }
     demGan(nhan, dem);
