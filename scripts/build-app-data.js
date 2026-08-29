@@ -582,6 +582,18 @@
       // 4 hang chinh theo TUNG THANG, luu o cap SHOP:
       // [oppoMay,oppoDT, ssMay,ssDT, xmMay,xmDT, ipMay,ipDT, tongMay,tongDT]
       var mkmShop = {};
+      // phan khuc x HANG x thang o cap shop -> PK 10-20M tach duoc tung hang
+      var HANG7 = { oppo: 0, samsung: 1, xiaomi: 2, apple: 3, vivo: 4, realme: 5 };
+      var sgbShop = {};
+      function sgbBlank() {
+        var a = [], q, g, h;
+        for (q = 0; q < NM; q++) {
+          var t = [];
+          for (g = 0; g < 4; g++) { var e = []; for (h = 0; h < 7; h++) e.push([0, 0]); t.push(e); }
+          a.push(t);
+        }
+        return a;
+      }
       var CHI4 = { oppo: 0, samsung: 2, xiaomi: 4, apple: 6 };
       MAIN.shop_segment_crosstab.forEach(function (r) {
         var i = MIDX[r.m]; if (i === undefined) return;
@@ -634,6 +646,15 @@
           if (oppo) { o4[0] += u; o4[1] += rv; }
         }
 
+      // gom them theo hang cho tung nhom gia
+      if (st && gn !== undefined) {
+        if (!sgbShop[st]) sgbShop[st] = sgbBlank();
+        var hb = HANG7[String(r.brand || '').toLowerCase()];
+        if (hb === undefined) hb = 6;
+        var ob = sgbShop[st][i][gn][hb];
+        ob[0] += u; ob[1] += rv;
+      }
+
         if (st && r.shopSize && !shops[st].size) shops[st].size = String(r.shopSize).trim();
         if (r.m === CUR_M) {
           var b = r.brand || '?';
@@ -675,6 +696,14 @@
         if (!shops[st]) return;
         shops[st].sgmS = sgmShop[st].map(function (mo) {
           return mo.map(function (v) { return [v[0], tr(v[1]), v[2], tr(v[3])]; });
+        });
+      });
+      Object.keys(sgbShop).forEach(function (st) {
+        if (!shops[st]) return;
+        shops[st].sgb = sgbShop[st].map(function (mo) {
+          return mo.map(function (nh) {
+            return nh.map(function (v) { return [v[0], tr(v[1])]; });
+          });
         });
       });
       nhomPKTen = NHOM_TEN;
