@@ -55,7 +55,17 @@
       var m = t.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);   // 01.01.2026
       if (m) return parseInt(m[2], 10);
       var d = new Date(t);
-      return isNaN(d.getTime()) ? 0 : (d.getMonth() + 1);
+      if (isNaN(d.getTime())) return 0;
+      /* BAY MUI GIO. O ngay that qua Apps Script thanh chuoi UTC: ngay 01.01.2026
+         (gio VN) ra "2025-12-31T17:00:00.000Z". Robot chay tren may chu GitHub
+         (gio UTC) nen doc ra THANG 12 — moi dong ghi ngay mung 1 bi day nham
+         sang thang truoc. Ep doc theo dung mui gio cua sheet. */
+      try {
+        var s2 = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
+        }).format(d);
+        return parseInt(s2.slice(5, 7), 10);
+      } catch (e) { return d.getMonth() + 1; }
     }
     function thangCuaChu(x) {
       var m = String(x || '').match(/(\d{1,2})/);

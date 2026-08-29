@@ -8778,7 +8778,18 @@ function shareKaParseFptMonth(dateStr) {
     const m = t.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
     if (m) return parseInt(m[2], 10);
     const d = new Date(t);
-    return isNaN(d.getTime()) ? null : (d.getMonth() + 1);
+    if (isNaN(d.getTime())) return null;
+    /* BẪY MÚI GIỜ. Ô ngày thật trong sheet khi qua Apps Script thành chuỗi UTC:
+       ngày 01.01.2026 (giờ VN) ra "2025-12-31T17:00:00.000Z". Đọc bằng giờ của
+       máy người xem thì máy nào lệch múi giờ sẽ ra THÁNG 12 thay vì THÁNG 1 —
+       tức là mọi dòng ghi ngày mùng 1 bị đẩy nhầm sang tháng trước. Ép đọc theo
+       đúng múi giờ của sheet (giờ Việt Nam) thì máy nào mở cũng ra một kết quả. */
+    try {
+        const s = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
+        }).format(d);
+        return parseInt(s.slice(5, 7), 10);
+    } catch (e) { return d.getMonth() + 1; }
 }
 function shareKaParseViettelMonth(thangStr) {
     const m = String(thangStr || '').match(/(\d+)/);
@@ -13748,10 +13759,10 @@ body.zoom-on { overflow: hidden; }
 </script>
 
 
-<script src="scripts/demo-mau.js?v=202608291630"></script>
-<script src="scripts/demo-ve.js?v=202608291630"></script>
-<script src="scripts/demo-chart-shim.js?v=202608291630"></script>
-<script src="scripts/demo-bang.js?v=202608291630"></script>
-<script src="scripts/demo-bo-cuc.js?v=202608291630"></script>
-<script src="scripts/demo-sang.js?v=202608291630"></script>
+<script src="scripts/demo-mau.js?v=202608291656"></script>
+<script src="scripts/demo-ve.js?v=202608291656"></script>
+<script src="scripts/demo-chart-shim.js?v=202608291656"></script>
+<script src="scripts/demo-bang.js?v=202608291656"></script>
+<script src="scripts/demo-bo-cuc.js?v=202608291656"></script>
+<script src="scripts/demo-sang.js?v=202608291656"></script>
 </html>
