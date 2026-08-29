@@ -287,6 +287,19 @@
     if (renoNam) van += '|R' + renoNam.join(',');
     if (ch.__dmvVan === van && ch.canvas.__dmvHop && ch.canvas.__dmvHop.isConnected) return;
     var hop = hopCua(ch); if (!hop) return;
+
+    /* BAY DA DINH 29/08 — TAB KA MO RA KHONG CO BIEU DO NAO.
+       DB TG dung len het bieu do ngay luc nap trang, ke ca bieu do nam trong
+       tab DANG AN. The an thi offsetWidth = 0 -> lop phu rong 0 -> khung SVG
+       rong 0 (khong nhin thay gi), con chu giai thi xuong dong tung chu mot,
+       dinh doc ben trai. Va vi "van tay du lieu" khong doi nen no KHONG BAO GIO
+       ve lai khi nguoi dung bam sang tab do.
+       Nen: the con an thi KHONG ve, va xoa van tay de lan sau ve lai. Viec goi
+       ve lai do ResizeObserver o duoi lo — no bao ngay khi the co kich thuoc. */
+    var c00 = ch.canvas;
+    theoDoiCo(ch);
+    if (!c00.offsetWidth || c00.offsetWidth < 40) { ch.__dmvVan = null; return; }
+
     ch.__dmvVan = van;
     // Bam theo o cua canvas, tinh lai moi lan ve (bo loc doi -> canvas doi co)
     var c0 = ch.canvas;
@@ -460,6 +473,26 @@
     window.DMV.legend(hop.__lg, ten, function (k, i) { return mau[i]; });
   }
 
+  /* Theo doi KICH THUOC cua tung canvas. Khi the tu an chuyen sang hien (nguoi
+     dung bam tab), be ngang nhay tu 0 len that — do la luc phai ve lai.
+     Dung ResizeObserver chu khong hen gio: hen gio thi hoac ve som qua (van con
+     an) hoac ve muon, nguoi dung nhin thay khoang trong roi moi thay bieu do. */
+  function theoDoiCo(ch) {
+    var c = ch.canvas;
+    if (c.__dmvRO || typeof ResizeObserver !== 'function') return;
+    try {
+      var ro = new ResizeObserver(function () {
+        if (!c.offsetWidth || c.offsetWidth < 40) return;
+        if (c.__dmvRong === c.offsetWidth) return;
+        c.__dmvRong = c.offsetWidth;
+        ch.__dmvVan = null;
+        setTimeout(function () { try { ve(ch); } catch (e) {} }, 30);
+      });
+      ro.observe(c);
+      c.__dmvRO = ro;
+    } catch (e) {}
+  }
+
   /* ---- gan vao Chart.js -------------------------------------------------- */
   function gan() {
     if (!window.Chart || !window.Chart.register || window.Chart.__dmvDaGan) return false;
@@ -488,6 +521,14 @@
   }
   // Bieu do da dung len truoc khi khoi nay chay, va nhung cai ve lai khi doi bo loc
   [800, 2500, 6000, 12000, 20000].forEach(function (ms) { setTimeout(quet, ms); });
+  /* Bam tab / tab con -> vai the vua tu an thanh hien. ResizeObserver lo duoc,
+     nhung quet them mot nhip nua cho chac (co the co the doi bang CSS khac). */
+  document.addEventListener('click', function (e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('.db-tg-tab,[data-panel],[data-tab]')) {
+      setTimeout(quet, 260); setTimeout(quet, 1200);
+    }
+  }, true);
   addEventListener('resize', function () {
     try {
       var ds = (window.Chart && window.Chart.instances) || {};
