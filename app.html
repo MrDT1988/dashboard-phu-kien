@@ -3648,18 +3648,23 @@ function seri(ch){
  var out={ten:[],mau:[],duong:[],donVi:'%',ghi:''};
  if(ch==='u'||ch==='r'){
   var tien=(ch==='r');
-  out.ten=TEN.slice(); out.mau=MAU.slice();
-  for(j=0;j<5;j++)out.duong.push([]);
+  out.ten=tien?['OPPO','Samsung','Xiaomi','Khác']:TEN.slice();
+  out.mau=tien?['#2AD998','#6E8CF0','#FF9147','#8B98A9']:MAU.slice();
+  var sn=out.ten.length;
+  for(j=0;j<sn;j++)out.duong.push([]);
   for(i=0;i<n;i++){
    var t=d.mkm[i];
-   if(!t){for(j=0;j<5;j++)out.duong[j].push(null);continue;}
-   var tong=lay(t,4,tien);
+   if(!t){for(j=0;j<sn;j++)out.duong[j].push(null);continue;}
    var b=[lay(t,0,tien),lay(t,1,tien),lay(t,2,tien),lay(t,3,tien)];
-   var kh=tong-(b[0]+b[1]+b[2]+b[3]); if(kh<0)kh=0;
-   var v=[b[0],b[1],b[2],b[3],kh];
-   for(j=0;j<5;j++)out.duong[j].push(tong?+(v[j]/tong*100).toFixed(1):null);
+   var tong=lay(t,4,tien), v;
+   if(tien){ tong=tong-b[3]; if(tong<0)tong=0;
+    var kh1=tong-(b[0]+b[1]+b[2]); if(kh1<0)kh1=0;
+    v=[b[0],b[1],b[2],kh1];
+   } else { var kh0=tong-(b[0]+b[1]+b[2]+b[3]); if(kh0<0)kh0=0;
+    v=[b[0],b[1],b[2],b[3],kh0]; }
+   for(j=0;j<sn;j++)out.duong[j].push(tong?+(v[j]/tong*100).toFixed(1):null);
   }
-  out.ghi=tien?'Thị phần theo doanh thu (%)':'Thị phần theo số máy (%)';
+  out.ghi=tien?'Thị phần doanh thu — đã trừ Apple khỏi mẫu số (%)':'Thị phần theo số máy (%)';
  } else if(ch==='pk'){
   var TEN7=['OPPO','Samsung','Xiaomi','Apple','Vivo','Realme','Khác'];var MAU7=['#2AD998','#6E8CF0','#FF9147','#EDEFF2','#A9B6FF','#F0C64A','#8B98A9'];
   out.ten=TEN7.slice(); out.mau=MAU7.slice(); out.duong=[];
@@ -3672,14 +3677,19 @@ function seri(ch){
   }
   out.ghi='Thị phần OPPO trong phân khúc 10–20M (%)';
  } else {
-  out.ten=['OPPO','Thị trường']; out.mau=['#2AD998','#8B98A9']; out.donVi='M'; out.duong=[[],[]];
+  var TEN5B=['OPPO','Samsung','Xiaomi','Apple','Khác'];var MAU5B=['#2AD998','#6E8CF0','#FF9147','#EDEFF2','#8B98A9'];
+  out.ten=TEN5B.slice(); out.mau=MAU5B.slice(); out.donVi='M'; out.duong=[];
+  for(j=0;j<5;j++)out.duong.push([]);
   for(i=0;i<n;i++){
    var t2=d.mkm[i];
-   if(!t2){out.duong[0].push(null);out.duong[1].push(null);continue;}
-   out.duong[0].push(t2[0]?+(t2[1]/t2[0]).toFixed(1):null);
-   out.duong[1].push(t2[8]?+(t2[9]/t2[8]).toFixed(1):null);
+   if(!t2){for(j=0;j<5;j++)out.duong[j].push(null);continue;}
+   var mK=t2[8]-(t2[0]+t2[2]+t2[4]+t2[6]);
+   var dK=t2[9]-(t2[1]+t2[3]+t2[5]+t2[7]);
+   var may=[t2[0],t2[2],t2[4],t2[6],mK>0?mK:0];
+   var dt=[t2[1],t2[3],t2[5],t2[7],dK>0?dK:0];
+   for(j=0;j<5;j++)out.duong[j].push(may[j]?+(dt[j]/may[j]).toFixed(1):null);
   }
-  out.ghi='Đơn giá bình quân (triệu/máy)';
+  out.ghi='Đơn giá bình quân từng hãng (triệu/máy)';
  }
  return out;
 }
@@ -4055,15 +4065,19 @@ function phan2(sh){
   function lay(t,k,r){return t?(t[k*2+(r?1:0)]||0):0;}
   if(che.p2==='u'||che.p2==='r'){
    var r=(che.p2==='r');
-   out.ten=TEN5.slice(); out.mau=MAU5.slice();
-   for(j=0;j<5;j++)out.duong.push([]);
+   out.ten=r?['OPPO','Samsung','Xiaomi','Khác']:TEN5.slice();
+   out.mau=r?['#2AD998','#6E8CF0','#FF9147','#8B98A9']:MAU5.slice();
+   var sn=out.ten.length;
+   for(j=0;j<sn;j++)out.duong.push([]);
    for(i=0;i<n;i++){
     var t=sh.mkm&&sh.mkm[i]?sh.mkm[i]:null;
-    if(!t){for(j=0;j<5;j++)out.duong[j].push(null);continue;}
-    var tong=lay(t,4,r), b=[lay(t,0,r),lay(t,1,r),lay(t,2,r),lay(t,3,r)];
-    var kh=tong-(b[0]+b[1]+b[2]+b[3]); if(kh<0)kh=0;
-    var v=[b[0],b[1],b[2],b[3],kh];
-    for(j=0;j<5;j++)out.duong[j].push(tong?+pc(v[j],tong).toFixed(1):null);
+    if(!t){for(j=0;j<sn;j++)out.duong[j].push(null);continue;}
+    var b=[lay(t,0,r),lay(t,1,r),lay(t,2,r),lay(t,3,r)];
+    var tong=lay(t,4,r), v;
+    if(r){ tong=tong-b[3]; if(tong<0)tong=0;
+     var k1=tong-(b[0]+b[1]+b[2]); if(k1<0)k1=0; v=[b[0],b[1],b[2],k1];
+    } else { var k0=tong-(b[0]+b[1]+b[2]+b[3]); if(k0<0)k0=0; v=[b[0],b[1],b[2],b[3],k0]; }
+    for(j=0;j<sn;j++)out.duong[j].push(tong?+pc(v[j],tong).toFixed(1):null);
    }
   } else if(che.p2==='pk'){
    var TEN7=['OPPO','Samsung','Xiaomi','Apple','Vivo','Realme','Khác'];var MAU7=['#2AD998','#6E8CF0','#FF9147','#EDEFF2','#A9B6FF','#F0C64A','#8B98A9'];
@@ -4076,12 +4090,15 @@ function phan2(sh){
     for(j=0;j<7;j++)out.duong[j].push(tg?+((((gb[j]&&gb[j][0])||0)/tg)*100).toFixed(1):null);
    }
   } else {
-   out.ten=['OPPO','Thị trường']; out.mau=['#2AD998','#8B98A9']; out.duong=[[],[]];
+   var TEN5B=['OPPO','Samsung','Xiaomi','Apple','Khác'];var MAU5B=['#2AD998','#6E8CF0','#FF9147','#EDEFF2','#8B98A9'];
+   out.ten=TEN5B.slice(); out.mau=MAU5B.slice(); out.duong=[];
+   for(j=0;j<5;j++)out.duong.push([]);
    for(i=0;i<n;i++){
     var t2=sh.mkm&&sh.mkm[i]?sh.mkm[i]:null;
-    if(!t2){out.duong[0].push(null);out.duong[1].push(null);continue;}
-    out.duong[0].push(t2[0]?+(t2[1]/t2[0]).toFixed(1):null);
-    out.duong[1].push(t2[8]?+(t2[9]/t2[8]).toFixed(1):null);
+    if(!t2){for(j=0;j<5;j++)out.duong[j].push(null);continue;}
+    var mK=t2[8]-(t2[0]+t2[2]+t2[4]+t2[6]), dK=t2[9]-(t2[1]+t2[3]+t2[5]+t2[7]);
+    var may=[t2[0],t2[2],t2[4],t2[6],mK>0?mK:0], dt=[t2[1],t2[3],t2[5],t2[7],dK>0?dK:0];
+    for(j=0;j<5;j++)out.duong[j].push(may[j]?+(dt[j]/may[j]).toFixed(1):null);
    }
   }
   return out;
