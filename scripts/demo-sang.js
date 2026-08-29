@@ -199,6 +199,7 @@
     ':root[data-theme="light"] .view-toggle-btn.active,',
     ':root[data-theme="light"] .sale-card-btn.active,',
     ':root[data-theme="light"] .ind-sale-metric-btn.active,',
+    ':root[data-theme="light"] .ind-oc-tab.active,',
     ':root[data-theme="light"] .brand-heat-metric-btn.active,',
     ':root[data-theme="light"] .quick-nav a.active,',
     ':root[data-theme="light"] .db-tg-tab.active{color:#FFFFFF}',

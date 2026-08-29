@@ -912,6 +912,18 @@ body {
    khung luôn cân bằng nhau, không phụ thuộc số hàng khác nhau ở 2 bảng mini bên dưới. */
 #chart-ind-sellout-group, #chart-ind-sellin-group { height: 240px !important; max-height: 240px; }
 .mini-week-table-wrap { margin-top:10px; }
+/* ---- Tab của cụm "O.C / Normal theo tháng" ---- */
+.ind-oc-tabnav { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:2px 0 14px; }
+.ind-oc-tab { padding:7px 16px; border:1px solid var(--border-color); border-radius:16px; background:var(--bg-input); font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; color:var(--text-secondary); transition:background .15s ease, color .15s ease, border-color .15s ease; }
+.ind-oc-tab:hover { background:var(--bg-card-hover); border-color:rgba(34,229,160,0.3); }
+.ind-oc-tab.active { background:var(--oppo-green-dark); border-color:var(--oppo-green); color:#04140e; box-shadow:0 0 10px rgba(34,229,160,0.35); }
+.ind-oc-doc { margin-left:auto; padding:6px 12px; border:1px dashed var(--border-color); border-radius:14px; background:transparent; font-family:inherit; font-size:11.5px; font-weight:600; cursor:pointer; color:var(--text-secondary); }
+.ind-oc-doc:hover { color:var(--text-primary); border-color:var(--oppo-green); }
+.ind-oc-doc::before { content:"ⓘ "; }
+/* Thẻ con nằm trong thẻ mẹ rồi thì không cần viền/nền/đổ bóng chồng lên nhau nữa. */
+#ind-oc-cum .ind-oc-panel .chart-container { background:transparent; border:0; box-shadow:none; padding:0; }
+#ind-oc-cum .ind-oc-panel .chart-container:hover { box-shadow:none; border:0; }
+@media (max-width: 640px) { .ind-oc-tab { flex:1 1 auto; padding:7px 10px; } .ind-oc-doc { margin-left:0; } }
 .mini-week-table { border-collapse:collapse; width:100%; font-size:7.5px; table-layout:fixed; }
 .mini-week-table td { padding:2px 1px; text-align:center; border:1px solid var(--border-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text-primary); }
 .mini-week-table tr.mwt-week td { background:rgba(34,229,160,0.10); font-weight:700; color:var(--text-primary); }
@@ -2517,37 +2529,59 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
     </section>
 
-    <section class="chart-row">
-        <div class="chart-container">
-            <h3>Sell Out theo tháng — O.C / Normal</h3>
-            <div class="chart-sub">Doanh số (số máy) theo tháng, tách nhóm O.C / Normal. Rê chuột vào cột để xem chi tiết theo từng model. Bảng mini bên dưới: cột "2026" của dòng Shop S.O là TB (trung bình) số shop/tháng; các dòng khác là tổng cả năm. D.Thu đơn vị B (tỷ đồng).</div>
-            <canvas id="chart-ind-sellout-group"></canvas>
-            <div class="mini-week-table-wrap">
-                <table class="mini-week-table" id="mini-table-ind-sellout-group"></table>
-            </div>
-        </div>
-        <div class="chart-container">
-            <h3>Sell In theo tháng — O.C / Normal</h3>
-            <div class="chart-sub">Số lượng nhập hàng OPPO (đã loại PK) theo tháng, tách nhóm O.C / Normal. Rê chuột vào cột để xem chi tiết theo từng model. Bảng mini bên dưới: cột "2026" của dòng Shop S.I là TB số shop/tháng; dòng O.C/Normal chỉ tính OPPO; riêng Tổng OPPO/Tổng PK tính trên toàn bộ shop (không tách nhóm). D.Thu chỉ tính cho OPPO (lấy từ Sell Out thực tế, đơn vị B (tỷ đồng)) vì sheet SELL IN không có đơn giá PK.</div>
-            <canvas id="chart-ind-sellin-group"></canvas>
-            <div class="mini-week-table-wrap">
-                <table class="mini-week-table" id="mini-table-ind-sellin-group"></table>
-            </div>
-        </div>
-    </section>
-
-    <section class="table-section">
+    <!-- ================= O.C / Normal theo tháng — GỘP 3 KHỐI VÀO 3 TAB =========
+         Trước đây ba khối này xếp dọc liền nhau: biểu đồ Sell Out, biểu đồ Sell In,
+         rồi bảng chi tiết 18 dòng. Trên điện thoại phải cuộn qua gần bốn màn hình
+         mới hết, mà cả ba đều là MỘT bộ số nhìn theo ba cách — anh Thái phản ánh
+         29/08 là "khá rối".
+         Gộp lại một thẻ, ba tab. Cùng lúc chỉ thấy một cách nhìn, đổi bằng một
+         lần bấm, không phải cuộn tìm.
+         Phần diễn giải dài cũng gấp lại sau nút "Cách đọc" — mở ra khi cần. -->
+    <section class="table-section" id="ind-oc-cum">
         <div class="table-section-header">
             <div>
-                <h3>Chi tiết theo nhóm O.C / Normal theo tháng</h3>
-                <div class="chart-sub"><b>O.C</b> = shop thuộc OPPO Club (Platinum/Titan/Gold). <b>Normal</b> = tất cả shop còn lại (kể cả VIP). Bảng đủ 12 tháng, có tăng trưởng % theo tháng. Mỗi nhóm 6 dòng liền nhau: <b>DS/DT/ĐG</b> (doanh số bán ra, bấm vào tên nhóm để xem bảng mini chi tiết theo từng shop) và <b>SHOP/S.I/PK</b> (SHOP = số shop CÓ phát sinh sellout trong tháng, cột "Tổng" là <b>trung bình</b> số shop/tháng; S.I/PK = số lượng nhập hàng (sell in) OPPO/Phụ kiện từ sheet "SELL IN", cột "Tổng" là tổng cả kỳ — chỉ áp dụng được bộ lọc Shop, sheet SELL IN không có cột Sale).</div>
+                <h3>O.C / Normal theo tháng</h3>
+                <div class="chart-sub">Cùng một bộ số, ba cách nhìn — bấm tab để đổi.
+                    <b>O.C</b> = shop thuộc OPPO Club (Platinum/Titan/Gold), <b>Normal</b> = tất cả shop còn lại (kể cả VIP).</div>
             </div>
         </div>
-        <div class="table-scroll" style="max-height:none;">
-            <table class="data-table" id="ind-group-month-table">
-                <thead><tr id="ind-group-month-table-head"></tr></thead>
-                <tbody id="ind-group-month-table-body"></tbody>
-            </table>
+        <nav class="ind-oc-tabnav">
+            <button class="ind-oc-tab active" type="button" data-tab="ind-oc-so">Sell Out</button>
+            <button class="ind-oc-tab" type="button" data-tab="ind-oc-si">Sell In</button>
+            <button class="ind-oc-tab" type="button" data-tab="ind-oc-ct">Chi tiết theo tháng</button>
+            <button class="ind-oc-doc" type="button" id="ind-oc-nut-doc" aria-expanded="false">Cách đọc</button>
+        </nav>
+
+        <div class="ind-oc-panel" id="ind-oc-so">
+            <div class="chart-container">
+                <h3>Sell Out theo tháng — O.C / Normal</h3>
+                <div class="chart-sub ind-oc-giai" hidden>Doanh số (số máy) theo tháng, tách nhóm O.C / Normal. Rê chuột vào cột để xem chi tiết theo từng model. Bảng mini bên dưới: cột "2026" của dòng Shop S.O là TB (trung bình) số shop/tháng; các dòng khác là tổng cả năm. D.Thu đơn vị B (tỷ đồng).</div>
+                <canvas id="chart-ind-sellout-group"></canvas>
+                <div class="mini-week-table-wrap">
+                    <table class="mini-week-table" id="mini-table-ind-sellout-group"></table>
+                </div>
+            </div>
+        </div>
+
+        <div class="ind-oc-panel" id="ind-oc-si" hidden>
+            <div class="chart-container">
+                <h3>Sell In theo tháng — O.C / Normal</h3>
+                <div class="chart-sub ind-oc-giai" hidden>Số lượng nhập hàng OPPO (đã loại PK) theo tháng, tách nhóm O.C / Normal. Rê chuột vào cột để xem chi tiết theo từng model. Bảng mini bên dưới: cột "2026" của dòng Shop S.I là TB số shop/tháng; dòng O.C/Normal chỉ tính OPPO; riêng Tổng OPPO/Tổng PK tính trên toàn bộ shop (không tách nhóm). D.Thu chỉ tính cho OPPO (lấy từ Sell Out thực tế, đơn vị B (tỷ đồng)) vì sheet SELL IN không có đơn giá PK.</div>
+                <canvas id="chart-ind-sellin-group"></canvas>
+                <div class="mini-week-table-wrap">
+                    <table class="mini-week-table" id="mini-table-ind-sellin-group"></table>
+                </div>
+            </div>
+        </div>
+
+        <div class="ind-oc-panel" id="ind-oc-ct" hidden>
+            <div class="chart-sub ind-oc-giai" hidden>Bảng đủ 12 tháng, có tăng trưởng % theo tháng. Mỗi nhóm 6 dòng liền nhau: <b>DS/DT/ĐG</b> (doanh số bán ra, bấm vào tên nhóm để xem bảng mini chi tiết theo từng shop) và <b>SHOP/S.I/PK</b> (SHOP = số shop CÓ phát sinh sellout trong tháng, cột "Tổng" là <b>trung bình</b> số shop/tháng; S.I/PK = số lượng nhập hàng (sell in) OPPO/Phụ kiện từ sheet "SELL IN", cột "Tổng" là tổng cả kỳ — chỉ áp dụng được bộ lọc Shop, sheet SELL IN không có cột Sale).</div>
+            <div class="table-scroll" style="max-height:none;">
+                <table class="data-table" id="ind-group-month-table">
+                    <thead><tr id="ind-group-month-table-head"></tr></thead>
+                    <tbody id="ind-group-month-table-body"></tbody>
+                </table>
+            </div>
         </div>
     </section>
 
@@ -7822,6 +7856,49 @@ document.querySelectorAll('.ind-sale-metric-btn:not(.ka-market-share-metric-btn)
     });
 });
 refreshIndCluster();
+
+/* ---- Tab của cụm "O.C / Normal theo tháng" -------------------------------
+   Biểu đồ nằm trong tab ĐANG ẨN thì Chart.js đo bề ngang ra 0 và ghi cứng
+   width:0 vào thẻ vẽ — bấm sang tab đó chỉ thấy khoảng trắng (đúng cái bẫy đã
+   dính ở tab KA). Nên sau khi hiện panel phải đánh thức lại: bắn sự kiện resize
+   và gọi thẳng chart.resize(). Lớp phủ bản demo còn một lớp cứu nữa
+   (hoiSinh + ResizeObserver trong demo-chart-shim.js) nghe theo data-tab. */
+(function () {
+    const cum = document.getElementById('ind-oc-cum');
+    if (!cum) return;
+    const tabs = [...cum.querySelectorAll('.ind-oc-tab')];
+    const panels = [...cum.querySelectorAll('.ind-oc-panel')];
+    function mo(ten) {
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === ten));
+        panels.forEach(p => { p.hidden = (p.id !== ten); });
+        window.dispatchEvent(new Event('resize'));
+        [0, 60, 260].forEach(ms => setTimeout(function () {
+            panels.forEach(p => {
+                if (p.hidden) return;
+                p.querySelectorAll('canvas').forEach(c => {
+                    try {
+                        const ch = window.Chart && window.Chart.getChart && window.Chart.getChart(c);
+                        if (!ch) return;
+                        if (!c.offsetWidth) { c.style.width = ''; c.style.height = ''; }
+                        ch.resize();
+                    } catch (e) { /* không để lỗi vẽ làm hỏng việc đổi tab */ }
+                });
+            });
+        }, ms));
+    }
+    tabs.forEach(t => t.addEventListener('click', () => mo(t.dataset.tab)));
+
+    // Nút "Cách đọc": gấp phần diễn giải dài lại, mở ra khi cần.
+    const nut = document.getElementById('ind-oc-nut-doc');
+    if (nut) {
+        nut.addEventListener('click', () => {
+            const mo2 = nut.getAttribute('aria-expanded') !== 'true';
+            nut.setAttribute('aria-expanded', mo2 ? 'true' : 'false');
+            nut.textContent = mo2 ? 'Ẩn cách đọc' : 'Cách đọc';
+            cum.querySelectorAll('.ind-oc-giai').forEach(e => { e.hidden = !mo2; });
+        });
+    }
+})();
 
 // Bộ lọc Tháng DÙNG CHUNG cho "Phần 2 — Review Tháng" (Tổng quan Mục tiêu Shop / Tiến độ Target O.C /
 // Chương trình Xe) - đổi 1 lần, cả 3 phần cùng cập nhật theo đúng Tháng đang chọn.
