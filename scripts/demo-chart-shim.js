@@ -26,6 +26,14 @@
 (function () {
   'use strict';
 
+  /* ROBOT DI QUA, KHONG LAM GI CA.
+     Robot lam du lieu cho app dien thoai (refresh-app-data.mjs) mo chinh trang
+     nay, va dat window.__BO_QUA_GOI = true truoc khi trang chay. No chi can SO,
+     khong nhin man hinh. Ve them mot lop SVG len 20 bieu do va gan bo theo doi
+     tren moi cai bang chi lam robot cham hon va them mot cho co the vo — ma neu
+     robot vo thi 20 sale mat du lieu tren app. Nen o day dung han. */
+  if (window.__BO_QUA_GOI) return;
+
   var DOI_MAU = { rgba: 1 };  // giu cho de doc: mau lay tu phan tu da ve, la mau that
 
   function soDoi(ch) {
@@ -330,6 +338,7 @@
    vao bat ky chu nao khac cua trang.                                        */
 (function () {
   'use strict';
+  if (window.__BO_QUA_GOI) return;      // robot di qua — xem ghi chu o dau tep
   function cham(mau) {
     return '<span style="display:inline-block;width:9px;height:9px;border-radius:3px;'
       + 'background:' + mau + ';margin-right:7px;vertical-align:1px"></span>';
