@@ -14255,6 +14255,34 @@ window.__dbtgSetTheme=setTheme;})();</script>
 /* Duong ke chung */
 [data-theme="light"] hr,
 [data-theme="light"] .chart-row > *{ border-color:#E4E8EC; }
+
+/* ===== LUOI AN TOAN: mau chu CHE DO TOI con sot lai =============================
+   Do 29/08 tren tai khoan sale kenh IND: 16 cho chu chim (ti le 1,59 va 2,03).
+   Nguyen nhan: bo doi mau cua khung giao dien (toLight) chua xu ly het cac ma
+   mau dat inline. Vd  color:#e0b24d  (ho phach, ve cho nen TOI) nam tren nen
+   xam nhat -> gan nhu vo hinh.
+
+   Cach va nay CHI AN KHI BO KIA CHUA DOI: selector [style*="#xxxxxx"] chi khop
+   khi thuoc tinh style VAN CON ma mau cu. Bo kia doi roi thi selector khong khop,
+   khong de len nhau. Tu tat khi ho sua goc.
+
+   Ban do va nhan trong bieu do KHONG bi anh huong — cho nay chi la CSS cho chu.
+   ============================================================================ */
+[data-theme="light"] [style*="#ffd873" i],
+[data-theme="light"] [style*="#ffc800" i],
+[data-theme="light"] [style*="#ffc266" i],
+[data-theme="light"] [style*="#ffb066" i],
+[data-theme="light"] [style*="#e0b24d" i]{ color:#9A5B00 !important; }   /* ho phach -> nau canh bao */
+
+[data-theme="light"] [style*="#2ee673" i]{ color:#006B33 !important; }   /* xanh la sang -> xanh OPPO */
+[data-theme="light"] [style*="#79c0ff" i]{ color:#2E7CB8 !important; }   /* xanh duong -> mau kenh IND */
+[data-theme="light"] [style*="#c9a0ff" i]{ color:#6B3FA0 !important; }   /* tim nhat -> tim dam */
+
+[data-theme="light"] [style*="#ff8fa3" i],
+[data-theme="light"] [style*="#ff5c72" i]{ color:#C62828 !important; }   /* hong -> do am */
+
+[data-theme="light"] [style*="#b0b7bd" i],
+[data-theme="light"] [style*="#c3cbd6" i]{ color:#59636F !important; }   /* xam nhat -> xam doc duoc */
 </style>
 
 </html>
