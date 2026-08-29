@@ -310,7 +310,9 @@
        ve lai do ResizeObserver o duoi lo — no bao ngay khi the co kich thuoc. */
     var c00 = ch.canvas;
     theoDoiCo(ch);
-    if (!c00.offsetWidth || c00.offsetWidth < 40) { ch.__dmvVan = null; return; }
+    if (!c00.offsetWidth || c00.offsetWidth < 40) {
+      if (!hoiSinh(ch)) { ch.__dmvVan = null; return; }
+    }
 
     ch.__dmvVan = van;
     // Bam theo o cua canvas, tinh lai moi lan ve (bo loc doi -> canvas doi co)
@@ -496,6 +498,33 @@
      dung bam tab), be ngang nhay tu 0 len that — do la luc phai ve lai.
      Dung ResizeObserver chu khong hen gio: hen gio thi hoac ve som qua (van con
      an) hoac ve muon, nguoi dung nhin thay khoang trong roi moi thay bieu do. */
+  /* ---- HOI SINH THE VE BI CO LAI BANG 0 -----------------------------------
+     LOI THAT, do tren ban dang chay 29/08 (tab "Chi tiet MWG"): bon bieu do
+     trong tab do co  style="width:0px;height:0px"  va NAM Y NHU VAY ke ca sau
+     khi nguoi dung bam sang tab. Chart.js ghi so 0 luc dung bieu do (luc do tab
+     con an), roi bo do — goi ch.resize() bang tay cung khong nhuc nhich, be
+     trong cua no (ch.width/ch.height) van la 0. tg.html co ban "phong ho" la
+     phat lai su kien resize cua cua so, nhung Chart.js v4 khong nghe su kien do
+     nua nen khong an thua.
+     Vi minh KHONG duoc sua tg.html, va vi lop phu la thu NGUOI DUNG THAT SU
+     NHIN THAY (canvas da trong suot), nen o day tu dat lai kich thuoc cho the
+     ve: lay be ngang cua the cha, lay chieu cao tu max-height trong CSS cua
+     chinh trang. Chart.js dang nam im nen khong ai gianh lai. */
+  function hoiSinh(ch) {
+    var c = ch.canvas, cha = c.parentNode;
+    if (!cha) return false;
+    try {
+      var sc = getComputedStyle(cha);
+      var rong = cha.clientWidth - (parseFloat(sc.paddingLeft) || 0) - (parseFloat(sc.paddingRight) || 0);
+      if (!(rong >= 40)) return false;
+      var cao = parseFloat(getComputedStyle(c).maxHeight);
+      if (!(cao > 40)) cao = 320;
+      c.style.width = Math.round(rong) + 'px';
+      c.style.height = Math.round(cao) + 'px';
+      return c.offsetWidth >= 40;
+    } catch (e) { return false; }
+  }
+
   function theoDoiCo(ch) {
     var c = ch.canvas;
     if (c.__dmvRO || typeof ResizeObserver !== 'function') return;
@@ -508,6 +537,20 @@
         setTimeout(function () { try { ve(ch); } catch (e) {} }, 30);
       });
       ro.observe(c);
+      /* Theo doi CA THE CHA. The ve bi co lai bang 0 thi be ngang cua no khong
+         bao gio doi nua — chi co the cha la nhuc nhich khi tab hien ra. Khong
+         theo doi cha thi phai doi den luc quet dinh ky moi thay bieu do. */
+      var cha = c.parentNode;
+      if (cha && cha.nodeType === 1) {
+        var roC = new ResizeObserver(function () {
+          if (!cha.clientWidth || cha.clientWidth < 40) return;
+          if (c.offsetWidth >= 40) return;          // the ve on, khong can lam gi
+          ch.__dmvVan = null;
+          setTimeout(function () { try { ve(ch); } catch (e) {} }, 30);
+        });
+        roC.observe(cha);
+        c.__dmvROC = roC;
+      }
       c.__dmvRO = ro;
     } catch (e) {}
   }
