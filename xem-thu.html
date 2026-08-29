@@ -14609,7 +14609,10 @@ window.__dbtgSetTheme=setTheme;})();</script>
   function veSpark(){
     var d = chuoiThang();
     if(!d) return;
-    document.querySelectorAll('.kpi-card').forEach(function(the){
+    /* CHI tab Tong quan. Cac tab kenh lay so tu NGUON KHAC (DATA MWG cho tab MWG),
+       ve duong tu crosstab CENTER len do la ve SAI SERIES ma nhin van co ly —
+       kieu sai nguy hiem nhat. Do 29/08: khong siet thi ve nham 13 the. */
+    document.querySelectorAll('#panel-overview .kpi-card').forEach(function(the){
       if(the.querySelector('.dm-spark')) return;
       var nhan = the.querySelector('.kpi-label');
       if(!nhan) return;
@@ -14629,7 +14632,7 @@ window.__dbtgSetTheme=setTheme;})();</script>
   function chay(){ try{ veSpark(); }catch(e){ console.warn('spark:', e && e.message); } }
   setTimeout(chay, 3000);
   setTimeout(chay, 7000);
-  var hang = document.querySelector('.kpi-row');
+  var hang = document.querySelector('#panel-overview .kpi-row');
   if(hang && window.MutationObserver){
     var doi=false;
     new MutationObserver(function(){ if(doi)return; doi=true;
