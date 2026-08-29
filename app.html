@@ -3836,4 +3836,426 @@ setTimeout(chay,1100);
 })();
 </script>
 
+
+<script id="app-shop5">
+(function(){
+'use strict';
+var KEY='app-shop5';
+function tat(){try{return localStorage.getItem(KEY)==='off'}catch(e){return false}}
+var NS='http://www.w3.org/2000/svg';
+var MAU5=['#2AD998','#6E8CF0','#FF9147','#EDEFF2','#8B98A9'];
+var TEN5=['OPPO','Samsung','Xiaomi','Apple','Khác'];
+var NHOM=[[0],[1,2],[3],[4],[5],[6]];
+var TEN6=['<5M','5–10M','10–15M','15–20M','20–30M','>30M'];
+var MAU6=['#B5DDC8','#8AC7A9','#3F9B70','#1E8558','#006B41','#00522F'];
+var QUY=[[0,11],[0,2],[3,5],[6,8],[9,11]];
+var TENQ=['2026','Q1','Q2','Q3','Q4'];
+var tenShop=null, che={p1:'u',p2:'u',p3:0,p5:0};
+
+function so(n){ n=Math.round(n||0); return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function tien(n){ n=n||0; return n>=1000?( (n/1000).toFixed(1).replace('.',',')+' tỷ' ):(so(n)+' tr'); }
+function pc(a,b){ return b?(a/b*100):0; }
+function n1(x){ return (Math.round(x*10)/10).toFixed(1).replace('.',','); }
+
+function timShop(){
+ if(!tenShop||!window.D)return null;
+ var kq=null;
+ (D.sales||[]).forEach(function(sa){
+  (sa.s||[]).forEach(function(sh){ if(sh&&sh.n===tenShop)kq=sh; });
+ });
+ return kq;
+}
+function el(t,cls,html){
+ var e=document.createElement(t);
+ if(cls)e.className=cls;
+ if(html!==undefined)e.innerHTML=html;
+ return e;
+}
+function tabBar(ten,dangChon,onChon){
+ var w=el('div','pills');
+ w.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px';
+ ten.forEach(function(t,i){
+  var b=el('button','',t);
+  b.style.cssText='border:1px solid rgba(255,255,255,.14);background:'+(i===dangChon?'rgba(42,217,152,.16)':'transparent')+';color:'+(i===dangChon?'#2AD998':'inherit')+';border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer';
+  b.onclick=function(){ onChon(i); };
+  w.appendChild(b);
+ });
+ return w;
+}
+
+function veCot(vals,dinhDang){
+ var svg=document.createElementNS(NS,'svg');
+ var W=340,H=140,T=16,B=18;
+ svg.setAttribute('viewBox','0 0 '+W+' '+H);
+ svg.setAttribute('preserveAspectRatio','none');
+ svg.style.cssText='width:100%;height:150px;overflow:visible;display:block';
+ var mx=0; vals.forEach(function(v){if(v>mx)mx=v;});
+ if(!mx)mx=1;
+ var n=vals.length, bw=(W/n)*0.74, gap=(W/n)*0.26;
+ vals.forEach(function(v,i){
+  var h=(H-T-B)*(v/(mx*1.1));
+  var x=i*(W/n)+gap/2, y=H-B-h;
+  var r=document.createElementNS(NS,'rect');
+  r.setAttribute('x',x.toFixed(1)); r.setAttribute('y',y.toFixed(1));
+  r.setAttribute('width',bw.toFixed(1)); r.setAttribute('height',Math.max(0,h).toFixed(1));
+  r.setAttribute('rx','3'); r.setAttribute('fill','#2AD998');
+  r.setAttribute('opacity', v?'0.85':'0.18');
+  svg.appendChild(r);
+  if(v){
+   var t=document.createElementNS(NS,'text');
+   t.setAttribute('x',(x+bw/2).toFixed(1)); t.setAttribute('y',(y-3).toFixed(1));
+   t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','8');
+   t.setAttribute('font-weight','700'); t.setAttribute('fill','currentColor');
+   t.textContent=dinhDang?dinhDang(v):so(v);
+   svg.appendChild(t);
+  }
+  var lb=document.createElementNS(NS,'text');
+  lb.setAttribute('x',(x+bw/2).toFixed(1)); lb.setAttribute('y',(H-5).toFixed(1));
+  lb.setAttribute('text-anchor','middle'); lb.setAttribute('font-size','7.5');
+  lb.setAttribute('fill','currentColor'); lb.setAttribute('opacity','0.55');
+  lb.textContent='T'+(i+1);
+  svg.appendChild(lb);
+ });
+ return svg;
+}
+function veDuong(duong,mau,nhanSo){
+ var svg=document.createElementNS(NS,'svg');
+ var W=340,H=150,T=14,B=18;
+ svg.setAttribute('viewBox','0 0 '+W+' '+H);
+ svg.setAttribute('preserveAspectRatio','none');
+ svg.style.cssText='width:100%;height:158px;overflow:visible;display:block';
+ var mx=0,co=false;
+ duong.forEach(function(d){d.forEach(function(v){if(v!==null&&isFinite(v)){co=true;if(v>mx)mx=v;}})});
+ if(!co)return svg;
+ mx=mx*1.14||1;
+ var n=12, bw=(W-8)/(n-1);
+ function X(i){return 4+i*bw}
+ function Y(v){return T+(H-T-B)*(1-v/mx)}
+ [0,0.5,1].forEach(function(p){
+  var y=T+(H-T-B)*p, ln=document.createElementNS(NS,'line');
+  ln.setAttribute('x1',0);ln.setAttribute('x2',W);
+  ln.setAttribute('y1',y.toFixed(1));ln.setAttribute('y2',y.toFixed(1));
+  ln.setAttribute('stroke','currentColor');ln.setAttribute('stroke-opacity','0.10');
+  svg.appendChild(ln);
+ });
+ duong.forEach(function(d,k){
+  var pts=[],i;
+  for(i=0;i<n;i++){if(d[i]===null||d[i]===undefined)continue;pts.push(X(i).toFixed(1)+','+Y(d[i]).toFixed(1));}
+  if(!pts.length)return;
+  if(pts.length>1){
+   var pl=document.createElementNS(NS,'polyline');
+   pl.setAttribute('points',pts.join(' ')); pl.setAttribute('fill','none');
+   pl.setAttribute('stroke',mau[k]); pl.setAttribute('stroke-width','2.2');
+   pl.setAttribute('stroke-linejoin','round'); pl.setAttribute('stroke-linecap','round');
+   pl.setAttribute('vector-effect','non-scaling-stroke');
+   svg.appendChild(pl);
+  }
+  for(i=0;i<n;i++){
+   if(d[i]===null||d[i]===undefined)continue;
+   var c=document.createElementNS(NS,'circle');
+   c.setAttribute('cx',X(i).toFixed(1)); c.setAttribute('cy',Y(d[i]).toFixed(1));
+   c.setAttribute('r','2.3'); c.setAttribute('fill',mau[k]);
+   c.setAttribute('vector-effect','non-scaling-stroke');
+   svg.appendChild(c);
+   if(k===0&&nhanSo){
+    var t=document.createElementNS(NS,'text');
+    t.setAttribute('x',X(i).toFixed(1)); t.setAttribute('y',(Y(d[i])-6).toFixed(1));
+    t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','8');
+    t.setAttribute('font-weight','700'); t.setAttribute('fill',mau[k]);
+    t.textContent=n1(d[i]);
+    svg.appendChild(t);
+   }
+  }
+ });
+ for(var i=0;i<n;i++){
+  var lb=document.createElementNS(NS,'text');
+  lb.setAttribute('x',X(i).toFixed(1)); lb.setAttribute('y',(H-5).toFixed(1));
+  lb.setAttribute('text-anchor','middle'); lb.setAttribute('font-size','7.5');
+  lb.setAttribute('fill','currentColor'); lb.setAttribute('opacity','0.55');
+  lb.textContent='T'+(i+1);
+  svg.appendChild(lb);
+ }
+ return svg;
+}
+function thanhNgang(muc){
+ var w=el('div');
+ var mx=0; muc.forEach(function(m){if(m.v>mx)mx=m.v;});
+ muc.forEach(function(m){
+  var r=el('div');
+  r.style.cssText='display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px';
+  var nh=el('div','',m.ten);
+  nh.style.cssText='width:76px;flex:0 0 auto;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+  var ct=el('div');
+  ct.style.cssText='flex:1;height:14px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden';
+  var fi=el('div');
+  fi.style.cssText='height:100%;border-radius:4px;background:'+(m.mau||'#2AD998')+';width:'+(mx?Math.max(2,m.v/mx*100):0)+'%';
+  ct.appendChild(fi);
+  var gt=el('div','',m.chu);
+  gt.style.cssText='width:96px;flex:0 0 auto;text-align:right;font-variant-numeric:tabular-nums;font-weight:600';
+  r.appendChild(nh); r.appendChild(ct); r.appendChild(gt);
+  w.appendChild(r);
+ });
+ return w;
+}
+
+function khoi(tieu,phu){
+ var c=el('div','card');
+ c.style.cssText='background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:14px 15px;margin-bottom:12px';
+ var h=el('h3','',tieu);
+ h.style.cssText='margin:0 0 3px;font-size:14px;font-weight:700';
+ c.appendChild(h);
+ if(phu){var p=el('div','',phu); p.style.cssText='font-size:11.5px;opacity:.6;margin-bottom:4px'; c.appendChild(p);}
+ return c;
+}
+
+/* ---- Phan 1: sell out & doanh thu ca nam ---- */
+function phan1(sh){
+ var c=khoi('Sell out & doanh thu cả năm','Đủ 12 tháng — tháng chưa có số để trống.');
+ var noi=el('div');
+ function ve(){
+  noi.innerHTML='';
+  var vals=[],i,fmt=null;
+  for(i=0;i<12;i++){
+   var o=sh.m&&sh.m[i]?sh.m[i]:null;
+   if(che.p1==='u')vals.push(o?o[0]:0);
+   else if(che.p1==='r'){vals.push(o?o[1]:0); fmt=function(v){return v>=1000?(v/1000).toFixed(1).replace('.',','):so(v)};}
+   else {
+    var t=0;
+    if(sh.srm){[1,2].forEach(function(k){var r=sh.srm[k]&&sh.srm[k][i]?sh.srm[k][i]:null; if(r)t+=r[0]||0;});}
+    vals.push(t);
+   }
+  }
+  noi.appendChild(veCot(vals,fmt));
+  var tong=vals.reduce(function(a,b){return a+b},0);
+  var g=el('div','', che.p1==='r'?('Cả năm: <b>'+tien(tong)+'</b>'):('Cả năm: <b>'+so(tong)+' máy</b>'));
+  g.style.cssText='font-size:12px;margin-top:8px;opacity:.85';
+  noi.appendChild(g);
+ }
+ var idx={u:0,r:1,rf:2}[che.p1]||0;
+ c.appendChild(tabBar(['Doanh số','Doanh thu','Reno & Find'],idx,function(i){
+  che.p1=['u','r','rf'][i]; lamMoi();
+ }));
+ c.appendChild(noi); ve();
+ return c;
+}
+
+/* ---- Phan 2: thi phan tung thang ---- */
+function phan2(sh){
+ var c=khoi('Chi tiết thị phần từng tháng','Theo tháng tách được 4 hãng lớn, phần còn lại gộp vào Khác.');
+ var noi=el('div');
+ function seri(){
+  var n=12,i,j,out={ten:[],mau:[],duong:[],nhan:true};
+  function lay(t,k,r){return t?(t[k*2+(r?1:0)]||0):0;}
+  if(che.p2==='u'||che.p2==='r'){
+   var r=(che.p2==='r');
+   out.ten=TEN5.slice(); out.mau=MAU5.slice();
+   for(j=0;j<5;j++)out.duong.push([]);
+   for(i=0;i<n;i++){
+    var t=sh.mkm&&sh.mkm[i]?sh.mkm[i]:null;
+    if(!t){for(j=0;j<5;j++)out.duong[j].push(null);continue;}
+    var tong=lay(t,4,r), b=[lay(t,0,r),lay(t,1,r),lay(t,2,r),lay(t,3,r)];
+    var kh=tong-(b[0]+b[1]+b[2]+b[3]); if(kh<0)kh=0;
+    var v=[b[0],b[1],b[2],b[3],kh];
+    for(j=0;j<5;j++)out.duong[j].push(tong?+pc(v[j],tong).toFixed(1):null);
+   }
+  } else if(che.p2==='pk'){
+   out.ten=['OPPO','Các hãng khác']; out.mau=['#2AD998','#8B98A9']; out.duong=[[],[]];
+   for(i=0;i<n;i++){
+    var g=sh.sgmS&&sh.sgmS[i]?sh.sgmS[i][2]:null;
+    if(!g||!g[2]){out.duong[0].push(null);out.duong[1].push(null);continue;}
+    var p=+pc(g[0],g[2]).toFixed(1);
+    out.duong[0].push(p); out.duong[1].push(+(100-p).toFixed(1));
+   }
+  } else {
+   out.ten=['OPPO','Thị trường']; out.mau=['#2AD998','#8B98A9']; out.duong=[[],[]];
+   for(i=0;i<n;i++){
+    var t2=sh.mkm&&sh.mkm[i]?sh.mkm[i]:null;
+    if(!t2){out.duong[0].push(null);out.duong[1].push(null);continue;}
+    out.duong[0].push(t2[0]?+(t2[1]/t2[0]).toFixed(1):null);
+    out.duong[1].push(t2[8]?+(t2[9]/t2[8]).toFixed(1):null);
+   }
+  }
+  return out;
+ }
+ function ve(){
+  noi.innerHTML='';
+  var s=seri();
+  noi.appendChild(veDuong(s.duong,s.mau,true));
+  var lg=el('div');
+  lg.style.cssText='display:flex;flex-wrap:wrap;gap:10px;margin-top:9px;font-size:11.5px';
+  s.ten.forEach(function(t,i){
+   lg.appendChild(el('span','','<i style="width:9px;height:9px;border-radius:3px;background:'+s.mau[i]+';display:inline-block;margin-right:5px"></i>'+t));
+  });
+  noi.appendChild(lg);
+ }
+ var idx2={u:0,r:1,pk:2,dg:3}[che.p2]||0;
+ c.appendChild(tabBar(['Doanh số','Doanh thu','PK 10–20M','Đơn giá'],idx2,function(i){
+  che.p2=['u','r','pk','dg'][i]; lamMoi();
+ }));
+ c.appendChild(noi); ve();
+ return c;
+}
+
+/* ---- Phan 3: ti trong phan khuc gia ---- */
+function pkKy(sh,tu,den){
+ var out=[];
+ NHOM.forEach(function(g){
+  var may=0,dt=0;
+  g.forEach(function(pi){
+   var hang=(sh.sgm&&sh.sgm[pi])||[];
+   for(var t=tu;t<=den&&t<hang.length;t++){var o=hang[t]; if(o){may+=o[0]||0;dt+=o[1]||0;}}
+  });
+  out.push([may,dt]);
+ });
+ return out;
+}
+function phan3(sh){
+ var c=khoi('Tỉ trọng phân khúc giá','Sáu nhóm giá — theo số máy OPPO bán ra.');
+ var noi=el('div');
+ function ve(){
+  noi.innerHTML='';
+  var k=QUY[che.p3], d=pkKy(sh,k[0],k[1]);
+  var tong=d.reduce(function(a,b){return a+b[0]},0);
+  if(!tong){noi.appendChild(el('div','','<i style="opacity:.6;font-size:12px">Kỳ này chưa có số liệu.</i>'));return;}
+  noi.appendChild(thanhNgang(d.map(function(v,i){
+   return {ten:TEN6[i], v:v[0], mau:MAU6[i], chu:so(v[0])+' máy · '+n1(pc(v[0],tong))+'%'};
+  })));
+  var g=el('div','','Tổng <b>'+so(tong)+' máy</b> trong kỳ '+TENQ[che.p3]);
+  g.style.cssText='font-size:12px;margin-top:8px;opacity:.85';
+  noi.appendChild(g);
+ }
+ c.appendChild(tabBar(TENQ,che.p3,function(i){che.p3=i;lamMoi();}));
+ c.appendChild(noi); ve();
+ return c;
+}
+
+/* ---- Phan 4: khung gio ---- */
+function phan4(sh){
+ var c=khoi('Top khung giờ bán tốt nhất','Từ 8h đến 22h, mỗi khung 2 tiếng. Ba khung mạnh nhất được tô đậm.');
+ var hr=((sh.hr)||[]).map(function(x){return {khung:x[0],may:x[1]||0,dt:x[2]||0};});
+ if(!hr.length){c.appendChild(el('div','','<i style="opacity:.6;font-size:12px">Chưa có số liệu khung giờ.</i>'));return c;}
+ var sap=hr.slice().sort(function(a,b){return b.may-a.may});
+ var top3={}; sap.slice(0,3).forEach(function(x,i){top3[x.khung]=i;});
+ c.appendChild(thanhNgang(hr.map(function(x){
+  var l=top3[x.khung];
+  return {ten:x.khung, v:x.may, mau:(l===undefined?'#3A4552':['#2AD998','#1E8558','#0F5B3E'][l]),
+          chu:so(x.may)+' máy · '+tien(x.dt)};
+ })));
+ var t3=el('div','','Mạnh nhất: '+sap.slice(0,3).map(function(x,i){return '<b>'+x.khung+'</b> ('+so(x.may)+' máy)';}).join(' · '));
+ t3.style.cssText='font-size:12px;margin-top:9px;opacity:.85';
+ c.appendChild(t3);
+ return c;
+}
+
+/* ---- Phan 5: top phan khuc + nhan vien ---- */
+function phan5(sh){
+ var c=khoi('Top phân khúc & nhân viên bán tốt','Phân khúc theo kỳ chọn. Nhân viên là số cả kỳ, dữ liệu không tách theo quý.');
+ var noi=el('div');
+ function ve(){
+  noi.innerHTML='';
+  var k=QUY[che.p5], d=pkKy(sh,k[0],k[1]);
+  var xs=d.map(function(v,i){return {ten:TEN6[i],may:v[0],dt:v[1]};}).sort(function(a,b){return b.may-a.may});
+  var tong=d.reduce(function(a,b){return a+b[0]},0);
+  var h1=el('div','','Phân khúc bán tốt nhất — '+TENQ[che.p5]);
+  h1.style.cssText='font-size:12px;font-weight:700;margin:2px 0 6px';
+  noi.appendChild(h1);
+  if(!tong)noi.appendChild(el('div','','<i style="opacity:.6;font-size:12px">Kỳ này chưa có số liệu.</i>'));
+  else noi.appendChild(thanhNgang(xs.slice(0,3).map(function(x,i){
+   return {ten:x.ten, v:x.may, mau:['#2AD998','#1E8558','#0F5B3E'][i], chu:so(x.may)+' máy · '+n1(pc(x.may,tong))+'%'};
+  })));
+  var stf=((sh.stf)||[]).map(function(x){return {ten:String(x[0]||''),may:x[1]||0,dt:x[2]||0,model:String(x[3]||'')};});
+  var h2=el('div','','Nhân viên bán tốt phân khúc 10–20M');
+  h2.style.cssText='font-size:12px;font-weight:700;margin:14px 0 6px';
+  noi.appendChild(h2);
+  if(!stf.length)noi.appendChild(el('div','','<i style="opacity:.6;font-size:12px">Shop này chưa có số liệu nhân viên.</i>'));
+  else {
+   noi.appendChild(thanhNgang(stf.slice(0,5).map(function(x,i){
+    var t=x.ten.replace(/^\d+\s*-\s*/,'');
+    return {ten:t, v:x.may, mau:i<3?['#2AD998','#1E8558','#0F5B3E'][i]:'#3A4552', chu:so(x.may)+' máy · '+tien(x.dt)};
+   })));
+   if(stf[0]&&stf[0].model){
+    var m=el('div','','Model bán mạnh nhất: <b>'+stf[0].model.slice(0,46)+'</b>');
+    m.style.cssText='font-size:11.5px;margin-top:8px;opacity:.75';
+    noi.appendChild(m);
+   }
+  }
+ }
+ c.appendChild(tabBar(TENQ,che.p5,function(i){che.p5=i;lamMoi();}));
+ c.appendChild(noi); ve();
+ return c;
+}
+
+/* ---- Dung 5 phan vao sheet ---- */
+function lamMoi(){
+ try{ dung(true); }catch(e){}
+}
+function dung(épLai){
+ if(tat())return false;
+ var sheet=document.getElementById('sheet');
+ if(!sheet||!sheet.classList.contains('on'))return false;
+ var body=sheet.children[sheet.children.length-1];
+ if(!body)return false;
+ var sh=timShop(); if(!sh)return false;
+ var cu=document.getElementById('shop5');
+ if(cu&&!épLai)return true;
+ if(cu)cu.remove();
+ var w=el('div'); w.id='shop5';
+ w.appendChild(phan1(sh));
+ w.appendChild(phan2(sh));
+ w.appendChild(phan3(sh));
+ w.appendChild(phan4(sh));
+ w.appendChild(phan5(sh));
+ var gap=document.getElementById('shop5-cu');
+ if(!gap){
+  gap=el('details'); gap.id='shop5-cu';
+  gap.style.cssText='margin:6px 0 18px';
+  var s=el('summary','','Xem thêm các khối chi tiết cũ');
+  s.style.cssText='cursor:pointer;font-size:12.5px;font-weight:600;opacity:.75;padding:9px 0';
+  gap.appendChild(s);
+  var hop=el('div'); hop.id='shop5-hop';
+  gap.appendChild(hop);
+  [].slice.call(body.children).forEach(function(e){
+   if(e.id==='shop5'||e.id==='shop5-cu')return;
+   hop.appendChild(e);
+  });
+  body.appendChild(gap);
+ }
+ body.insertBefore(w,body.firstChild);
+ return true;
+}
+
+/* ---- Bat ten shop khi bam ---- */
+document.addEventListener('click',function(e){
+ try{
+  var b=e.target&&e.target.closest?e.target.closest('[data-shop]'):null;
+  if(b)tenShop=b.getAttribute('data-shop');
+ }catch(err){}
+},true);
+
+window.__shop5Tat=function(){try{localStorage.setItem(KEY,'off')}catch(e){} location.reload(); return 'da tat';};
+window.__shop5Bat=function(){try{localStorage.removeItem(KEY)}catch(e){} location.reload(); return 'da bat';};
+window.__shop5Dung=function(){return dung(true);};
+
+setInterval(function(){
+ try{
+  if(tat())return;
+  var sheet=document.getElementById('sheet');
+  if(!sheet)return;
+  if(!sheet.classList.contains('on')){
+   var w=document.getElementById('shop5'); if(w)w.remove();
+   var g=document.getElementById('shop5-cu');
+   if(g){
+    var hop=document.getElementById('shop5-hop');
+    var body=sheet.children[sheet.children.length-1];
+    if(hop&&body){[].slice.call(hop.children).forEach(function(x){body.appendChild(x)});}
+    g.remove();
+   }
+   return;
+  }
+  if(!document.getElementById('shop5'))dung(false);
+ }catch(e){}
+},700);
+})();
+</script>
+
 </html>
