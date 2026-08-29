@@ -510,6 +510,17 @@
      Margin am thi canvas van nguyen kich thuoc (no vo hinh, khong ai thay),
      chi co the CHA co lai — dung thu minh muon. */
   function coKhung(ch, hop) {
+    /* Do LAI vai nhip nua. Ngay sau khi gan innerHTML, trinh duyet chua tinh
+       xong bo cuc cua SVG va cua chu giai — do luc do ra chieu cao 0, tinh
+       "thua" ra so am, va the khong bao gio co lai. Da dinh 29/08: bieu do
+       "Ti trong phan khuc theo kenh" va "Ti trong dong gop" van thua 170-180px
+       trong khi "Ti trong Reno" (do sau, kip bo cuc) thi co dung. */
+    doCoKhung(ch, hop);
+    requestAnimationFrame(function () { doCoKhung(ch, hop); });
+    setTimeout(function () { doCoKhung(ch, hop); }, 150);
+    setTimeout(function () { doCoKhung(ch, hop); }, 700);
+  }
+  function doCoKhung(ch, hop) {
     var c = ch.canvas;
     try {
       var svg = hop.__ve && hop.__ve.querySelector('svg');
