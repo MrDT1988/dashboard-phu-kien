@@ -3442,6 +3442,17 @@ function ganTab(){
 window.__app4tabTat=function(){try{localStorage.setItem(KEY,'off')}catch(e){} location.reload(); return 'da tat, dang tai lai';};
 window.__app4tabBat=function(){try{localStorage.removeItem(KEY)}catch(e){} location.reload(); return 'da bat, dang tai lai';};
 
+
+function suaBadge(){
+ try{
+  var nav=document.querySelector('nav'); if(!nav)return;
+  var bm=nav.querySelector('button[data-v="month"]'), ba=nav.querySelector('button[data-v="alert"]');
+  if(!bm||!ba)return;
+  var bg=bm.querySelector('.badge');
+  if(bg){ var cu=ba.querySelector('.badge'); if(cu)cu.remove(); ba.appendChild(bg); }
+ }catch(e){}
+}
+
 /* ---------- E. Vong chay ---------- */
 var dem=0;
 function chay(){
@@ -3451,6 +3462,7 @@ function chay(){
  try{ ok=xepTab(); }catch(e){}
  try{ if(ok)ganTab(); }catch(e){}
  if(ok){ try{ if(window.renderOver)window.renderOver(); }catch(e){} }
+ try{ suaBadge(); }catch(e){}
  return ok;
 }
 var iv=setInterval(function(){
@@ -3463,6 +3475,7 @@ setInterval(function(){
   if(tat())return;
   var over=q('v-over');
   if(over&&!over.getAttribute('data-4tab')&&over.children.length>=12)chay();
+  suaBadge();
  }catch(e){}
 },3000);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(chay,400)});
