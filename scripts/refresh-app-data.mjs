@@ -178,14 +178,14 @@ async function layMotLan(lanThu) {
       log('  -> khong do duoc kich thuoc goi: ' + e.message);
     }
 
+    // doc bo rut TU DIA (repo da checkout) - tranh nhan ban cu tu bo nho dem cua Pages
+    const BO_RUT = fs.readFileSync('scripts/build-app-data.js', 'utf8');
     log('chay bo trich xuat build-app-data.js');
-    const data = await page.evaluate(async ([site, ka]) => {
-      const src = await fetch(site + '/scripts/build-app-data.js?t=' + Date.now())
-        .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
+    const data = await page.evaluate(async ([src, ka]) => {
       (0, eval)(src);
       if (typeof window.buildAppData !== 'function') throw new Error('khong nap duoc buildAppData');
       return window.buildAppData(window.__exportDataMwg, window.__exportDataMain, ka);
-    }, [SITE, shareKA]);
+    }, [BO_RUT, shareKA]);
 
     return data;
   } finally {
