@@ -618,6 +618,11 @@
     --neutral: #8b98a9;
     --glow-soft: 0 0 12px rgba(34,229,160,0.14);
     --glow-strong: 0 0 16px rgba(34,229,160,0.22);
+    /* Màu con số TỒN KHO. Trước để vàng mù tạt #e0b24d gắn cứng trong JS — trên
+       nền Sáng nó chỉ đạt tỉ tương phản 1,9 (chuẩn cần 4,5), nhìn như chữ mờ.
+       Tách ra thành biến để nền Sáng đổi được sang màu đậm hơn (xem demo-sang.js). */
+    --ton-du: #ff9f5a;      /* còn hàng nằm kho */
+    --ton-am: #7fb2ff;      /* bán nhiều hơn số nhập ghi nhận */
     --gap: 16px;
     --radius: 10px;
 }
@@ -7038,6 +7043,43 @@ function tonKhoIndChuanModel(x) {
     return String(x || '').toUpperCase().replace(/\s+/g, ' ').replace(/\s*\+\s*/g, '+').trim();
 }
 
+/* ---- TÊN ĐẠI LÝ / ĐIỂM BÁN: BỎ ĐỊA CHỈ -------------------------------------
+   Sheet ghi cả địa chỉ vào ô tên, ví dụ:
+     "Chí Trung - Bến Tre - Khu phố 2, thị tấn Bình Đại, Huện Bình Đại"
+   Cả dòng địa chỉ đó tràn ngang bảng, đẩy các cột số ra xa, đọc rất mệt.
+   Cắt còn TÊN (+ tỉnh/huyện nếu ngắn), tên đầy đủ vẫn giữ trong tooltip nên
+   không mất thông tin gì. */
+function tonKhoIndLaDiaChi(s) {
+    const t = tonKhoIndKhongDau(s);
+    if (/(^|\s)(so|ap|duong|khu pho|kp|phuong|xa|huyen|thi tran|thi xa|quoc lo|ql|tinh|to|hem|ngo|dc|d\/c)(\s|$)/.test(t)) return true;
+    if (/\d[\da-z\/]*\s*,/.test(t)) return true;     // "76B, Tiên Đông Vàm"
+    if (/^\d/.test(t.trim())) return true;           // bắt đầu bằng số nhà
+    return false;
+}
+function tonKhoIndTenGon(ten) {
+    const goc = String(ten || '').trim();
+    const phan = goc.split(/\s*[-–]\s*/).map(s => s.trim()).filter(Boolean);
+    if (!phan.length) return goc;
+    const giu = [phan[0]];
+    for (let i = 1; i < phan.length && giu.length < 2; i++) {
+        // "cty", "tnhh"... là chữ chung, bỏ qua chứ không dừng
+        if (/^(cty|c\.ty|công ty|tnhh|mtv|dntn)\.?$/i.test(phan[i])) continue;
+        if (tonKhoIndLaDiaChi(phan[i])) break;
+        if (phan[i].length > 16) break;              // đoạn dài = địa chỉ viết liền
+        giu.push(phan[i]);
+    }
+    // "(cty)" là chữ chung, bỏ; "(CMT8)" là tên chi nhánh, giữ.
+    let t = giu.join(' - ').replace(/\s*\((cty|c\.ty|công ty|tnhh|mtv|dntn)\)/gi, '').trim();
+    if (t.length > 38) t = t.slice(0, 37).trim() + '…';
+    return t || goc;
+}
+function tonKhoIndOTen(ten, dam) {
+    const gon = tonKhoIndTenGon(ten);
+    const day = String(ten || '').trim();
+    const chu = escapeHtml(gon);
+    return '<td title="' + escapeHtml(day) + '">' + (dam ? '<b>' + chu + '</b>' : chu) + '</td>';
+}
+
 function computeIndTonKho() {
     const rows = DATA.sell_in_rows || [];
     const idToName = indStoreIdToName();
@@ -7184,7 +7226,7 @@ function renderIndTonKho() {
     document.getElementById('ind-ton-out-sub').textContent = 'máy, cùng kỳ ' + nhan;
     const elTon = document.getElementById('ind-ton-ton');
     elTon.textContent = fmtInt(tTon);
-    elTon.style.color = tTon > 0 ? '#e0b24d' : '#2ee673';
+    elTon.style.color = tTon > 0 ? 'var(--ton-du)' : 'var(--positive)';
     document.getElementById('ind-ton-ton-sub').textContent =
         (nhip > 0 && tTon > 0) ? ('còn bán được ~' + tonKhoIndSoNgayBan(tTon, nhip)) : 'máy';
 
@@ -7193,7 +7235,7 @@ function renderIndTonKho() {
         + (K.theoTen ? (', không khớp thì ghép theo <b>tên đại lý</b> (' + fmtInt(K.theoTen) + ' máy)') : '')
         + '. <b>Chưa cộng tồn đầu năm, chưa trừ hàng trả về và điều chuyển giữa đại lý</b> — dùng để so đại lý với nhau và bắt hàng nằm lâu, không thay được biên bản kiểm kê.';
     if (K.leTong) {
-        note += '<br><span style="color:#e0b24d;"><b>Chưa khớp được:</b> ' + fmtInt(K.leTong)
+        note += '<br><span style="color:var(--ton-du);"><b>Chưa khớp được:</b> ' + fmtInt(K.leTong)
             + ' máy nhập dưới ' + K.leMa + ' mã đại lý không nằm trong danh sách IND — phần lớn là đại lý tỉnh khác cùng nhà phân phối. Không cộng vào tồn.</span>';
     }
     document.getElementById('ind-ton-note').innerHTML = note;
@@ -7212,32 +7254,59 @@ function renderIndTonKho() {
         return r;
     }).sort((a, b) => b.ton - a.ton);
 
-    body.innerHTML = dsModel.length ? dsModel.map(r => {
+    /* ---- ẨN CÁC DÒNG TỒN ÂM ------------------------------------------------
+       Tồn âm = bán ra nhiều hơn số nhập ghi nhận được. Không phải sai số: đó là
+       máy nhập từ 2025, trước kỳ mà sheet SELL IN có số, nên phần nhập của
+       chúng không nằm trong dữ liệu. Đo 29/08: 26 trong 38 model là tồn âm —
+       tức là hai phần ba bảng chỉ là nhiễu, che mất số model thật sự đang nằm kho.
+       ẨN khỏi bảng, nhưng KHÔNG bỏ khỏi con số tổng (tổng vẫn là phép trừ thật),
+       và ghi rõ đã ẩn bao nhiêu để không ai tưởng số bị mất. */
+    const modelAm = dsModel.filter(r => r.ton < 0);
+    const modelHien = dsModel.filter(r => r.ton >= 0);
+    if (modelAm.length) {
+        const tongAm = modelAm.reduce((a, r) => a + r.ton, 0);
+        document.getElementById('ind-ton-note').innerHTML += '<br><span style="color:var(--text-secondary);">'
+            + '<b>Đã ẩn ' + modelAm.length + ' model tồn âm</b> (' + fmtInt(tongAm)
+            + ' máy) — hàng nhập từ trước kỳ sheet SELL IN có số nên chỉ thấy phần bán ra.'
+            + ' Vẫn được trừ trong ô Tồn ở trên, chỉ không hiện thành dòng cho đỡ rối.</span>';
+    }
+
+    body.innerHTML = modelHien.length ? modelHien.map(r => {
         const pct = r.nhap ? (r.ban / r.nhap * 100) : null;
-        const mau = r.ton > 0 ? '#e0b24d' : (r.ton < 0 ? '#5b8fd6' : 'var(--text-secondary)');
+        const mau = r.ton > 0 ? 'var(--ton-du)' : 'var(--text-secondary)';
         return '<tr><td>' + r.n + '</td>'
             + '<td class="num">' + fmtInt(r.nhap) + '</td>'
             + '<td class="num">' + fmtInt(r.ban) + '</td>'
             + '<td class="num" style="color:' + mau + '; font-weight:700;">' + fmtInt(r.ton) + '</td>'
             + '<td class="num">' + tonKhoIndSoNgayBan(r.ton, r.nhip) + '</td>'
             + '<td class="num">' + (pct === null ? '-' : pct.toFixed(0) + '%') + '</td></tr>';
-    }).join('') : '<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-secondary);">Không có dữ liệu (theo bộ lọc hiện tại).</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-secondary);">Không có model nào còn tồn (theo bộ lọc hiện tại).</td></tr>';
 
     // ---- bang theo dai ly
     dlBody.innerHTML = K.dsDaiLy.length ? K.dsDaiLy.map((x, i) => {
         const top = x.md.filter(r => r.ton > 0)[0];
-        const mau = x.ton > 0 ? '#e0b24d' : (x.ton < 0 ? '#5b8fd6' : 'var(--text-secondary)');
+        const mau = x.ton > 0 ? 'var(--ton-du)' : (x.ton < 0 ? 'var(--ton-am)' : 'var(--text-secondary)');
         const idCt = 'ind-ton-ct-' + i;
+        // Bảng con cũng bỏ dòng tồn âm, giống bảng model ở trên.
+        const mdHien = x.md.filter(r => r.ton >= 0);
+        const mdAm = x.md.length - mdHien.length;
         const ct = '<tr id="' + idCt + '" hidden><td colspan="8" style="padding:0 12px 12px;">'
             + '<div style="font-size:12px; color:var(--text-secondary); margin:6px 0;">Điểm bán: '
-            + x.shops.map(t => '· ' + t).join('<br>') + '</div>'
+            + x.shops.map(t => '· <span title="' + escapeHtml(String(t)) + '">'
+                + escapeHtml(tonKhoIndTenGon(t)) + '</span>').join('<br>') + '</div>'
             + '<table class="data-table" style="margin:0;"><thead><tr><th>Model</th><th class="num">Nhập</th><th class="num">Bán</th><th class="num">Tồn</th></tr></thead><tbody>'
-            + x.md.map(r => '<tr><td>' + r.n + '</td><td class="num">' + fmtInt(r.nhap)
-                + '</td><td class="num">' + fmtInt(r.ban) + '</td><td class="num">' + fmtInt(r.ton) + '</td></tr>').join('')
-            + '</tbody></table></td></tr>';
+            + (mdHien.length ? mdHien.map(r => '<tr><td>' + r.n + '</td><td class="num">' + fmtInt(r.nhap)
+                + '</td><td class="num">' + fmtInt(r.ban) + '</td><td class="num" style="color:'
+                + (r.ton > 0 ? 'var(--ton-du)' : 'var(--text-secondary)') + '; font-weight:700;">'
+                + fmtInt(r.ton) + '</td></tr>').join('')
+                : '<tr><td colspan="4" style="color:var(--text-secondary);">Không còn model nào tồn.</td></tr>')
+            + '</tbody></table>'
+            + (mdAm ? '<div style="font-size:11.5px; color:var(--text-secondary); margin-top:6px;">Đã ẩn '
+                + mdAm + ' model tồn âm (hàng nhập trước kỳ sheet SELL IN có số).</div>' : '')
+            + '</td></tr>';
         return '<tr class="ind-ton-dl-row" data-ct="' + idCt + '" style="cursor:pointer;">'
             + '<td>' + (i + 1) + '</td>'
-            + '<td><b>' + x.ten + '</b></td>'
+            + tonKhoIndOTen(x.ten, true)
             + '<td class="num">' + x.shops.length + '</td>'
             + '<td>' + x.sale.join(', ') + '</td>'
             + '<td class="num">' + fmtInt(x.nhap) + '</td>'

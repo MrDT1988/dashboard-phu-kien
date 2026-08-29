@@ -65,6 +65,11 @@
        tren nen TRANG, nhung nhieu o dung no lai co nen xam nhat (#FAFBFC, o
        zebra, o to nhat) nen tut xuong duoi 4,5. #5E6773 con 5,77, du bien an. */
     '  --positive:#0C6231; --negative:#C62828; --neutral:#5E6773;',
+    /* MAU CON SO TON KHO. Ban toi de #ff9f5a; tren nen TRANG no chi do duoc
+       2,3 — anh Thai bao "to mau cai ton hoi kho nhin". #B23C00 do duoc 5,9
+       tren nen trang, van la mau cam nen van bat mat ngay, khong lan voi mau
+       do bao "giam" (--negative #C62828 la do thuan). */
+    '  --ton-du:#B23C00; --ton-am:#1D4ED8;',
     '  --glow-soft:0 1px 3px rgba(16,24,40,.06); --glow-strong:0 2px 8px rgba(16,24,40,.10);',
     '  --dm-line2:#EFF2F5; --dm-bsoft:#E8F3EC; --dm-bline:#BEDCCB; --dm-warn:#9A5B00;',
     '  color-scheme:light;',
