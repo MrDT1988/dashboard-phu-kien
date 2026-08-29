@@ -433,7 +433,34 @@
     return true;
   }
 
+  /* ---- HAI THE GHIM O GOC DUOI KHONG DUOC CHE SO LIEU --------------------
+     The "Duy Thai / Dang xuat" ghim goc duoi trai va nut "Sang/Toi" ghim goc
+     duoi phai deu la thu EM THEM VAO, ban demo khong co. Do 29/08 tren so that:
+     the dang nhap che mat cot KENH cua bang "Sellout & Doanh thu theo kenh",
+     nut Sang/Toi che cot T9. Bang so ma bi che mot cot la doc sai bang.
+
+     Khong bo di duoc (anh Thai can nut Dang xuat de vao thu tung tai khoan).
+     Nen: dang CUON thi hai cai mo han di cho nhin xuyen qua duoc; ngung cuon
+     hoac re chuot toi thi hien lai ngay. */
+  function moKhiCuon() {
+    var st = document.createElement('style');
+    st.textContent =
+      '#dbtg-the-ai,#dm-sang-nut{transition:opacity .18s}'
+      + '#dbtg-the-ai:hover,#dm-sang-nut:hover{opacity:1 !important}'
+      + 'html.dm-dang-cuon #dbtg-the-ai,html.dm-dang-cuon #dm-sang-nut{opacity:.18}';
+    document.head.appendChild(st);
+    var hen = null;
+    addEventListener('scroll', function () {
+      document.documentElement.classList.add('dm-dang-cuon');
+      if (hen) clearTimeout(hen);
+      hen = setTimeout(function () {
+        document.documentElement.classList.remove('dm-dang-cuon');
+      }, 700);
+    }, { passive: true });
+  }
+
   function khoiDong() {
+    try { moKhiCuon(); } catch (e) {}
     datCSS();
     dungNut();
     dat(dangDung());

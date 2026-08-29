@@ -377,6 +377,7 @@
       hop.__ve.style.margin = '0 auto';
       window.DMV.veVong(hop.__ve, data, { mau: mau, dec: dec, dvTong: dvT });
       chuThich(hop, data.map(function (x) { return x[0]; }), mau);
+      coKhung(ch, hop);
       return;
     }
 
@@ -413,6 +414,7 @@
         tenCuoi: !coCG,
       });
       chuThich(hop, series.map(function (s) { return s.t; }), series.map(function (s) { return s.c; }));
+      coKhung(ch, hop);
       return;
     }
 
@@ -424,6 +426,7 @@
          mat thang do tuyet doi o day khong mat thong tin gi (so nam trong
          chu thich khi ro chuot). */
       veTiTrong(hop, ch, nhan, ds, Hv, { W: Math.max(W, 460), rowH: 40 });
+      coKhung(ch, hop);
       return;
     }
 
@@ -462,6 +465,7 @@
       tong: !laPT,
     });
     chuThich(hop, sr.map(function (s) { return s.t; }), sr.map(function (s) { return s.c; }));
+    coKhung(ch, hop);
   }
 
   function chuThich(hop, ten, mau) {
@@ -490,6 +494,39 @@
       });
       ro.observe(c);
       c.__dmvRO = ro;
+    } catch (e) {}
+  }
+
+  /* ---- CO KHUNG LAI CHO VUA VOI HINH DA VE --------------------------------
+     Bieu do dang THANH NGANG va dang VONG thap hon han khung cu:
+        Ti trong phan khuc theo kenh  khung 380px · ve 146px -> thua 234px
+        Ti trong Reno theo kenh       khung 380px · ve 173px -> thua 207px
+        Ti trong dong gop (2 vong)    khung 380px · ve 201px -> thua 179px
+     Cong ca trang gan 1.200px trang phai cuon qua vo ich.
+
+     CACH CO: dat  margin-bottom AM  cho canvas, KHONG doi chieu cao canvas.
+     Vi sao khong doi chieu cao: Chart.js tu ghi style.height cua canvas theo
+     ti le cua no; minh ghi de vao thi hai ben gianh nhau, bieu do nhay lien tuc.
+     Margin am thi canvas van nguyen kich thuoc (no vo hinh, khong ai thay),
+     chi co the CHA co lai — dung thu minh muon. */
+  function coKhung(ch, hop) {
+    var c = ch.canvas;
+    try {
+      var svg = hop.__ve && hop.__ve.querySelector('svg');
+      if (!svg) return;
+      var caoVe = svg.getBoundingClientRect().height;
+      var lg = hop.__lg;
+      if (lg && lg.offsetHeight) caoVe += lg.offsetHeight + 10;
+      caoVe = Math.ceil(caoVe) + 8;
+      var thua = c.offsetHeight - caoVe;
+      /* Chi co khi thua NHIEU (> 40px). Thua vai chuc pixel la khoang tho binh
+         thuong cua the, co lai chi lam moi thu chat chua. */
+      if (thua > 40) {
+        c.style.marginBottom = (-thua) + 'px';
+        hop.style.height = caoVe + 'px';
+      } else if (c.style.marginBottom) {
+        c.style.marginBottom = '';
+      }
     } catch (e) {}
   }
 
@@ -525,8 +562,12 @@
      nhung quet them mot nhip nua cho chac (co the co the doi bang CSS khac). */
   document.addEventListener('click', function (e) {
     if (!e.target || !e.target.closest) return;
-    if (e.target.closest('.db-tg-tab,[data-panel],[data-tab]')) {
-      setTimeout(quet, 260); setTimeout(quet, 1200);
+    if (e.target.closest('.db-tg-tab,[data-panel],[data-tab],[class*="subtab"],[class*="sec-"]')) {
+      /* Ve NGAY o khung hinh ke tiep — luc do trinh duyet da tinh xong bo cuc
+         moi, the vua hien da co be ngang that. Doi 260ms nhu truoc thi anh Thai
+         bam sang tab la thay the trong mot luc, nhin nhu trang bi loi. */
+      requestAnimationFrame(function () { requestAnimationFrame(quet); });
+      setTimeout(quet, 120); setTimeout(quet, 600); setTimeout(quet, 1600);
     }
   }, true);
   addEventListener('resize', function () {
