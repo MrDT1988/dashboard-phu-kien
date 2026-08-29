@@ -285,6 +285,7 @@
     var y = function (v) { return PT + ih - (v - mn) / (mx - mn) * ih; };
     var x = function (i) { return PL + iw * i / Math.max(nhan.length - 1, 1); };
     var co = opt.co || nhan.length;
+    var tenP = [];
     var s = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
     for (var g = 0; g <= 4; g++) {
       var yy = PT + ih - ih * g / 4;
@@ -315,11 +316,32 @@
         }
       });
       if (opt.tenCuoi !== false) {
-        s += '<text x="' + (W - PR + 7) + '" y="' + (y(vv[vv.length - 1]) + 3.5) + '" style="font:'
-          + (noi === false ? 600 : 700) + ' 11px ' + DP['--font'] + ';fill:' + c + ';opacity:'
-          + (noi === false ? 0.72 : 1) + '">' + sr.t + '</text>';
+        tenP.push({ y: y(vv[vv.length - 1]), t: sr.t, c: c, noi: noi });
       }
     });
+    /* TEN DAT O CUOI DUONG: khi cac duong hoi tu o ky cuoi thi bon nam cai ten
+       de chong len nhau thanh mot mang chu — do that 29/08 tren "Thi phan theo
+       hang theo thang": Vivo / Apple / Khac / Realme dinh lien nhau, khong doc
+       ra chu nao. DAY RA cho du 11,5px moi ten, giu nguyen thu tu tren-duoi cua
+       duong nen van biet ten nao la cua duong nao. */
+    if (tenP.length) {
+      tenP.sort(function (a, b) { return a.y - b.y; });
+      var KH = 11.5, tren = PT - 2, duoi = PT + ih + 10;
+      var q;
+      for (q = 1; q < tenP.length; q++) {
+        if (tenP[q].y - tenP[q - 1].y < KH) tenP[q].y = tenP[q - 1].y + KH;
+      }
+      var tran = tenP[tenP.length - 1].y - duoi;
+      if (tran > 0) {
+        for (q = 0; q < tenP.length; q++) tenP[q].y -= tran;
+        if (tenP[0].y < tren) for (q = 0; q < tenP.length; q++) tenP[q].y = tren + q * KH;
+      }
+      tenP.forEach(function (p) {
+        s += '<text x="' + (W - PR + 7) + '" y="' + (p.y + 3.5).toFixed(1) + '" style="font:'
+          + (p.noi === false ? 600 : 700) + ' 11px ' + DP['--font'] + ';fill:' + p.c + ';opacity:'
+          + (p.noi === false ? 0.72 : 1) + '">' + p.t + '</text>';
+      });
+    }
     nhan.forEach(function (t, i) {
       if (i < co) {
         s += '<text x="' + x(i) + '" y="' + (H - 7) + '" text-anchor="middle" style="font:500 10px '

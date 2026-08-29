@@ -445,9 +445,12 @@
   function moKhiCuon() {
     var st = document.createElement('style');
     st.textContent =
-      '#dbtg-the-ai,#dm-sang-nut{transition:opacity .18s}'
+      /* Do lai 29/08: chi mo khi DANG cuon van chua du — ngoi yen doc bang thi
+         the dang nhap van che mat dau dong (chu "OPPO" o cot Hang). Nen de MO
+         SAN o muc vua du biet la ai dang dang nhap, re chuot toi thi ro han. */
+      '#dbtg-the-ai,#dm-sang-nut{transition:opacity .18s;opacity:.5}'
       + '#dbtg-the-ai:hover,#dm-sang-nut:hover{opacity:1 !important}'
-      + 'html.dm-dang-cuon #dbtg-the-ai,html.dm-dang-cuon #dm-sang-nut{opacity:.18}';
+      + 'html.dm-dang-cuon #dbtg-the-ai,html.dm-dang-cuon #dm-sang-nut{opacity:.12}';
     document.head.appendChild(st);
     var hen = null;
     addEventListener('scroll', function () {
