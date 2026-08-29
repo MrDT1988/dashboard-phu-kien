@@ -14645,4 +14645,153 @@ window.__dbtgSetTheme=setTheme;})();</script>
   window.__dmSpark = chay;
 })();</script>
 
+
+<script id="dbtg-chart-demo">(function(){'use strict';
+  if(!window.Chart || !window.Chart.register) return;
+
+  var SANG = function(){ return document.documentElement.getAttribute('data-theme') === 'light'; };
+  var M = {
+    luoi:  function(){ return SANG() ? '#EFF2F5' : 'rgba(255,255,255,.06)'; },
+    day:   function(){ return SANG() ? '#E4E8EC' : 'rgba(255,255,255,.12)'; },
+    chu:   function(){ return SANG() ? '#59636F' : '#8b98a9'; },
+    nen:   function(){ return SANG() ? '#FFFFFF' : '#141b24'; },
+  };
+
+  function coNhanSo(ch){
+    try{
+      var o = ch.options && ch.options.plugins && ch.options.plugins.datalabels;
+      if(!o) return false;
+      if(o.display === false) return false;
+      return true;
+    }catch(e){ return false; }
+  }
+
+  function chinh(ch){
+    try{
+      if(!ch || !ch.config) return;
+      var loai = ch.config.type;
+      if(loai !== 'bar') return;                 // chi bieu do cot
+      var o = ch.options || (ch.options = {});
+      var sc = o.scales || (o.scales = {});
+
+      // --- truc y: chi con luoi mo, khong vien, khong vach
+      var y = sc.y || (sc.y = {});
+      y.grid = y.grid || {};
+      y.grid.color = M.luoi();
+      y.grid.drawTicks = false;
+      y.grid.lineWidth = 1;
+      y.border = y.border || {}; y.border.display = false;
+      y.ticks = y.ticks || {};
+      if(coNhanSo(ch)) y.ticks.display = false;  // co nhan tren cot roi -> bo so truc y
+      else { y.ticks.color = M.chu(); y.ticks.font = { size: 11 }; }
+
+      // --- truc x: bo luoi doc, giu duong day
+      var x = sc.x || (sc.x = {});
+      x.grid = x.grid || {}; x.grid.display = false;
+      x.border = x.border || {}; x.border.color = M.day(); x.border.width = 1;
+      x.ticks = x.ticks || {};
+      x.ticks.color = M.chu();
+      x.ticks.font = Object.assign({}, x.ticks.font, { size: 10 });
+
+      // --- chua tren dinh 14% cho so khong dinh noc (demo dung 1.14)
+      if(y.max == null) y.grace = '14%';
+
+
+      // --- TONG TREN DINH COT cho bieu do cot chong CHUA co nhan so.
+      // Ban demo luon ghi tong tren dinh; "Doanh so theo tuan" cua DB TG dang
+      // khong co nhan nao, ma truc y cung da tat -> nguoi xem KHONG CO THANG DO
+      // NAO ca. Do vua la lech so voi demo, vua la mat thong tin.
+      // > 20 cot thi xoay doc, dung nhu demo (ho xoay -90 khi nhan.length > 20).
+      o.plugins = o.plugins || {};
+      var chongX = !!(sc.x && sc.x.stacked);
+      if(chongX && !coNhanSo(ch)){
+        var soCot = (ch.data.labels || []).length;
+        var nhieu = soCot > 20;
+        var dsCuoi = (ch.data.datasets || []).length - 1;
+        o.plugins.datalabels = {
+          display: function(c){
+            if(c.datasetIndex !== dsCuoi) return false;
+            var t = 0;
+            c.chart.data.datasets.forEach(function(d){ t += (+d.data[c.dataIndex] || 0); });
+            return t > 0;
+          },
+          anchor: 'end', align: 'end', offset: 3,
+          rotation: nhieu ? -90 : 0,
+          color: function(){ return SANG() ? '#14171B' : '#e8edf2'; },
+          font: { weight: 700, size: nhieu ? 9.5 : 12 },
+          formatter: function(v, c){
+            var t = 0;
+            c.chart.data.datasets.forEach(function(d){ t += (+d.data[c.dataIndex] || 0); });
+            if(!t) return '';
+            return Math.round(t).toLocaleString('vi-VN');
+          },
+        };
+      }
+
+      // --- chu giai: o vuong nho bo goc, nam duoi ben trai
+      var lg = o.plugins.legend || (o.plugins.legend = {});
+      if(lg.display !== false){
+        lg.position = 'bottom';
+        lg.align = 'start';
+        lg.labels = Object.assign({}, lg.labels, {
+          boxWidth: 9, boxHeight: 9, borderRadius: 3, useBorderRadius: true,
+          padding: 13, color: M.chu(), font: { size: 12 },
+        });
+      }
+
+      // --- cot: bo goc 2.5, khe 1.5px giua cac mang chong, be ngang 94% o
+      (ch.data.datasets || []).forEach(function(d){
+        if(d.type && d.type !== 'bar') return;
+        if(d.borderRadius == null) d.borderRadius = 2.5;
+        d.borderSkipped = false;
+        if(d.categoryPercentage == null) d.categoryPercentage = 0.94;
+        if(d.barPercentage == null) d.barPercentage = 1;
+        // Khe giua cac mang chong: ve vien mau NEN o canh tren.
+        // Bo kiem bang mau doi 2px giua hai mang lien nhau; demo dung 1.5.
+        var chong = !!(o.scales && o.scales.x && o.scales.x.stacked);
+        if(chong){
+          d.borderColor = M.nen();
+          d.borderWidth = { top: 2, right: 0, bottom: 0, left: 0 };
+        }
+      });
+    }catch(e){ console.warn('dbtg-chart-demo:', e && e.message); }
+  }
+
+  window.Chart.register({
+    id: 'dbtgChartDemo',
+    beforeUpdate: function(ch){ if(!ch.$dmXong){ chinh(ch); ch.$dmXong = true; } },
+  });
+
+  // Bieu do da dung len truoc khi khoi nay chay
+  function quetHet(){
+    try{
+      var ds = window.Chart.instances || {};
+      Object.keys(ds).forEach(function(k){
+        var ch = ds[k];
+        if(ch && !ch.$dmXong){ chinh(ch); ch.$dmXong = true; ch.update('none'); }
+      });
+    }catch(e){}
+  }
+  setTimeout(quetHet, 2500);
+  setTimeout(quetHet, 6000);
+  setTimeout(quetHet, 12000);
+
+  // Doi Sang/Toi thi mau luoi phai doi theo
+  var themeCu = document.documentElement.getAttribute('data-theme');
+  setInterval(function(){
+    var t = document.documentElement.getAttribute('data-theme');
+    if(t === themeCu) return;
+    themeCu = t;
+    try{
+      var ds = window.Chart.instances || {};
+      Object.keys(ds).forEach(function(k){
+        var ch = ds[k]; if(!ch) return;
+        ch.$dmXong = false; chinh(ch); ch.$dmXong = true; ch.update('none');
+      });
+    }catch(e){}
+  }, 1200);
+
+  window.__dmChart = quetHet;
+})();</script>
+
 </html>
