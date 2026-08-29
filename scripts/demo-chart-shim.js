@@ -252,8 +252,13 @@
       });
       if (duong.filter(function (x) { return x != null; }).length < 3) duong = null;
     }
+    /* So tien (hang trieu tro len) phai rut gon, neu khong cac so tren dinh cot
+       de chong len nhau. Nhan ra bang DO LON, khong bang ten cot — ten cot cua
+       DB TG khong nhat quan. */
+    var lonNhat = Math.max.apply(null, tongC.concat([0]));
+    var canRutGon = lonNhat >= 1e6;
     window.DMV.veChong(hop.__ve, nhan, sr, {
-      W: W, H: Hv, duong: duong,
+      W: W, H: Hv, duong: duong, rutGon: canRutGon,
       fx: nhan.length > 20 ? 7 : (nhan.length > 12 ? 9.5 : 11),
       dec: laPT ? 1 : (tongC.some(function (t) { return t > 0 && t < 60; }) ? 1 : 0),
       dv: laPT ? '%' : '',
