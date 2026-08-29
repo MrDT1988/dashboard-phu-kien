@@ -134,8 +134,20 @@
     });
   }
 
+  /* Hop la flex-column. Khi coKhung() ha chieu cao hop xuong, cac the con se
+     bi flex BOP LAI (flex-shrink mac dinh la 1) — SVG thap di, do lai thay
+     "thua" them, lai ha nua: vong lap co dan khong dung. Khoa lai. */
+  function khoaCo() {
+    if (document.getElementById('dmv-khoa-co')) return;
+    var st = document.createElement('style');
+    st.id = 'dmv-khoa-co';
+    st.textContent = '.dmv-hop>*{flex:0 0 auto}';
+    (document.head || document.documentElement).appendChild(st);
+  }
+
   /* ---- hop chua lop SVG, dat de len tren canvas ------------------------- */
   function hopCua(ch) {
+    khoaCo();
     var c = ch.canvas;
     if (c.__dmvHop && c.__dmvHop.isConnected) return c.__dmvHop;
     var cha = c.parentNode;
@@ -333,11 +345,13 @@
       if (ds.length >= 2) {
         boHaiVong(hop);
         veTiTrong(hop, ch, nhan, ds, Hv, de.opt);
+        coKhung(ch, hop);
         return;
       }
     } else if (de && de.kieu === 'veDuong') {
       boHaiVong(hop);
       veDuongTu(hop, ch, nhan, ds, W, Hv, de);
+      coKhung(ch, hop);
       return;
     }
 
@@ -370,6 +384,7 @@
           mau: mau, ten: 'Doanh thu', dec: dec, dv: dvT ? ' ' + dvT.split(' ')[0] : '', dvTong: dvT,
         });
         chuThich(hop, data.map(function (x) { return x[0]; }), mau);
+        coKhung(ch, hop);
         return;
       }
       boHaiVong(hop);
@@ -523,12 +538,26 @@
   function doCoKhung(ch, hop) {
     var c = ch.canvas;
     try {
-      var svg = hop.__ve && hop.__ve.querySelector('svg');
-      if (!svg) return;
-      var caoVe = svg.getBoundingClientRect().height;
+      /* Do theo DAY THAT SU cua noi dung trong hop, khong cong don tung manh.
+         Ly do: cho hai vong (A7) hai SVG nam CANH nhau trong hai the con —
+         cong lai thi ra gap doi, va truoc day chi tim svg con truc tiep cua
+         __ve nen khong thay gi ca, khung khong bao gio co. Do bang toa do day
+         so voi dinh hop thi moi bo cuc deu dung. */
+      var svgs = hop.querySelectorAll('svg');
+      if (!svgs.length) return;
+      var dinh = hop.getBoundingClientRect().top;
+      var day = 0;
+      for (var i = 0; i < svgs.length; i++) {
+        var r = svgs[i].getBoundingClientRect();
+        if (r.height) day = Math.max(day, r.bottom - dinh);
+      }
+      if (day <= 0) return;
       var lg = hop.__lg;
-      if (lg && lg.offsetHeight) caoVe += lg.offsetHeight + 10;
-      caoVe = Math.ceil(caoVe) + 8;
+      if (lg && lg.offsetHeight) {
+        var rl = lg.getBoundingClientRect();
+        day = Math.max(day, rl.bottom - dinh);
+      }
+      var caoVe = Math.ceil(day) + 8;
       var thua = c.offsetHeight - caoVe;
       /* Chi co khi thua NHIEU (> 40px). Thua vai chuc pixel la khoang tho binh
          thuong cua the, co lai chi lam moi thu chat chua. */
