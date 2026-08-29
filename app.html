@@ -3337,4 +3337,137 @@ $('#pin-in').addEventListener('input',function(){
 })();
 </script>
 </body>
+
+<script id="app-4tab">
+(function(){
+'use strict';
+var KEY='app-4tab';
+function tat(){try{return localStorage.getItem(KEY)==='off'}catch(e){return false}}
+
+/* ---------- A. Mo bieu do du nam ---------- */
+var daBoc=false;
+function bocDuNam(){
+ if(daBoc||!window.monthsIn||!window.quartersIn||!window.weeksIn)return;
+ var _m=window.monthsIn,_q=window.quartersIn,_w=window.weeksIn;
+ function moc(){var y=new Date().getFullYear(),r=[],d=0,i;
+  for(i=0;i<12;i++){var n=new Date(y,i+1,0).getDate();r.push([d+1,d+n]);d+=n;}return r;}
+ window.monthsIn=function(){
+  if(tat())return _m.apply(this,arguments);
+  var g=_m.apply(this,arguments)||[],M=moc(),out=g.slice(),i;
+  for(i=g.length;i<12;i++)out.push({a:M[i][0],b:M[i][1],label:'T'+(i+1)});
+  return out;};
+ window.quartersIn=function(){
+  if(tat())return _q.apply(this,arguments);
+  var g=_q.apply(this,arguments)||[],M=moc(),out=g.slice(),i;
+  var mq=[[M[0][0],M[2][1]],[M[3][0],M[5][1]],[M[6][0],M[8][1]],[M[9][0],M[11][1]]];
+  for(i=g.length;i<4;i++)out.push({a:mq[i][0],b:mq[i][1],label:'Q'+(i+1)});
+  return out;};
+ window.weeksIn=function(a,b){
+  if(!tat()&&typeof a==='number'&&typeof b==='number'&&a<=1&&b>=150)return _w(1,365);
+  return _w.apply(this,arguments);};
+ daBoc=true;
+}
+
+/* ---------- B. Bo cuc 4 tab ---------- */
+function q(id){return document.getElementById(id)}
+function xepTab(){
+ var over=q('v-over'); if(!over)return false;
+ if(over.getAttribute('data-4tab'))return true;
+ if(over.children.length<12)return false;
+ var main=over.parentElement, nav=document.querySelector('nav'); if(!main||!nav)return false;
+ var find=q('v-find'), canh=q('v-alert'), rank=q('v-rank'), ton=q('v-ton');
+ if(!find||!canh)return false;
+
+ var month=q('v-month');
+ if(!month){month=document.createElement('section');month.id='v-month';month.hidden=true;main.insertBefore(month,canh);}
+
+ var bOver=nav.querySelector('button[data-v="over"]');
+ var bMonth=nav.querySelector('button[data-v="month"]');
+ if(!bMonth&&bOver){
+  bMonth=bOver.cloneNode(true);
+  bMonth.setAttribute('data-v','month'); bMonth.className='';
+  bMonth.removeAttribute('id'); bMonth.removeAttribute('hidden');
+  bMonth.innerHTML=bOver.innerHTML.replace('Tổng quan','Chi tiết tháng').replace('📊','📅');
+  nav.insertBefore(bMonth,bOver.nextSibling);
+ }
+
+ var c=[].slice.call(over.children);
+ [0,1,3,8,9,10].forEach(function(i){if(c[i])month.appendChild(c[i])});
+ [6,4,2,7].forEach(function(i){if(c[i])over.appendChild(c[i])});
+ if(c[5])find.appendChild(c[5]);
+ if(c[11])canh.appendChild(c[11]);
+ if(rank)[].slice.call(rank.children).forEach(function(e){over.appendChild(e)});
+ if(ton)[].slice.call(ton.children).forEach(function(e){canh.appendChild(e)});
+
+ ['rank','ton'].forEach(function(v){var b=nav.querySelector('button[data-v="'+v+'"]'); if(b)b.hidden=true;});
+ if(bOver&&bOver.innerHTML.indexOf('Overview 2026')<0)
+  bOver.innerHTML=bOver.innerHTML.replace('Tổng quan','Overview 2026');
+ var bShop=nav.querySelector('button[data-v="find"]'), bCanh=nav.querySelector('button[data-v="alert"]');
+ if(bShop&&bCanh)nav.insertBefore(bShop,bCanh);
+
+ [].slice.call(document.querySelectorAll('#v-over p,#v-over .sub')).forEach(function(e){
+  if(/\d+\s*shop doanh thu cao nh/i.test(e.textContent||''))
+   e.textContent='Các shop anh/chị phụ trách, xếp theo doanh thu tháng này.';
+ });
+
+ over.setAttribute('data-4tab','1');
+ return true;
+}
+
+/* ---------- C. Chuyen tab ---------- */
+var daGan=false;
+function ganTab(){
+ if(daGan)return; var nav=document.querySelector('nav'); if(!nav)return;
+ nav.addEventListener('click',function(e){
+  var b=e.target&&e.target.closest?e.target.closest('button[data-v]'):null; if(!b)return;
+  setTimeout(function(){
+   try{
+    var mp=q('v-month'); if(!mp)return;
+    var v=b.getAttribute('data-v');
+    if(v==='month'){
+     ['v-over','v-alert','v-find','v-rank','v-ton'].forEach(function(id){var e2=q(id); if(e2)e2.hidden=true;});
+     mp.hidden=false;
+     [].slice.call(nav.querySelectorAll('button[data-v]')).forEach(function(x){
+      if(x===b)x.classList.add('on'); else x.classList.remove('on');});
+    }else{ mp.hidden=true; }
+    window.scrollTo(0,0);
+   }catch(err){}
+  },0);
+ },false);
+ daGan=true;
+}
+
+
+/* ---------- D. Cong tac ---------- */
+window.__app4tabTat=function(){try{localStorage.setItem(KEY,'off')}catch(e){} location.reload(); return 'da tat, dang tai lai';};
+window.__app4tabBat=function(){try{localStorage.removeItem(KEY)}catch(e){} location.reload(); return 'da bat, dang tai lai';};
+
+/* ---------- E. Vong chay ---------- */
+var dem=0;
+function chay(){
+ if(tat())return true;
+ try{ bocDuNam(); }catch(e){}
+ var ok=false;
+ try{ ok=xepTab(); }catch(e){}
+ try{ if(ok)ganTab(); }catch(e){}
+ if(ok){ try{ if(window.renderOver)window.renderOver(); }catch(e){} }
+ return ok;
+}
+var iv=setInterval(function(){
+ dem++;
+ var xong=false; try{xong=chay()}catch(e){}
+ if(xong||dem>60)clearInterval(iv);
+},1000);
+setInterval(function(){
+ try{
+  if(tat())return;
+  var over=q('v-over');
+  if(over&&!over.getAttribute('data-4tab')&&over.children.length>=12)chay();
+ }catch(e){}
+},3000);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(chay,400)});
+setTimeout(chay,800);
+})();
+</script>
+
 </html>
