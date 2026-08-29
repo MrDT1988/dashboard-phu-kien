@@ -4087,6 +4087,18 @@ function phan2(sh){
    lg.appendChild(el('span','','<i style="width:9px;height:9px;border-radius:3px;background:'+s.mau[i]+';display:inline-block;margin-right:5px"></i>'+t));
   });
   noi.appendChild(lg);
+  var dv=(che.p2==='dg')?'':'%';
+  var w2=el('div'); w2.style.cssText='overflow-x:auto;margin-top:11px';
+  var hh='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;padding:7px 8px;white-space:nowrap;position:sticky;left:0;z-index:3;background:#141b24;box-shadow:1px 0 0 rgba(255,255,255,.10)">Hãng</th>';
+  for(var ii=0;ii<12;ii++)hh+='<th style="text-align:right;padding:7px 8px;white-space:nowrap">T'+(ii+1)+'</th>';
+  hh+='</tr></thead><tbody>';
+  s.ten.forEach(function(tn,kk){
+   hh+='<tr><td style="text-align:left;padding:7px 8px;font-weight:700;white-space:nowrap;position:sticky;left:0;z-index:2;background:#141b24;box-shadow:1px 0 0 rgba(255,255,255,.10)"><i style="width:8px;height:8px;border-radius:2px;background:'+s.mau[kk]+';display:inline-block;margin-right:6px"></i>'+tn+'</td>';
+   for(var jj=0;jj<12;jj++){var vv=s.duong[kk][jj];
+    hh+='<td style="text-align:right;padding:7px 8px;font-variant-numeric:tabular-nums">'+(vv===null||vv===undefined?'—':n1(vv)+dv)+'</td>';}
+   hh+='</tr>';
+  });
+  hh+='</tbody></table>'; w2.innerHTML=hh; noi.appendChild(w2);
  }
  var idx2={u:0,r:1,pk:2,dg:3}[che.p2]||0;
  c.appendChild(tabBar(['Doanh số','Doanh thu','PK 10–20M','Đơn giá'],idx2,function(i){
@@ -4189,7 +4201,7 @@ function phan5(sh){
 function lamMoi(){
  try{ dung(true); }catch(e){}
 }
-function dung(épLai){
+function dung(epLai){
  if(tat())return false;
  var sheet=document.getElementById('sheet');
  if(!sheet||!sheet.classList.contains('on'))return false;
@@ -4197,7 +4209,7 @@ function dung(épLai){
  if(!body)return false;
  var sh=timShop(); if(!sh)return false;
  var cu=document.getElementById('shop5');
- if(cu&&!épLai)return true;
+ if(cu&&!epLai)return true;
  if(cu)cu.remove();
  var w=el('div'); w.id='shop5';
  w.appendChild(phan1(sh));
@@ -4205,21 +4217,11 @@ function dung(épLai){
  w.appendChild(phan3(sh));
  w.appendChild(phan4(sh));
  w.appendChild(phan5(sh));
- var gap=document.getElementById('shop5-cu');
- if(!gap){
-  gap=el('details'); gap.id='shop5-cu';
-  gap.style.cssText='margin:6px 0 18px';
-  var s=el('summary','','Xem thêm các khối chi tiết cũ');
-  s.style.cssText='cursor:pointer;font-size:12.5px;font-weight:600;opacity:.75;padding:9px 0';
-  gap.appendChild(s);
-  var hop=el('div'); hop.id='shop5-hop';
-  gap.appendChild(hop);
-  [].slice.call(body.children).forEach(function(e){
-   if(e.id==='shop5'||e.id==='shop5-cu')return;
-   hop.appendChild(e);
-  });
-  body.appendChild(gap);
- }
+ [].slice.call(body.children).forEach(function(e){
+  if(e.id==='shop5')return;
+  if(!e.getAttribute('data-cu5')){e.setAttribute('data-cu5','1'); e.setAttribute('data-ds', e.style.display||'');}
+  e.style.display='none';
+ });
  body.insertBefore(w,body.firstChild);
  return true;
 }
@@ -4243,19 +4245,20 @@ setInterval(function(){
   if(!sheet)return;
   if(!sheet.classList.contains('on')){
    var w=document.getElementById('shop5'); if(w)w.remove();
-   var g=document.getElementById('shop5-cu');
-   if(g){
-    var hop=document.getElementById('shop5-hop');
-    var body=sheet.children[sheet.children.length-1];
-    if(hop&&body){[].slice.call(hop.children).forEach(function(x){body.appendChild(x)});}
-    g.remove();
-   }
+   [].slice.call(document.querySelectorAll('[data-cu5]')).forEach(function(e){
+    e.style.display=e.getAttribute('data-ds')||'';
+    e.removeAttribute('data-cu5'); e.removeAttribute('data-ds');
+   });
    return;
   }
   if(!document.getElementById('shop5'))dung(false);
  }catch(e){}
-},700);
+},1500);
 })();
 </script>
 
+<style id="app-css2">
+#tv-mkt-thang table th:first-child,#tv-mkt-thang table td:first-child,#shop5 table th:first-child,#shop5 table td:first-child{position:sticky;left:0;z-index:2;background:#141b24;box-shadow:1px 0 0 rgba(255,255,255,.10)}
+#tv-mkt-thang table th:first-child,#shop5 table th:first-child{z-index:3}
+</style>
 </html>
