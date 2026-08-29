@@ -14746,6 +14746,16 @@ window.__dbtgSetTheme=setTheme;})();</script>
      Khong dung datalabels duoc: moi dataset chi mot cau hinh, ma cac mang da
      dung datalabels de ghi so BEN TRONG roi. Nen ve them mot lop chu rieng.
      Ton trong viec an/hien series bang chu giai (meta.hidden). */
+  /* Rut gon so y NHU app dang lam voi tung mang (ham fmtVND ben trong trang).
+     Do 29/08: ghi thang so dong tho -> "29.520.000.000" dai qua, cac tong de len
+     nhau, khong doc duoc gi. Bieu do doanh so (~7.484) thi giu nguyen so. */
+  function rutGon(v){
+    var a = Math.abs(v);
+    if(a >= 1e9) return (v/1e9).toLocaleString('vi-VN', { maximumFractionDigits:1 }) + 'B';
+    if(a >= 1e6) return (v/1e6).toLocaleString('vi-VN', { maximumFractionDigits:1 }) + 'M';
+    return Math.round(v).toLocaleString('vi-VN');
+  }
+
   var pluginTong = {
     id: 'dbtgTongCot',
     afterDatasetsDraw: function(ch){
@@ -14771,7 +14781,7 @@ window.__dbtgSetTheme=setTheme;})();</script>
           if(!t) continue;
           var x = tyX.getPixelForValue(i);
           var y = tyY.getPixelForValue(t) - 6;
-          var chu = Math.round(t).toLocaleString('vi-VN');
+          var chu = rutGon(t);
           if(nhieu){
             g.save(); g.translate(x, y); g.rotate(-Math.PI/2);
             g.textAlign = 'left'; g.textBaseline = 'middle';
