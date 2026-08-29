@@ -14285,4 +14285,252 @@ window.__dbtgSetTheme=setTheme;})();</script>
 [data-theme="light"] [style*="#c3cbd6" i]{ color:#59636F !important; }   /* xam nhat -> xam doc duoc */
 </style>
 
+
+<style id="dbtg-demo-css">
+/* ================================================================================
+   GIAO DIEN THEO BAN DEMO DA CHOT — 29/08
+   Bo cuc ap cho ca hai che do; mau chi ap cho che do sang.
+   ============================================================================== */
+:root{
+  --dm-line:#E4E8EC; --dm-line2:#EFF2F5; --dm-card2:#FAFBFC;
+  --dm-ink:#14171B; --dm-sub:#59636F; --dm-mut:#69727E;
+  --dm-brand:#006B33; --dm-bsoft:#E8F3EC; --dm-bline:#BEDCCB;
+  --dm-pos:#0C6231; --dm-psoft:#E8F4EC; --dm-neg:#C62828; --dm-nsoft:#FBEAEA;
+  --dm-sh:0 1px 2px rgba(16,24,40,.04);
+  --dm-sh2:0 4px 14px rgba(16,24,40,.07);
+}
+
+/* ---- khung trang ------------------------------------------------------------ */
+.dashboard-container{ max-width:1240px; margin:0 auto; padding:14px 20px 60px; }
+
+/* ---- thanh dau trang: bo hop xanh, chuyen sang kieu demo -------------------- */
+[data-theme="light"] .dashboard-header{
+  background:none !important; background-image:none !important;
+  border:0 !important; box-shadow:none !important;
+  padding:0 !important; margin-bottom:12px !important;
+}
+[data-theme="light"] .dashboard-header h1{
+  color:var(--dm-ink) !important; font-size:22px; font-weight:800; letter-spacing:-.02em;
+}
+[data-theme="light"] .dashboard-header p{
+  color:var(--dm-sub) !important; font-size:12.5px; margin-top:3px;
+}
+[data-theme="light"] .dashboard-header .badge{
+  background:var(--dm-bsoft) !important; color:var(--dm-brand) !important;
+  border:1px solid var(--dm-bline) !important; box-shadow:none !important;
+  font-size:11.5px; font-weight:700; border-radius:999px; padding:3px 10px;
+}
+[data-theme="light"] .dashboard-header details,
+[data-theme="light"] .dashboard-header summary{ color:var(--dm-mut) !important; }
+
+/* ---- tab: vien thuoc thay cho nut to ca hang -------------------------------- */
+.db-tg-tabnav{
+  display:flex; gap:6px; flex-wrap:wrap;
+  padding:6px 0 10px; margin-bottom:12px; border-bottom:1px solid var(--dm-line);
+}
+.db-tg-tabnav .db-tg-tab{
+  flex:0 0 auto !important; width:auto !important;
+  padding:8px 15px; border-radius:10px; font-size:13px; font-weight:600;
+  display:inline-flex; align-items:center; gap:7px;
+}
+[data-theme="light"] .db-tg-tabnav .db-tg-tab{
+  background:#FFFFFF !important; border:1px solid var(--dm-line) !important;
+  color:var(--dm-sub) !important; box-shadow:var(--dm-sh) !important;
+}
+[data-theme="light"] .db-tg-tabnav .db-tg-tab.active{
+  background:var(--dm-bsoft) !important; border-color:var(--dm-bline) !important;
+  color:var(--dm-brand) !important;
+}
+[data-theme="light"] .db-tg-tabnav #export-html-btn{
+  background:#FFFFFF !important; border:1px solid var(--dm-line) !important;
+  color:var(--dm-sub) !important; margin-left:auto;
+}
+
+/* ---- the KPI ---------------------------------------------------------------- */
+.kpi-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
+@media(max-width:900px){ .kpi-row{ grid-template-columns:repeat(2,1fr); } }
+.kpi-card{ border-radius:14px; padding:15px 16px 12px; display:flex; flex-direction:column; }
+[data-theme="light"] .kpi-card{
+  background:#FFFFFF !important; border:1px solid var(--dm-line) !important;
+  box-shadow:var(--dm-sh) !important;
+}
+[data-theme="light"] .kpi-card:hover{ box-shadow:var(--dm-sh2) !important; }
+.kpi-card .kpi-label{
+  font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+}
+[data-theme="light"] .kpi-card .kpi-label{ color:var(--dm-sub) !important; }
+.kpi-card .kpi-value{
+  font-size:27px; font-weight:700; letter-spacing:-.025em; line-height:1.1; margin-top:8px;
+}
+[data-theme="light"] .kpi-card .kpi-value{ color:var(--dm-ink) !important; }
+.kpi-card .kpi-period{ font-size:11.5px; margin-top:6px; }
+[data-theme="light"] .kpi-card .kpi-period{ color:var(--dm-mut) !important; }
+
+/* Dong MoM: tu hop to mau thanh mot dong nho, gon — dung tinh than .prev cua demo */
+.kpi-card .kpi-mom{
+  font-size:11.5px; font-weight:600; margin-top:5px;
+  padding:0 !important; border:0 !important; border-radius:0 !important;
+}
+[data-theme="light"] .kpi-card .kpi-mom{ background:none !important; }
+
+/* Dong theo kenh: gach ngang nhat o tren, so day sang phai */
+.kpi-card .kpi-channels{
+  margin-top:10px; padding-top:9px; border-top:1px solid var(--dm-line2);
+  display:flex; flex-direction:column; gap:5px; font-size:12px;
+}
+.kpi-card .kpi-ch-row{ display:flex; align-items:center; gap:7px; }
+.kpi-card .kpi-ch-row .kpi-ch-name{ min-width:34px; }
+[data-theme="light"] .kpi-card .kpi-channels{ color:var(--dm-sub) !important; }
+
+/* Chip tang/giam do bo tang cuong chen vao (xem khoi <script> ben duoi) */
+.dm-pill{
+  display:inline-flex; align-items:center; gap:3px;
+  font-size:11.5px; font-weight:600; padding:2px 7px; border-radius:999px;
+  line-height:1.5; white-space:nowrap; font-variant-numeric:tabular-nums;
+  margin-left:8px; vertical-align:middle;
+}
+.dm-pill.up{ color:var(--dm-pos); background:var(--dm-psoft); }
+.dm-pill.dn{ color:var(--dm-neg); background:var(--dm-nsoft); }
+[data-theme="dark"] .dm-pill.up{ color:#2ee673; background:rgba(46,230,115,.14); }
+[data-theme="dark"] .dm-pill.dn{ color:#ff8fa3; background:rgba(255,143,163,.14); }
+
+/* ---- the bieu do / bang ----------------------------------------------------- */
+.chart-container, section.table-section{ border-radius:14px; margin-bottom:12px; }
+[data-theme="light"] .chart-container,
+[data-theme="light"] section.table-section{
+  background:#FFFFFF !important; border:1px solid var(--dm-line) !important;
+  box-shadow:var(--dm-sh) !important;
+}
+.chart-container h3, section.table-section h3{
+  font-size:14.5px; font-weight:700; letter-spacing:-.01em;
+}
+[data-theme="light"] .chart-container h3,
+[data-theme="light"] section.table-section h3{ color:var(--dm-ink) !important; }
+.chart-sub{ font-size:12px; margin-top:4px; line-height:1.5; }
+[data-theme="light"] .chart-sub{ color:var(--dm-mut) !important; }
+
+/* ---- bo loc ----------------------------------------------------------------- */
+.filter-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.filter-bar label{ font-size:12px; font-weight:600; }
+[data-theme="light"] .filter-bar label{ color:var(--dm-sub) !important; }
+[data-theme="light"] .filter-bar select,
+[data-theme="light"] .filter-bar .multiselect,
+[data-theme="light"] .filter-bar .reset-btn,
+[data-theme="light"] .filter-bar input{
+  background:#FFFFFF !important; border:1px solid var(--dm-line) !important;
+  color:var(--dm-ink) !important; border-radius:9px !important;
+  box-shadow:var(--dm-sh) !important; font-size:12.5px;
+}
+
+/* ---- tieu de muc ------------------------------------------------------------ */
+[data-theme="light"] .db-tg-panel > h2{
+  color:var(--dm-ink) !important; font-size:16px; font-weight:800;
+  margin:22px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--dm-line);
+}
+
+/* ---- bang ------------------------------------------------------------------- */
+[data-theme="light"] table{ font-variant-numeric:tabular-nums; }
+[data-theme="light"] .table-scroll{ background:transparent !important; }
+</style>
+
+
+<script id="dbtg-demo-js">(function(){'use strict';
+  var MAU_KENH = { MWG:'#006B33', IND:'#2E7CB8', KA:'#C98A2E' };
+
+  /* Tach con so phan tram dau tien trong mot cau.
+     Vi du "MoM +12.5% · cung ky 23 ngay dau T7/2026: 32 may" -> {so:'+12,5%', len:true} */
+  function tachPhanTram(t){
+    var m = String(t||'').match(/([+−-]?\s?\d+[.,]?\d*)\s?%/);
+    if(!m) return null;
+    var thoSo = m[1].replace(/\s/g,'');
+    var len = thoSo.indexOf('-')<0 && thoSo.indexOf('−')<0;
+    // 0% thi khong len khong xuong -> van hien nhung mau trung tinh
+    var so = parseFloat(thoSo.replace(',','.').replace('−','-'));
+    return { chu: thoSo.replace('.',',') + '%', len: len, khong: so === 0, cat: m.index };
+  }
+
+  function veChip(the){
+    if(the.getAttribute('data-dm-chip') === '1') return;
+    var mom = the.querySelector('.kpi-mom');
+    var giaTri = the.querySelector('.kpi-value');
+    if(!mom || !giaTri) return;
+    var t = (mom.textContent||'').trim();
+    if(!t || t === '-') return;
+    var p = tachPhanTram(t);
+    if(!p) { the.setAttribute('data-dm-chip','1'); return; }
+
+    // Chip dat canh con so lon
+    var cu = giaTri.parentElement.querySelector('.dm-pill');
+    if(cu) cu.remove();
+    var chip = document.createElement('span');
+    chip.className = 'dm-pill ' + (p.khong ? '' : (p.len ? 'up' : 'dn'));
+    chip.textContent = (p.khong ? '' : (p.len ? '▲ ' : '▼ ')) + p.chu;
+    giaTri.appendChild(chip);
+
+    // Dong MoM: bo doan phan tram dau (chip da mang roi), giu phan so sanh
+    var conLai = t.replace(/^\s*MoM\s*/i,'').replace(/^[+−-]?\s?\d+[.,]?\d*\s?%\s*[··,-]?\s*/,'');
+    if(conLai && conLai !== t) mom.textContent = conLai;
+    the.setAttribute('data-dm-chip','1');
+  }
+
+  function veChamKenh(the){
+    the.querySelectorAll('.kpi-ch-name').forEach(function(o){
+      if(o.getAttribute('data-dm-dot') === '1') return;
+      var ten = (o.textContent||'').trim().toUpperCase();
+      var mau = MAU_KENH[ten];
+      if(!mau) { o.setAttribute('data-dm-dot','1'); return; }
+      var d = document.createElement('span');
+      d.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;'
+        + 'background:' + mau + ';margin-right:7px;vertical-align:middle;flex:0 0 auto';
+      o.insertBefore(d, o.firstChild);
+      o.setAttribute('data-dm-dot','1');
+    });
+  }
+
+  function quet(){
+    try{
+      document.querySelectorAll('.kpi-card').forEach(function(the){
+        veChip(the); veChamKenh(the);
+      });
+    }catch(e){ console.warn('dbtg-demo-js:', e && e.message); }
+  }
+
+  /* App dung lai the KPI moi lan doi bo loc -> phai ve lai.
+     Danh dau bi xoa theo phan tu cu nen khong lo ve chong. */
+  function xoaDau(){
+    document.querySelectorAll('[data-dm-chip]').forEach(function(e){ e.removeAttribute('data-dm-chip'); });
+  }
+
+  function batDau(){
+    quet();
+    var hang = document.querySelector('.kpi-row');
+    if(hang && window.MutationObserver){
+      var doi = false;
+      new MutationObserver(function(){
+        if(doi) return; doi = true;
+        setTimeout(function(){ doi = false; xoaDau(); quet(); }, 120);
+      }).observe(hang, { childList:true, subtree:true, characterData:true });
+    }
+    /* Bieu do: chi chinh luoi va chu cho nhat di nhu ban demo.
+       KHONG dong vao MAU — bo doi mau cua khung giao dien lo phan do va no
+       chay lai moi 2 giay, dat mau o day la hai ben danh nhau. */
+    try{
+      if(window.Chart && window.Chart.defaults){
+        var d = window.Chart.defaults;
+        d.font = d.font || {};
+        d.font.family = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+        d.font.size = 11.5;
+        if(d.scale && d.scale.grid){ d.scale.grid.drawBorder = false; }
+      }
+    }catch(e){}
+  }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', batDau);
+  else batDau();
+  // Goi lai mot lan sau khi so lieu ve xong (goi ma hoa mo trong ~0,1s, ve ~1s)
+  setTimeout(quet, 2500);
+  setTimeout(function(){ xoaDau(); quet(); }, 6000);
+  window.__dmQuet = quet;
+})();</script>
+
 </html>
