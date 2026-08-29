@@ -3483,4 +3483,145 @@ setTimeout(chay,800);
 })();
 </script>
 
+
+<script id="app-tq2">
+(function(){
+'use strict';
+var KEY='app-tq2';
+function tat(){try{return localStorage.getItem(KEY)==='off'}catch(e){return false}}
+function q(i){return document.getElementById(i)}
+
+/* --- 1. Bieu do tuan du 53 --- */
+var dabk=false;
+function bocTuan(){
+ if(dabk||!window.bucketsOf)return;
+ var _bk=window.bucketsOf;
+ window.bucketsOf=function(t){
+  var g=_bk.apply(this,arguments);
+  if(!tat()&&t==='W'&&window.weeksIn){
+   try{var w=window.weeksIn(1,365); if(w&&w.length>g.length)return w;}catch(e){}
+  }
+  return g;
+ };
+ dabk=true;
+}
+
+/* --- 2. Hien so tren moi cot --- */
+function themSo(el,vals,opt){
+ if(tat()||!el||!vals||!vals.length)return 0;
+ var svg=(el.tagName&&el.tagName.toLowerCase()==='svg')?el:el.querySelector('svg');
+ if(!svg)return 0;
+ [].slice.call(svg.querySelectorAll('.dbtg-so')).forEach(function(e){e.remove()});
+ var rect=[].slice.call(svg.querySelectorAll('rect[data-i]'));
+ if(!rect.length)rect=[].slice.call(svg.querySelectorAll('rect'));
+ if(rect.length!==vals.length)return 0;
+ var fmt=(opt&&typeof opt.fmt==='function')?opt.fmt:function(v){return v};
+ var co=Math.max(6,Math.min(10.5,360/rect.length));
+ var NS='http://www.w3.org/2000/svg',n=0;
+ rect.forEach(function(r,i){
+  var v=vals[i]; if(!v)return;
+  var x=parseFloat(r.getAttribute('x'))+parseFloat(r.getAttribute('width'))/2;
+  var y=parseFloat(r.getAttribute('y'));
+  if(!isFinite(x)||!isFinite(y))return;
+  var t=document.createElementNS(NS,'text');
+  t.setAttribute('class','dbtg-so');
+  t.setAttribute('x',x.toFixed(1)); t.setAttribute('y',Math.max(7,y-2.5).toFixed(1));
+  t.setAttribute('text-anchor','middle');
+  t.setAttribute('font-size',co.toFixed(1));
+  t.setAttribute('font-weight','700');
+  t.setAttribute('fill','currentColor');
+  t.textContent=String(fmt(v));
+  svg.appendChild(t); n++;
+ });
+ return n;
+}
+var dabar=false;
+function bocBar(){
+ if(dabar||!window.drawBars)return;
+ var _b=window.drawBars;
+ window.drawBars=function(el,nhan,vals,opt){
+  var r=_b.apply(this,arguments);
+  try{var v=(vals||[]).slice(),o=opt; setTimeout(function(){try{themSo(el,v,o)}catch(e){}},80);}catch(e){}
+  return r;
+ };
+ dabar=true;
+}
+
+/* --- 3. Sua khoi trong Overview --- */
+function timCard(over,re){
+ var kq=null;
+ [].slice.call(over.children).forEach(function(c){
+  var h=c.querySelector('h2,h3');
+  if(h&&re.test(h.textContent||''))kq=c;
+ });
+ return kq;
+}
+function xepOverview(){
+ if(tat())return true;
+ var over=q('v-over'); if(!over)return false;
+ if(over.children.length<4)return false;
+
+ var c0=over.children[0], h0=c0?c0.querySelector('h2,h3'):null;
+ if(h0&&h0.textContent.trim()==='Doanh số')h0.textContent='Doanh số & doanh thu 2026';
+
+ var xh=timCard(over,/Xếp hạng Sale/i);
+ if(xh&&!xh.hidden){xh.hidden=true;xh.setAttribute('data-an','1');}
+
+ var ts=timCard(over,/^\s*Top shop\s*$/i);
+ if(ts){var h=ts.querySelector('h2,h3'); if(h)h.textContent='Chi tiết shop'; ts.setAttribute('data-ctshop','1');}
+ var ct=ts||over.querySelector('[data-ctshop]');
+ if(ct&&!ct.getAttribute('data-ganbam')){
+  ct.addEventListener('click',function(e){
+   try{
+    var b=e.target&&e.target.closest?e.target.closest('[data-shop]'):null; if(!b)return;
+    var ten=b.getAttribute('data-shop'); var f=q('v-find'); if(!f)return;
+    var moc=null;
+    [].slice.call(f.querySelectorAll('[data-shop]')).forEach(function(x){
+     if(x.getAttribute('data-shop')===ten)moc=x;});
+    if(moc){e.preventDefault();e.stopPropagation();moc.click();}
+   }catch(err){}
+  },true);
+  ct.setAttribute('data-ganbam','1');
+ }
+
+ [].slice.call(over.querySelectorAll('p,.sub')).forEach(function(e){
+  var t=e.textContent||'';
+  if(/\d+\s*tuần gần nhất/i.test(t))
+   e.textContent=t.replace(/\d+\s*tuần gần nhất\./i,'Đủ 53 tuần trong năm.');
+  if(/\d+\s*shop doanh thu cao nh/i.test(t))
+   e.textContent='Các shop anh/chị phụ trách — bấm vào một shop để xem chi tiết đầy đủ.';
+ });
+ return true;
+}
+
+/* --- 4. Cong tac + vong chay --- */
+window.__appTq2Tat=function(){try{localStorage.setItem(KEY,'off')}catch(e){} location.reload(); return 'da tat';};
+window.__appTq2Bat=function(){try{localStorage.removeItem(KEY)}catch(e){} location.reload(); return 'da bat';};
+
+function chay(){
+ if(tat())return true;
+ try{bocTuan()}catch(e){}
+ try{bocBar()}catch(e){}
+ var ok=false;
+ try{ok=xepOverview()}catch(e){}
+ if(ok){try{if(window.renderOver)window.renderOver()}catch(e){}}
+ return ok;
+}
+var dem=0,iv=setInterval(function(){
+ dem++; var xong=false; try{xong=chay()}catch(e){}
+ if(xong||dem>60)clearInterval(iv);
+},1000);
+setInterval(function(){
+ try{
+  if(tat())return;
+  var over=q('v-over'); if(!over)return;
+  var h0=over.children[0]?over.children[0].querySelector('h2,h3'):null;
+  if(h0&&h0.textContent.trim()==='Doanh số')chay();
+ }catch(e){}
+},3000);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(chay,500)});
+setTimeout(chay,900);
+})();
+</script>
+
 </html>
