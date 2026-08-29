@@ -3362,9 +3362,7 @@ function bocDuNam(){
   var mq=[[M[0][0],M[2][1]],[M[3][0],M[5][1]],[M[6][0],M[8][1]],[M[9][0],M[11][1]]];
   for(i=g.length;i<4;i++)out.push({a:mq[i][0],b:mq[i][1],label:'Q'+(i+1)});
   return out;};
- window.weeksIn=function(a,b){
-  if(!tat()&&typeof a==='number'&&typeof b==='number'&&a<=1&&b>=150)return _w(1,365);
-  return _w.apply(this,arguments);};
+ /* weeksIn giu nguyen ban goc */
  daBoc=true;
 }
 
@@ -3492,19 +3490,8 @@ function tat(){try{return localStorage.getItem(KEY)==='off'}catch(e){return fals
 function q(i){return document.getElementById(i)}
 
 /* --- 1. Bieu do tuan du 53 --- */
-var dabk=false;
-function bocTuan(){
- if(dabk||!window.bucketsOf)return;
- var _bk=window.bucketsOf;
- window.bucketsOf=function(t){
-  var g=_bk.apply(this,arguments);
-  if(!tat()&&t==='W'&&window.weeksIn){
-   try{var w=window.weeksIn(1,365); if(w&&w.length>g.length)return w;}catch(e){}
-  }
-  return g;
- };
- dabk=true;
-}
+function bocTuan(){}
+
 
 /* --- 2. Hien so tren moi cot --- */
 function themSo(el,vals,opt){
@@ -3586,8 +3573,6 @@ function xepOverview(){
 
  [].slice.call(over.querySelectorAll('p,.sub')).forEach(function(e){
   var t=e.textContent||'';
-  if(/\d+\s*tuần gần nhất/i.test(t))
-   e.textContent=t.replace(/\d+\s*tuần gần nhất\./i,'Đủ 53 tuần trong năm.');
   if(/\d+\s*shop doanh thu cao nh/i.test(t))
    e.textContent='Các shop anh/chị phụ trách — bấm vào một shop để xem chi tiết đầy đủ.';
  });
@@ -3821,8 +3806,6 @@ function suaChuThich(){
  var over=q('v-over'); if(!over)return;
  [].slice.call(over.querySelectorAll('p,.sub')).forEach(function(e){
   var t=e.textContent||'';
-  if(/\d+\s*tuần gần nhất/i.test(t))
-   e.textContent=t.replace(/\d+\s*tuần gần nhất\./i,'Đủ 53 tuần trong năm.');
  });
 }
 window.__appTq3Tat=function(){try{localStorage.setItem(KEY,'off')}catch(e){} location.reload(); return 'da tat';};
