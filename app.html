@@ -3623,7 +3623,7 @@ var che='u';
 function gomDL(){
  if(!window.scope)return null;
  var sc=window.scope(); if(!sc)return null;
- var ds=sc.s||[], mkm=null, sgmS=null;
+ var ds=sc.s||[], mkm=null, sgmS=null, sgb=null;
  ds.forEach(function(sh){
   if(sh.mkm){ if(!mkm)mkm=sh.mkm.map(function(t){return t.slice()});
    else sh.mkm.forEach(function(t,i){ if(!mkm[i]){mkm[i]=t.slice();return;}
@@ -3632,8 +3632,13 @@ function gomDL(){
    else sh.sgmS.forEach(function(t,i){ if(!sgmS[i]){sgmS[i]=t.map(function(g){return g.slice()});return;}
     t.forEach(function(g,j){ if(!sgmS[i][j]){sgmS[i][j]=g.slice();return;}
      g.forEach(function(v,k){sgmS[i][j][k]=(sgmS[i][j][k]||0)+v;});});});}
+  if(sh.sgb){ if(!sgb)sgb=sh.sgb.map(function(t){return t.map(function(g){return g.map(function(h){return h.slice()})})});
+   else sh.sgb.forEach(function(t,i){ if(!sgb[i]){sgb[i]=t.map(function(g){return g.map(function(h){return h.slice()})});return;}
+    t.forEach(function(g,j){ if(!sgb[i][j]){sgb[i][j]=g.map(function(h){return h.slice()});return;}
+     g.forEach(function(h,k){ if(!sgb[i][j][k]){sgb[i][j][k]=h.slice();return;}
+      h.forEach(function(v,m){sgb[i][j][k][m]=(sgb[i][j][k][m]||0)+v;});});});});}
  });
- return mkm?{mkm:mkm,sgmS:sgmS}:null;
+ return mkm?{mkm:mkm,sgmS:sgmS,sgb:sgb}:null;
 }
 
 function seri(ch){
@@ -3656,12 +3661,14 @@ function seri(ch){
   }
   out.ghi=tien?'Thị phần theo doanh thu (%)':'Thị phần theo số máy (%)';
  } else if(ch==='pk'){
-  out.ten=['OPPO','Các hãng khác']; out.mau=['#2AD998','#8B98A9']; out.duong=[[],[]];
+  var TEN7=['OPPO','Samsung','Xiaomi','Apple','Vivo','Realme','Khác'];var MAU7=['#2AD998','#6E8CF0','#FF9147','#EDEFF2','#A9B6FF','#F0C64A','#8B98A9'];
+  out.ten=TEN7.slice(); out.mau=MAU7.slice(); out.duong=[];
+  for(j=0;j<7;j++)out.duong.push([]);
   for(i=0;i<n;i++){
-   var g=d.sgmS&&d.sgmS[i]?d.sgmS[i][2]:null;
-   if(!g||!g[2]){out.duong[0].push(null);out.duong[1].push(null);continue;}
-   var p=+(g[0]/g[2]*100).toFixed(1);
-   out.duong[0].push(p); out.duong[1].push(+(100-p).toFixed(1));
+   var gb=d.sgb&&d.sgb[i]?d.sgb[i][2]:null;
+   if(!gb){for(j=0;j<7;j++)out.duong[j].push(null);continue;}
+   var tg=0; for(j=0;j<7;j++)tg+=(gb[j]&&gb[j][0])||0;
+   for(j=0;j<7;j++)out.duong[j].push(tg?+((((gb[j]&&gb[j][0])||0)/tg)*100).toFixed(1):null);
   }
   out.ghi='Thị phần OPPO trong phân khúc 10–20M (%)';
  } else {
@@ -4059,12 +4066,14 @@ function phan2(sh){
     for(j=0;j<5;j++)out.duong[j].push(tong?+pc(v[j],tong).toFixed(1):null);
    }
   } else if(che.p2==='pk'){
-   out.ten=['OPPO','Các hãng khác']; out.mau=['#2AD998','#8B98A9']; out.duong=[[],[]];
+   var TEN7=['OPPO','Samsung','Xiaomi','Apple','Vivo','Realme','Khác'];var MAU7=['#2AD998','#6E8CF0','#FF9147','#EDEFF2','#A9B6FF','#F0C64A','#8B98A9'];
+   out.ten=TEN7.slice(); out.mau=MAU7.slice(); out.duong=[];
+   for(j=0;j<7;j++)out.duong.push([]);
    for(i=0;i<n;i++){
-    var g=sh.sgmS&&sh.sgmS[i]?sh.sgmS[i][2]:null;
-    if(!g||!g[2]){out.duong[0].push(null);out.duong[1].push(null);continue;}
-    var p=+pc(g[0],g[2]).toFixed(1);
-    out.duong[0].push(p); out.duong[1].push(+(100-p).toFixed(1));
+    var gb=sh.sgb&&sh.sgb[i]?sh.sgb[i][2]:null;
+    if(!gb){for(j=0;j<7;j++)out.duong[j].push(null);continue;}
+    var tg=0; for(j=0;j<7;j++)tg+=(gb[j]&&gb[j][0])||0;
+    for(j=0;j<7;j++)out.duong[j].push(tg?+((((gb[j]&&gb[j][0])||0)/tg)*100).toFixed(1):null);
    }
   } else {
    out.ten=['OPPO','Thị trường']; out.mau=['#2AD998','#8B98A9']; out.duong=[[],[]];
