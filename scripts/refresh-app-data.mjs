@@ -166,6 +166,9 @@ async function layMotLan(lanThu) {
           dataMwgGz: await nenB64(window.__exportDataMain),
         };
       });
+      // Gui kem so thi phan Share KA de dong luon vao goi ma hoa cua DB TG.
+      // tg.html khong con fetch thang sheet nua (sheet da dong link cong khai).
+      if (Array.isArray(shareKA) && shareKA.length) doGoiChung.shareKA = shareKA;
       const mb = (n) => (n == null ? '?' : (n / 1048576).toFixed(1) + ' MB');
       [doGoiChung.center, doGoiChung.dataMwg].forEach((x) => {
         if (!x || !x.co) return;

@@ -261,6 +261,9 @@
         var kq = {
           center: goi.center ? await moKhoiMaHoa(goi.center, ma) : null,
           dataMwg: goi.dataMwg ? await moKhoiMaHoa(goi.dataMwg, ma) : null,
+          // So thi phan FPT + Viettel (sheet "Share KA"). Chi co trong goi cua
+          // nguoi duoc xem kenh KA; nguoi khac la null va bang do cung dang an.
+          shareKa: goi.shareKa ? await moKhoiMaHoa(goi.shareKa, ma) : null,
         };
         try { localStorage.setItem(KHO_MA, ma); localStorage.setItem(KHO_AI, JSON.stringify(ai)); } catch (e) {}
         kq.moc = idx; kq.ai = ai;
@@ -6089,7 +6092,12 @@ function renderIndSaleTrendChart() {
     const latestInfo = computeIndLatestMonthInfo();
     renderOneIndSaleHeatmap('ind-sale-heat-top', topNames, months, series, meta, latestInfo);
     renderOneIndSaleHeatmap('ind-sale-heat-bottom', bottomNames, months, series, meta, latestInfo);
-    document.querySelectorAll('.ind-sale-metric-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.metric === indSaleChartMetric));
+    // Chỉ đổi trạng thái active cho ĐÚNG 5 nút chỉ số của bảng nhiệt Sale (DS/DT/SHOP/S.I/PK).
+    // Class .ind-sale-metric-btn còn được dùng lại cho 2 nhóm nút khác - nút chỉ số Thị phần KA
+    // (.ka-market-share-metric-btn) và 2 nút Gói Platinum&Titan / Gold (.oc-target-tab) - nên nếu
+    // quét cả class thì mỗi lần vẽ lại bảng nhiệt là 2 nhóm kia bị gỡ mất viền sáng "đang chọn".
+    document.querySelectorAll('.ind-sale-metric-btn:not(.ka-market-share-metric-btn):not(.oc-target-tab)')
+        .forEach(btn => btn.classList.toggle('active', btn.dataset.metric === indSaleChartMetric));
 }
 function indSaleTableRowHtml(r, isGroupStart) {
     const trStyle = isGroupStart ? ' style="border-top:2px solid rgba(255,255,255,0.15);"' : '';
@@ -7733,7 +7741,12 @@ function refreshIndCluster() {
 // Đã bỏ UI "Bộ lọc chung — Chi tiết IND" (ms-ind-sale/ms-ind-shop/ind-reset) theo yêu cầu anh Thái -
 // indFilters giữ nguyên state {sales:[],stores:[]} mặc định (không lọc gì), refreshIndCluster() chỉ
 // cần gọi 1 lần khi khởi tạo (không còn UI nào làm nó đổi giá trị nữa).
-document.querySelectorAll('.ind-sale-metric-btn').forEach(btn => {
+// Chỉ gắn cho ĐÚNG 5 nút chỉ số của bảng nhiệt Sale. Trước đây quét cả class .ind-sale-metric-btn
+// nên 2 nút Gói (Platinum&Titan / Gold) cũng dính handler này: chúng không có data-metric, bấm vào
+// là indSaleChartMetric = undefined -> IND_SALE_METRIC_META[undefined] -> renderIndSaleTrendChart()
+// văng lỗi và cả cụm Sale/ASM đứng hình. Nút chỉ số Thị phần KA cũng vậy (metric của KA là
+// ds/b1015/b1520/b1020, không có trong IND_SALE_METRIC_META). Hai nhóm nút đó đã có handler riêng.
+document.querySelectorAll('.ind-sale-metric-btn:not(.ka-market-share-metric-btn):not(.oc-target-tab)').forEach(btn => {
     btn.addEventListener('click', () => {
         indSaleChartMetric = btn.dataset.metric;
         renderIndSaleTrendChart();
@@ -8757,9 +8770,15 @@ function shareKaNormalizeBucket(pk) {
     if (!pk) return '';
     return String(pk).trim().replace(/^\d+_/, '').replace(/\s+/g, '').toLowerCase();
 }
+// Cột "Ngày" đọc được từ HAI nguồn nên phải chịu được cả hai kiểu ghi:
+//   - Sheet đọc thẳng (CSV): ô là chữ "01.01.2026"
+//   - Gói mã hoá (Apps Script getValues): ô ngày thật -> chuỗi ISO "2026-01-01T..."
 function shareKaParseFptMonth(dateStr) {
-    const m = String(dateStr || '').match(/^\d{2}\.(\d{2})\.\d{4}$/);
-    return m ? parseInt(m[1], 10) : null;
+    const t = String(dateStr || '').trim();
+    const m = t.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
+    if (m) return parseInt(m[2], 10);
+    const d = new Date(t);
+    return isNaN(d.getTime()) ? null : (d.getMonth() + 1);
 }
 function shareKaParseViettelMonth(thangStr) {
     const m = String(thangStr || '').match(/(\d+)/);
@@ -8776,12 +8795,11 @@ function shareKaAddEntry(sub, brand, month, qty, bucket) {
 }
 const SHARE_KA_RAW_ROWS = { FPT: [], VIETTEL: [] };
 let kaMarketShareShopFilter = { FPT: [], VIETTEL: [] };
-function loadShareKaMarketShare() {
-    return fetch(shareKaGvizUrl()).then(res => {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.text();
-    }).then(text => {
-        const rows = Papa.parse(text, { skipEmptyLines: false }).data;
+/* NẠP SỐ THỊ PHẦN TỪ MẢNG DÒNG THÔ.
+   Dùng chung cho cả hai nguồn (gói mã hoá và đọc thẳng Sheet) vì cấu trúc cột
+   giống hệt nhau: FPT cột 0-7, VIETTEL cột 12-18. */
+function shareKaNapRows(rows) {
+    {
         let headerRow = -1;
         for (let i = 0; i < rows.length && i < 6; i++) {
             if (rows[i][0] === 'Ngày' || rows[i][1] === 'Mã Shop') { headerRow = i; break; }
@@ -8817,6 +8835,27 @@ function loadShareKaMarketShare() {
         if (SHARE_KA_RAW_ROWS.FPT.length < 5 && SHARE_KA_RAW_ROWS.VIETTEL.length < 5) throw new Error('Đọc được quá ít dòng dữ liệu, có thể sheet đổi cấu trúc');
         shareKaRebuildData('FPT');
         shareKaRebuildData('VIETTEL');
+    }
+}
+/* NGUỒN SỐ THỊ PHẦN — ƯU TIÊN GÓI MÃ HOÁ.
+   Trước đây trang này fetch thẳng Sheet "Share KA" qua đường gviz công khai, nên
+   sheet BẮT BUỘC phải mở "ai có link cũng xem được". Anh Thái đã đóng link đó lại
+   (29/08) -> fetch bị chặn CORS -> bảng thị phần trống.
+   Nay đọc từ chính gói mã hoá mà robot dựng mỗi ngày (robot lấy sheet qua Apps
+   Script, có chìa khoá riêng) -> sheet giữ kín, bảng vẫn có số.
+   Vẫn giữ đường lùi đọc thẳng Sheet: nếu ngày nào gói chưa có phần này thì trang
+   thử cách cũ, mở được thì vẫn ra số. */
+function loadShareKaMarketShare() {
+    return Promise.resolve(window.__goiDBTG || null).then(goi => {
+        const rows = goi && goi.shareKa;
+        if (Array.isArray(rows) && rows.length > 5) { shareKaNapRows(rows); return 'gói'; }
+        return fetch(shareKaGvizUrl()).then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+        }).then(text => {
+            shareKaNapRows(Papa.parse(text, { skipEmptyLines: false }).data);
+            return 'sheet';
+        });
     });
 }
 // Dựng lại KA_MARKET_SHARE_DATA[sub] từ dữ liệu thô, áp dụng bộ lọc Shop đang chọn (nếu có).
@@ -8918,7 +8957,7 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
         });
     }).catch(err => {
         console.error('Không tải được dữ liệu Thị phần (Share KA):', err);
-        if (noteEl) noteEl.insertAdjacentHTML('afterend', '<div style="color:var(--negative); font-size:11.5px; margin-top:4px;">⚠️ Không tải được dữ liệu thị phần từ Sheet Share KA (' + escapeHtml(err.message) + ') — đang hiện bảng trống.</div>');
+        if (noteEl) noteEl.insertAdjacentHTML('afterend', '<div style="color:var(--negative); font-size:11.5px; margin-top:4px;">⚠️ Chưa có số thị phần trong gói dữ liệu, và cũng không đọc thẳng được Sheet Share KA (' + escapeHtml(err.message) + ') — đang hiện bảng trống. Gói được robot làm mới mỗi ngày lúc 10:00.</div>');
     });
 })();
 
@@ -13709,10 +13748,10 @@ body.zoom-on { overflow: hidden; }
 </script>
 
 
-<script src="scripts/demo-mau.js?v=202608291559"></script>
-<script src="scripts/demo-ve.js?v=202608291559"></script>
-<script src="scripts/demo-chart-shim.js?v=202608291559"></script>
-<script src="scripts/demo-bang.js?v=202608291559"></script>
-<script src="scripts/demo-bo-cuc.js?v=202608291559"></script>
-<script src="scripts/demo-sang.js?v=202608291559"></script>
+<script src="scripts/demo-mau.js?v=202608291630"></script>
+<script src="scripts/demo-ve.js?v=202608291630"></script>
+<script src="scripts/demo-chart-shim.js?v=202608291630"></script>
+<script src="scripts/demo-bang.js?v=202608291630"></script>
+<script src="scripts/demo-bo-cuc.js?v=202608291630"></script>
+<script src="scripts/demo-sang.js?v=202608291630"></script>
 </html>

@@ -44,7 +44,9 @@ function maHoaBytes(buf, pin) {
 }
 
 /**
- * @param {{centerGz:string, dataMwgGz:string}} goi  hai khoi da nen gzip, dang base64
+ * @param {{centerGz:string, dataMwgGz:string, shareKA?:any[]}} goi
+ *        hai khoi da nen gzip dang base64, va (tuy chon) cac dong tho cua
+ *        sheet "Share KA" — robot lay qua Apps Script, chua nen.
  * @param {{updated:string, maxDay:number, months:number[]}} moc
  */
 export function dongGoiDBTG(goi, moc) {
@@ -57,6 +59,17 @@ export function dongGoiDBTG(goi, moc) {
   const center = Buffer.from(goi.centerGz || '', 'base64');
   const dataMwg = Buffer.from(goi.dataMwgGz || '', 'base64');
   if (!center.length && !dataMwg.length) throw new Error('ca hai khoi deu rong');
+
+  /* SO THI PHAN FPT + VIETTEL (sheet "Share KA").
+     Truoc day tg.html fetch thang sheet qua duong gviz cong khai, nen sheet phai
+     de che do "ai co link cung xem duoc". Anh Thai dong link do lai 29/08 ->
+     bang thi phan trong. Nay dong luon vao goi ma hoa: sheet giu kin, ma bang
+     van co so. Chi bo vao goi cua nguoi DUOC XEM KENH KA. */
+  const shareKaGz = (Array.isArray(goi.shareKA) && goi.shareKA.length > 5)
+    ? zlib.gzipSync(Buffer.from(JSON.stringify(goi.shareKA), 'utf8'))
+    : null;
+  if (shareKaGz) log(`co so thi phan Share KA: ${goi.shareKA.length} dong -> ${mb(shareKaGz.length)} (da nen)`);
+  else log('khong co so thi phan Share KA trong lan chay nay');
 
   fs.mkdirSync(OUTDIR, { recursive: true });
 
@@ -109,9 +122,13 @@ export function dongGoiDBTG(goi, moc) {
     const gzA = zlib.gzipSync(Buffer.from(JSON.stringify(cat.center), 'utf8'));
     const gzB = cat.dataMwg ? zlib.gzipSync(Buffer.from(JSON.stringify(cat.dataMwg), 'utf8')) : null;
     const id2 = crypto.randomBytes(8).toString('hex');
+    // Admin xem ca 3 kenh; leader chi xem kenh cua minh. Chi ai co kenh KA moi
+    // duoc nhan so thi phan — dung nguyen tac "chi giao dung phan cua ho".
+    const xemKA = ng.vaiTro === 'admin' || (ng.ai && ng.ai.kenh === 'KA');
     fs.writeFileSync(path.join(OUTDIR, 'dbtg-' + id2 + '.json'), JSON.stringify({
       center: maHoaBytes(gzA, ng.pin),
       dataMwg: gzB ? maHoaBytes(gzB, ng.pin) : null,
+      shareKa: (shareKaGz && xemKA) ? maHoaBytes(shareKaGz, ng.pin) : null,
     }));
     const co2 = fs.statSync(path.join(OUTDIR, 'dbtg-' + id2 + '.json')).size;
     tongByte += co2;
