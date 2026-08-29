@@ -388,10 +388,27 @@
   var nut = null;
   function capNhatNut(che) {
     if (!nut) return;
+    /* Chu tren nut dang bat: KHONG duoc dong cung mau trang.
+       Nen Sang --oppo-green la #006B33 (dam) -> chu trang dung.
+       Nen Toi  --oppo-green la #2ad998 (sang) -> chu trang chi con ti so 1,83,
+       khong doc duoc. Do do sang cua nen roi moi chon den hay trang. */
+    var xanh = '';
+    try { xanh = getComputedStyle(document.documentElement)
+      .getPropertyValue('--oppo-green').trim(); } catch (e) {}
+    var m = String(xanh).match(/^#([0-9a-f]{6})$/i);
+    var chuTren = '#FFFFFF';
+    if (m) {
+      var q = [0, 2, 4].map(function (k) {
+        var v = parseInt(m[1].slice(k, k + 2), 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      var L = 0.2126 * q[0] + 0.7152 * q[1] + 0.0722 * q[2];
+      if ((L + 0.05) / 0.05 > 1.05 / (L + 0.05)) chuTren = '#0B1A12';
+    }
     [].forEach.call(nut.querySelectorAll('[data-che]'), function (b) {
       var on = b.dataset.che === che;
       b.style.background = on ? 'var(--oppo-green)' : 'transparent';
-      b.style.color = on ? '#FFFFFF' : 'var(--text-secondary)';
+      b.style.color = on ? chuTren : 'var(--text-secondary)';
       b.style.fontWeight = on ? '800' : '600';
     });
   }

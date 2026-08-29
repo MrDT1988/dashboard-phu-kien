@@ -36,6 +36,40 @@
 
   var DOI_MAU = { rgba: 1 };  // giu cho de doc: mau lay tu phan tu da ve, la mau that
 
+  /* ---- BANG DE THEO ID CANVAS ------------------------------------------
+   * VI SAO PHAI CO BANG NAY:
+   *   Cho tren, khoi ve() suy ra DANG bieu do tu chart.config.type cua Chart.js.
+   *   Suy the dung cho 14/20 cho, nhung SAI cho 6 cho — vi DB TG dung cot chong
+   *   DOC cho ca nhung thu ban demo ve bang thanh NGANG hoac bang DUONG:
+   *     - Ti trong phan khuc gia (theo kenh / theo so luong / theo hang / hang
+   *       theo phan khuc): demo ve THANH NGANG 100%, moi dong mot doi tuong.
+   *       Cot doc 100% chong 7 manh thi khong doc duoc manh nao, va nhan truc x
+   *       phai xoay nghieng; thanh ngang thi ten doi tuong nam ngang, doc thang.
+   *     - Thi phan theo hang theo thang: demo ve DUONG, OPPO to dam cac hang khac
+   *       lam mo — vi day la cau hoi "OPPO dang len hay xuong so voi ho", cot
+   *       chong khong tra loi duoc.
+   *   Khong the doan tu config duoc: ca 6 cai deu la bar + stacked + max 100,
+   *   giong het 14 cai kia. Nen phai GHI THANG TEN CANVAS ra day.
+   *   So do (rowH / PL / W / fn / fs) chep dung tu loi goi cua ban demo.
+   */
+  var DE = {
+    // ve100('cSegKenh',SEGK.nh,SEGK.bo,PSEG,{rowH:28,PL:56,W:390,fn:11,fs:10.5})
+    'chart-segment-channel': { kieu: 've100', opt: { rowH: 28, PL: 56, W: 390, fn: 11, fs: 10.5 } },
+    // ve100('cSegUnits',SEGU.nh,SEGU.bo,PSEG,{rowH:30,PL:36})
+    'chart-segment-units':   { kieu: 've100', opt: { rowH: 30, PL: 36 } },
+    // ve100('cSeg',SEGH.nh,SEGH.bo,[--apple,--samsung,...],{rowH:26,PL:56})
+    'chart-segment':         { kieu: 've100', opt: { rowH: 26, PL: 56 } },
+    // ve100('cBrandSeg',HSEG.nh,HSEG.bo,PSEG,{rowH:26,PL:62})
+    'chart-brand-segment':   { kieu: 've100', opt: { rowH: 26, PL: 62 } },
+    // veDuong('cShare',TH,dsHang.map(k=>({...,noi:k==='OPPO'})))
+    'chart-monthly-brand':   { kieu: 'veDuong', noi: 'OPPO' },
+    // veVong('cPieDT',renoNam,...) ve canh veVong('cPieDS',PIE,...)
+    'chart-channel-revenue-pie': { keo: 'reno' },
+  };
+  function deCua(ch) {
+    try { return DE[ch.canvas.id] || null; } catch (e) { return null; }
+  }
+
   function soDoi(ch) {
     /* Van tay cua du lieu dang ve. Chi ve lai khi doi -> khong dot CPU moi khung. */
     var d = ch.data || {}, r = (d.labels || []).length + '|';
@@ -126,12 +160,131 @@
     return h;
   }
 
+  /* ---- ve100: moi NHAN mot dong, moi dataset mot manh trong dong -------- */
+  function veTiTrong(hop, ch, nhan, ds, Hv, opt) {
+    var bo = ds.map(function (x) {
+      return [x.s.label || ('Nhóm ' + (x.i + 1)),
+        nhan.map(function (_, i) { return so((x.s.data || [])[i]); })];
+    });
+    /* Quy ve 100% tung dong. DB TG da tinh san ra % o may cho nay, nhung khong
+       phai cho nao cung vay — chia lai la phep khong doi voi so da la %, nen
+       lam that thay vi phai nho cho nao da chia roi. */
+    var tongD = nhan.map(function (_, i) {
+      return bo.reduce(function (a, b) { return a + b[1][i]; }, 0) || 1;
+    });
+    var boPT = bo.map(function (b) {
+      return [b[0], b[1].map(function (v, i) { return v / tongD[i] * 100; })];
+    });
+    var mauN = mauBo(bo.map(function (b) { return b[0]; }),
+      ds.map(function (x) { return mauCua(ch, x.i, 0); }));
+    var o2 = {};
+    Object.keys(opt || {}).forEach(function (k) { o2[k] = opt[k]; });
+    /* Khong de bo thanh CAO HON o canvas. SVG giu ti le theo viewBox va
+       overflow:visible, nen neu de nguyen rowH cua demo voi so dong nhieu hon
+       demo thi no tran xuong de len bang ngay ben duoi. */
+    var caoToiDa = (Hv - 14) / Math.max(nhan.length, 1);
+    o2.rowH = Math.max(Math.min(o2.rowH || 30, caoToiDa), 18);
+    window.DMV.ve100(hop.__ve, nhan, boPT, mauN, o2);
+    chuThich(hop, bo.map(function (b) { return b[0]; }), mauN);
+  }
+
+  /* ---- veDuong: moi dataset mot duong ----------------------------------- */
+  function veDuongTu(hop, ch, nhan, ds, W, Hv, opt) {
+    opt = opt || {};
+    /* CAT BO COT GOP.
+       DB TG dan them cot "2026" (trung binh ca nam) o dau va cot "Tổng" o cuoi
+       khi xem theo tuan. Voi cot chong thi hai cot do doc duoc; voi DUONG thi
+       khong — noi mot diem trung binh ca nam vao chuoi thoi gian la ve mot doan
+       doc khong co that. Ban demo chi co T1..T12, khong co cot gop nao. */
+    var d = 0, c = nhan.length;
+    if (c > 1 && /^\s*\d{4}\s*$/.test(nhan[0])) d = 1;
+    if (c - d > 1 && /^\s*(tổng|tong|total)\s*$/i.test(nhan[c - 1])) c--;
+    var nhan2 = nhan.slice(d, c);
+    var noiTen = String(opt.noi || '').toUpperCase();
+    var series = ds.map(function (x) {
+      var t = x.s.label || ('Nhóm ' + (x.i + 1));
+      return {
+        t: t,
+        v: (x.s.data || []).slice(d, c).map(so),
+        c: mauDemo(t, mauCua(ch, x.i, 0)),
+        /* noi = duong "chinh", ve to va dam; cac duong khac de mo di.
+           Ban demo lam vay de mat bat ngay duong OPPO trong dam hang khac. */
+        noi: noiTen ? (String(t).toUpperCase() === noiTen) : undefined,
+      };
+    });
+    /* Cat duoi cac ky CHUA CO SO LIEU — xem ghi chu o nhanh 'line' ben duoi. */
+    var co = nhan2.length;
+    while (co > 1 && series.every(function (s2) { return !s2.v[co - 1]; })) co--;
+    var coCG = series.length > 1;
+    window.DMV.veDuong(hop.__ve, nhan2, series, {
+      W: W, H: Hv, PR: opt.PR || 58, hau: '%', co: co,
+      moc: null,
+      /* Nhieu diem qua thi so tren diem chong len nhau thanh mang chu. */
+      soTrenDiem: co <= 14,
+      tenCuoi: opt.tenCuoi !== false,
+    });
+    if (coCG) chuThich(hop, series.map(function (s) { return s.t; }), series.map(function (s) { return s.c; }));
+  }
+
+  /* ---- so Reno & Find ca nam theo kenh, lay tu chinh bieu do dang song ---
+     Ban demo co HAI vong o the "Ti trong dong gop theo kenh": Reno & Find (may)
+     va Doanh thu. DB TG chi co vong Doanh thu. So Reno & Find theo kenh KHONG
+     tinh lai o day — cong tu bieu do "Sell Out Reno & Find theo thang" dang
+     hien tren trang, nen luon dung voi bo loc nguoi dung dang dat. Khong lay
+     duoc thi tra ve null va chi ve mot vong nhu cu — khong bia so. */
+  function bieuDo(id) {
+    try {
+      if (window.Chart && window.Chart.getChart) {
+        var c = window.Chart.getChart(id);
+        if (c) return c;
+      }
+      var ds = (window.Chart && window.Chart.instances) || {};
+      var k = Object.keys(ds).filter(function (x) {
+        return ds[x] && ds[x].canvas && ds[x].canvas.id === id;
+      });
+      return k.length ? ds[k[0]] : null;
+    } catch (e) { return null; }
+  }
+  function soReno() {
+    var ch = bieuDo('chart-renofind-month');
+    if (!ch || !ch.data || !ch.data.datasets) return null;
+    var ra = hienDs(ch).map(function (x) {
+      return [String(x.s.label || ''),
+        (x.s.data || []).reduce(function (a, v) { return a + so(v); }, 0)];
+    }).filter(function (r) { return r[0] && r[1] > 0; });
+    return ra.length ? ra : null;
+  }
+
+  /* Hai o vong tron canh nhau trong cung lop phu — dung the .haiVong cua demo. */
+  function hopHaiVong(hop) {
+    if (hop.__hai && hop.__hai.a.parentNode === hop.__ve) return hop.__hai;
+    hop.__ve.innerHTML = '';
+    hop.__ve.style.cssText = 'display:flex;gap:8px;align-items:flex-start;justify-content:center';
+    var a = document.createElement('div');
+    var b2 = document.createElement('div');
+    a.style.cssText = b2.style.cssText = 'flex:1 1 0;min-width:0';
+    hop.__ve.appendChild(a); hop.__ve.appendChild(b2);
+    hop.__hai = { a: a, b: b2 };
+    return hop.__hai;
+  }
+  function boHaiVong(hop) {
+    if (!hop.__hai) return;
+    hop.__ve.innerHTML = '';
+    hop.__ve.style.cssText = '';     // tra lai the trong, khong con display:flex
+    hop.__hai = null;
+  }
+
   /* ---- doi mot bieu do sang cach ve cua demo ---------------------------- */
   function ve(ch) {
     if (!window.DMV) return;
     var loai = ch.config && ch.config.type;
     if (!loai) return;
+    var de = deCua(ch);
     var van = soDoi(ch);
+    /* Vong Reno lay so tu MOT bieu do khac, nen van tay cua rieng bieu do nay
+       khong doi khi so ben kia doi. Dan them vao de con ve lai. */
+    var renoNam = (de && de.keo === 'reno') ? soReno() : null;
+    if (renoNam) van += '|R' + renoNam.join(',');
     if (ch.__dmvVan === van && ch.canvas.__dmvHop && ch.canvas.__dmvHop.isConnected) return;
     var hop = hopCua(ch); if (!hop) return;
     ch.__dmvVan = van;
@@ -158,6 +311,23 @@
     var chong = !!((truc.x && truc.x.stacked) || (truc.y && truc.y.stacked));
     var ngang = o.indexAxis === 'y';
 
+    /* ---- BANG DE: 6 cho ban demo ve khac han cach Chart.js dang dung ----- */
+    if (de && de.kieu === 've100') {
+      /* CHI khi dang xem NHIEU manh. Nguoi dung loc con MOT phan khuc thi mot
+         dong 100% mau kin la vo nghia — ban demo doi sang cot chong theo thang
+         o dung tinh huong do (veChong cho cSegUnits khi FS.pk khac ALL). Roi
+         xuong duoi la ra dung nhanh veChong. */
+      if (ds.length >= 2) {
+        boHaiVong(hop);
+        veTiTrong(hop, ch, nhan, ds, Hv, de.opt);
+        return;
+      }
+    } else if (de && de.kieu === 'veDuong') {
+      boHaiVong(hop);
+      veDuongTu(hop, ch, nhan, ds, W, Hv, de);
+      return;
+    }
+
     if (loai === 'pie' || loai === 'doughnut') {
       var d0 = ds[0].s;
       var data = nhan.map(function (t, i) { return [t, so((d0.data || [])[i])]; })
@@ -172,6 +342,24 @@
       if (lon >= 1e9) { chia = 1e9; dvT = 'tỷ đồng'; dec = 1; }
       else if (lon >= 1e6) { chia = 1e6; dvT = 'triệu đồng'; dec = 1; }
       if (chia > 1) data = data.map(function (x) { return [x[0], x[1] / chia]; });
+      /* HAI VONG CANH NHAU (A7). Ban demo dat vong "Reno & Find" (may) canh
+         vong "Doanh thu" trong cung mot the, de doc duoc ngay mot kenh dong gop
+         bao nhieu MAY Reno so voi bao nhieu TIEN — hai ti trong nay lech nhau
+         chinh la cho phai nhin. Thu tu Reno truoc, Doanh thu sau, dung nhu demo. */
+      if (renoNam && renoNam.length) {
+        var mauR = mauBo(renoNam.map(function (x) { return x[0]; }),
+          renoNam.map(function () { return '--khac'; }));
+        var oo = hopHaiVong(hop);
+        window.DMV.veVong(oo.a, renoNam, {
+          mau: mauR, ten: 'Reno & Find', dec: 0, dv: ' máy', dvTong: 'máy Reno',
+        });
+        window.DMV.veVong(oo.b, data, {
+          mau: mau, ten: 'Doanh thu', dec: dec, dv: dvT ? ' ' + dvT.split(' ')[0] : '', dvTong: dvT,
+        });
+        chuThich(hop, data.map(function (x) { return x[0]; }), mau);
+        return;
+      }
+      boHaiVong(hop);
       hop.__ve.style.maxWidth = '330px';
       hop.__ve.style.margin = '0 auto';
       window.DMV.veVong(hop.__ve, data, { mau: mau, dec: dec, dvTong: dvT });
@@ -222,19 +410,7 @@
          Chi lam vay khi that su la ti trong; neu khong thi tu quy doi, vi
          mat thang do tuyet doi o day khong mat thong tin gi (so nam trong
          chu thich khi ro chuot). */
-      var bo = ds.map(function (x) {
-        return [x.s.label || ('Nhóm ' + (x.i + 1)), nhan.map(function (_, i) { return so((x.s.data || [])[i]); })];
-      });
-      var tongD = nhan.map(function (_, i) {
-        return bo.reduce(function (a, b) { return a + b[1][i]; }, 0) || 1;
-      });
-      var boPT = bo.map(function (b) {
-        return [b[0], b[1].map(function (v, i) { return v / tongD[i] * 100; })];
-      });
-      var mauN = mauBo(bo.map(function (b2) { return b2[0]; }),
-        ds.map(function (x) { return mauCua(ch, x.i, 0); }));
-      window.DMV.ve100(hop.__ve, nhan, boPT, mauN, { W: Math.max(W, 460), rowH: Math.max(Math.min(Hv / nhan.length, 40), 24) });
-      chuThich(hop, bo.map(function (b) { return b[0]; }), mauN);
+      veTiTrong(hop, ch, nhan, ds, Hv, { W: Math.max(W, 460), rowH: 40 });
       return;
     }
 

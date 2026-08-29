@@ -114,9 +114,14 @@
     if (tip) return;
     var st = document.createElement('style');
     st.textContent =
+      /* BAY DA DINH 29/08: the <style> nay nau MOT LAN luc tai trang. Truoc day
+         em nau san MAU (cv(...)) vao day — trang mo o nen Sang nen chu giai bi
+         dong cung mau #59636F; bam sang nen Toi thi chu giai van mau do, nam
+         tren nen #1a222c, ti so 2,63 (chuan 4,5) — 71 cho khong doc duoc.
+         Nay ghi thang ten BIEN CSS, trinh duyet tu doi theo che do. */
       '#dmv-tip{position:fixed;z-index:99990;pointer-events:none;opacity:0;'
-      + 'transition:opacity .12s;background:' + cv('--card') + ';color:' + cv('--ink') + ';'
-      + 'border:1px solid ' + cv('--line') + ';border-radius:9px;padding:8px 10px;'
+      + 'transition:opacity .12s;background:var(--bg-card);color:var(--text-primary);'
+      + 'border:1px solid var(--border-color);border-radius:9px;padding:8px 10px;'
       + 'font:600 12px ' + DP['--font'] + ';box-shadow:0 8px 24px rgba(0,0,0,.35);max-width:280px}'
       + '#dmv-tip .r{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:3px}'
       + '#dmv-tip .r i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}'
@@ -126,7 +131,7 @@
       + '.dmv rect.bar:hover,.dmv path.bar:hover{opacity:1}'
       + '.dmv svg{width:100%;height:auto;display:block;overflow:visible}'
       + '.dmv-lg{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;'
-      + 'margin-top:10px;font:600 12px ' + DP['--font'] + ';color:' + cv('--mut') + '}'
+      + 'margin-top:10px;font:600 12px ' + DP['--font'] + ';color:var(--text-secondary)}'
       + '.dmv-lg span{display:inline-flex;align-items:center;gap:7px}'
       + '.dmv-lg .chip{width:9px;height:9px;border-radius:3px;display:inline-block}';
     document.head.appendChild(st);
