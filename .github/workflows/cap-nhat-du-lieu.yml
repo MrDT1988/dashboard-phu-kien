@@ -44,6 +44,7 @@ jobs:
           FORCE: ${{ github.event.inputs.force }}
           SALE_CODES: ${{ secrets.SALE_CODES }}
           AS_KEY: ${{ secrets.AS_KEY }}
+          GT_CSV: ${{ secrets.GT_CSV }}
         run: node scripts/refresh-app-data.mjs
 
       # Chia thanh cac goi MA HOA rieng tung nguoi. app-data.json (ban goc, chua ma hoa)
