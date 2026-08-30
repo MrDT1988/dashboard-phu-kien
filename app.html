@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.7';
+var APP_VER='2026-08-30.8';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5474,6 +5474,180 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   setTimeout(function(){ try{ ve() }catch(e){} },600);
   setTimeout(function(){ try{ ve() }catch(e){} },2000);
   window.__thidua={ve:ve,tinh:tinh};
+})();
+</script>
+<script id="app-ngayshop">
+(function(){
+  var VIEN='border-left:2px solid rgba(255,255,255,.22)';
+  var MAU={o:'#00a86f',s:'#4a7fd4',x:'#f0803c'};
+
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+  function so0(v){ return (typeof n0==='function')?n0(v):String(Math.round(v||0)) }
+  function tien(v){ return (typeof money==='function')?money(v):String(Math.round(v||0)) }
+  function tenNgan(s){
+    var t=String(s==null?'':s).trim();
+    var i=t.indexOf(' - ');
+    if(i>=0) t=t.slice(i+3).trim();
+    return t||String(s==null?'':s);
+  }
+  function muiTen(a,b,kieu){
+    if(b===null||b===undefined) return '';
+    var g=(a||0)-(b||0);
+    if(!g) return '<small style="color:var(--muted)">0</small>';
+    var c=g>0?'var(--green)':'var(--red)';
+    var v=(kieu==='r')?tien(Math.abs(g)):so0(Math.abs(g));
+    return '<small style="color:'+c+'">'+(g>0?'▲':'▼')+' '+v+'</small>';
+  }
+  function muiDiem(a,b){
+    if(a===null||b===null||a===undefined||b===undefined) return '';
+    var g=a-b;
+    if(Math.abs(g)<0.05) return '<small style="color:var(--muted)">0</small>';
+    var c=g>0?'var(--green)':'var(--red)';
+    return '<small style="color:'+c+'">'+(g>0?'▲':'▼')+' '+Math.abs(g).toFixed(1)+'d</small>';
+  }
+  function o(v,i){ return (v&&v[i])?v[i]:0 }
+
+  function ngayChon(){
+    var s=el('nd-sel');
+    var d=s?(+s.value||0):0;
+    if(!d){
+      try{ d=(typeof ngayMkt==='function')?ngayMkt():(D.maxDay||0) }catch(e){ d=0 }
+    }
+    return d||0;
+  }
+
+  function lay(){
+    if(typeof D==='undefined'||!D) return null;
+    var sc=null;
+    try{ sc=(typeof scope==='function')?scope():null }catch(e){ sc=null }
+    if(!sc) return null;
+    var ds=(sc.s||[]).filter(function(x){ return x&&x.ch2==='MWG'&&x.dk&&x.dk.length });
+    return ds.length?ds:null;
+  }
+
+  function bang(ds,d){
+    var rows=ds.map(function(sh){
+      var t=sh.dk[d-1]||null;
+      var p=(d>1)?(sh.dk[d-2]||null):null;
+      return {n:tenNgan(sh.n), t:t, p:p, oU:o(t,0), tU:o(t,8)};
+    });
+    rows.sort(function(a,b){
+      if(!a.tU&&b.tU) return 1;
+      if(a.tU&&!b.tU) return -1;
+      if(b.oU!==a.oU) return b.oU-a.oU;
+      return b.tU-a.tU;
+    });
+
+    var h='<table class="tv">';
+    h+='<tr>'+
+       '<th>SHOP</th>'+
+       '<th colspan="3" style="'+VIEN+';text-align:center">DOANH SỐ</th>'+
+       '<th colspan="3" style="'+VIEN+';text-align:center">DOANH THU</th>'+
+       '<th colspan="3" style="'+VIEN+';text-align:center">PK 10–20M</th>'+
+       '</tr>';
+    h+='<tr>'+
+       '<th></th>'+
+       '<th style="'+VIEN+';color:'+MAU.o+'">OPPO</th><th style="color:'+MAU.s+'">SS</th><th style="color:'+MAU.x+'">XM</th>'+
+       '<th style="'+VIEN+';color:'+MAU.o+'">OPPO</th><th style="color:'+MAU.s+'">SS</th><th style="color:'+MAU.x+'">XM</th>'+
+       '<th style="'+VIEN+';color:'+MAU.o+'">OPPO</th><th>Tổng</th><th>Share</th>'+
+       '</tr>';
+
+    var T=[0,0,0,0,0,0,0,0,0,0,0,0,0,0], P=[0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    var coP=false;
+    rows.forEach(function(r){
+      var t=r.t, p=r.p;
+      if(t) for(var k=0;k<14;k++) T[k]+=t[k]||0;
+      if(p){ coP=true; for(var q=0;q<14;q++) P[q]+=p[q]||0 }
+      var im=!r.tU;
+      h+='<tr'+(im?' style="opacity:.55"':'')+'>';
+      h+='<td>'+esc(r.n)+(im?'<small style="color:var(--red)">chưa có S.O</small>':'')+'</td>';
+      h+='<td style="'+VIEN+'">'+so0(o(t,0))+muiTen(o(t,0),p?o(p,0):null)+'</td>';
+      h+='<td>'+so0(o(t,2))+muiTen(o(t,2),p?o(p,2):null)+'</td>';
+      h+='<td>'+so0(o(t,4))+muiTen(o(t,4),p?o(p,4):null)+'</td>';
+      h+='<td style="'+VIEN+'">'+tien(o(t,1))+muiTen(o(t,1),p?o(p,1):null,'r')+'</td>';
+      h+='<td>'+tien(o(t,3))+muiTen(o(t,3),p?o(p,3):null,'r')+'</td>';
+      h+='<td>'+tien(o(t,5))+muiTen(o(t,5),p?o(p,5):null,'r')+'</td>';
+      var a=o(t,10), b=o(t,12);
+      var a0=p?o(p,10):null, b0=p?o(p,12):null;
+      var s1=b?(a/b*100):null, s0=(b0)?(a0/b0*100):null;
+      h+='<td style="'+VIEN+'">'+so0(a)+muiTen(a,a0)+'</td>';
+      h+='<td>'+so0(b)+muiTen(b,b0)+'</td>';
+      h+='<td>'+(s1===null?'—':s1.toFixed(0)+'%')+muiDiem(s1,s0)+'</td>';
+      h+='</tr>';
+    });
+
+    var pp=coP?P:null;
+    var sT=T[12]?(T[10]/T[12]*100):null;
+    var sP=(pp&&pp[12])?(pp[10]/pp[12]*100):null;
+    h+='<tr style="background:var(--card2)">';
+    h+='<td><b>TỔNG '+rows.length+' shop</b></td>';
+    h+='<td style="'+VIEN+'"><b>'+so0(T[0])+'</b>'+muiTen(T[0],pp?pp[0]:null)+'</td>';
+    h+='<td><b>'+so0(T[2])+'</b>'+muiTen(T[2],pp?pp[2]:null)+'</td>';
+    h+='<td><b>'+so0(T[4])+'</b>'+muiTen(T[4],pp?pp[4]:null)+'</td>';
+    h+='<td style="'+VIEN+'"><b>'+tien(T[1])+'</b>'+muiTen(T[1],pp?pp[1]:null,'r')+'</td>';
+    h+='<td><b>'+tien(T[3])+'</b>'+muiTen(T[3],pp?pp[3]:null,'r')+'</td>';
+    h+='<td><b>'+tien(T[5])+'</b>'+muiTen(T[5],pp?pp[5]:null,'r')+'</td>';
+    h+='<td style="'+VIEN+'"><b>'+so0(T[10])+'</b>'+muiTen(T[10],pp?pp[10]:null)+'</td>';
+    h+='<td><b>'+so0(T[12])+'</b>'+muiTen(T[12],pp?pp[12]:null)+'</td>';
+    h+='<td><b>'+(sT===null?'—':sT.toFixed(0)+'%')+'</b>'+muiDiem(sT,sP)+'</td>';
+    h+='</tr></table>';
+    return h;
+  }
+
+  function veShop(){
+    var box=el('ngay-box'); if(!box) return;
+    var d=ngayChon(); if(!d) return;
+    var cu=el('ngay-shop-card');
+    if(cu&&cu.parentNode===box&&cu.getAttribute('data-d')===String(d)) return;
+    var ds=lay();
+    if(!ds){ if(cu&&cu.parentNode) cu.parentNode.removeChild(cu); return }
+    if(!cu){
+      cu=document.createElement('div');
+      cu.className='card';
+      cu.id='ngay-shop-card';
+    }
+    cu.setAttribute('data-d',String(d));
+    var thang=D.months[D.months.length-1];
+    cu.innerHTML='<h2>Chi tiết shop — ngày '+d+'/'+thang+'</h2>'+
+      '<p class="sub">Doanh số · Doanh thu · PK 10–20M của OPPO / Samsung / Xiaomi tại từng shop. '+
+      'Số nhỏ bên dưới là chênh lệch so với <b>ngày liền trước</b>.</p>'+
+      '<div class="tvwrap" id="ngay-shop-b">'+bang(ds,d)+'</div>'+
+      '<div class="note">Xếp theo số máy OPPO bán được trong ngày; shop chưa có S.O nằm cuối. '+
+      'Riêng ô <b>PK 10–20M</b> data MWG chỉ tách được <b>OPPO</b> và <b>toàn thị trường</b> ở cấp shop — '+
+      'không có riêng Samsung / Xiaomi. Cột Share là phần mình giữ được trong ô 10–20M tại shop đó.</div>';
+    var neo=box.children[1]||null;
+    if(cu.parentNode!==box||box.children[1]!==cu){
+      if(neo&&neo!==cu) box.insertBefore(cu,neo); else box.appendChild(cu);
+    }
+  }
+
+  var dangVe=false;
+  function chay(){
+    if(dangVe) return;
+    dangVe=true;
+    try{ veShop() }catch(e){ if(window.console) console.warn('[ngayshop]',e) }
+    dangVe=false;
+  }
+
+  function gan(){
+    var box=el('ngay-box');
+    if(!box||box.__qsObs) return;
+    try{
+      var ob=new MutationObserver(function(){ chay() });
+      ob.observe(box,{childList:true});
+      box.__qsObs=ob;
+    }catch(e){}
+  }
+
+  document.addEventListener('change',function(e){
+    if(e.target&&e.target.id==='nd-sel') setTimeout(chay,0);
+  });
+
+  setInterval(function(){ try{ gan(); chay() }catch(e){} },2000);
+  setTimeout(function(){ try{ gan(); chay() }catch(e){} },400);
+  setTimeout(function(){ try{ gan(); chay() }catch(e){} },1500);
+  window.__ngayshop={ve:veShop,lay:lay,bang:bang};
 })();
 </script>
 </html>
