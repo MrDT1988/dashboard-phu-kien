@@ -98,6 +98,27 @@ function gopAll(D, ds) {
     if (s.moM) { out.moM = out.moM || {};
       Object.keys(s.moM).forEach((m) => { out.moM[m] = gomModel(out.moM[m], s.moM[m]).slice(0, 12); }); }
     if (s.si) out.si = gomSellin(out.si, s.si);
+    // ngay x hang ca nam: cong thang tung o
+    if (s.dnB) {
+      if (!out.dnB) out.dnB = s.dnB.map(() => [0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+      s.dnB.forEach((v, i) => {
+        if (!out.dnB[i] || !v) return;
+        for (let k = 0; k < 14; k++) out.dnB[i][k] += (v[k] || 0);
+      });
+    }
+    // top model tung hang tung thang: cong het roi moi cat top 10
+    if (s.mdB) {
+      out._mdB = out._mdB || {};
+      Object.keys(s.mdB).forEach((m2) => {
+        out._mdB[m2] = out._mdB[m2] || {};
+        Object.keys(s.mdB[m2]).forEach((h2) => {
+          const g2 = out._mdB[m2][h2] || (out._mdB[m2][h2] = {});
+          (s.mdB[m2][h2] || []).forEach(([n3, u3, r3]) => {
+            g2[n3] = g2[n3] || [0, 0]; g2[n3][0] += u3; g2[n3][1] += r3;
+          });
+        });
+      });
+    }
     if (s.tk) out.tk = gomTon(out.tk, s.tk);
     if (s.tgc) { out.tgc = out.tgc || {};
       Object.keys(s.tgc).forEach((c) => { out.tgc[c] = out.tgc[c] || [0, 0];
@@ -133,6 +154,18 @@ function gopAll(D, ds) {
       }
     }
   }
+  if (out._mdB) {
+    out.mdB = {};
+    Object.keys(out._mdB).forEach((m2) => {
+      out.mdB[m2] = {};
+      Object.keys(out._mdB[m2]).forEach((h2) => {
+        const g2 = out._mdB[m2][h2];
+        out.mdB[m2][h2] = Object.keys(g2).map((n3) => [n3, g2[n3][0], g2[n3][1]])
+          .sort((a2, b2) => b2[1] - a2[1]).slice(0, 10);
+      });
+    });
+    delete out._mdB;
+  }
   if (out.chd.MWG && out.chd.MWG.mkt) out.mkt = out.chd.MWG.mkt;
   return out;
 }
@@ -167,6 +200,7 @@ function saleTheoKenh(D, s, ch) {
   if (s.tgc && s.tgc[ch]) o.tgc = { [ch]: s.tgc[ch] };
   if (ch === 'IND' && s.si) o.si = s.si;   // sell-in chi co o kenh IND
   if (ch === 'IND' && s.tk) o.tk = s.tk;   // ton kho cung vay
+  if (ch === 'MWG') { if (s.dnB) o.dnB = s.dnB; if (s.mdB) o.mdB = s.mdB; }
   return o;
 }
 
