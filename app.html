@@ -4303,6 +4303,52 @@ setInterval(function(){
 })();
 </script>
 
+
+<script id="app-thang">
+(function(){
+  if(typeof drawStack!=='function') return;
+  var goc=drawStack;
+  window.drawStack=function(el,labels,aVals,tVals,opts){
+    var kq=goc.apply(this,arguments);
+    try{
+      if(!el||el.id!=='ch-act'||!tVals||!tVals.length) return kq;
+      var svg=(el.tagName&&el.tagName.toLowerCase()==='svg')?el:el.querySelector('svg');
+      if(!svg) return kq;
+      var cu=[].slice.call(svg.querySelectorAll('.so-act'));
+      for(var z=0;z<cu.length;z++) cu[z].remove();
+      var n=tVals.length, W=680;
+      var gap=n>20?2:(n>12?4:6), bw=(W-(n-1)*gap)/n;
+      var dinh={};
+      var rs=[].slice.call(svg.querySelectorAll('rect'));
+      for(var a=0;a<rs.length;a++){
+        var x=parseFloat(rs[a].getAttribute('x')), y=parseFloat(rs[a].getAttribute('y'));
+        if(!isFinite(x)||!isFinite(y)) continue;
+        var i=Math.round(x/(bw+gap));
+        if(i<0||i>=n) continue;
+        if(dinh[i]===undefined||y<dinh[i]) dinh[i]=y;
+      }
+      var NS='http://www.w3.org/2000/svg';
+      var so=(typeof n0==='function')?n0:function(v){return v};
+      for(var k=0;k<n;k++){
+        if(k===n-1) continue;
+        var v=tVals[k]; if(!v||dinh[k]===undefined) continue;
+        var t=document.createElementNS(NS,'text');
+        t.setAttribute('class','so-act');
+        t.setAttribute('x',(k*(bw+gap)+bw/2).toFixed(1));
+        t.setAttribute('y',Math.max(8,dinh[k]-4).toFixed(1));
+        t.setAttribute('text-anchor','middle');
+        t.setAttribute('font-size','9.5');
+        t.setAttribute('font-weight','700');
+        t.setAttribute('fill','currentColor');
+        t.textContent=String(so(v));
+        svg.appendChild(t);
+      }
+    }catch(e){}
+    return kq;
+  };
+})();
+</script>
+
 <style id="app-css2">
 #tv-mkt-thang table th:first-child,#tv-mkt-thang table td:first-child,#shop5 table th:first-child,#shop5 table td:first-child{position:sticky;left:0;z-index:2;background:#141b24;box-shadow:1px 0 0 rgba(255,255,255,.10)}
 #tv-mkt-thang table th:first-child,#shop5 table th:first-child{z-index:3}
