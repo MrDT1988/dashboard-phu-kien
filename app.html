@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.18';
+var APP_VER='2026-08-30.19';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5820,7 +5820,6 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     var chua=false;
     for(var i=0;i<ds.length;i++) if(ds[i].getAttribute('data-gon')!=='1'){ chua=true; break }
     if(!chua) return;
-    var mp=banDoRule();
     var coDk={};
     try{
       var o2=(typeof scope==='function')?scope():null;
@@ -5854,16 +5853,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
         sp.textContent=(nhieu?'• ':'')+x[0]+((nhieu&&i>0&&x[1])?(' ('+x[1]+')'):'');
         bd.appendChild(sp);
       });
-      var ly=mp[ten];
-      if(ly&&ly.length){
-        var sp2=document.createElement('span');
-        sp2.className='d gt-ly';
-        sp2.innerHTML='<b style="color:var(--amber)">Phải giải trình:</b> '+
-          ly.map(function(y){
-            return '<span style="color:var('+y[0]+');font-weight:700">'+esc(y[1])+'</span>';
-          }).join(' - ');
-        bd.appendChild(sp2);
-      } else if(!coDk[ten]){
+      // Danh sach nay CHI de nam tinh hinh — khong gan giai trinh (anh Thai chot 30/08).
+      if(!coDk[ten]){
         var sp3=document.createElement('span');
         sp3.className='d';
         sp3.style.color='var(--muted)';
@@ -5873,11 +5864,28 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     });
     try{
       var sub=el('a-sub');
-      if(sub&&tt.length) sub.textContent=tt.length+' shop cần để ý trong tháng '+D.months[MI]+
-        ' — số theo data MWG, xếp theo mức độ gấp, bấm vào để xem chi tiết.';
+      if(sub&&tt.length) sub.innerHTML=tt.length+' shop đang ảnh hưởng kết quả tháng '+D.months[MI]+
+        ' — số theo data MWG, xếp theo mức độ gấp. <b>Chỉ để nắm tình hình, không phải giải trình</b> — '+
+        'shop nào dính rule đã được đưa lên mục <b>Phải giải trình</b> ở trên.';
       var bg=document.querySelector('nav .badge');
       if(bg) bg.textContent=tt.length>99?'99+':String(tt.length);
     }catch(e){}
+  }
+
+  // Danh sach canh bao (the thu 3) khong con la noi giai trinh:
+  // bo nut 'Giai trinh' ma themGT() da gan, va doi tieu de cho dung y nghia.
+  function doiThe3(){
+    var list=el('a-list'); if(!list) return;
+    [].slice.call(list.querySelectorAll('.gt-btn')).forEach(function(b){
+      if(b.parentNode) b.parentNode.removeChild(b);
+    });
+    var the=list.parentNode;
+    if(!the) return;
+    var h2=the.querySelector('h2');
+    if(h2&&h2.getAttribute('data-doi')!=='1'){
+      h2.textContent='Ảnh hưởng kết quả tháng';
+      h2.setAttribute('data-doi','1');
+    }
   }
 
   function boShopTrongNgay(){
@@ -5891,6 +5899,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     if(dang) return;
     dang=true;
     try{ boShopTrongNgay() }catch(e){}
+    try{ doiThe3() }catch(e){}
     try{ gon() }catch(e){ if(window.console) console.warn('[canh2]',e) }
     dang=false;
   }
@@ -6047,7 +6056,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     if(note) note.innerHTML='<b>4 rule:</b> ① Giảm liên tục 3 ngày · ② Không có S.O liên tục 3 ngày · '+
       '③ Rớt hơn 15% so bình quân của chính shop · ④ Giảm hơn 20% so cùng kỳ tháng trước.<br>'+
       'Shop dính rule được chấm điểm nặng — <b>chỉ '+N+' shop nặng nhất mỗi ngày phải giải trình</b>, '+
-      'phần còn lại đưa xuống mục theo dõi để khỏi loãng.';
+      'phần còn lại đưa xuống mục theo dõi để khỏi loãng.<br>'+
+      'Thẻ <b>Ảnh hưởng kết quả tháng</b> ở dưới chỉ để nắm tình hình — shop nào lọt rule sẽ tự nhảy lên đây.';
 
     var m=document.createElement('span');
     m.className='t3-done'; m.style.display='none';
