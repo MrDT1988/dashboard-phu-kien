@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.14';
+var APP_VER='2026-08-30.15';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5466,9 +5466,14 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     var mp=el('v-month'); if(!mp) return;
     var box=el('c-thidua');
     var K=tinh();
-    if(!K||!K.rows.length){
-      if(box) box.hidden=true;
-      return;
+    var trong=(!K||!K.rows.length);
+    if(trong){
+      var coMWG=0;
+      try{
+        var o9=(typeof scope==='function')?scope():null;
+        ((o9&&o9.s)||[]).forEach(function(x){ if(x&&x.ch2==='MWG'&&x.mkm) coMWG++ });
+      }catch(e){}
+      if(!coMWG){ if(box) box.hidden=true; return }
     }
     if(!box){
       box=document.createElement('div');
@@ -5478,6 +5483,13 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     }
     box.hidden=false;
     if(box.parentNode!==mp) mp.appendChild(box);
+
+    if(trong){
+      box.innerHTML='<h2>🏆 Chương trình thi đua tháng</h2>'+
+        '<p class="sub">Bonus Shop trọng điểm chỉ áp dụng cho shop <b>Size S, A, B</b>. '+
+        'Khu vực đang xem không có shop nào thuộc nhóm này nên chưa có số để theo dõi.</p>';
+      return;
+    }
 
     var rui=K.rows.filter(function(r){return r.moc===0&&r.dtTb>0});
     var ten=rui.slice(0,6).map(function(r){return tenNgan(r.n)}).join(', ');
