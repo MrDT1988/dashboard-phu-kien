@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.17';
+var APP_VER='2026-08-30.18';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6125,7 +6125,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     var ds=[];
     D.sales.forEach(function(s){
       if(!thuoc(s.n)) return;
-      var dt=0,m1=0,m2=0,shop=0,coBM=false;
+      var dt=0,m1=0,m2=0,shop=0,coBM=false,ep=false;
       (s.s||[]).forEach(function(x){
         if(!x||x.ch2!=='MWG') return;
         shop++;
@@ -6133,7 +6133,9 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
         if(x.bmS&&x.bmS[mi]){ coBM=true; m1+=x.bmS[mi][0]||0; m2+=x.bmS[mi][1]||0 }
       });
       if(!shop) return;
-      ds.push({n:s.n,shop:shop,dt:dt,m1:m1,m2:m2,coBM:coBM,
+      // bmL = so cap SALE, da ap luat ep gia theo ten model -> uu tien dung
+      if(s.bmL&&s.bmL[mi]){ coBM=true; ep=true; m1=s.bmL[mi][0]||0; m2=s.bmL[mi][1]||0 }
+      ds.push({n:s.n,shop:shop,dt:dt,m1:m1,m2:m2,coBM:coBM,ep:ep,
                ck:dt*TL/100, bm:(m1*G1+m2*G2)/1e6});
     });
     return ds.length?{ds:ds,thang:D.months[mi]}:null;
@@ -6187,7 +6189,11 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
        '<b>Chiết khấu</b> = 1,2% doanh thu OPPO của tất cả shop MWG mình phụ trách trong tháng. '+
        '<b>Bonus Model</b> = máy OPPO phân khúc <b>10–15M × 80.000đ</b> + <b>từ 15M trở lên × 120.000đ</b>; '+
        'máy dưới 10M không tính. Hai phần này <b>độc lập</b> với chương trình Bonus Shop trọng điểm ở trên.'+
-       (coBM?'':' <b style="color:var(--amber)">Bonus Model đang chờ số phân khúc chi tiết — có từ lần robot chạy 10h sáng mai.</b>')+
+       (coBM
+         ?(K.ds.some(function(x){return x.ep})
+            ?' Đã áp luật <b>ép giá riêng</b>: <b>Reno16 F 5G 8+128GB = 120.000đ/máy</b> thay vì 80.000đ theo phân khúc.'
+            :'')
+         :' <b style="color:var(--amber)">Bonus Model đang chờ số phân khúc chi tiết — có từ lần robot chạy 10h sáng mai.</b>')+
        '</div>';
     box.innerHTML=h;
   }
