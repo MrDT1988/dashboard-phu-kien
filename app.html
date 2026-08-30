@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.22';
+var APP_VER='2026-08-30.23';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -4524,7 +4524,13 @@ setInterval(function(){
   /* ---- 3. Sell out theo ngay: bo Sale, thay bang HANG, 3 tab ---- */
   function veNgayHang(o){
     var neo=el('tv-week'); if(!neo) return;
-    var f=el('filt'); if(f) f.hidden=true;
+    // Giu lai o Size shop / Ngay — chi bo o chon Sale vi the nay da tach theo HANG.
+    var f=el('filt');
+    if(f){
+      f.hidden=false;
+      var fsel=el('f-sale'), flb=(fsel&&fsel.closest)?fsel.closest('label'):null;
+      if(flb){ flb.hidden=true; flb.style.display='none' }
+    }
     var dm=el('p-dymode'); if(dm) dm.style.display='none';
     var hh=el('tvh-h'); if(hh){ hh.hidden=true; hh.style.display='none' }
     var th=el('tv-hang'); if(th){ th.innerHTML=''; th.style.display='none' }
@@ -6282,6 +6288,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     try{ mot=((D.sales||[]).length<=1) }catch(e){}
     lb.hidden=mot;
     lb.style.display=mot?'none':'';
+    var hop=el('filt');
+    if(hop&&typeof SEG!=='undefined'&&SEG==='MWG'&&hop.hidden) hop.hidden=false;
     if(mot){
       var nt=el('filt-note');
       if(nt&&nt.getAttribute('data-1sale')!=='1'&&nt.innerHTML.indexOf('<b>Sale</b> và ')>=0){
