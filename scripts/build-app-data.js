@@ -802,33 +802,34 @@
     }
 
     // 7a2. Top 10 model MOI HANG theo tung thang, o cap SALE va toan bo -> o.mdB[thang][hang]
-    // Gop model theo DONG MAY: bo tien to loai may, bo ten hang, bo mau o duoi ten.
-    var MAU = {};
-    ('den trang xanh vang bac xam hong tim do nau cam kem be bien la duong reu ngoc titan dong nhat dam sang toi ' +
-     'kim ghi than chi thep cat tuyet suong khoi may ' +
-     'black white blue green gold silver gray grey pink purple red orange brown cream beige midnight starlight ' +
-     'natural desert ultramarine teal cosmic deep light dark sand graphite obsidian aqua lavender coral ivory ' +
-     'phantom mystic awesome icy sky ocean forest lilac peach mint jade khaki olive bronze titanium').split(' ')
-      .forEach(function (w) { if (w) MAU[w] = 1; });
-    ['đen','trắng','xanh','vàng','bạc','xám','hồng','tím','đỏ','nâu','biển','lá','dương','rêu','ngọc',
-     'đồng','nhạt','đậm','sáng','tối','ghi','chì','thép','cát','tuyết','sương','khói','mây']
-      .forEach(function (w) { MAU[w] = 1; });
+    // Gop model theo DONG MAY: bo tien to loai may, bo ten hang, bo MAU o duoi ten.
+    // Luat: lay day token cuoi cung KHONG phai spec (khong co chu so, khong co ngoac);
+    // neu trong day do co it nhat MOT tu mau goc thi cat ca day. Nho vay bat duoc ca
+    // mau ghep kieu 'Xanh ngoc bich', 'Den Thach Anh', 'Cosmic Orange'.
+    var MAU_GOC = {};
+    ('den trang xanh vang bac xam hong tim do nau cam kem be black white blue green gold silver ' +
+     'gray grey pink purple red orange brown beige teal lilac peach mint jade olive bronze titan ' +
+     'titanium ivory coral lavender aqua khaki').split(' ').forEach(function (w) { if (w) MAU_GOC[w] = 1; });
+    ['đen','trắng','xanh','vàng','bạc','xám','hồng','tím','đỏ','nâu'].forEach(function (w) { MAU_GOC[w] = 1; });
+    function laSpec(t) {
+      if (t.indexOf('(') >= 0 || t.indexOf(')') >= 0) return true;
+      for (var z = 0; z < t.length; z++) { var c = t.charCodeAt(z); if (c >= 48 && c <= 57) return true; }
+      return false;
+    }
     function gonTen(s) {
       var t = String(s == null ? '' : s).trim();
       var bo = ['Điện thoại ', 'Máy tính bảng '];
       for (var i9 = 0; i9 < bo.length; i9++) if (t.indexOf(bo[i9]) === 0) t = t.slice(bo[i9].length).trim();
       var hg9 = ['OPPO ', 'Oppo ', 'SAMSUNG ', 'Samsung ', 'XIAOMI ', 'Xiaomi ', 'REALME ', 'Realme ',
-                 'realme ', 'vivo ', 'Vivo ', 'HONOR ', 'Honor ', 'TECNO ', 'Tecno ', 'Nubia ',
-                 'Masstel ', 'Motorola ', 'Nothing Phone '];
+                 'realme ', 'vivo ', 'Vivo ', 'HONOR ', 'Honor ', 'TECNO ', 'Tecno ', 'Nubia ', 'Masstel '];
       for (var j9 = 0; j9 < hg9.length; j9++) if (t.indexOf(hg9[j9]) === 0) { t = t.slice(hg9[j9].length).trim(); break; }
       if (t.indexOf('Galaxy ') === 0) t = t.slice(7).trim();
-      var p9 = t.split(' '), n9 = 0;
-      while (p9.length > 1 && n9 < 4) {
-        var w9 = p9[p9.length - 1].toLowerCase();
-        if (!MAU[w9]) break;
-        p9.pop(); n9++;
-      }
-      return p9.join(' ').trim() || t;
+      var p9 = t.split(' '), k9 = p9.length;
+      while (k9 > 1 && !laSpec(p9[k9 - 1])) k9--;
+      var coMau = false;
+      for (var q9 = k9; q9 < p9.length; q9++) if (MAU_GOC[p9[q9].toLowerCase()]) coMau = true;
+      if (coMau) { var z9 = p9.slice(0, k9).join(' ').trim(); if (z9) return z9; }
+      return t;
     }
     var TEN6 = { oppo: 'OPPO', op: 'OPPO', samsung: 'Samsung', ss: 'Samsung',
                  xiaomi: 'Xiaomi', xm: 'Xiaomi', realme: 'Realme', rm: 'Realme',
