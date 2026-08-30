@@ -241,6 +241,40 @@ function saleTheoKenh(D, s, ch) {
   return o;
 }
 
+// Giai trinh: chi giu dong cua shop THUOC pham vi nguoi nay — giu dung luat
+// 'sale nao thay so cua sale do'. Noi theo MA SO trong ten shop.
+function maSo(s) {
+  var t = String(s || ''), i = 0, r = [];
+  while (i < t.length) {
+    var c = t.charCodeAt(i);
+    if (c >= 48 && c <= 57) {
+      var j = i;
+      while (j < t.length) { var d = t.charCodeAt(j); if (d < 48 || d > 57) break; j++; }
+      var so = t.slice(i, j);
+      if (so.length >= 2 && so.length <= 5) r.push(so);
+      i = j;
+    } else i++;
+  }
+  return r;
+}
+function locGT(gtAll, ds) {
+  if (!Array.isArray(gtAll) || !gtAll.length) return null;
+  var ten = [];
+  ds.forEach(function (s) { (s.s || []).forEach(function (x) { if (x && x.n) ten.push(x.n); }); });
+  if (!ten.length) return null;
+  var maCua = ten.map(maSo);
+  var out = [];
+  gtAll.forEach(function (gt) {
+    var ma = maSo(gt[0]);
+    if (!ma.length) return;
+    for (var i = 0; i < ten.length; i++) {
+      var mb = maCua[i], khop = false;
+      for (var k = 0; k < ma.length; k++) if (mb.indexOf(ma[k]) >= 0) { khop = true; break; }
+      if (khop) { out.push([ten[i], gt[1], gt[2], gt[3]]); return; }
+    }
+  });
+  return out.length ? out : null;
+}
 function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
   let ds = D.sales.filter((s) => tenSales.includes(s.n));
   if (kenh) ds = ds.map((s) => saleTheoKenh(D, s, kenh)).filter(Boolean)
@@ -252,6 +286,7 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     chans: kenh ? [kenh] : D.chans,
     v: D.v, segsMkt: D.segsMkt || [], nhomPK: D.nhomPK || null,
     dmT: D.dmT || null,
+    gt: locGT(D.gtAll, ds),
     shareKA: D.shareKA || null,
     src: D.src || null, tkMonths: D.tkMonths || [],
     tgK: D.tgK || null, sizes: D.sizes || [],
