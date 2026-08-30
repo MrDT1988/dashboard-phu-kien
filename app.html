@@ -4526,6 +4526,9 @@ setInterval(function(){
     var neo=el('tv-week'); if(!neo) return;
     var f=el('filt'); if(f) f.hidden=true;
     var dm=el('p-dymode'); if(dm) dm.style.display='none';
+    var hh=el('tvh-h'); if(hh){ hh.hidden=true; hh.style.display='none' }
+    var th=el('tv-hang'); if(th){ th.innerHTML=''; th.style.display='none' }
+    var fs=el('f-seg-w'); if(fs){ fs.hidden=true; fs.style.display='none' }
     var hdr=neo.previousElementSibling;
     var pil=el('p-hang3');
     if(!pil||(dm&&pil.nextElementSibling!==dm)){
@@ -4549,7 +4552,7 @@ setInterval(function(){
     var tong=gomDn(o.dnB,a0,a0+nMax-1);
 
     var head=['Hãng'].concat(ngay.map(function(d){return String(d)})).concat(['Tổng']);
-    var rows=[], ghi='';
+    var rows=[], ghi='', ghiThem='';
 
     if(DAY_TAB==='pk'){
       var lay=function(v,i){ return i===0?(v[10]||0):i===1?((v[12]||0)-(v[10]||0)):(v[12]||0) };
@@ -4562,6 +4565,25 @@ setInterval(function(){
         var t=v[12]||0; return t?('<b>'+(v[10]/t*100).toFixed(0)+'%</b>'):'—';
       })).concat(['<b>'+(tong[12]?(tong[10]/tong[12]*100).toFixed(1):0)+'%</b>']));
       ghi='Khoảng 10–20M chỉ có số OPPO và tổng thị trường theo ngày, chưa tách được từng hãng. Đơn vị: máy.';
+      var iN=2, tenN=(D.nhomPK||[]);
+      for(var q9=0;q9<tenN.length;q9++) if(/10.*20/.test(tenN[q9])){ iN=q9; break }
+      var H7=['OPPO','Samsung','Xiaomi','Apple','vivo','Realme','Khác'];
+      var g7=[]; for(var z9=0;z9<7;z9++) g7.push([0,0]);
+      var coSgb=false;
+      ((o&&o.s)||[]).forEach(function(sh){
+        var sb=sh.sgb; if(!sb||!sb[MI]||!sb[MI][iN]) return;
+        coSgb=true;
+        sb[MI][iN].forEach(function(v,k9){ if(k9<7&&v){ g7[k9][0]+=v[0]||0; g7[k9][1]+=v[1]||0 } });
+      });
+      if(coSgb){
+        var tU9=0,tR9=0; g7.forEach(function(v){ tU9+=v[0]; tR9+=v[1] });
+        if(tU9) ghiThem='<div class="subhead">PK 10–20M theo hãng — tháng '+m+'</div>'+
+          '<div class="tvwrap" id="tq-pkh-b">'+bang(['Hãng','Máy','Thị phần','Doanh thu'],
+            H7.map(function(nn,k9){ return [nn, so0(g7[k9][0]),
+              (g7[k9][0]/tU9*100).toFixed(1)+'%', tien(g7[k9][1])] })
+              .concat([['<b>Tổng</b>','<b>'+so0(tU9)+'</b>','<b>100%</b>','<b>'+tien(tR9)+'</b>']]))+
+          '</div><div class="note">Khoảng 10–20M chỉ tách được theo hãng ở mức THÁNG — DB TG không có số 10–20M theo từng hãng theo ngày.</div>';
+      }
       if(typeof drawStack==='function'){
         var sv=el('ch-day');
         if(sv) drawStack(sv,ngay,cot.map(function(v){return v[10]||0}),cot.map(function(v){return v[12]||0}),
@@ -4600,7 +4622,7 @@ setInterval(function(){
     }
     if(hdr&&hdr.className==='subhead')
       hdr.textContent='Chi tiết theo ngày — từng hãng ('+(DAY_TAB==='pk'?'PK 10–20M':DAY_TAB==='u'?'số máy':'doanh thu')+')';
-    neo.innerHTML=bang(head,rows)+'<div class="note">'+ghi+'</div>';
+    neo.innerHTML=bang(head,rows)+'<div class="note">'+ghi+'</div>'+ghiThem;
   }
   /* ---- 4. Bo the Phan khuc gia ---- */
   function boSeg(){ var c=el('c-seg'); if(c){ c.hidden=true; c.style.display='none' } }
