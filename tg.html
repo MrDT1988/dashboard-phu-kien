@@ -1314,6 +1314,43 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
     body { background:white; color:#1a1a1a; }
     .table-scroll { max-height:none; overflow:visible; }
 }
+
+/* ================= CÂN LẠI KÍCH THƯỚC CÁC BẢNG MINI =========================
+   Anh Thái 29/08: "bảng thì nhỏ quá bảng thì lớn quá".
+   Đúng vậy — cỡ chữ đang đặt theo TÊN CLASS chứ không theo SỐ CỘT:
+     .mini-month-table   9px    13 cột   (Doanh số/Doanh thu theo tháng)
+     .mini-week-table    7,5px  54 cột   (theo tuần cả năm — cần nhỏ thật)
+     .mini-week-table    7,5px  14 cột   (Sell Out/Sell In O.C-Normal, KA theo
+                                          tháng) -> CÙNG số cột với bảng 9px ở
+                                          trên mà chữ nhỏ hơn 1,5px
+   Nên hai bảng cạnh nhau, cùng 12 tháng, mà một cái to một cái bé.
+
+   Sửa: cỡ chữ đi theo SỐ CỘT, không theo tên class.
+     ít cột (< 20)  -> 9,5px, thoáng, đọc được trên điện thoại
+     nhiều cột (>= 20, tức bảng 53 tuần / theo ngày) -> 7,5px, mới đủ chỗ
+   Dùng :has(td:nth-child(20)) để tự nhận ra, không phải liệt kê từng bảng —
+   sau này thêm bảng mới cũng tự đúng. Trình duyệt cũ không hiểu :has() thì
+   rơi về cỡ 9,5px và bảng tự cuộn ngang, vẫn đọc được. */
+.mini-week-table, .mini-month-table { font-size:9.5px; }
+.mini-week-table td, .mini-month-table td { padding:3px 5px; }
+.mini-week-table td.mwt-label, .mini-month-table td.mmt-label { font-size:9px; }
+.mini-week-table:has(tr > td:nth-child(20)),
+.mini-month-table:has(tr > td:nth-child(20)) { font-size:7.5px; }
+.mini-week-table:has(tr > td:nth-child(20)) td,
+.mini-month-table:has(tr > td:nth-child(20)) td { padding:2px 1px; }
+.mini-week-table:has(tr > td:nth-child(20)) td.mwt-label,
+.mini-month-table:has(tr > td:nth-child(20)) td.mmt-label { font-size:7.5px; }
+/* Chật quá thì cho cuộn ngang, đừng bóp chữ nhỏ đến mức không đọc nổi. */
+.mini-week-table-wrap { overflow-x:auto; }
+
+/* ---- BỎ HẲN DẤU SAO / TÔ VÀNG CỘT THÁNG HIỆN TẠI ----
+   Anh Thái 29/08: "bỏ toàn bộ các ngôi sao highlight tháng hiện tại đi, nhìn
+   rối quá, trả về bình thường cho tối giản". Có tới HAI cơ chế cùng đánh dấu
+   nên bảng theo hãng ra "T8 ★ ★" — hai sao chồng nhau. Gỡ cả hai. */
+.cm-col-header { background:transparent !important; color:inherit !important; }
+.cm-star { display:none !important; }
+.latest-month-col, thead th.latest-month-col,
+.brand-heat-table th.latest-month-col { background:transparent !important; }
 </style>
 
 </head>
@@ -9279,49 +9316,24 @@ window.__khoiDongDBTG(initDashboard, 'center', 'loading-overlay', loadAndRender)
 </script>
 
 <script>
+/* ĐÁNH DẤU CỘT "THÁNG HIỆN TẠI" — ĐÃ GỠ (29/08).
+   Trước đây khối này chạy một MutationObserver quét MỌI bảng trong trang, tìm
+   cột có tiêu đề trùng tháng hiện tại rồi tô nền vàng + gắn dấu ★. Bảng theo
+   hãng còn tự gắn thêm một dấu nữa của riêng nó, nên ra "T8 ★ ★".
+   Anh Thái 29/08: "bỏ toàn bộ các ngôi sao highlight tháng hiện tại đi, nhìn
+   rối quá, trả về bình thường cho tối giản".
+   Gỡ luôn cả observer — nó chạy lại sau MỖI lần bảng vẽ lại, quét toàn bộ
+   trang, giờ không còn việc gì để làm nữa. Chỉ giữ một lần dọn cho sạch các
+   dấu cũ nếu còn sót. */
 (function () {
-    var now = new Date();
-    var currentMonthLabel = 'T' + (now.getMonth() + 1);
-    var pending = false;
-    var observer = null;
-    function cleanText(s) { return (s || '').replace(/[▲▼★]/g, '').trim(); }
-    function highlightAll() {
-        // QUAN TRỌNG: tạm ngắt observer trước khi tự mình sửa DOM (thêm/xóa sao, đổi class) - nếu không
-        // chính những thay đổi này lại kích observer gọi lại highlightAll() vô hạn (treo tab/CPU 100%).
-        if (observer) observer.disconnect();
-        document.querySelectorAll('table').forEach(function (table) {
-            table.querySelectorAll('.cm-star').forEach(function (el) { el.remove(); });
-            table.querySelectorAll('.cm-col-header').forEach(function (el) { el.classList.remove('cm-col-header'); });
-            var headerRow = (table.tHead && table.tHead.rows.length) ? table.tHead.rows[table.tHead.rows.length - 1] : table.rows[0];
-            if (!headerRow) return;
-            var headerCells = Array.prototype.slice.call(headerRow.children);
-            var colIdx = -1;
-            headerCells.forEach(function (cell, idx) {
-                if (cleanText(cell.textContent) === currentMonthLabel) colIdx = idx;
-            });
-            if (colIdx === -1) return;
-            var th = headerCells[colIdx];
-            th.classList.add('cm-col-header');
-            var star = document.createElement('span');
-            star.className = 'cm-star';
-            star.textContent = ' ★';
-            th.appendChild(star);
-        });
-        if (observer) observer.observe(document.body, { childList: true, subtree: true });
+    function don() {
+        document.querySelectorAll('.cm-star').forEach(function (el) { el.remove(); });
+        document.querySelectorAll('.cm-col-header').forEach(function (el) { el.classList.remove('cm-col-header'); });
+        document.querySelectorAll('.latest-month-col').forEach(function (el) { el.classList.remove('latest-month-col'); });
     }
-    function schedule() {
-        if (pending) return;
-        pending = true;
-        setTimeout(function () { pending = false; highlightAll(); }, 60);
-    }
-    function start() {
-        observer = new MutationObserver(schedule);
-        observer.observe(document.body, { childList: true, subtree: true });
-        schedule();
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-    else start();
-    window.addEventListener('load', schedule);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', don);
+    else don();
+    window.addEventListener('load', don);
 })();
 </script>
 <script>
@@ -10983,7 +10995,7 @@ function renderBrandHeatTable() {
     const colgroup = `<colgroup><col style="width:${namePct}%;">${labels.map(()=>`<col style="width:${monthPct}%;">`).join('')}<col style="width:${yearColPct}%;"></colgroup>`;
     const head = `<thead><tr><th style="text-align:left; padding-left:8px;">Hãng</th>${labels.map((lbl,i) => {
         const isLatest = activeMonths[i] === latestRealMonthIdx;
-        return `<th${isLatest?' class="latest-month-col"':''}>${lbl}${isLatest?' ★':''}</th>`;
+        return `<th>${lbl}</th>`;   // đã bỏ tô vàng + dấu ★ cho tháng hiện tại (29/08)
     }).join('')}<th class="bht-year-col">2026</th></tr></thead>`;
     const rows = order.map(b => brandHeatRowHtml(brandDisplay(b), series[b], meta, false, pctSeries ? pctSeries[b] : null, yearSeries[b], yearPctSeriesForMetric ? yearPctSeriesForMetric[b] : null)).join('');
     const totalRow = brandHeatRowHtml('TỔNG', totalArr, meta, true, totalPctArr, yearTotalMap[brandHeatMetric], brandHeatMetric === 'avgprice' ? null : 100);
@@ -13905,10 +13917,10 @@ body.zoom-on { overflow: hidden; }
 </script>
 
 
-<script src="scripts/demo-mau.js?v=202608291843"></script>
-<script src="scripts/demo-ve.js?v=202608291843"></script>
-<script src="scripts/demo-chart-shim.js?v=202608291843"></script>
-<script src="scripts/demo-bang.js?v=202608291843"></script>
-<script src="scripts/demo-bo-cuc.js?v=202608291843"></script>
-<script src="scripts/demo-sang.js?v=202608291843"></script>
+<script src="scripts/demo-mau.js?v=202608301650"></script>
+<script src="scripts/demo-ve.js?v=202608301650"></script>
+<script src="scripts/demo-chart-shim.js?v=202608301650"></script>
+<script src="scripts/demo-bang.js?v=202608301650"></script>
+<script src="scripts/demo-bo-cuc.js?v=202608301650"></script>
+<script src="scripts/demo-sang.js?v=202608301650"></script>
 </html>
