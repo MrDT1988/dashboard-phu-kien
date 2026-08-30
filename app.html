@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.20';
+var APP_VER='2026-08-30.21';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5864,9 +5864,9 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     });
     try{
       var sub=el('a-sub');
-      if(sub&&tt.length) sub.innerHTML=tt.length+' shop đang ảnh hưởng kết quả tháng '+D.months[MI]+
-        ' — số theo data MWG, xếp theo mức độ gấp. <b>Chỉ để nắm tình hình, không phải giải trình</b> — '+
-        'shop nào dính rule đã được đưa lên mục <b>Phải giải trình</b> ở trên.';
+      if(sub&&tt.length) sub.innerHTML='Số theo data MWG, xếp theo mức độ gấp. '+
+        '<b>Chỉ để nắm tình hình, không phải giải trình</b> — shop nào vượt ngưỡng đã nằm ở mục '+
+        '<b>Phải giải trình</b> phía trên.';
       var bg=document.querySelector('nav .badge');
       if(bg) bg.textContent=tt.length>99?'99+':String(tt.length);
     }catch(e){}
@@ -5883,7 +5883,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     if(!the) return;
     var h2=the.querySelector('h2');
     if(h2&&h2.getAttribute('data-doi')!=='1'){
-      h2.textContent='Ảnh hưởng kết quả tháng';
+      h2.textContent='Shop có vấn đề cần theo dõi';
       h2.setAttribute('data-doi','1');
     }
   }
@@ -5927,9 +5927,10 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
 </style>
 <script id="app-top3">
 (function(){
-  // ================= NGUONG "TE QUA" — chot 30/08 =================
-  // Anh Thai: khong bat giai trinh moi ngay. Chi shop TE THAT SU moi phai tra loi.
-  // Ngay nao khong shop nao vuot nguong thi khong ai phai giai trinh — dung co ep du 3.
+  // ================= TAB CANH BAO CHI CON 2 PHAN (chot 30/08) =================
+  // 1. Phai giai trinh  — shop VUOT NGUONG TE, co the rong
+  // 2. Shop co van de can theo doi — gop tat ca shop con lai, moi shop mot dong
+  // Theo doi thi truong da chuyen sang tab Chi tiet ngay (nam dau tien).
   var N=3;            // tran: nhieu nhat 3 shop mot ngay
   var NGAY_CHET=5;    // khong co S.O tu 5 ngay lien tiep tro len
   var GIAM_SAU=30;    // giam tu 30% tro len so cung ky thang truoc
@@ -5975,7 +5976,6 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     try{ return (typeof ngayMkt==='function')?ngayMkt():(D.maxDay||0) }catch(e){ return 0 }
   }
 
-  // Do muc "te that su" ngay tu so lieu ngay cua shop (data MWG)
   function doNang(sh,d){
     var dk=sh&&sh.dk?sh.dk:null;
     if(!dk||!dk.length) return null;
@@ -5992,13 +5992,12 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     return {nang:nang, lien:lien, mat:Math.max(0,b-a)};
   }
 
-  // Danh sach shop PHAI giai trinh hom nay (co the rong)
   function topNang(){
     try{
-      if(!window.__canh||typeof window.__canh.ruleShop!=='function') return null;
+      if(!window.__canh||typeof window.__canh.ruleShop!=='function') return [];
       var o=(typeof scope==='function')?scope():null;
       var d=ngayXem();
-      if(!o||!d) return null;
+      if(!o||!d) return [];
       var ds=window.__canh.ruleShop(o,d)||[];
       var mp={};
       (o.s||[]).forEach(function(x){ if(x&&x.n) mp[x.n]=x });
@@ -6006,16 +6005,15 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
       ds.forEach(function(x){
         var t=doNang(mp[x.n],d);
         var duRule=!!(x.ly&&x.ly.length>=SO_RULE);
-        var laNang=duRule||!!(t&&t.nang);
-        if(!laNang) return;
-        nang.push({n:x.n, diem:(x.nang||0)+(t&&t.nang?5:0)+(duRule?5:0), mat:t?t.mat:0});
+        if(!(duRule||(t&&t.nang))) return;
+        nang.push({n:x.n, diem:(x.nang||0)+((t&&t.nang)?5:0)+(duRule?5:0), mat:t?t.mat:0});
       });
       nang.sort(function(a,b){
         if(b.diem!==a.diem) return b.diem-a.diem;
         return b.mat-a.mat;
       });
       return nang.slice(0,N).map(function(x){ return x.n });
-    }catch(e){ return null }
+    }catch(e){ return [] }
   }
 
   function tenTuNut(r){
@@ -6029,7 +6027,19 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     return (j>=0?s.slice(0,j):s).trim();
   }
 
-  function veThe(top){
+  // Theo doi thi truong -> dau tab Chi tiet ngay
+  function chuyenTT(){
+    var tt=el('canh-ngay'); if(!tt) return;
+    var find=el('v-find'); if(!find) return;
+    var neo=el('ngay-box');
+    if(neo&&neo.parentNode===find){
+      if(tt.parentNode!==find||tt.nextElementSibling!==neo) find.insertBefore(tt,neo);
+    } else if(tt.parentNode!==find){
+      find.insertBefore(tt,find.firstChild);
+    }
+  }
+
+  function veThe(ds){
     var box=el('canh-gt'); if(!box) return;
     if(box.querySelector('.t3-done')) return;
     var rows=[].slice.call(box.children).filter(function(c){
@@ -6040,8 +6050,9 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     [].slice.call(box.children).forEach(function(c){
       if(c.className&&String(c.className).indexOf('note')>=0) note=c;
     });
+    var list=el('a-list');
 
-    var bb=0, td=[];
+    var bb=0, chuyen=0;
     rows.forEach(function(r){
       var ten=tenTuNut(r);
       var t=r.querySelector('.t');
@@ -6052,76 +6063,87 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
         if(sp) t.appendChild(sp);
         t.setAttribute('data-gon','1');
       }
-      if(top&&top.indexOf(ten)>=0){ bb++; return }
-      td.push(r);
+      if(ds.indexOf(ten)>=0){ bb++; return }
+      // chua toi nguong -> chuyen han sang the 2
+      if(!list) return;
+      r.setAttribute('data-tenshop',ten);
+      r.style.opacity='';
+      var ic=r.querySelector('.ic');
+      if(ic){ ic.textContent='👁';
+        ic.style.background='color-mix(in srgb, var(--amber) 14%, transparent)';
+        ic.style.color='var(--amber)' }
+      var pi=r.querySelector('.pill');
+      if(pi&&pi.textContent.indexOf('đã trả lời')<0){
+        pi.textContent='theo dõi';
+        pi.style.background='color-mix(in srgb, var(--amber) 13%, transparent)';
+        pi.style.color='var(--amber)';
+      }
+      var bt=r.querySelector('.gt-btn');
+      if(bt&&bt.parentNode) bt.parentNode.removeChild(bt);
+      list.insertBefore(r,list.firstChild);
+      chuyen++;
     });
-
-    if(td.length){
-      var head=document.createElement('div');
-      head.className='td-head';
-      head.style.cssText='margin:15px 0 9px;padding-top:13px;border-top:1px solid var(--line);'+
-        'font-size:12px;font-weight:700;color:var(--amber)';
-      head.textContent=bb
-        ? ('Theo dõi thêm — '+td.length+' shop, chưa tới mức phải giải trình')
-        : ('Đang theo dõi — '+td.length+' shop, chưa shop nào tới mức phải giải trình');
-      if(note) box.insertBefore(head,note); else box.appendChild(head);
-      td.forEach(function(r){
-        r.style.opacity='.72';
-        var ic=r.querySelector('.ic');
-        if(ic){ ic.textContent='👁';
-          ic.style.background='color-mix(in srgb, var(--amber) 14%, transparent)';
-          ic.style.color='var(--amber)' }
-        var pi=r.querySelector('.pill');
-        if(pi&&pi.textContent.indexOf('đã trả lời')<0){
-          pi.textContent='theo dõi';
-          pi.style.background='color-mix(in srgb, var(--amber) 13%, transparent)';
-          pi.style.color='var(--amber)';
-        }
-        var bt=r.querySelector('.gt-btn');
-        if(bt&&bt.textContent.indexOf('Sửa')<0){
-          bt.textContent='Ghi chú ↗';
-          bt.style.background='color-mix(in srgb, var(--neutral) 26%, transparent)';
-          bt.style.color='var(--ink2)';
-        }
-        if(note) box.insertBefore(r,note); else box.appendChild(r);
-      });
-    }
 
     var sub=box.querySelector('.sub');
     if(sub) sub.innerHTML=bb
-      ? ('<b style="color:var(--red)">'+bb+' shop</b> phải giải trình hôm nay'+
-         (td.length?(' · <b style="color:var(--amber)">'+td.length+' shop</b> chỉ theo dõi'):'')+
-         '. Bấm <b>Giải trình</b> để mở biểu mẫu đã điền sẵn tên shop.')
-      : ('<b style="color:var(--green)">Hôm nay không shop nào tới mức phải giải trình.</b>'+
-         (td.length?(' '+td.length+' shop bên dưới chỉ để theo dõi.'):''));
+      ? ('<b style="color:var(--red)">'+bb+' shop</b> phải giải trình hôm nay. '+
+         'Bấm <b>Giải trình</b> để mở biểu mẫu đã điền sẵn tên shop.')
+      : '<b style="color:var(--green)">Hôm nay không shop nào tới mức phải giải trình.</b>';
+    if(!bb){
+      var rong=document.createElement('div');
+      rong.className='empty';
+      rong.textContent='🎉 Không shop nào phải giải trình hôm nay';
+      if(note) box.insertBefore(rong,note); else box.appendChild(rong);
+    }
     if(note) note.innerHTML='<b>Chỉ giải trình khi thật sự tệ</b> — không phải ngày nào cũng có. '+
-      'Một shop phải trả lời khi rơi vào ít nhất một mức nặng: '+
-      '<b>không có S.O từ '+NGAY_CHET+' ngày liên tiếp</b> · '+
+      'Ngưỡng: <b>không có S.O từ '+NGAY_CHET+' ngày liên tiếp</b> · '+
       '<b>giảm từ '+GIAM_SAU+'% so cùng kỳ</b> (nền cùng kỳ ≥ '+NEN_MIN+' máy) · '+
-      'hoặc <b>dính từ '+SO_RULE+' rule trở lên cùng lúc</b>. Nhiều shop vượt ngưỡng thì lấy '+N+' shop nặng nhất.<br>'+
-      'Thẻ <b>Ảnh hưởng kết quả tháng</b> ở dưới chỉ để nắm tình hình — shop nào vượt ngưỡng sẽ tự nhảy lên đây.';
+      'hoặc <b>dính từ '+SO_RULE+' rule trở lên cùng lúc</b>. Nhiều shop vượt thì lấy '+N+' shop nặng nhất.<br>'+
+      'Shop chưa tới ngưỡng nằm ở thẻ <b>Shop có vấn đề cần theo dõi</b> bên dưới.';
 
     var m=document.createElement('span');
     m.className='t3-done'; m.style.display='none';
     box.appendChild(m);
   }
 
+  // Moi shop chi mot dong o the 2: an dong thang neu shop do da co dong ngay,
+  // va an luon shop dang phai giai trinh o the 1.
+  function boTrung(ds){
+    var list=el('a-list'); if(!list) return;
+    var da={};
+    [].slice.call(list.querySelectorAll('[data-tenshop]')).forEach(function(x){
+      var t=x.getAttribute('data-tenshop'); if(t) da[t]=1;
+    });
+    [].slice.call(list.querySelectorAll('.al[data-shop]')).forEach(function(b){
+      var t=b.dataset?b.dataset.shop:'';
+      var w=(b.parentNode&&String(b.parentNode.className).indexOf('gt-row')>=0)?b.parentNode:b;
+      var an=!!(t&&(da[t]||ds.indexOf(t)>=0));
+      w.style.display=an?'none':'';
+    });
+  }
+
   var dang=false;
   function chay(){
     if(dang) return;
     dang=true;
-    try{ veThe(topNang()) }catch(e){ if(window.console) console.warn('[top3]',e) }
+    try{
+      var ds=topNang();
+      chuyenTT();
+      veThe(ds);
+      boTrung(ds);
+    }catch(e){ if(window.console) console.warn('[top3]',e) }
     dang=false;
   }
 
   function gan(){
     var sec=el('v-alert');
-    if(!sec||sec.__t3) return;
-    try{
-      var ob=new MutationObserver(function(){ chay() });
-      ob.observe(sec,{childList:true,subtree:true});
-      sec.__t3=ob;
-    }catch(e){}
+    if(sec&&!sec.__t3){
+      try{
+        var ob=new MutationObserver(function(){ chay() });
+        ob.observe(sec,{childList:true,subtree:true});
+        sec.__t3=ob;
+      }catch(e){}
+    }
   }
 
   setTimeout(function(){ try{ gan(); chay() }catch(e){} },700);
