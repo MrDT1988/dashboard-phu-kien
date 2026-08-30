@@ -24,6 +24,52 @@ const SO_LAN_THU = Number(process.env.RETRIES || 1);
 
 const log = (...a) => console.log('[refresh]', ...a);
 
+// ---- Doc bang cau tra loi GIAI TRINH (CSV xuat ban tu Google Sheet) ----
+// Chi chay khi co bien moi truong GT_CSV. Hong thi bo qua, khong lam vo lan chay.
+var CR = String.fromCharCode(13), LF = String.fromCharCode(10);
+function tachCSV(s) {
+  var out = [], hang = [], o = '', trong = false, i = 0;
+  while (i < s.length) {
+    var c = s[i];
+    if (trong) {
+      if (c === '"') { if (s[i + 1] === '"') { o += '"'; i += 2; continue; } trong = false; i++; continue; }
+      o += c; i++; continue;
+    }
+    if (c === '"') { trong = true; i++; continue; }
+    if (c === ',') { hang.push(o); o = ''; i++; continue; }
+    if (c === CR) { i++; continue; }
+    if (c === LF) { hang.push(o); out.push(hang); hang = []; o = ''; i++; continue; }
+    o += c; i++;
+  }
+  if (o.length || hang.length) { hang.push(o); out.push(hang); }
+  return out;
+}
+async function docGiaiTrinh() {
+  const url = process.env.GT_CSV;
+  if (!url) { log('khong co GT_CSV, bo qua phan giai trinh'); return null; }
+  try {
+    const r = await fetch(url, { redirect: 'follow' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const bang = tachCSV(await r.text());
+    if (bang.length < 2) { log('bang giai trinh trong'); return []; }
+    const ds = [];
+    for (let k = 1; k < bang.length; k++) {
+      const h = bang[k];
+      if (!h || h.length < 2) continue;
+      const shop = String(h[1] || '').trim();
+      if (!shop) continue;
+      ds.push([shop, String(h[0] || '').trim(),
+               String(h[2] || '').trim().slice(0, 300),
+               String(h[3] || '').trim().slice(0, 300)]);
+    }
+    log('doc duoc ' + ds.length + ' dong giai trinh');
+    return ds;
+  } catch (e) {
+    log('khong doc duoc bang giai trinh: ' + String(e && e.message || e));
+    return null;
+  }
+}
+
 function kiemTra(d) {
   const loi = [];
   if (!d || typeof d !== 'object') return ['khong nhan duoc du lieu'];
@@ -237,6 +283,8 @@ async function layMotLan(lanThu) {
     process.exit(2);
   }
 
+  var gtDS = await docGiaiTrinh();
+  if (gtDS) data.gtAll = gtDS;
   fs.writeFileSync(OUT, JSON.stringify(data));
 
   // Ghi lai moc so sanh (da ma hoa) cho lan chay sau
