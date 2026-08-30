@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.11';
+var APP_VER='2026-08-30.12';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5767,27 +5767,56 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     var list=el('a-list'); if(!list) return;
     var ds=[].slice.call(list.querySelectorAll('.al[data-shop]'));
     if(!ds.length) return;
-    var mp=null;
+    var chua=false;
+    for(var i=0;i<ds.length;i++) if(ds[i].getAttribute('data-gon')!=='1'){ chua=true; break }
+    if(!chua) return;
+    var mp=banDoRule();
+    var giu={}, tt=[];
     ds.forEach(function(b){
-      if(b.getAttribute('data-gon')==='1') return;
       var ten=b.dataset?b.dataset.shop:'';
       if(!ten) return;
+      var dd=b.querySelector('.d'), pl=b.querySelector('.pill');
+      var mo=dd?dd.textContent.trim():'';
+      var pi=pl?pl.textContent.trim():'';
+      if(!giu[ten]){ giu[ten]={el:b, ds:[]}; tt.push(ten) }
+      if(mo) giu[ten].ds.push([mo,pi]);
+      if(giu[ten].el!==b){
+        var xoa=(b.parentNode&&b.parentNode.className==='gt-row')?b.parentNode:b;
+        if(xoa.parentNode) xoa.parentNode.removeChild(xoa);
+      }
+    });
+    tt.forEach(function(ten){
+      var g=giu[ten], b=g.el;
       b.setAttribute('data-gon','1');
       var t=b.querySelector('.t');
       if(t) t.textContent=nhan(ten);
-      if(mp===null) mp=banDoRule();
-      var ly=mp[ten];
-      if(!ly||!ly.length) return;
       var bd=b.querySelector('.bd'); if(!bd) return;
-      if(bd.querySelector('.gt-ly')) return;
-      var sp=document.createElement('span');
-      sp.className='d gt-ly';
-      sp.innerHTML='<b style="color:var(--amber)">Phải giải trình:</b> '+
-        ly.map(function(y){
-          return '<span style="color:var('+y[0]+');font-weight:700">'+esc(y[1])+'</span>';
-        }).join(' - ');
-      bd.appendChild(sp);
+      [].slice.call(bd.querySelectorAll('.d')).forEach(function(x){ x.parentNode.removeChild(x) });
+      var nhieu=g.ds.length>1;
+      g.ds.forEach(function(x,i){
+        var sp=document.createElement('span');
+        sp.className='d';
+        sp.textContent=(nhieu?'• ':'')+x[0]+((nhieu&&i>0&&x[1])?(' ('+x[1]+')'):'');
+        bd.appendChild(sp);
+      });
+      var ly=mp[ten];
+      if(ly&&ly.length){
+        var sp2=document.createElement('span');
+        sp2.className='d gt-ly';
+        sp2.innerHTML='<b style="color:var(--amber)">Phải giải trình:</b> '+
+          ly.map(function(y){
+            return '<span style="color:var('+y[0]+');font-weight:700">'+esc(y[1])+'</span>';
+          }).join(' - ');
+        bd.appendChild(sp2);
+      }
     });
+    try{
+      var sub=el('a-sub');
+      if(sub&&tt.length) sub.textContent=tt.length+' shop cần để ý trong tháng '+D.months[MI]+
+        ' — xếp theo mức độ gấp, bấm vào để xem chi tiết.';
+      var bg=document.querySelector('nav .badge');
+      if(bg) bg.textContent=tt.length>99?'99+':String(tt.length);
+    }catch(e){}
   }
 
   function boShopTrongNgay(){
