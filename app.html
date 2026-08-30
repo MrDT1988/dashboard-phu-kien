@@ -4935,6 +4935,159 @@ setInterval(function(){
 #nd-sel{width:100%;padding:9px 10px;border-radius:10px;background:#141b24;color:inherit;border:1px solid rgba(255,255,255,.12);font-size:14px;font-weight:600}
 </style>
 
+
+<script id="app-canh">
+(function(){
+  var GFORM='https://docs.google.com/forms/d/e/1FAIpQLScY0RRpM6nCiCKD_KfS5I_x4VCYCbJgpT43RRKKJmZkjrq7fA/viewform?usp=pp_url&entry.1084610876=';
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+  function so0(v){ return (typeof n0==='function')?n0(v):String(Math.round(v||0)) }
+  function tien(v){ return (typeof money==='function')?money(v):String(Math.round(v||0)) }
+  function mNow(){ return D.months[D.months.length-1] }
+  function soNgay(){ return (typeof ngayMkt==='function')?ngayMkt():(D.maxDay||28) }
+  function oNgay(o,d){
+    var a0=toDoy(D.year,mNow(),1);
+    return (o.dnB||[])[a0+d-2]||null;
+  }
+  function gtUrl(ten,sale){
+    var t=String(ten||'');
+    return GFORM+encodeURIComponent(sale?(t+' · '+sale):t);
+  }
+  function dong(ic,cl,tieu,mo,pill,shop,sale){
+    return '<div class="gt-row"><div class="al" style="cursor:default">'+
+      '<span class="ic" style="background:color-mix(in srgb, var('+cl+') 16%, transparent);color:var('+cl+')">'+ic+'</span>'+
+      '<span class="bd"><span class="t">'+esc(tieu)+'</span><span class="d">'+mo+'</span></span>'+
+      '<span class="pill" style="background:color-mix(in srgb, var('+cl+') 14%, transparent);color:var('+cl+')">'+esc(pill)+'</span>'+
+      '</div>'+(shop?('<a class="gt-btn" target="_blank" rel="noopener" href="'+gtUrl(shop,sale)+'">Giải trình ↗</a>'):'')+'</div>';
+  }
+  function pctS(a,b){ return b?(a/b*100):null }
+
+  function veNgay(o){
+    var sec=el('v-alert'); if(!sec||!o) return;
+    var box=el('canh-ngay');
+    if(!box){
+      box=document.createElement('div'); box.className='card'; box.id='canh-ngay';
+      sec.insertBefore(box, sec.firstElementChild);
+    }
+    var d=soNgay(), t=oNgay(o,d), p=d>1?oNgay(o,d-1):null;
+    if(!t||!t[8]){ box.innerHTML='<h2>Cảnh báo ngày</h2><div class="note">Chưa có số ngày để soi.</div>'; return }
+    var ds=[];
+
+    // R1 share san luong
+    var s1=pctS(t[0],t[8]), s0=p?pctS(p[0],p[8]):null;
+    if(s1!==null&&s0!==null&&Math.abs(s1-s0)>=1)
+      ds.push([s1<s0?0:8,(s1<s0?'⛔':'✅'),(s1<s0?'--red':'--green'),'Share sản lượng đổi mạnh',
+        'OPPO '+s0.toFixed(1)+'% → <b>'+s1.toFixed(1)+'%</b> ('+so0(t[0])+'/'+so0(t[8])+' máy)',
+        (s1-s0>=0?'+':'')+(s1-s0).toFixed(1)+'đ',null,null]);
+
+    // R2 share doanh thu tru Apple
+    var mS=t[9]-(t[7]||0), mP=p?(p[9]-(p[7]||0)):0;
+    var r1=pctS(t[1],mS), r0=(p&&mP)?pctS(p[1],mP):null;
+    if(r1!==null&&r0!==null&&Math.abs(r1-r0)>=1)
+      ds.push([r1<r0?0:8,(r1<r0?'⛔':'✅'),(r1<r0?'--red':'--green'),'Share doanh thu (trừ Apple) đổi mạnh',
+        r0.toFixed(1)+'% → <b>'+r1.toFixed(1)+'%</b>', (r1-r0>=0?'+':'')+(r1-r0).toFixed(1)+'đ',null,null]);
+
+    // R3 share PK 10-20M
+    var pk=o.pkD||null, ck=pk?(pk[d]||pk[String(d)]):null, cp=(pk&&d>1)?(pk[d-1]||pk[String(d-1)]):null;
+    var q1=null,q0=null,qO=0,qT=0;
+    if(ck){ ck.forEach(function(v){ qT+=v[0] }); qO=ck[0]?ck[0][0]:0; q1=pctS(qO,qT); }
+    else { q1=pctS(t[10],t[12]); qO=t[10]; qT=t[12]; }
+    if(cp){ var z=0; cp.forEach(function(v){ z+=v[0] }); q0=pctS(cp[0]?cp[0][0]:0,z); }
+    else if(p) q0=pctS(p[10],p[12]);
+    if(q1!==null&&q0!==null&&Math.abs(q1-q0)>=1)
+      ds.push([q1<q0?0:8,(q1<q0?'⛔':'✅'),(q1<q0?'--red':'--green'),'Share PK 10–20M đổi mạnh',
+        q0.toFixed(1)+'% → <b>'+q1.toFixed(1)+'%</b> ('+so0(qO)+'/'+so0(qT)+' máy)',
+        (q1-q0>=0?'+':'')+(q1-q0).toFixed(1)+'đ',null,null]);
+
+    // R4 doi thu tang >=15% ma OPPO khong tang
+    if(p){
+      var oTang=(p[0]&&t[0]>p[0]);
+      [[2,'Samsung'],[4,'Xiaomi']].forEach(function(x){
+        var a=t[x[0]]||0, b=p[x[0]]||0;
+        if(b>=3&&a>=b*1.15&&!oTang)
+          ds.push([1,'⚠️','--amber',x[1]+' bứt lên mà mình đứng yên',
+            x[1]+' '+so0(b)+' → <b>'+so0(a)+'</b> máy, OPPO '+so0(p[0])+' → '+so0(t[0]),
+            '+'+Math.round((a/b-1)*100)+'%',null,null]);
+      });
+    }
+
+    // R5 don gia
+    if(p&&p[0]&&t[0]){
+      var g1=t[1]/t[0], g0=p[1]/p[0];
+      if(g0&&Math.abs(g1/g0-1)>=0.05)
+        ds.push([2,(g1<g0?'⚠️':'✅'),(g1<g0?'--amber':'--green'),'Đơn giá OPPO đổi mạnh',
+          tien(Math.round(g0*10)/10)+' → <b>'+tien(Math.round(g1*10)/10)+'</b>',
+          (g1>=g0?'+':'')+Math.round((g1/g0-1)*100)+'%',null,null]);
+    }
+
+    // R6 + R7 theo shop
+    (o.s||[]).forEach(function(sh){
+      var dk=sh.dk||[]; if(!dk.length) return;
+      var v=dk[d-1]||null, w=d>1?(dk[d-2]||null):null;
+      if(!v) return;
+      var sale=sh.__sale||'';
+      if((v[8]||0)>=3&&!(v[0]||0)){
+        var lien=0;
+        for(var i=d-1;i>=0;i--){ var c=dk[i]; if(!c||!(c[8]||0)) break; if(c[0]||0) break; lien++; }
+        ds.push([0,'⛔','--red',sh.n,
+          'Trắng OPPO — chợ bán '+so0(v[8])+' máy, mình 0'+(lien>1?(' · '+lien+' ngày liên tiếp'):''),
+          lien>1?(lien+' ngày'):'0 máy',sh.n,sale]);
+      } else if(w&&(w[0]||0)>=3&&(v[0]||0)<(w[0]||0)*0.7){
+        ds.push([1,'▼','--red',sh.n,
+          'OPPO '+so0(w[0])+' → <b>'+so0(v[0])+'</b> máy so hôm trước',
+          '-'+Math.round((1-(v[0]||0)/w[0])*100)+'%',sh.n,sale]);
+      }
+    });
+
+    ds.sort(function(a,b){ return a[0]-b[0] });
+    var h='<div class="sec"><h2>Cảnh báo ngày '+d+'/'+mNow()+'</h2></div>'+
+      '<p class="sub">Theo rule của Review ngày — so với ngày liền trước. Bấm <b>Giải trình</b> để mở biểu mẫu đã điền sẵn tên shop.</p>';
+    h+= ds.length? ds.map(function(x){ return dong(x[1],x[2],x[3],x[4],x[5],x[6],x[7]) }).join('')
+      : '<div class="empty">🎉 Ngày '+d+' không có gì bất thường theo rule review</div>';
+    h+='<div class="note">Ngưỡng: thị phần đổi ≥ 1 điểm · đối thủ tăng ≥ 15% khi mình không tăng · đơn giá đổi ≥ 5% · '+
+      'shop trắng OPPO khi chợ bán ≥ 3 máy · shop rớt ≥ 30% máy so hôm trước.</div>';
+    box.innerHTML=h;
+  }
+
+  function themGT(){
+    var list=el('a-list'); if(!list) return;
+    var ds=[].slice.call(list.querySelectorAll('.al'));
+    ds.forEach(function(b){
+      if(b.parentNode&&b.parentNode.className==='gt-row') return;
+      var ten=b.dataset?b.dataset.shop:'';
+      if(!ten) return;
+      var w=document.createElement('div'); w.className='gt-row';
+      b.parentNode.insertBefore(w,b); w.appendChild(b);
+      var a=document.createElement('a');
+      a.className='gt-btn'; a.target='_blank'; a.rel='noopener';
+      a.href=gtUrl(ten,'');
+      a.textContent='Giải trình ↗';
+      w.appendChild(a);
+    });
+  }
+
+  if(typeof renderAlerts==='function'){
+    var goc=renderAlerts;
+    window.renderAlerts=function(o){
+      var kq;
+      try{ kq=goc.apply(this,arguments) }catch(e){ kq=null }
+      try{ veNgay(o); themGT() }catch(e){ if(window.console) console.warn('[canh]',e) }
+      return kq;
+    };
+  }
+  window.__canh={veNgay:veNgay,themGT:themGT,gtUrl:gtUrl};
+})();
+
+</script>
+<style id="app-css5">
+.gt-row{display:flex;align-items:stretch;gap:8px;margin-bottom:6px}
+.gt-row>.al{flex:1;min-width:0;margin-bottom:0}
+.gt-btn{flex:0 0 auto;align-self:center;display:inline-block;padding:8px 10px;border-radius:10px;
+background:color-mix(in srgb, var(--amber) 16%, transparent);color:var(--amber);
+font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
+.gt-btn:active{opacity:.7}
+</style>
+
 <style id="app-css2">
 #tv-mkt-thang table th:first-child,#tv-mkt-thang table td:first-child,#shop5 table th:first-child,#shop5 table td:first-child{position:sticky;left:0;z-index:2;background:#141b24;box-shadow:1px 0 0 rgba(255,255,255,.10)}
 #tv-mkt-thang table th:first-child,#shop5 table th:first-child{z-index:3}
