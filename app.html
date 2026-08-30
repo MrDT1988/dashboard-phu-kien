@@ -4307,4 +4307,30 @@ setInterval(function(){
 #tv-mkt-thang table th:first-child,#tv-mkt-thang table td:first-child,#shop5 table th:first-child,#shop5 table td:first-child{position:sticky;left:0;z-index:2;background:#141b24;box-shadow:1px 0 0 rgba(255,255,255,.10)}
 #tv-mkt-thang table th:first-child,#shop5 table th:first-child{z-index:3}
 </style>
+
+<script id="app-ser">
+(function(){
+  if(typeof renderMonth!=='function') return;
+  var goc=renderMonth;
+  window.renderMonth=function(o){
+    goc.apply(this,arguments);
+    try{
+      var pil=document.getElementById('p-ser');
+      if(!pil||pil.hidden) return;
+      var bs=pil.querySelectorAll('button[data-ser]');
+      for(var i=0;i<bs.length;i++){ bs[i].disabled=false; bs[i].style.opacity=''; }
+      if(window.TR==='W'){
+        var sub=document.getElementById('mo-sub');
+        if(sub&&sub.textContent.indexOf('tự chuyển')<0)
+          sub.textContent+=' Reno/Find chỉ có số theo tháng — bấm vào sẽ tự chuyển sang xem theo tháng.';
+      }
+    }catch(e){}
+  };
+  document.addEventListener('click',function(e){
+    var b=e.target&&e.target.closest?e.target.closest('[data-ser]'):null;
+    if(!b) return;
+    if(window.TR==='W'&&b.dataset.ser!=='ALL') window.TR='M';
+  },true);
+})();
+<\/script>
 </html>
