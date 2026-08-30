@@ -4741,6 +4741,212 @@ setInterval(function(){
 #tq-tdshop-b table td:first-child,#tv-week table td:first-child{white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis}
 </style>
 
+
+<script id="app-ngay">
+(function(){
+  var NGAY=0, SH_TAB='u', MD_H='Samsung';
+  var H5=[{k:'OPPO',u:0,r:1,c:'#00a86f'},{k:'Samsung',u:2,r:3,c:'#4a7fd4'},
+          {k:'Xiaomi',u:4,r:5,c:'#f0803c'},{k:'Apple',u:6,r:7,c:'#9aa4b2'}];
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+  function so0(v){ return (typeof n0==='function')?n0(v):String(Math.round(v||0)) }
+  function tien(v){ return (typeof money==='function')?money(v):String(Math.round(v||0)) }
+  function bang(head,rows){
+    return '<table class="tv"><tr>'+head.map(function(h){return '<th>'+esc(h)+'</th>'}).join('')+'</tr>'+
+      rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join('')+
+      '</table>';
+  }
+  function tenShop(s){ var t=String(s==null?'':s), i=t.indexOf(' - '); return i>=0?t.slice(i+3):t }
+  function delta(a,b,dg){
+    if(!b) return '<span style="color:var(--muted)">—</span>';
+    var g=(a-b)/b*100;
+    return '<b style="color:var('+(g>=0?'--green':'--red')+')">'+(g>=0?'▲':'▼')+Math.abs(g).toFixed(0)+'%</b>';
+  }
+  function mNow(){ return D.months[D.months.length-1] }
+  function soNgay(){ return (typeof ngayMkt==='function')?ngayMkt():(D.maxDay||28) }
+  function oNgay(o,d){
+    var a0=toDoy(D.year,mNow(),1);
+    var v=(o.dnB||[])[a0+d-2];
+    return v||[0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+  }
+  function dkNgay(sh,d){
+    var v=(sh.dk||[])[d-1];
+    return v||[0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+  }
+
+  /* ---- 1. Toan vung: ngay N so ngay N-1 ---- */
+  function khoiVung(o,d){
+    var t=oNgay(o,d), p=d>1?oNgay(o,d-1):null;
+    var tU=t[8]||0, tR=t[9]||0;
+    if(!tU) return '<div class="note">Ngày '+d+' chưa có số.</div>';
+    var rows=H5.map(function(x){
+      var u=t[x.u]||0, r=t[x.r]||0;
+      return ['<span style="color:'+x.c+'">'+x.k+'</span>', so0(u), p?delta(u,p[x.u]):'—',
+        tien(r), p?delta(r,p[x.r]):'—',
+        (tU?(u/tU*100).toFixed(1):0)+'%', (tR?(r/tR*100).toFixed(1):0)+'%'];
+    });
+    var khU=tU-(t[0]||0)-(t[2]||0)-(t[4]||0)-(t[6]||0);
+    var khR=tR-(t[1]||0)-(t[3]||0)-(t[5]||0)-(t[7]||0);
+    rows.push(['<span style="color:#3a4553">Khác</span>', so0(khU),'—', tien(khR),'—',
+      (tU?(khU/tU*100).toFixed(1):0)+'%', (tR?(khR/tR*100).toFixed(1):0)+'%']);
+    rows.push(['<b>Tổng thị trường</b>','<b>'+so0(tU)+'</b>', p?delta(tU,p[8]):'—',
+      '<b>'+tien(tR)+'</b>', p?delta(tR,p[9]):'—','<b>100%</b>','<b>100%</b>']);
+    var h='<div class="tvwrap">'+bang(['Hãng','Máy','so hôm trước','Doanh thu','so hôm trước','Share DS','Share DT'],rows)+'</div>';
+    var pkO=t[10]||0, pkT=t[12]||0;
+    var pkOp=p?(p[10]||0):0, pkTp=p?(p[12]||0):0;
+    h+='<div class="subhead">PK 10–20M — ngày '+d+'/'+mNow()+'</div><div class="tvwrap">'+
+      bang(['Chỉ số','Ngày '+d,'so hôm trước'],[
+        ['OPPO', so0(pkO)+' máy', pkOp?delta(pkO,pkOp):'—'],
+        ['Toàn thị trường', so0(pkT)+' máy', pkTp?delta(pkT,pkTp):'—'],
+        ['<b>Share OPPO</b>','<b>'+(pkT?(pkO/pkT*100).toFixed(1):0)+'%</b>',
+          (pkTp&&pkT)?('<b>'+((pkO/pkT-pkOp/pkTp)*100>=0?'+':'')+((pkO/pkT-pkOp/pkTp)*100).toFixed(1)+'đ</b>'):'—']
+      ])+'</div>'+
+      '<div class="note">PK 10–20M theo ngày chỉ có OPPO và tổng thị trường — DB TG không tách theo hãng ở mức ngày.</div>';
+    return h;
+  }
+
+  /* ---- 2. Chi tiet sell out tung shop: OPPO / SS / XM ---- */
+  function khoiShop(o,d){
+    var ds=((o&&o.s)||[]).filter(function(x){ return x.dk&&x.dk.length });
+    if(!ds.length) return '<div class="note">Chưa có số theo ngày của từng shop trong gói dữ liệu này.</div>';
+    var pil=[['u','Doanh số'],['r','Doanh thu'],['pk','PK 10–20M']].map(function(x){
+      return '<button data-nsh="'+x[0]+'"'+(SH_TAB===x[0]?' class="on"':'')+'>'+x[1]+'</button>'
+    }).join('');
+    var rows=[], head, isU=SH_TAB==='u';
+    var tong=[0,0,0,0,0,0];
+    if(SH_TAB==='pk'){
+      head=['Shop','OPPO','Toàn TT','Share OPPO','so hôm trước'];
+      ds.forEach(function(sh){
+        var v=dkNgay(sh,d), p=d>1?dkNgay(sh,d-1):null;
+        var a=v[10]||0, b=v[12]||0;
+        if(!b&&!a) return;
+        var s1=b?(a/b*100):null, s0=(p&&p[12])?(p[10]/p[12]*100):null;
+        tong[0]+=a; tong[1]+=b;
+        rows.push([esc(tenShop(sh.n)), so0(a), so0(b),
+          s1===null?'—':('<b>'+s1.toFixed(0)+'%</b>'),
+          (s1===null||s0===null)?'—':('<b style="color:var('+((s1-s0)>=0?'--green':'--red')+')">'+
+            ((s1-s0)>=0?'+':'')+(s1-s0).toFixed(1)+'đ</b>')]);
+      });
+      rows.push(['<b>Tổng</b>','<b>'+so0(tong[0])+'</b>','<b>'+so0(tong[1])+'</b>',
+        '<b>'+(tong[1]?(tong[0]/tong[1]*100).toFixed(1):0)+'%</b>','']);
+    } else {
+      var k=function(i){ return isU?H5[i].u:H5[i].r };
+      var dg=isU?so0:tien;
+      head=['Shop','OPPO','so hôm trước','Samsung','Xiaomi','Tổng','Share OPPO'];
+      ds.forEach(function(sh){
+        var v=dkNgay(sh,d), p=d>1?dkNgay(sh,d-1):null;
+        var oo=v[k(0)]||0, ss=v[k(1)]||0, xm=v[k(2)]||0, tt=isU?(v[8]||0):(v[9]||0);
+        if(!tt&&!oo) return;
+        tong[0]+=oo; tong[1]+=ss; tong[2]+=xm; tong[3]+=tt;
+        rows.push([esc(tenShop(sh.n)), dg(oo),
+          (p&&p[k(0)])?delta(oo,p[k(0)]):(oo?'<b style="color:var(--green)">mới</b>':'—'),
+          dg(ss), dg(xm), dg(tt),
+          tt?('<b style="color:var('+(oo/tt>=0.15?'--green':'--red')+')">'+(oo/tt*100).toFixed(0)+'%</b>'):'—']);
+      });
+      rows.push(['<b>Tổng</b>','<b>'+dg(tong[0])+'</b>','','<b>'+dg(tong[1])+'</b>',
+        '<b>'+dg(tong[2])+'</b>','<b>'+dg(tong[3])+'</b>',
+        '<b>'+(tong[3]?(tong[0]/tong[3]*100).toFixed(1):0)+'%</b>']);
+    }
+    if(rows.length<2) return '<div class="pills sm" id="p-nsh">'+pil+'</div><div class="note">Ngày '+d+' chưa có shop nào có số.</div>';
+    return '<div class="pills sm" id="p-nsh">'+pil+'</div>'+
+      '<div class="tvwrap" id="ngay-shop-b">'+bang(head,rows)+'</div>'+
+      '<div class="note">Xếp theo thứ tự shop. Share OPPO dưới 15% tô đỏ. '+
+      (SH_TAB==='pk'?'Đơn vị: máy.':(isU?'Đơn vị: máy.':'Đơn vị: doanh thu.'))+'</div>';
+  }
+
+  /* ---- 3. Doi thu ban gi: OPPO / SS / XM ---- */
+  function khoiModel(o){
+    var mdB=o&&o.mdB;
+    if(!mdB||!Object.keys(mdB).length) return '<div class="note">Chưa có số model theo hãng trong gói dữ liệu này.</div>';
+    var m=mNow(), cell=mdB[m]||mdB[String(m)]||{};
+    var ten=['OPPO','Samsung','Xiaomi'];
+    var pil=ten.map(function(h){
+      return '<button data-nmd="'+h+'"'+(MD_H===h?' class="on"':'')+'>'+h+'</button>'
+    }).join('');
+    var lst=(cell[MD_H]||[]).slice(0,10);
+    if(!lst.length) return '<div class="pills sm" id="p-nmd">'+pil+'</div>'+
+      '<div class="note">Tháng '+m+' chưa có số của '+MD_H+'.</div>';
+    var tU=0; lst.forEach(function(x){ tU+=x[1] });
+    var rows=lst.map(function(x){
+      var gia=x[1]?(x[2]/x[1]):0;
+      var pk=(gia>=10&&gia<20);
+      var t=(typeof tenModel==='function')?tenModel(x[0]):x[0];
+      return [esc(t)+(pk?' <b style="color:var(--amber)">10–20M</b>':''),
+        so0(x[1]), (tU?(x[1]/tU*100).toFixed(1):0)+'%', tien(x[2]), tien(Math.round(gia*10)/10)];
+    });
+    return '<div class="pills sm" id="p-nmd">'+pil+'</div>'+
+      '<div class="tvwrap" id="ngay-md-b">'+bang(['Model','Máy','% top','Doanh thu','Giá TB'],rows)+'</div>'+
+      '<div class="note">TOP 10 dòng máy '+MD_H+' tháng '+m+'. Nhãn <b style="color:var(--amber)">10–20M</b> = giá bình quân rơi vào ô mình đang giữ. '+
+      'Model chỉ có số theo THÁNG, không có theo ngày.</div>';
+  }
+
+  function ve(){
+    var sec=document.getElementById('v-find'); if(!sec) return;
+    var cu=sec.querySelector('.card');
+    if(cu&&cu.id!=='ngay-card') cu.style.display='none';
+    var box=document.getElementById('ngay-box');
+    if(!box){
+      box=document.createElement('div'); box.id='ngay-box';
+      sec.appendChild(box);
+    }
+    var o;
+    try{ o=curObj() }catch(e){ o=null }
+    if(!o){ box.innerHTML=''; return }
+    var nMax=soNgay();
+    if(!NGAY||NGAY>nMax) NGAY=nMax;
+    var opt=''; for(var d=nMax;d>=1;d--) opt+='<option value="'+d+'"'+(d===NGAY?' selected':'')+'>Ngày '+d+'/'+mNow()+'</option>';
+    box.innerHTML=
+      '<div class="card"><div class="sec"><h2>Chi tiết ngày</h2></div>'+
+      '<label style="display:block;margin:6px 0 10px"><span style="display:block;font-size:10px;color:var(--muted);font-weight:600;margin-bottom:4px">Chọn ngày</span>'+
+      '<select id="nd-sel">'+opt+'</select></label>'+
+      '<p class="sub">Số theo data MWG. Mọi so sánh là với <b>ngày liền trước</b>.</p>'+
+      khoiVung(o,NGAY)+'</div>'+
+      '<div class="card"><h2>Sell out từng shop — ngày '+NGAY+'/'+mNow()+'</h2>'+khoiShop(o,NGAY)+'</div>'+
+      '<div class="card"><h2>Đối thủ bán gì</h2>'+khoiModel(o)+'</div>';
+  }
+
+  function doiTenNav(){
+    var b=document.querySelector('nav button[data-v="find"]');
+    if(b&&b.textContent.indexOf('Chi tiết ngày')<0){
+      var em=b.querySelector('em');
+      b.innerHTML=(em?'<em>📅</em>':'')+'Chi tiết ngày';
+    }
+  }
+
+  if(typeof renderFind==='function'){
+    var goc=renderFind;
+    window.renderFind=function(o){
+      var kq;
+      try{ kq=goc.apply(this,arguments) }catch(e){ kq=null }
+      try{ doiTenNav(); ve() }catch(e){ if(window.console) console.warn('[ngay]',e) }
+      return kq;
+    };
+  }
+  document.addEventListener('change',function(e){
+    var s=e.target;
+    if(s&&s.id==='nd-sel'){ NGAY=+s.value||NGAY; try{ ve() }catch(er){} }
+  });
+  document.addEventListener('click',function(e){
+    if(!e.target||!e.target.closest) return;
+    var a=e.target.closest('[data-nsh]');
+    if(a){ SH_TAB=a.dataset.nsh; try{ ve() }catch(er){} return }
+    var b=e.target.closest('[data-nmd]');
+    if(b){ MD_H=b.dataset.nmd; try{ ve() }catch(er){} return }
+  });
+  setInterval(function(){ try{ doiTenNav() }catch(e){} },2000);
+  window.__ngay={ve:ve,khoiVung:khoiVung,khoiShop:khoiShop,khoiModel:khoiModel};
+})();
+
+</script>
+<style id="app-css4">
+#ngay-shop-b table th:first-child,#ngay-shop-b table td:first-child,
+#ngay-md-b table th:first-child,#ngay-md-b table td:first-child
+{position:sticky;left:0;z-index:2;background:#141b24;box-shadow:1px 0 0 rgba(255,255,255,.10)}
+#ngay-shop-b table th:first-child,#ngay-md-b table th:first-child{z-index:3}
+#ngay-shop-b table td:first-child{white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+#nd-sel{width:100%;padding:9px 10px;border-radius:10px;background:#141b24;color:inherit;border:1px solid rgba(255,255,255,.12);font-size:14px;font-weight:600}
+</style>
+
 <style id="app-css2">
 #tv-mkt-thang table th:first-child,#tv-mkt-thang table td:first-child,#shop5 table th:first-child,#shop5 table td:first-child{position:sticky;left:0;z-index:2;background:#141b24;box-shadow:1px 0 0 rgba(255,255,255,.10)}
 #tv-mkt-thang table th:first-child,#shop5 table th:first-child{z-index:3}
