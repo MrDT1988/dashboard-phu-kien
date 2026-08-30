@@ -4552,18 +4552,17 @@ setInterval(function(){
   function veNgayHang(o){
     var neo=el('tv-week'); if(!neo) return;
     var f=el('filt'); if(f) f.hidden=true;
+    var dm=el('p-dymode'); if(dm) dm.style.display='none';
     var hdr=neo.previousElementSibling;
     var pil=el('p-hang3');
-    if(!pil){
-      pil=document.createElement('div'); pil.className='pills sm'; pil.id='p-hang3';
-      if(hdr&&hdr.className==='subhead') hdr.parentNode.insertBefore(pil,hdr);
-      else neo.parentNode.insertBefore(pil,neo);
+    if(!pil||(dm&&pil.nextElementSibling!==dm)){
+      if(!pil){ pil=document.createElement('div'); pil.className='pills'; pil.id='p-hang3' }
+      if(dm&&dm.parentNode) dm.parentNode.insertBefore(pil,dm);
+      else if(!pil.parentNode) neo.parentNode.insertBefore(pil,neo);
     }
-    pil.innerHTML=[['r','Doanh thu'],['u','Doanh số'],['pk','PK 10–20M'],['sr','Reno']].map(function(x){
+    pil.innerHTML=[['r','Doanh thu'],['u','Doanh số'],['pk','PK 10–20M']].map(function(x){
       return '<button data-h3="'+x[0]+'"'+(DAY_TAB===x[0]?' class="on"':'')+'>'+x[1]+'</button>'
     }).join('');
-
-    if(DAY_TAB==='sr'){ veRenoShop(o,neo,hdr); return }
 
     if(!o||!o.dnB){
       if(hdr&&hdr.className==='subhead') hdr.textContent='Theo ngày — từng hãng';
@@ -4573,7 +4572,7 @@ setInterval(function(){
     var m=D.months[MI], nMax=(typeof ngayMkt==='function')?ngayMkt():DIM();
     var a0=toDoy(D.year,m,1);
     var ngay=[]; for(var d=1;d<=nMax;d++) ngay.push(d);
-    var cot=ngay.map(function(d){ return o.dnB[a0+d-1-1]||[0,0,0,0,0,0,0,0,0,0,0,0,0,0] });
+    var cot=ngay.map(function(d){ return o.dnB[a0+d-2]||[0,0,0,0,0,0,0,0,0,0,0,0,0,0] });
     var tong=gomDn(o.dnB,a0,a0+nMax-1);
 
     var head=['Hãng'].concat(ngay.map(function(d){return String(d)})).concat(['Tổng']);
@@ -4590,6 +4589,16 @@ setInterval(function(){
         var t=v[12]||0; return t?('<b>'+(v[10]/t*100).toFixed(0)+'%</b>'):'—';
       })).concat(['<b>'+(tong[12]?(tong[10]/tong[12]*100).toFixed(1):0)+'%</b>']));
       ghi='Khoảng 10–20M chỉ có số OPPO và tổng thị trường theo ngày, chưa tách được từng hãng. Đơn vị: máy.';
+      if(typeof drawStack==='function'){
+        var sv=el('ch-day');
+        if(sv) drawStack(sv,ngay,cot.map(function(v){return v[10]||0}),cot.map(function(v){return v[12]||0}),
+          {colorA:'var(--c1)',colorB:'#3a4553',h:186,fmt:function(a2,t2){return so0(t2)}});
+        var ds1=el('dy-sub');
+        if(ds1) ds1.textContent='PK 10–20M theo ngày tháng '+m+' — cột xám là cả thị trường, phần xanh là OPPO. Đơn vị: máy.';
+        var lg=el('lg-day');
+        if(lg) lg.innerHTML='<span><i style="background:var(--c1)"></i>OPPO</span>'+
+          '<span><i style="background:#3a4553"></i>Toàn thị trường</span>';
+      }
     } else {
       var isU=DAY_TAB==='u';
       var dg=isU?so0:tien;
@@ -4617,10 +4626,9 @@ setInterval(function(){
       ghi=(isU?'Số máy':'Doanh thu')+' bán ra từng ngày tháng '+m+' của từng hãng. Cột "Khác" = tổng trừ 4 hãng chính.';
     }
     if(hdr&&hdr.className==='subhead')
-      hdr.textContent='Theo ngày — từng hãng ('+(DAY_TAB==='pk'?'PK 10–20M':DAY_TAB==='u'?'số máy':'doanh thu')+')';
+      hdr.textContent='Chi tiết theo ngày — từng hãng ('+(DAY_TAB==='pk'?'PK 10–20M':DAY_TAB==='u'?'số máy':'doanh thu')+')';
     neo.innerHTML=bang(head,rows)+'<div class="note">'+ghi+'</div>';
   }
-
   /* ---- 4. Bo the Phan khuc gia ---- */
   function boSeg(){ var c=el('c-seg'); if(c){ c.hidden=true; c.style.display='none' } }
 
@@ -4719,7 +4727,10 @@ setInterval(function(){
   document.addEventListener('click',function(e){
     if(!e.target||!e.target.closest) return;
     var b3=e.target.closest('[data-h3]');
-    if(b3){ DAY_TAB=b3.dataset.h3; try{ veNgayHang(scope()) }catch(er){} return }
+    if(b3){ DAY_TAB=b3.dataset.h3;
+      try{ if(typeof dyMode!=='undefined') window.dyMode=(DAY_TAB==='r'?'r':'u') }catch(er){}
+      try{ renderDaily(scope()) }catch(er){ try{ veNgayHang(scope()) }catch(e2){} }
+      return }
     var bh=e.target.closest('[data-mdh]');
     if(bh){ MD_HANG=bh.dataset.mdh; try{ veTop10(scope()) }catch(er){} return }
   });
