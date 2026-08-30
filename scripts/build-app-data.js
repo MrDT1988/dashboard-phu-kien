@@ -593,6 +593,18 @@
           if (k[0] >= NHOM_BIEN[gi][0] && k[0] < NHOM_BIEN[gi][1]) { SEG_NHOM[ten] = gi; return; }
         }
       });
+      // Bonus Model cua chuong trinh Sale Loc & Khai:
+      //   10-15M -> 80.000d/may  ·  tu 15M tro len -> 120.000d/may  ·  duoi 10M -> 0
+      // Chi can 2 o dem may OPPO nen luu gon: bmS[thang] = [may 10-15M, may >=15M]
+      var SEG_BM = {};
+      SEGA.forEach(function (ten) {
+        var k = docKhoangPK(ten); if (!k) return;
+        if (k[0] >= 15) { SEG_BM[ten] = 1; return; }
+        if (k[0] >= 10) { SEG_BM[ten] = 0; return; }
+      });
+      var bmShop = {};
+      function bmBlank() { var a = []; for (var q = 0; q < NM; q++) a.push([0, 0]); return a; }
+
       var sgmShop = {};
       function sgmBlank() {
         var a = [];
@@ -676,6 +688,14 @@
         ob[0] += u; ob[1] += rv;
       }
 
+        if (st && oppo) {
+          var bi = SEG_BM[r.seg];
+          if (bi !== undefined) {
+            if (!bmShop[st]) bmShop[st] = bmBlank();
+            bmShop[st][i][bi] += u;
+          }
+        }
+
         if (st && r.shopSize && !shops[st].size) shops[st].size = String(r.shopSize).trim();
         if (r.m === CUR_M) {
           var b = r.brand || '?';
@@ -718,6 +738,9 @@
         shops[st].sgmS = sgmShop[st].map(function (mo) {
           return mo.map(function (v) { return [v[0], tr(v[1]), v[2], tr(v[3])]; });
         });
+      });
+      Object.keys(bmShop).forEach(function (st) {
+        if (shops[st]) shops[st].bmS = bmShop[st];
       });
       Object.keys(sgbShop).forEach(function (st) {
         if (!shops[st]) return;
@@ -1247,6 +1270,7 @@
         if (sh.mkm) c.mkm = sh.mkm;
         if (sh.sgmS) c.sgmS = sh.sgmS;
         if (sh.sgb) c.sgb = sh.sgb;
+        if (sh.bmS) c.bmS = sh.bmS;
         if (sh.dkp) c.dkp = sh.dkp;
         if (sh.hr) c.hr = sh.hr;
         if (sh.stf) c.stf = sh.stf;
