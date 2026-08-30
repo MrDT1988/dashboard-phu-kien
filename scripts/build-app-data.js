@@ -565,12 +565,33 @@
 
       // 4 nhom gia anh Thai dung de nhin nhanh. Nhan dien theo TEN khoang, doi nhan
       // ben DB TG cung khong vo. Dung cho sgmS = phan khuc x thang o cap shop.
-      var NHOM_TEN = ['Dưới 5M', '5–10M', '10–20M', '20–30M'];
-      var NHOM_RE = [/^\s*<\s*5/, /^\s*5\s*-\s*7|^\s*7\s*-\s*10/,
-                     /^\s*10\s*-\s*15|^\s*15\s*-\s*20/, /^\s*20\s*-\s*30/];
+      var NHOM_TEN = ['Dưới 5M', '5–10M', '10–20M', 'Trên 20M'];
+      var NHOM_BIEN = [[0, 5], [5, 10], [10, 20], [20, Infinity]];
+      // Doc nhan khoang gia ra [tu, den] trieu, khong dung bieu thuc chinh quy.
+      // Khop theo TEN nhu ban cu bo sot <3M, 3-5M, >20M, >30M = 38% so may.
+      function docKhoangPK(ten) {
+        var t = String(ten == null ? '' : ten).toUpperCase().split(' ').join('');
+        t = t.split('TRIỆU').join('M').split('TRIEU').join('M').split('M').join('');
+        var so = function (x) {
+          if (x.charAt(0) === '=') x = x.slice(1);
+          var v = parseFloat(x.split(',').join('.'));
+          return isNaN(v) ? null : v;
+        };
+        if (t.charAt(0) === '<') { var a = so(t.slice(1)); return a === null ? null : [0, a]; }
+        if (t.charAt(0) === '>') { var b = so(t.slice(1)); return b === null ? null : [b, Infinity]; }
+        var p = t.split('-');
+        if (p.length === 2) {
+          var c = so(p[0]), d = so(p[1]);
+          if (c !== null && d !== null) return [c, d];
+        }
+        return null;
+      }
       var SEG_NHOM = {};
       SEGA.forEach(function (ten) {
-        NHOM_RE.forEach(function (re, gi) { if (re.test(ten)) SEG_NHOM[ten] = gi; });
+        var k = docKhoangPK(ten); if (!k) return;
+        for (var gi = 0; gi < NHOM_BIEN.length; gi++) {
+          if (k[0] >= NHOM_BIEN[gi][0] && k[0] < NHOM_BIEN[gi][1]) { SEG_NHOM[ten] = gi; return; }
+        }
       });
       var sgmShop = {};
       function sgmBlank() {
