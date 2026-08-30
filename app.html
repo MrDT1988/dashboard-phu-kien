@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.12';
+var APP_VER='2026-08-30.13';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -4936,6 +4936,44 @@ setInterval(function(){
 </style>
 
 
+<script id="app-canh3">
+(function(){
+  // MOT NGUON DUY NHAT: bang canh bao cu (renderAlerts) doi sang so cua DATA MWG.
+  // Cach lam: truoc khi goi ban goc thi TAM thay sh.m / sh.d bang so rut tu sh.mkm / sh.dk,
+  // va tam thay D.maxDay bang ngayMkt(). Goi xong tra lai nguyen trang.
+  // Shop nao khong co so MWG (kenh KA / IND) thi giu nguyen so noi bo.
+  if(typeof renderAlerts!=='function') return;
+  var goc=renderAlerts;
+  window.renderAlerts=function(o){
+    var luu=[], luuMax=null, doi=false;
+    try{
+      var mi=(typeof MI==='number')?MI:0;
+      var ds=(o&&o.s)?o.s:[];
+      ds.forEach(function(sh){
+        if(!sh||!sh.mkm||!sh.dk) return;
+        if(!sh.mkm.length||!sh.dk.length) return;
+        if(!sh.mkm[mi]) return;
+        luu.push([sh,sh.m,sh.d]);
+        sh.m=sh.mkm.map(function(v){ return [(v&&v[0])||0,(v&&v[1])||0] });
+        sh.d=sh.dk.map(function(v){ return (v&&v[0])||0 });
+      });
+      if(luu.length&&typeof ngayMkt==='function'){
+        var nm=ngayMkt();
+        if(nm>0&&D){ luuMax=D.maxDay; D.maxDay=nm; doi=true }
+      }
+    }catch(e){ if(window.console) console.warn('[canh3]',e) }
+    var kq=null;
+    try{ kq=goc.apply(this,arguments) }
+    finally{
+      try{ if(doi) D.maxDay=luuMax }catch(e){}
+      for(var i=0;i<luu.length;i++){ luu[i][0].m=luu[i][1]; luu[i][0].d=luu[i][2] }
+    }
+    return kq;
+  };
+  window.__canh3={goc:goc};
+})();
+</script>
+
 <script id="app-canh">
 (function(){
   var GFORM='https://docs.google.com/forms/d/e/1FAIpQLScY0RRpM6nCiCKD_KfS5I_x4VCYCbJgpT43RRKKJmZkjrq7fA/viewform?usp=pp_url&entry.1084610876=';
@@ -5813,7 +5851,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     try{
       var sub=el('a-sub');
       if(sub&&tt.length) sub.textContent=tt.length+' shop cần để ý trong tháng '+D.months[MI]+
-        ' — xếp theo mức độ gấp, bấm vào để xem chi tiết.';
+        ' — số theo data MWG, xếp theo mức độ gấp, bấm vào để xem chi tiết.';
       var bg=document.querySelector('nav .badge');
       if(bg) bg.textContent=tt.length>99?'99+':String(tt.length);
     }catch(e){}
