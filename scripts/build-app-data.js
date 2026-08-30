@@ -912,6 +912,114 @@
     });
     if (dnAll) all.dnB = goiDn(dnAll);
 
+    // 7d. Tu MAIN.daily.rows (du lieu THO: thang,ngay,sale,phankhuc,hang,DT,may,size,model)
+    // -> model theo NGAY + cong don, va PK 10-20M theo NGAY theo HANG. Ca hai o cap SALE.
+    var DL = kho('daily');
+    var dmTen = null, dmSale = {}, dmAll = null, pkSale = {}, pkAll = null;
+    if (DL && Array.isArray(DL.rows) && DL.rows.length) {
+      src.dailyRaw = true;
+      var dSale = DL.sales || [], dSeg = DL.segments || [], dBr = DL.brands || [], dMd = DL.models || [];
+      var H7B = {};
+      dBr.forEach(function (b, i) {
+        var k = String(b || '').toLowerCase();
+        H7B[i] = (k === 'oppo') ? 0 : (k === 'samsung') ? 1 : (k === 'xiaomi') ? 2 :
+                 (k === 'apple') ? 3 : (k === 'vivo') ? 4 : (k === 'realme') ? 5 : 6;
+      });
+      var laPK = {};
+      dSeg.forEach(function (s, i) { if (s === '10-15M' || s === '15-20M') laPK[i] = 1; });
+      var BA = { 0: 'OPPO', 1: 'Samsung', 2: 'Xiaomi' };
+      var pkBlank = function () {
+        var a = {};
+        return a;
+      };
+      var gomM = {}, gomA = {};   // gomM[sale][hang][ngay|'c'][modelIdx] = [may, dt]
+      var pkM = {}, pkA = {};     // pkM[sale][ngay][hang7] = [may, dt]
+      DL.rows.forEach(function (r) {
+        if (r[0] !== CUR_M) return;
+        var d = r[1], sn = dSale[r[2]], bi = r[4], u = r[6] || 0, rv = r[5] || 0;
+        if (!d || !u) return;
+        var h7 = H7B[bi]; if (h7 === undefined) h7 = 6;
+        // PK 10-20M theo ngay theo hang
+        if (laPK[r[3]]) {
+          var hopP = [pkA];
+          if (sn) { if (!pkM[sn]) pkM[sn] = {}; hopP.push(pkM[sn]); }
+          hopP.forEach(function (B) {
+            if (!B[d]) { B[d] = []; for (var q = 0; q < 7; q++) B[d].push([0, 0]); }
+            B[d][h7][0] += u; B[d][h7][1] += rv;
+          });
+        }
+        // model theo ngay + cong don, chi 3 hang OPPO / Samsung / Xiaomi
+        var bn = BA[h7]; if (!bn) return;
+        var mi = r[8];
+        var hopM = [gomA];
+        if (sn) { if (!gomM[sn]) gomM[sn] = {}; hopM.push(gomM[sn]); }
+        hopM.forEach(function (B) {
+          if (!B[bn]) B[bn] = {};
+          var G = B[bn];
+          if (!G[d]) G[d] = {};
+          if (!G[d][mi]) G[d][mi] = [0, 0];
+          G[d][mi][0] += u; G[d][mi][1] += rv;
+          if (!G.c) G.c = {};
+          if (!G.c[mi]) G.c[mi] = [0, 0];
+          G.c[mi][0] += u; G.c[mi][1] += rv;
+        });
+      });
+      // rut gon: moi ngay moi hang giu top 8 theo may cua ngay, kem so cong don
+      var dungM = {};
+      var goiM = function (B) {
+        var out = null;
+        Object.keys(B || {}).forEach(function (bn) {
+          var G = B[bn], cd = G.c || {};
+          Object.keys(G).forEach(function (d) {
+            if (d === 'c') return;
+            var ds = Object.keys(G[d]).map(function (mi) {
+              var v = G[d][mi], c = cd[mi] || [0, 0];
+              return [+mi, v[0], tr(v[1]), c[0], tr(c[1])];
+            }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 8);
+            if (!ds.length) return;
+            ds.forEach(function (x) { dungM[x[0]] = 1; });
+            if (!out) out = {};
+            if (!out[d]) out[d] = {};
+            out[d][bn] = ds;
+          });
+        });
+        return out;
+      };
+      var mAll = goiM(gomA), mBySale = {};
+      Object.keys(gomM).forEach(function (sn) { mBySale[sn] = goiM(gomM[sn]); });
+      // bang tra ten model — chi giu ma thuc su duoc dung
+      var doi = {}, ten = [];
+      Object.keys(dungM).forEach(function (mi) { doi[mi] = ten.length; ten.push(dMd[mi] || '?'); });
+      var doiSo = function (O) {
+        if (!O) return null;
+        Object.keys(O).forEach(function (d) {
+          Object.keys(O[d]).forEach(function (bn) {
+            O[d][bn].forEach(function (x) { x[0] = doi[x[0]]; });
+          });
+        });
+        return O;
+      };
+      dmTen = ten;
+      dmAll = doiSo(mAll);
+      Object.keys(mBySale).forEach(function (sn) { dmSale[sn] = doiSo(mBySale[sn]); });
+      var goiPK = function (B) {
+        var out = null;
+        Object.keys(B || {}).forEach(function (d) {
+          if (!out) out = {};
+          out[d] = B[d].map(function (v) { return [v[0], tr(v[1])]; });
+        });
+        return out;
+      };
+      pkAll = goiPK(pkA);
+      Object.keys(pkM).forEach(function (sn) { pkSale[sn] = goiPK(pkM[sn]); });
+    }
+    if (dmTen && dmTen.length) {
+      if (dmAll) all.dmN = dmAll;
+      Object.keys(dmSale).forEach(function (sn) { if (sales[sn] && dmSale[sn]) sales[sn].dmN = dmSale[sn]; });
+    }
+    if (pkAll) all.pkD = pkAll;
+    Object.keys(pkSale).forEach(function (sn) { if (sales[sn]) sales[sn].pkD = pkSale[sn]; });
+
     // 7c. Khung gio ban (moi hang, thang hien tai) -> sh.hr = [[khung, may, dt]]
     var shb = kho('shop_hour_all_brand');
     if (shb && Object.keys(shb).length) {
@@ -1055,6 +1163,8 @@
       if (o.mkt) r.mkt = o.mkt;
       if (o.mdB) r.mdB = o.mdB;
       if (o.dnB) r.dnB = o.dnB;
+      if (o.dmN) r.dmN = o.dmN;
+      if (o.pkD) r.pkD = o.pkD;
       if (o.tgc) r.tgc = o.tgc;
       if (o.si) r.si = o.si;
       var tk = tonKho(o); if (tk) r.tk = tk;   // ton kho IND theo model
@@ -1124,6 +1234,7 @@
       v: 2,
       months: MONTHS, maxDay: maxDay, dimCur: DIM_CUR, dimPrv: DIM_PRV,
       year: YEAR, lastDoy: lastDoy,
+      dmT: dmTen,
       segs: SEGS, sers: SERS, chans: CHANS,
       segsMkt: SEGA,
       nhomPK: nhomPKTen,
