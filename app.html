@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.21';
+var APP_VER='2026-08-30.22';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -795,7 +795,7 @@ function chanDy(ch){
 function buildFilt(){
   var box=$('#filt'), sel=$('#f-sale'), nt=$('#filt-note');
   // Anh Thái 26/08: bộ lọc nằm ở phần Sell out theo ngày của tab kênh, không để trên Tổng quan
-  if(SEG!=='MWG'||D.sales.length<=1){
+  if(SEG!=='MWG'){
     // QUAN TRONG: phai TAT han bo loc, khong chi an o chon.
     // Truoc day chi an di ma bien F_SIZE/F_SEGS/F_NGAY van giu nguyen -> Tong quan, KA, IND
     // bi loc ngam theo lua chon ben MWG ma khong co gi bao. Gio roi khoi MWG la xoa sach.
@@ -6267,6 +6267,41 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   setTimeout(function(){ try{ ve() }catch(e){} },700);
   setTimeout(function(){ try{ ve() }catch(e){} },2200);
   window.__lockhai={ve:ve,tinh:tinh};
+})();
+</script>
+<script id="app-loc">
+(function(){
+  // Goi cua SALE chi co 1 sale -> o chon Sale khong con y nghia, an di cho gon.
+  // Cac o Size shop / Ngay / Phan khuc van giu (truoc day bi an oan cung o chon Sale).
+  function el(i){ return document.getElementById(i) }
+  function chinh(){
+    var sel=el('f-sale'); if(!sel) return;
+    var lb=sel.closest?sel.closest('label'):sel.parentNode;
+    if(!lb) return;
+    var mot=false;
+    try{ mot=((D.sales||[]).length<=1) }catch(e){}
+    lb.hidden=mot;
+    lb.style.display=mot?'none':'';
+    if(mot){
+      var nt=el('filt-note');
+      if(nt&&nt.getAttribute('data-1sale')!=='1'&&nt.innerHTML.indexOf('<b>Sale</b> và ')>=0){
+        nt.innerHTML=nt.innerHTML.split('<b>Sale</b> và ').join('');
+        nt.setAttribute('data-1sale','1');
+      }
+    }
+  }
+  if(typeof buildFilt==='function'){
+    var goc=buildFilt;
+    window.buildFilt=function(){
+      var kq=goc.apply(this,arguments);
+      try{ chinh() }catch(e){ if(window.console) console.warn('[loc]',e) }
+      return kq;
+    };
+  }
+  setTimeout(function(){ try{ chinh() }catch(e){} },600);
+  setTimeout(function(){ try{ chinh() }catch(e){} },1800);
+  setInterval(function(){ try{ chinh() }catch(e){} },2500);
+  window.__loc={chinh:chinh};
 })();
 </script>
 </html>
