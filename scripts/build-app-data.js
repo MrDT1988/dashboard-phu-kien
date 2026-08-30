@@ -852,12 +852,25 @@
     // [oppoMay,oppoDT, ssMay,ssDT, xmMay,xmDT, ipMay,ipDT, tongMay,tongDT,
     //  pkOppoMay,pkOppoDT, pkTongMay,pkTongDT]   (DT don vi trieu)
     var dnAll = null, dnSale = {};
+    // MWG co so toi ngay MOI HON nguon OPPO -> mang phai dai theo ngay lon nhat cua CA HAI
+    var dnLen = lastDoy;
+    if (sdd) {
+      Object.keys(sdd).forEach(function (tn2) {
+        var dm2 = sdd[tn2] || {};
+        Object.keys(dm2).forEach(function (k2) {
+          var p2 = String(k2).split('-'); if (p2.length < 2) return;
+          var m2 = +p2[0], d2 = +p2[1]; if (!m2 || !d2) return;
+          var y2 = doyOf(YEAR, m2, d2);
+          if (y2 > dnLen) dnLen = y2;
+        });
+      });
+    }
     var dnBlank = function () {
-      var a = new Array(lastDoy);
-      for (var q = 0; q < lastDoy; q++) a[q] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+      var a = new Array(dnLen);
+      for (var q = 0; q < dnLen; q++) a[q] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
       return a;
     };
-    if (sdd && Object.keys(sdd).length && lastDoy > 0) {
+    if (sdd && Object.keys(sdd).length && dnLen > 0) {
       Object.keys(sdd).forEach(function (tenMain) {
         var st = veShopOppo(tenMain); if (!st || !shops[st]) return;
         var sn = shops[st].sale;
@@ -867,7 +880,7 @@
           var m = +p[0], d = +p[1];
           if (!m || !d) return;
           var doy = doyOf(YEAR, m, d) - 1;
-          if (!(doy >= 0 && doy < lastDoy)) return;
+          if (!(doy >= 0 && doy < dnLen)) return;
           var c = dayMap[kk] || {};
           var v = [c.oppo_units || 0, c.oppo_rev || 0,
                    c.samsung_units || 0, c.samsung_rev || 0,
