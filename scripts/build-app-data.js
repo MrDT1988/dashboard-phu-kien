@@ -802,6 +802,34 @@
     }
 
     // 7a2. Top 10 model MOI HANG theo tung thang, o cap SALE va toan bo -> o.mdB[thang][hang]
+    // Gop model theo DONG MAY: bo tien to loai may, bo ten hang, bo mau o duoi ten.
+    var MAU = {};
+    ('den trang xanh vang bac xam hong tim do nau cam kem be bien la duong reu ngoc titan dong nhat dam sang toi ' +
+     'kim ghi than chi thep cat tuyet suong khoi may ' +
+     'black white blue green gold silver gray grey pink purple red orange brown cream beige midnight starlight ' +
+     'natural desert ultramarine teal cosmic deep light dark sand graphite obsidian aqua lavender coral ivory ' +
+     'phantom mystic awesome icy sky ocean forest lilac peach mint jade khaki olive bronze titanium').split(' ')
+      .forEach(function (w) { if (w) MAU[w] = 1; });
+    ['đen','trắng','xanh','vàng','bạc','xám','hồng','tím','đỏ','nâu','biển','lá','dương','rêu','ngọc',
+     'đồng','nhạt','đậm','sáng','tối','ghi','chì','thép','cát','tuyết','sương','khói','mây']
+      .forEach(function (w) { MAU[w] = 1; });
+    function gonTen(s) {
+      var t = String(s == null ? '' : s).trim();
+      var bo = ['Điện thoại ', 'Máy tính bảng '];
+      for (var i9 = 0; i9 < bo.length; i9++) if (t.indexOf(bo[i9]) === 0) t = t.slice(bo[i9].length).trim();
+      var hg9 = ['OPPO ', 'Oppo ', 'SAMSUNG ', 'Samsung ', 'XIAOMI ', 'Xiaomi ', 'REALME ', 'Realme ',
+                 'realme ', 'vivo ', 'Vivo ', 'HONOR ', 'Honor ', 'TECNO ', 'Tecno ', 'Nubia ',
+                 'Masstel ', 'Motorola ', 'Nothing Phone '];
+      for (var j9 = 0; j9 < hg9.length; j9++) if (t.indexOf(hg9[j9]) === 0) { t = t.slice(hg9[j9].length).trim(); break; }
+      if (t.indexOf('Galaxy ') === 0) t = t.slice(7).trim();
+      var p9 = t.split(' '), n9 = 0;
+      while (p9.length > 1 && n9 < 4) {
+        var w9 = p9[p9.length - 1].toLowerCase();
+        if (!MAU[w9]) break;
+        p9.pop(); n9++;
+      }
+      return p9.join(' ').trim() || t;
+    }
     var TEN6 = { oppo: 'OPPO', op: 'OPPO', samsung: 'Samsung', ss: 'Samsung',
                  xiaomi: 'Xiaomi', xm: 'Xiaomi', realme: 'Realme', rm: 'Realme',
                  vivo: 'vivo', vv: 'vivo', apple: 'Apple', ip: 'Apple', iphone: 'Apple' };
@@ -822,6 +850,7 @@
             var u = v.units || 0, rv = v.rev || 0;
             if (!u) return;
             var hg = hang6(v.brand);
+            mdl = gonTen(mdl);
             var hop = [mdAll];
             if (sn) { if (!mdSale[sn]) mdSale[sn] = {}; hop.push(mdSale[sn]); }
             hop.forEach(function (B) {
@@ -950,7 +979,7 @@
         }
         // model theo ngay + cong don, chi 3 hang OPPO / Samsung / Xiaomi
         var bn = BA[h7]; if (!bn) return;
-        var mi = r[8];
+        var mi = gonTen(dMd[r[8]] || '?');
         var hopM = [gomA];
         if (sn) { if (!gomM[sn]) gomM[sn] = {}; hopM.push(gomM[sn]); }
         hopM.forEach(function (B) {
@@ -974,7 +1003,7 @@
             if (d === 'c') return;
             var ds = Object.keys(G[d]).map(function (mi) {
               var v = G[d][mi], c = cd[mi] || [0, 0];
-              return [+mi, v[0], tr(v[1]), c[0], tr(c[1])];
+              return [mi, v[0], tr(v[1]), c[0], tr(c[1])];
             }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 8);
             if (!ds.length) return;
             ds.forEach(function (x) { dungM[x[0]] = 1; });
@@ -989,7 +1018,7 @@
       Object.keys(gomM).forEach(function (sn) { mBySale[sn] = goiM(gomM[sn]); });
       // bang tra ten model — chi giu ma thuc su duoc dung
       var doi = {}, ten = [];
-      Object.keys(dungM).forEach(function (mi) { doi[mi] = ten.length; ten.push(dMd[mi] || '?'); });
+      Object.keys(dungM).forEach(function (mi) { doi[mi] = ten.length; ten.push(mi); });
       var doiSo = function (O) {
         if (!O) return null;
         Object.keys(O).forEach(function (d) {
