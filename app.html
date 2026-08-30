@@ -4913,6 +4913,7 @@ setInterval(function(){
     }
   }
 
+  try{ doiTenNav() }catch(e){}
   if(typeof renderFind==='function'){
     var goc=renderFind;
     window.renderFind=function(o){
