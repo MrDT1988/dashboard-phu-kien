@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.13';
+var APP_VER='2026-08-30.14';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5809,6 +5809,11 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     for(var i=0;i<ds.length;i++) if(ds[i].getAttribute('data-gon')!=='1'){ chua=true; break }
     if(!chua) return;
     var mp=banDoRule();
+    var coDk={};
+    try{
+      var o2=(typeof scope==='function')?scope():null;
+      ((o2&&o2.s)||[]).forEach(function(x){ if(x&&x.dk&&x.dk.length) coDk[x.n]=1 });
+    }catch(e){}
     var giu={}, tt=[];
     ds.forEach(function(b){
       var ten=b.dataset?b.dataset.shop:'';
@@ -5846,6 +5851,12 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
             return '<span style="color:var('+y[0]+');font-weight:700">'+esc(y[1])+'</span>';
           }).join(' - ');
         bd.appendChild(sp2);
+      } else if(!coDk[ten]){
+        var sp3=document.createElement('span');
+        sp3.className='d';
+        sp3.style.color='var(--muted)';
+        sp3.textContent='Shop này chưa có số theo ngày trong data MWG — dòng trên lấy theo số nội bộ.';
+        bd.appendChild(sp3);
       }
     });
     try{
