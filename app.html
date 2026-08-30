@@ -4388,35 +4388,68 @@ setInterval(function(){
   }
 
   /* ---- 1. The KPI: them doi thu Samsung / Xiaomi theo ky dang chon ---- */
+  function hetNgayDn(dnB){
+    if(!dnB) return 0;
+    for(var i=dnB.length-1;i>=0;i--){ var v=dnB[i]; if(v&&((v[8]||0)||(v[0]||0))) return i+1 }
+    return 0;
+  }
   function veDoiThu(o){
     var neo=el('o-cmp'); if(!neo) return;
     var box=el('tq-doithu');
     if(!box){ box=document.createElement('div'); box.id='tq-doithu'; neo.parentNode.insertBefore(box,neo); }
-    if(!o||!o.dnB){ box.innerHTML=''; return }
+    if(!o||!o.dnB||(typeof SEG!=='undefined'&&SEG!=='MWG')){ box.innerHTML=''; return }
+    var het=hetNgayDn(o.dnB); if(!het){ box.innerHTML=''; return }
     var P=periodOf(PER);
-    var t=gomDn(o.dnB,P.a,P.b);
-    var p=P.pa?gomDn(o.dnB,P.pa,P.pb):null;
+    var b=Math.min(P.b,het), len=b-P.a+1;
+    if(len<1){ box.innerHTML=''; return }
+    var t=gomDn(o.dnB,P.a,b);
+    var p=P.pa?gomDn(o.dnB,P.pa,P.pa+len-1):null;
     var tongU=t[8]||0, tongR=t[9]||0;
     if(!tongU){ box.innerHTML=''; return }
     var ten=PER==='W'?'tuần':PER==='Q'?'quý':'tháng';
+    var oU=t[0]||0, oR=t[1]||0;
+
+    var e1=el('o-units'); if(e1) e1.textContent=so0(oU);
+    var e2=el('k-dt');    if(e2) e2.textContent=tien(oR);
+    var e3=el('o-rev');   if(e3) e3.textContent=tien(oR);
+    var e4=el('o-avg');   if(e4) e4.textContent=oU?tien(Math.round(oR/oU*10)/10):'—';
+    var moc=(typeof ddmm==='function')?ddmm(b):String(b);
+    var e5=el('o-sub');
+    if(e5) e5.textContent='Số theo data MWG — đã chạy '+len+' ngày, tới ngày '+moc+
+      (p?(' · so đúng '+len+' ngày đầu '+ten+' trước'):'');
+    var dl=el('o-mom');
+    if(dl){
+      if(p&&p[0]){
+        var g=(oU-p[0])/p[0]*100;
+        dl.className='delta '+(g>=0?'up':'down');
+        dl.textContent=(g>=0?'▲ ':'▼ ')+Math.abs(g).toFixed(1)+'% máy so cùng kỳ';
+      } else { dl.className='delta flat'; dl.textContent='Chưa có kỳ trước để so' }
+    }
+    if(p&&p[0]){
+      var dr=oR-p[1];
+      neo.innerHTML='Cùng kỳ trước: <b>'+so0(p[0])+' máy</b> · <b>'+tien(p[1])+'</b>'+
+        (p[1]?(' → doanh thu <b style="color:var('+(dr>=0?'--green':'--red')+')">'+
+          (dr>=0?'▲ ':'▼ ')+Math.abs(dr/p[1]*100).toFixed(1)+'%</b>'):'');
+    } else neo.innerHTML='';
+
     var max=Math.max(t[0]||0,t[2]||0,t[4]||0,1);
     var h='<div class="subhead">Mình và đối thủ — '+ten+' này</div><div class="hb">';
     HANG3.forEach(function(x){
       var u=t[x.u]||0, r=t[x.r]||0;
       var sh=tongU?(u/tongU*100):0;
-      var g=(p&&p[x.u])?((u-p[x.u])/p[x.u]*100):null;
+      var g2=(p&&p[x.u])?((u-p[x.u])/p[x.u]*100):null;
       h+='<div class="row"><div class="top"><span class="nm"><i style="background:'+x.c+'"></i>'+
         '<span>'+x.k+'</span></span><span class="v">'+so0(u)+' máy · '+tien(r)+' · '+sh.toFixed(1)+'%'+
-        (g===null?'':' <b style="color:var('+(g>=0?'--green':'--red')+')">'+
-          (g>=0?'▲':'▼')+Math.abs(g).toFixed(1)+'%</b>')+
+        (g2===null?'':' <b style="color:var('+(g2>=0?'--green':'--red')+')">'+
+          (g2>=0?'▲':'▼')+Math.abs(g2).toFixed(1)+'%</b>')+
         '</span></div><div class="track"><i style="width:'+(u/max*100).toFixed(1)+
         '%;background:'+x.c+'"></i></div></div>';
     });
-    h+='</div><div class="note">Thị phần tính trên tổng thị trường '+so0(tongU)+' máy · '+
-      tien(tongR)+' của '+ten+' đang xem. Mũi tên là so với '+ten+' trước.</div>';
+    h+='</div><div class="note">Toàn bộ thẻ này lấy theo <b>data MWG</b> (mới hơn nguồn OPPO). '+
+      'Tổng thị trường '+so0(tongU)+' máy · '+tien(tongR)+' của '+ten+' đang xem. '+
+      'Mũi tên là so với '+ten+' trước.</div>';
     box.innerHTML=h;
   }
-
   /* ---- 2. Tien do tung shop: shop nao nhanh, shop nao cham ---- */
   function veTienDoShop(o){
     var c=el('c-target'); if(!c) return;
