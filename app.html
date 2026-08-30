@@ -4457,6 +4457,50 @@ setInterval(function(){
     box.innerHTML=h;
   }
 
+  /* ---- 3b. Reno / Find / A Series theo tung shop (chi co so theo THANG) ---- */
+  function iSer(ten){
+    var ds=(typeof D!=='undefined'&&D.sers)||[];
+    for(var i=0;i<ds.length;i++) if(ds[i]===ten) return i;
+    return -1;
+  }
+  function veRenoShop(o,neo,hdr){
+    var m=D.months[MI];
+    if(hdr&&hdr.className==='subhead') hdr.textContent='Dòng máy theo từng shop — tháng '+m;
+    var iR=iSer('Reno Series'), iF=iSer('Find Series'), iA=iSer('A Series');
+    var ds=(o&&o.s)||[];
+    var co=ds.some(function(x){ return x.srm&&x.srm.length });
+    if(iR<0||!co){
+      neo.innerHTML='<div class="note">Chưa có số dòng máy theo shop trong gói dữ liệu này.</div>';
+      return;
+    }
+    var lay=function(x,k){ if(k<0||!x.srm||!x.srm[k]) return [0,0]; return x.srm[k][MI]||[0,0] };
+    var rows=[], tR=0,tF=0,tA=0,tT=0,tRr=0;
+    ds.forEach(function(x){
+      var r=lay(x,iR), f=lay(x,iF), a=lay(x,iA);
+      var tong=((x.m||[])[MI]||[0,0])[0]||0;
+      if(!tong&&!r[0]&&!f[0]&&!a[0]) return;
+      rows.push({n:x.n,r:r[0],rr:r[1],f:f[0],a:a[0],t:tong,p:tong?(r[0]/tong*100):null});
+      tR+=r[0]; tRr+=r[1]; tF+=f[0]; tA+=a[0]; tT+=tong;
+    });
+    if(!rows.length){ neo.innerHTML='<div class="note">Tháng này chưa có số.</div>'; return }
+    rows.sort(function(x,y){
+      if(x.p===null&&y.p===null) return y.r-x.r;
+      if(x.p===null) return 1; if(y.p===null) return -1;
+      return x.p-y.p;
+    });
+    var tb=tT?(tR/tT*100):0;
+    var h=bang(['Shop','Reno máy','Reno DT','% Reno','Find máy','A Series','Tổng máy'],
+      rows.map(function(x){
+        var mau=x.p===null?'--muted':x.p>=tb?'--green':x.p>=tb*0.7?'--amber':'--red';
+        return [esc(tenShop(x.n)), so0(x.r), tien(x.rr),
+          '<b style="color:var('+mau+')">'+(x.p===null?'—':x.p.toFixed(1)+'%')+'</b>',
+          so0(x.f), so0(x.a), so0(x.t)];
+      }).concat([['<b>Tổng</b>','<b>'+so0(tR)+'</b>','<b>'+tien(tRr)+'</b>',
+        '<b>'+tb.toFixed(1)+'%</b>','<b>'+so0(tF)+'</b>','<b>'+so0(tA)+'</b>','<b>'+so0(tT)+'</b>']]));
+    neo.innerHTML=h+'<div class="note">Dòng máy chỉ có số theo THÁNG, không có theo ngày — nên tab này tách theo shop. '+
+      'Xếp từ shop có tỉ trọng Reno thấp nhất lên. Xanh = trên mức bình quân '+tb.toFixed(1)+'%.</div>';
+  }
+
   /* ---- 3. Sell out theo ngay: bo Sale, thay bang HANG, 3 tab ---- */
   function veNgayHang(o){
     var neo=el('tv-week'); if(!neo) return;
@@ -4468,9 +4512,11 @@ setInterval(function(){
       if(hdr&&hdr.className==='subhead') hdr.parentNode.insertBefore(pil,hdr);
       else neo.parentNode.insertBefore(pil,neo);
     }
-    pil.innerHTML=[['r','Doanh thu'],['u','Doanh số'],['pk','PK 10–20M']].map(function(x){
+    pil.innerHTML=[['r','Doanh thu'],['u','Doanh số'],['pk','PK 10–20M'],['sr','Reno']].map(function(x){
       return '<button data-h3="'+x[0]+'"'+(DAY_TAB===x[0]?' class="on"':'')+'>'+x[1]+'</button>'
     }).join('');
+
+    if(DAY_TAB==='sr'){ veRenoShop(o,neo,hdr); return }
 
     if(!o||!o.dnB){
       if(hdr&&hdr.className==='subhead') hdr.textContent='Theo ngày — từng hãng';
