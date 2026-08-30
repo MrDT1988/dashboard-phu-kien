@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.9';
+var APP_VER='2026-08-30.10';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5291,14 +5291,40 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     });
     return mp;
   }
+  function laSo(p){
+    if(!p.length) return false;
+    for(var i=0;i<p.length;i++){ var c=p.charCodeAt(i); if(c<48||c>57) return false }
+    return true;
+  }
+  function laMa(p){
+    if(p.indexOf('_')<0) return false;
+    for(var i=0;i<p.length;i++){ var c=p.charCodeAt(i); if(c>=97&&c<=122) return false }
+    return true;
+  }
+  function laHoa(p){
+    if(!p.length||p.indexOf(' ')>=0) return false;
+    return p===p.toUpperCase()&&p!==p.toLowerCase();
+  }
+  function maKenh(s){
+    var p=String(s==null?'':s).split(' - ');
+    for(var i=0;i<p.length;i++){
+      var x=p[i].trim();
+      if(laMa(x)){ var k=x.indexOf('_'); return k>0?x.slice(0,k):x }
+    }
+    return '';
+  }
   function tenNgan(s){
-    var t=String(s==null?'':s), i=t.indexOf(' - ');
-    return i>=0?t.slice(i+3):t;
+    var goc=String(s==null?'':s).trim();
+    var p=goc.split(' - ');
+    var k=0;
+    while(k<p.length-1){
+      var x=p[k].trim();
+      if(laSo(x)||laMa(x)||laHoa(x)) k++; else break;
+    }
+    var t=p.slice(k).join(' - ').trim();
+    return t||goc;
   }
-  function maShop(s){
-    var t=String(s==null?'':s), i=t.indexOf(' - ');
-    return i>=0?t.slice(0,i):'';
-  }
+  function maShop(s){ return maKenh(s) }
 
   function tinh(){
     if(typeof D==='undefined'||!D||!D.months) return null;
@@ -5495,13 +5521,25 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     for(var i=0;i<p.length;i++){ var c=p.charCodeAt(i); if(c>=97&&c<=122) return false }
     return true;
   }
+  function laHoa(p){
+    if(!p.length||p.indexOf(' ')>=0) return false;
+    return p===p.toUpperCase()&&p!==p.toLowerCase();
+  }
+  function maKenh(s){
+    var p=String(s==null?'':s).split(' - ');
+    for(var i=0;i<p.length;i++){
+      var x=p[i].trim();
+      if(laMa(x)){ var k=x.indexOf('_'); return k>0?x.slice(0,k):x }
+    }
+    return '';
+  }
   function tenNgan(s){
     var goc=String(s==null?'':s).trim();
     var p=goc.split(' - ');
     var k=0;
     while(k<p.length-1){
       var x=p[k].trim();
-      if(laSo(x)||laMa(x)) k++; else break;
+      if(laSo(x)||laMa(x)||laHoa(x)) k++; else break;
     }
     var t=p.slice(k).join(' - ').trim();
     return t||goc;
@@ -5545,7 +5583,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     var rows=ds.map(function(sh){
       var t=sh.dk[d-1]||null;
       var p=(d>1)?(sh.dk[d-2]||null):null;
-      return {n:tenNgan(sh.n), t:t, p:p, oU:o(t,0), tU:o(t,8)};
+      return {n:tenNgan(sh.n), ma:maKenh(sh.n), t:t, p:p, oU:o(t,0), tU:o(t,8)};
     });
     rows.sort(function(a,b){
       if(!a.tU&&b.tU) return 1;
@@ -5554,6 +5592,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
       return b.tU-a.tU;
     });
 
+    var trung={};
+    rows.forEach(function(r){ trung[r.n]=(trung[r.n]||0)+1 });
     var h='<table class="tv">';
     h+='<tr>'+
        '<th>SHOP</th>'+
@@ -5576,7 +5616,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
       if(p){ coP=true; for(var q=0;q<14;q++) P[q]+=p[q]||0 }
       var im=!r.tU;
       h+='<tr'+(im?' style="opacity:.55"':'')+'>';
-      h+='<td>'+esc(r.n)+(im?'<small style="color:var(--red)">chưa có S.O</small>':'')+'</td>';
+      var nh=esc(r.n)+((trung[r.n]>1&&r.ma)?(' <span style="color:var(--muted)">('+esc(r.ma)+')</span>'):'');
+      h+='<td>'+nh+(im?'<small style="color:var(--red)">chưa có S.O</small>':'')+'</td>';
       h+='<td style="'+VIEN+'">'+so0(o(t,0))+muiTen(o(t,0),p?o(p,0):null)+'</td>';
       h+='<td>'+so0(o(t,2))+muiTen(o(t,2),p?o(p,2):null)+'</td>';
       h+='<td>'+so0(o(t,4))+muiTen(o(t,4),p?o(p,4):null)+'</td>';
