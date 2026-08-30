@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.8';
+var APP_VER='2026-08-30.9';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5485,11 +5485,26 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
   function so0(v){ return (typeof n0==='function')?n0(v):String(Math.round(v||0)) }
   function tien(v){ return (typeof money==='function')?money(v):String(Math.round(v||0)) }
+  function laSo(p){
+    if(!p.length) return false;
+    for(var i=0;i<p.length;i++){ var c=p.charCodeAt(i); if(c<48||c>57) return false }
+    return true;
+  }
+  function laMa(p){
+    if(p.indexOf('_')<0) return false;
+    for(var i=0;i<p.length;i++){ var c=p.charCodeAt(i); if(c>=97&&c<=122) return false }
+    return true;
+  }
   function tenNgan(s){
-    var t=String(s==null?'':s).trim();
-    var i=t.indexOf(' - ');
-    if(i>=0) t=t.slice(i+3).trim();
-    return t||String(s==null?'':s);
+    var goc=String(s==null?'':s).trim();
+    var p=goc.split(' - ');
+    var k=0;
+    while(k<p.length-1){
+      var x=p[k].trim();
+      if(laSo(x)||laMa(x)) k++; else break;
+    }
+    var t=p.slice(k).join(' - ').trim();
+    return t||goc;
   }
   function muiTen(a,b,kieu){
     if(b===null||b===undefined) return '';
