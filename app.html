@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.10';
+var APP_VER='2026-08-30.11';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5706,4 +5706,124 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   window.__ngayshop={ve:veShop,lay:lay,bang:bang};
 })();
 </script>
+<script id="app-canh2">
+(function(){
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+
+  function laSo(p){
+    if(!p.length) return false;
+    for(var i=0;i<p.length;i++){ var c=p.charCodeAt(i); if(c<48||c>57) return false }
+    return true;
+  }
+  function laMa(p){
+    if(p.indexOf('_')<0) return false;
+    for(var i=0;i<p.length;i++){ var c=p.charCodeAt(i); if(c>=97&&c<=122) return false }
+    return true;
+  }
+  function laHoa(p){
+    if(!p.length||p.indexOf(' ')>=0) return false;
+    return p===p.toUpperCase()&&p!==p.toLowerCase();
+  }
+  function maSo(s){
+    var p=String(s==null?'':s).split(' - ');
+    for(var i=0;i<p.length;i++){ var x=p[i].trim(); if(laSo(x)) return x }
+    return '';
+  }
+  function tenNgan(s){
+    var goc=String(s==null?'':s).trim();
+    var p=goc.split(' - ');
+    var k=0;
+    while(k<p.length-1){
+      var x=p[k].trim();
+      if(laSo(x)||laMa(x)||laHoa(x)) k++; else break;
+    }
+    var t=p.slice(k).join(' - ').trim();
+    return t||goc;
+  }
+  function nhan(s){
+    var m=maSo(s), t=tenNgan(s);
+    return m?(m+' - '+t):t;
+  }
+
+  function ngayXem(){
+    try{ return (typeof ngayMkt==='function')?ngayMkt():(D.maxDay||0) }catch(e){ return 0 }
+  }
+
+  function banDoRule(){
+    var mp={};
+    try{
+      if(!window.__canh||typeof window.__canh.ruleShop!=='function') return mp;
+      var o=(typeof scope==='function')?scope():null;
+      var d=ngayXem();
+      if(!o||!d) return mp;
+      var ds=window.__canh.ruleShop(o,d)||[];
+      ds.forEach(function(x){ mp[x.n]=x.ly||[] });
+    }catch(e){}
+    return mp;
+  }
+
+  function gon(){
+    var list=el('a-list'); if(!list) return;
+    var ds=[].slice.call(list.querySelectorAll('.al[data-shop]'));
+    if(!ds.length) return;
+    var mp=null;
+    ds.forEach(function(b){
+      if(b.getAttribute('data-gon')==='1') return;
+      var ten=b.dataset?b.dataset.shop:'';
+      if(!ten) return;
+      b.setAttribute('data-gon','1');
+      var t=b.querySelector('.t');
+      if(t) t.textContent=nhan(ten);
+      if(mp===null) mp=banDoRule();
+      var ly=mp[ten];
+      if(!ly||!ly.length) return;
+      var bd=b.querySelector('.bd'); if(!bd) return;
+      if(bd.querySelector('.gt-ly')) return;
+      var sp=document.createElement('span');
+      sp.className='d gt-ly';
+      sp.innerHTML='<b style="color:var(--amber)">Phải giải trình:</b> '+
+        ly.map(function(y){
+          return '<span style="color:var('+y[0]+');font-weight:700">'+esc(y[1])+'</span>';
+        }).join(' - ');
+      bd.appendChild(sp);
+    });
+  }
+
+  function boShopTrongNgay(){
+    var c=el('c-shop');
+    if(!c||!c.parentNode) return;
+    if(c.parentNode.id==='v-find'&&c.style.display!=='none') c.style.display='none';
+  }
+
+  var dang=false;
+  function chay(){
+    if(dang) return;
+    dang=true;
+    try{ boShopTrongNgay() }catch(e){}
+    try{ gon() }catch(e){ if(window.console) console.warn('[canh2]',e) }
+    dang=false;
+  }
+
+  function gan(){
+    var list=el('a-list');
+    if(!list||list.__c2) return;
+    try{
+      var ob=new MutationObserver(function(){ chay() });
+      ob.observe(list,{childList:true,subtree:true});
+      list.__c2=ob;
+    }catch(e){}
+  }
+
+  setTimeout(function(){ try{ gan(); chay() }catch(e){} },400);
+  setTimeout(function(){ try{ gan(); chay() }catch(e){} },1500);
+  setInterval(function(){ try{ gan(); chay() }catch(e){} },2000);
+  window.__canh2={chay:chay,nhan:nhan,gon:gon};
+})();
+</script>
+<style id="app-css6">
+#a-list .al{text-align:left}
+#a-list .al .t,#a-list .al .d{text-align:left}
+#a-list .gt-ly{margin-top:3px;line-height:1.45}
+</style>
 </html>
