@@ -4744,9 +4744,11 @@ setInterval(function(){
 
 <script id="app-ngay">
 (function(){
-  var NGAY=0, SH_TAB='u', MD_H='Samsung';
+  var NGAY=0, MD_H='Samsung';
   var H5=[{k:'OPPO',u:0,r:1,c:'#00a86f'},{k:'Samsung',u:2,r:3,c:'#4a7fd4'},
           {k:'Xiaomi',u:4,r:5,c:'#f0803c'},{k:'Apple',u:6,r:7,c:'#9aa4b2'}];
+  var H7=['OPPO','Samsung','Xiaomi','Apple','vivo','Realme','Khác'];
+  var C7=['#00a86f','#4a7fd4','#f0803c','#9aa4b2','#8b7cd8','#d86a8c','#3a4553'];
   function el(i){ return document.getElementById(i) }
   function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
   function so0(v){ return (typeof n0==='function')?n0(v):String(Math.round(v||0)) }
@@ -4756,22 +4758,30 @@ setInterval(function(){
       rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'}).join('')+
       '</table>';
   }
-  function tenShop(s){ var t=String(s==null?'':s), i=t.indexOf(' - '); return i>=0?t.slice(i+3):t }
-  function delta(a,b,dg){
+  function delta(a,b){
     if(!b) return '<span style="color:var(--muted)">—</span>';
     var g=(a-b)/b*100;
     return '<b style="color:var('+(g>=0?'--green':'--red')+')">'+(g>=0?'▲':'▼')+Math.abs(g).toFixed(0)+'%</b>';
+  }
+  function diem(a,b){
+    if(a===null||b===null) return '—';
+    var g=a-b;
+    return '<b style="color:var('+(g>=0?'--green':'--red')+')">'+(g>=0?'+':'')+g.toFixed(1)+'đ</b>';
+  }
+  function tenGon(s){
+    var t=String(s==null?'':s).trim();
+    var bo=['Điện thoại ','Máy tính bảng '];
+    for(var i=0;i<bo.length;i++) if(t.indexOf(bo[i])===0) t=t.slice(bo[i].length).trim();
+    var hg=['OPPO ','Oppo ','SAMSUNG ','Samsung ','XIAOMI ','Xiaomi ','REALME ','Realme ','realme ','vivo ','Vivo '];
+    for(var j=0;j<hg.length;j++) if(t.indexOf(hg[j])===0){ t=t.slice(hg[j].length).trim(); break }
+    if(t.indexOf('Galaxy ')===0) t=t.slice(7).trim();
+    return t;
   }
   function mNow(){ return D.months[D.months.length-1] }
   function soNgay(){ return (typeof ngayMkt==='function')?ngayMkt():(D.maxDay||28) }
   function oNgay(o,d){
     var a0=toDoy(D.year,mNow(),1);
-    var v=(o.dnB||[])[a0+d-2];
-    return v||[0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-  }
-  function dkNgay(sh,d){
-    var v=(sh.dk||[])[d-1];
-    return v||[0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    return (o.dnB||[])[a0+d-2]||[0,0,0,0,0,0,0,0,0,0,0,0,0,0];
   }
 
   /* ---- 1. Toan vung: ngay N so ngay N-1 ---- */
@@ -4781,103 +4791,86 @@ setInterval(function(){
     if(!tU) return '<div class="note">Ngày '+d+' chưa có số.</div>';
     var rows=H5.map(function(x){
       var u=t[x.u]||0, r=t[x.r]||0;
+      var s1=tU?(u/tU*100):null, s0=(p&&p[8])?(p[x.u]/p[8]*100):null;
       return ['<span style="color:'+x.c+'">'+x.k+'</span>', so0(u), p?delta(u,p[x.u]):'—',
         tien(r), p?delta(r,p[x.r]):'—',
-        (tU?(u/tU*100).toFixed(1):0)+'%', (tR?(r/tR*100).toFixed(1):0)+'%'];
+        (s1===null?0:s1.toFixed(1))+'%', diem(s1,s0)];
     });
     var khU=tU-(t[0]||0)-(t[2]||0)-(t[4]||0)-(t[6]||0);
     var khR=tR-(t[1]||0)-(t[3]||0)-(t[5]||0)-(t[7]||0);
     rows.push(['<span style="color:#3a4553">Khác</span>', so0(khU),'—', tien(khR),'—',
-      (tU?(khU/tU*100).toFixed(1):0)+'%', (tR?(khR/tR*100).toFixed(1):0)+'%']);
+      (tU?(khU/tU*100).toFixed(1):0)+'%','—']);
     rows.push(['<b>Tổng thị trường</b>','<b>'+so0(tU)+'</b>', p?delta(tU,p[8]):'—',
-      '<b>'+tien(tR)+'</b>', p?delta(tR,p[9]):'—','<b>100%</b>','<b>100%</b>']);
-    var h='<div class="tvwrap">'+bang(['Hãng','Máy','so hôm trước','Doanh thu','so hôm trước','Share DS','Share DT'],rows)+'</div>';
-    var pkO=t[10]||0, pkT=t[12]||0;
-    var pkOp=p?(p[10]||0):0, pkTp=p?(p[12]||0):0;
-    h+='<div class="subhead">PK 10–20M — ngày '+d+'/'+mNow()+'</div><div class="tvwrap">'+
-      bang(['Chỉ số','Ngày '+d,'so hôm trước'],[
-        ['OPPO', so0(pkO)+' máy', pkOp?delta(pkO,pkOp):'—'],
-        ['Toàn thị trường', so0(pkT)+' máy', pkTp?delta(pkT,pkTp):'—'],
-        ['<b>Share OPPO</b>','<b>'+(pkT?(pkO/pkT*100).toFixed(1):0)+'%</b>',
-          (pkTp&&pkT)?('<b>'+((pkO/pkT-pkOp/pkTp)*100>=0?'+':'')+((pkO/pkT-pkOp/pkTp)*100).toFixed(1)+'đ</b>'):'—']
-      ])+'</div>'+
-      '<div class="note">PK 10–20M theo ngày chỉ có OPPO và tổng thị trường — DB TG không tách theo hãng ở mức ngày.</div>';
+      '<b>'+tien(tR)+'</b>', p?delta(tR,p[9]):'—','<b>100%</b>','']);
+    var h='<div class="tvwrap" id="ngay-vung-b">'+
+      bang(['Hãng','Máy','so hôm trước','Doanh thu','so hôm trước','Share DS','so hôm trước'],rows)+'</div>';
+    var dgO=t[0]?(t[1]/t[0]):0, dgOp=(p&&p[0])?(p[1]/p[0]):0;
+    h+='<div class="note">Đơn giá OPPO '+tien(Math.round(dgO*10)/10)+
+      (dgOp?(' — '+delta(dgO,dgOp)+' so hôm trước'):'')+'.</div>';
+    h+=khoiPK(o,d);
     return h;
   }
 
-  /* ---- 2. Chi tiet sell out tung shop: OPPO / SS / XM ---- */
-  function khoiShop(o,d){
-    var ds=((o&&o.s)||[]).filter(function(x){ return x.dk&&x.dk.length });
-    if(!ds.length) return '<div class="note">Chưa có số theo ngày của từng shop trong gói dữ liệu này.</div>';
-    var pil=[['u','Doanh số'],['r','Doanh thu'],['pk','PK 10–20M']].map(function(x){
-      return '<button data-nsh="'+x[0]+'"'+(SH_TAB===x[0]?' class="on"':'')+'>'+x[1]+'</button>'
-    }).join('');
-    var rows=[], head, isU=SH_TAB==='u';
-    var tong=[0,0,0,0,0,0];
-    if(SH_TAB==='pk'){
-      head=['Shop','OPPO','Toàn TT','Share OPPO','so hôm trước'];
-      ds.forEach(function(sh){
-        var v=dkNgay(sh,d), p=d>1?dkNgay(sh,d-1):null;
-        var a=v[10]||0, b=v[12]||0;
-        if(!b&&!a) return;
-        var s1=b?(a/b*100):null, s0=(p&&p[12])?(p[10]/p[12]*100):null;
-        tong[0]+=a; tong[1]+=b;
-        rows.push([esc(tenShop(sh.n)), so0(a), so0(b),
-          s1===null?'—':('<b>'+s1.toFixed(0)+'%</b>'),
-          (s1===null||s0===null)?'—':('<b style="color:var('+((s1-s0)>=0?'--green':'--red')+')">'+
-            ((s1-s0)>=0?'+':'')+(s1-s0).toFixed(1)+'đ</b>')]);
+  /* ---- PK 10-20M theo ngay, tach du hang neu co pkD ---- */
+  function khoiPK(o,d){
+    var pk=o.pkD||null;
+    var cot=pk?(pk[d]||pk[String(d)]):null;
+    var truoc=(pk&&d>1)?(pk[d-1]||pk[String(d-1)]):null;
+    var h='<div class="subhead">PK 10–20M — ngày '+d+'/'+mNow()+'</div>';
+    if(cot){
+      var tU=0,tR=0; cot.forEach(function(v){ tU+=v[0]; tR+=v[1] });
+      var pU=0; if(truoc) truoc.forEach(function(v){ pU+=v[0] });
+      var rows=H7.map(function(nn,k){
+        var v=cot[k]||[0,0], w=truoc?(truoc[k]||[0,0]):null;
+        var s1=tU?(v[0]/tU*100):null, s0=(w&&pU)?(w[0]/pU*100):null;
+        return ['<span style="color:'+C7[k]+'">'+nn+'</span>', so0(v[0]),
+          w?delta(v[0],w[0]):'—', tien(v[1]),
+          (s1===null?0:s1.toFixed(1))+'%', diem(s1,s0)];
       });
-      rows.push(['<b>Tổng</b>','<b>'+so0(tong[0])+'</b>','<b>'+so0(tong[1])+'</b>',
-        '<b>'+(tong[1]?(tong[0]/tong[1]*100).toFixed(1):0)+'%</b>','']);
-    } else {
-      var k=function(i){ return isU?H5[i].u:H5[i].r };
-      var dg=isU?so0:tien;
-      head=['Shop','OPPO','so hôm trước','Samsung','Xiaomi','Tổng','Share OPPO'];
-      ds.forEach(function(sh){
-        var v=dkNgay(sh,d), p=d>1?dkNgay(sh,d-1):null;
-        var oo=v[k(0)]||0, ss=v[k(1)]||0, xm=v[k(2)]||0, tt=isU?(v[8]||0):(v[9]||0);
-        if(!tt&&!oo) return;
-        tong[0]+=oo; tong[1]+=ss; tong[2]+=xm; tong[3]+=tt;
-        rows.push([esc(tenShop(sh.n)), dg(oo),
-          (p&&p[k(0)])?delta(oo,p[k(0)]):(oo?'<b style="color:var(--green)">mới</b>':'—'),
-          dg(ss), dg(xm), dg(tt),
-          tt?('<b style="color:var('+(oo/tt>=0.15?'--green':'--red')+')">'+(oo/tt*100).toFixed(0)+'%</b>'):'—']);
-      });
-      rows.push(['<b>Tổng</b>','<b>'+dg(tong[0])+'</b>','','<b>'+dg(tong[1])+'</b>',
-        '<b>'+dg(tong[2])+'</b>','<b>'+dg(tong[3])+'</b>',
-        '<b>'+(tong[3]?(tong[0]/tong[3]*100).toFixed(1):0)+'%</b>']);
+      rows.push(['<b>Tổng</b>','<b>'+so0(tU)+'</b>', truoc?delta(tU,pU):'—',
+        '<b>'+tien(tR)+'</b>','<b>100%</b>','']);
+      h+='<div class="tvwrap" id="ngay-pk-b">'+
+        bang(['Hãng','Máy','so hôm trước','Doanh thu','Share','so hôm trước'],rows)+'</div>'+
+        '<div class="note">Khoảng 10–20M của ngày, tách đủ hãng. Cột cuối là chênh lệch thị phần tính bằng điểm.</div>';
+      return h;
     }
-    if(rows.length<2) return '<div class="pills sm" id="p-nsh">'+pil+'</div><div class="note">Ngày '+d+' chưa có shop nào có số.</div>';
-    return '<div class="pills sm" id="p-nsh">'+pil+'</div>'+
-      '<div class="tvwrap" id="ngay-shop-b">'+bang(head,rows)+'</div>'+
-      '<div class="note">Xếp theo thứ tự shop. Share OPPO dưới 15% tô đỏ. '+
-      (SH_TAB==='pk'?'Đơn vị: máy.':(isU?'Đơn vị: máy.':'Đơn vị: doanh thu.'))+'</div>';
+    var t=oNgay(o,d), p=d>1?oNgay(o,d-1):null;
+    var a=t[10]||0, b=t[12]||0;
+    var a0=p?(p[10]||0):0, b0=p?(p[12]||0):0;
+    h+='<div class="tvwrap">'+bang(['Chỉ số','Ngày '+d,'so hôm trước'],[
+      ['OPPO', so0(a)+' máy', a0?delta(a,a0):'—'],
+      ['Toàn thị trường', so0(b)+' máy', b0?delta(b,b0):'—'],
+      ['<b>Share OPPO</b>','<b>'+(b?(a/b*100).toFixed(1):0)+'%</b>',
+        diem(b?a/b*100:null, b0?a0/b0*100:null)]
+    ])+'</div><div class="note">Gói dữ liệu này chưa có PK tách theo hãng — chạy lại robot sẽ có.</div>';
+    return h;
   }
 
-  /* ---- 3. Doi thu ban gi: OPPO / SS / XM ---- */
-  function khoiModel(o){
-    var mdB=o&&o.mdB;
-    if(!mdB||!Object.keys(mdB).length) return '<div class="note">Chưa có số model theo hãng trong gói dữ liệu này.</div>';
-    var m=mNow(), cell=mdB[m]||mdB[String(m)]||{};
-    var ten=['OPPO','Samsung','Xiaomi'];
-    var pil=ten.map(function(h){
+  /* ---- 2. Doi thu ban gi: ngay + cong don ---- */
+  function khoiModel(o,d){
+    var dm=o&&o.dmN, ten=(typeof D!=='undefined'&&D.dmT)||null;
+    var ds=['OPPO','Samsung','Xiaomi'];
+    var pil=ds.map(function(h){
       return '<button data-nmd="'+h+'"'+(MD_H===h?' class="on"':'')+'>'+h+'</button>'
     }).join('');
-    var lst=(cell[MD_H]||[]).slice(0,10);
-    if(!lst.length) return '<div class="pills sm" id="p-nmd">'+pil+'</div>'+
-      '<div class="note">Tháng '+m+' chưa có số của '+MD_H+'.</div>';
-    var tU=0; lst.forEach(function(x){ tU+=x[1] });
+    var dau='<div class="pills sm" id="p-nmd">'+pil+'</div>';
+    if(!dm||!ten) return dau+'<div class="note">Gói dữ liệu này chưa có model theo ngày — chạy lại robot sẽ có.</div>';
+    var cell=dm[d]||dm[String(d)]||{};
+    var lst=cell[MD_H]||[];
+    if(!lst.length) return dau+'<div class="note">Ngày '+d+' chưa có số của '+MD_H+'.</div>';
+    var tN=0,tL=0; lst.forEach(function(x){ tN+=x[1]; tL+=x[3] });
     var rows=lst.map(function(x){
       var gia=x[1]?(x[2]/x[1]):0;
       var pk=(gia>=10&&gia<20);
-      var t=(typeof tenModel==='function')?tenModel(x[0]):x[0];
-      return [esc(t)+(pk?' <b style="color:var(--amber)">10–20M</b>':''),
-        so0(x[1]), (tU?(x[1]/tU*100).toFixed(1):0)+'%', tien(x[2]), tien(Math.round(gia*10)/10)];
+      return [esc(tenGon(ten[x[0]]))+(pk?' <b style="color:var(--amber)">10–20M</b>':''),
+        '<b>'+so0(x[1])+'</b>', tien(x[2]), tien(Math.round(gia*10)/10),
+        so0(x[3]), tien(x[4])];
     });
-    return '<div class="pills sm" id="p-nmd">'+pil+'</div>'+
-      '<div class="tvwrap" id="ngay-md-b">'+bang(['Model','Máy','% top','Doanh thu','Giá TB'],rows)+'</div>'+
-      '<div class="note">TOP 10 dòng máy '+MD_H+' tháng '+m+'. Nhãn <b style="color:var(--amber)">10–20M</b> = giá bình quân rơi vào ô mình đang giữ. '+
-      'Model chỉ có số theo THÁNG, không có theo ngày.</div>';
+    rows.push(['<b>Tổng top</b>','<b>'+so0(tN)+'</b>','','','<b>'+so0(tL)+'</b>','']);
+    return dau+'<div class="tvwrap" id="ngay-md-b">'+
+      bang(['Model','Máy ngày','DT ngày','Giá TB','Máy cộng dồn','DT cộng dồn'],rows)+'</div>'+
+      '<div class="note">TOP 8 dòng máy '+MD_H+' bán nhiều nhất <b>ngày '+d+'</b>, kèm số cộng dồn từ đầu tháng '+mNow()+'. '+
+      'Đã bỏ tên hãng khỏi tên máy cho gọn. Nhãn <b style="color:var(--amber)">10–20M</b> = giá bình quân rơi vào ô mình đang giữ.</div>';
   }
 
   function ve(){
@@ -4885,10 +4878,7 @@ setInterval(function(){
     var cu=sec.querySelector('.card');
     if(cu&&cu.id!=='ngay-card') cu.style.display='none';
     var box=document.getElementById('ngay-box');
-    if(!box){
-      box=document.createElement('div'); box.id='ngay-box';
-      sec.appendChild(box);
-    }
+    if(!box){ box=document.createElement('div'); box.id='ngay-box'; sec.appendChild(box) }
     var o;
     try{ o=curObj() }catch(e){ o=null }
     if(!o){ box.innerHTML=''; return }
@@ -4901,8 +4891,7 @@ setInterval(function(){
       '<select id="nd-sel">'+opt+'</select></label>'+
       '<p class="sub">Số theo data MWG. Mọi so sánh là với <b>ngày liền trước</b>.</p>'+
       khoiVung(o,NGAY)+'</div>'+
-      '<div class="card"><h2>Sell out từng shop — ngày '+NGAY+'/'+mNow()+'</h2>'+khoiShop(o,NGAY)+'</div>'+
-      '<div class="card"><h2>Đối thủ bán gì</h2>'+khoiModel(o)+'</div>';
+      '<div class="card"><h2>Đối thủ bán gì — ngày '+NGAY+'/'+mNow()+'</h2>'+khoiModel(o,NGAY)+'</div>';
   }
 
   function doiTenNav(){
@@ -4929,13 +4918,11 @@ setInterval(function(){
   });
   document.addEventListener('click',function(e){
     if(!e.target||!e.target.closest) return;
-    var a=e.target.closest('[data-nsh]');
-    if(a){ SH_TAB=a.dataset.nsh; try{ ve() }catch(er){} return }
     var b=e.target.closest('[data-nmd]');
     if(b){ MD_H=b.dataset.nmd; try{ ve() }catch(er){} return }
   });
   setInterval(function(){ try{ doiTenNav() }catch(e){} },2000);
-  window.__ngay={ve:ve,khoiVung:khoiVung,khoiShop:khoiShop,khoiModel:khoiModel};
+  window.__ngay={ve:ve,khoiVung:khoiVung,khoiModel:khoiModel,khoiPK:khoiPK,tenGon:tenGon};
 })();
 
 </script>
