@@ -801,6 +801,104 @@
       });
     }
 
+    // 7a2. Top 10 model MOI HANG theo tung thang, o cap SALE va toan bo -> o.mdB[thang][hang]
+    var TEN6 = { oppo: 'OPPO', op: 'OPPO', samsung: 'Samsung', ss: 'Samsung',
+                 xiaomi: 'Xiaomi', xm: 'Xiaomi', realme: 'Realme', rm: 'Realme',
+                 vivo: 'vivo', vv: 'vivo', apple: 'Apple', ip: 'Apple', iphone: 'Apple' };
+    function hang6(x) {
+      var k = String(x || '').trim().toLowerCase();
+      return TEN6[k] || 'Khác';
+    }
+    var mdAll = {}, mdSale = {};
+    if (smd && Object.keys(smd).length) {
+      Object.keys(smd).forEach(function (tenMain) {
+        var st = veShopOppo(tenMain); if (!st || !shops[st]) return;
+        var sn = shops[st].sale;
+        var byM = smd[tenMain] || {};
+        Object.keys(byM).forEach(function (mk) {
+          var cell = byM[mk] || {};
+          Object.keys(cell).forEach(function (mdl) {
+            var v = cell[mdl] || {};
+            var u = v.units || 0, rv = v.rev || 0;
+            if (!u) return;
+            var hg = hang6(v.brand);
+            var hop = [mdAll];
+            if (sn) { if (!mdSale[sn]) mdSale[sn] = {}; hop.push(mdSale[sn]); }
+            hop.forEach(function (B) {
+              if (!B[mk]) B[mk] = {};
+              if (!B[mk][hg]) B[mk][hg] = {};
+              if (!B[mk][hg][mdl]) B[mk][hg][mdl] = [0, 0];
+              B[mk][hg][mdl][0] += u; B[mk][hg][mdl][1] += rv;
+            });
+          });
+        });
+      });
+    }
+    function goiMdB(B) {
+      var out = null;
+      Object.keys(B || {}).forEach(function (mk) {
+        Object.keys(B[mk]).forEach(function (hg) {
+          var ds = topModel(B[mk][hg], 10);
+          if (!ds.length) return;
+          if (!out) out = {};
+          if (!out[mk]) out[mk] = {};
+          out[mk][hg] = ds;
+        });
+      });
+      return out;
+    }
+
+    // 7b2. NGAY x HANG ca nam o cap SALE va toan bo -> o.dnB[ngayTrongNam-1] = 14 so
+    // [oppoMay,oppoDT, ssMay,ssDT, xmMay,xmDT, ipMay,ipDT, tongMay,tongDT,
+    //  pkOppoMay,pkOppoDT, pkTongMay,pkTongDT]   (DT don vi trieu)
+    var dnAll = null, dnSale = {};
+    var dnBlank = function () {
+      var a = new Array(lastDoy);
+      for (var q = 0; q < lastDoy; q++) a[q] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+      return a;
+    };
+    if (sdd && Object.keys(sdd).length && lastDoy > 0) {
+      Object.keys(sdd).forEach(function (tenMain) {
+        var st = veShopOppo(tenMain); if (!st || !shops[st]) return;
+        var sn = shops[st].sale;
+        var dayMap = sdd[tenMain] || {};
+        Object.keys(dayMap).forEach(function (kk) {
+          var p = String(kk).split('-'); if (p.length < 2) return;
+          var m = +p[0], d = +p[1];
+          if (!m || !d) return;
+          var doy = doyOf(YEAR, m, d) - 1;
+          if (!(doy >= 0 && doy < lastDoy)) return;
+          var c = dayMap[kk] || {};
+          var v = [c.oppo_units || 0, c.oppo_rev || 0,
+                   c.samsung_units || 0, c.samsung_rev || 0,
+                   c.xiaomi_units || 0, c.xiaomi_rev || 0,
+                   c.apple_units || 0, c.apple_rev || 0,
+                   c.total_units || 0, c.total_rev || 0,
+                   c.pk1020_oppo_units || 0, c.pk1020_oppo_rev || 0,
+                   c.pk1020_total_units || 0, c.pk1020_total_rev || 0];
+          if (!v[0] && !v[8]) return;
+          if (!dnAll) dnAll = dnBlank();
+          var hop = [dnAll];
+          if (sn) { if (!dnSale[sn]) dnSale[sn] = dnBlank(); hop.push(dnSale[sn]); }
+          hop.forEach(function (a) { for (var z = 0; z < 14; z++) a[doy][z] += v[z]; });
+        });
+      });
+    }
+    function goiDn(a) {
+      return a.map(function (v) {
+        return [v[0], tr(v[1]), v[2], tr(v[3]), v[4], tr(v[5]), v[6], tr(v[7]),
+                v[8], tr(v[9]), v[10], tr(v[11]), v[12], tr(v[13])];
+      });
+    }
+    Object.keys(mdSale).forEach(function (sn) {
+      if (sales[sn]) { var z = goiMdB(mdSale[sn]); if (z) sales[sn].mdB = z; }
+    });
+    if (Object.keys(mdAll).length) { var zA = goiMdB(mdAll); if (zA) all.mdB = zA; }
+    Object.keys(dnSale).forEach(function (sn) {
+      if (sales[sn]) sales[sn].dnB = goiDn(dnSale[sn]);
+    });
+    if (dnAll) all.dnB = goiDn(dnAll);
+
     // 7c. Khung gio ban (moi hang, thang hien tai) -> sh.hr = [[khung, may, dt]]
     var shb = kho('shop_hour_all_brand');
     if (shb && Object.keys(shb).length) {
@@ -942,6 +1040,8 @@
       if (withDy) { var x = densify(o); r.dy = x[0]; r.dr = x[1]; }
       else { r.d = o.d; r.dp = o.dp; }
       if (o.mkt) r.mkt = o.mkt;
+      if (o.mdB) r.mdB = o.mdB;
+      if (o.dnB) r.dnB = o.dnB;
       if (o.tgc) r.tgc = o.tgc;
       if (o.si) r.si = o.si;
       var tk = tonKho(o); if (tk) r.tk = tk;   // ton kho IND theo model
