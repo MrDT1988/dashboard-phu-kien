@@ -972,6 +972,7 @@
         if (sh.dk) c.dk = sh.dk;
         if (sh.mkm) c.mkm = sh.mkm;
         if (sh.sgmS) c.sgmS = sh.sgmS;
+        if (sh.sgb) c.sgb = sh.sgb;
         if (sh.dkp) c.dkp = sh.dkp;
         if (sh.hr) c.hr = sh.hr;
         if (sh.stf) c.stf = sh.stf;
