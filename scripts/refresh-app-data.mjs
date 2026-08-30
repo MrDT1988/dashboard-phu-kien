@@ -27,7 +27,8 @@ const log = (...a) => console.log('[refresh]', ...a);
 // ---- Doc bang cau tra loi GIAI TRINH (CSV xuat ban tu Google Sheet) ----
 // Chi chay khi co bien moi truong GT_CSV. Hong thi bo qua, khong lam vo lan chay.
 var CR = String.fromCharCode(13), LF = String.fromCharCode(10);
-function tachCSV(s) {
+function tachCSV(s, sep) {
+  sep = sep || ',';
   var out = [], hang = [], o = '', trong = false, i = 0;
   while (i < s.length) {
     var c = s[i];
@@ -36,7 +37,7 @@ function tachCSV(s) {
       o += c; i++; continue;
     }
     if (c === '"') { trong = true; i++; continue; }
-    if (c === ',') { hang.push(o); o = ''; i++; continue; }
+    if (c === sep) { hang.push(o); o = ''; i++; continue; }
     if (c === CR) { i++; continue; }
     if (c === LF) { hang.push(o); out.push(hang); hang = []; o = ''; i++; continue; }
     o += c; i++;
@@ -50,7 +51,14 @@ async function docGiaiTrinh() {
   try {
     const r = await fetch(url, { redirect: 'follow' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    const bang = tachCSV(await r.text());
+    // Phong ho: neu lo xuat ban ra .tsv thi van doc duoc
+    const txt = await r.text();
+    const dong1 = txt.split(LF)[0] || '';
+    var demKy = function (ch) { var n = 0; for (var z = 0; z < dong1.length; z++) if (dong1[z] === ch) n++; return n; };
+    var TAB = String.fromCharCode(9);
+    var sep = demKy(TAB) > demKy(',') ? TAB : ',';
+    if (sep === TAB) log('phat hien dinh dang TSV, van doc duoc');
+    const bang = tachCSV(txt, sep);
     if (bang.length < 2) { log('bang giai trinh trong'); return []; }
     const ds = [];
     for (let k = 1; k < bang.length; k++) {
