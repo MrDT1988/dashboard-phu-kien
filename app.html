@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.16';
+var APP_VER='2026-08-30.17';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -1048,8 +1048,8 @@ function renderOver(){
   $('#h-name').textContent=o.n+(SEG!=='ALL'?' · '+SEG:'');
   // Ghi RO hai moc khi hai nguon lech nhip, va noi ro "cap nhat" la GIO ROBOT CHAY
   // chu khong phai ngay cua so lieu — truoc day hai cai nay de bi doc nham lam mot.
-  $('#h-stamp').innerHTML='Số máy OPPO tới ngày <b>'+day+'/'+M[MI]+'</b>'+
-    (lechNhip()?(' · <b style="color:var(--amber)">thị phần tới ngày '+ngayMkt()+'/'+M[MI]+'</b>'):'')+
+  $('#h-stamp').innerHTML='Số theo data MWG tới ngày <b>'+(ngayMkt()||day)+'/'+M[MI]+'</b>'+
+    (lechNhip()?(' · <span style="color:var(--muted)">số nội bộ OPPO tới '+day+'/'+M[MI]+'</span>'):'')+
     ' · robot chạy lúc '+
     new Date(D.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})+
     ' · bản '+APP_VER;
@@ -6096,6 +6096,116 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   setTimeout(function(){ try{ gan(); chay() }catch(e){} },1800);
   setInterval(function(){ try{ gan(); chay() }catch(e){} },2500);
   window.__top3={chay:chay,topNang:topNang,N:N};
+})();
+</script>
+<script id="app-lockhai">
+(function(){
+  // Chuong trinh rieng cua Sale Loc & Sale Khai (muc 2 ben DB TG):
+  //   1,2% doanh thu OPPO  +  Bonus Model theo phan khuc
+  //   10-15M -> 80.000d/may · tu 15M tro len -> 120.000d/may · duoi 10M -> 0
+  var TU=['LỘC','KHẢI'];
+  var TL=1.2, G1=80000, G2=120000;
+
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+  function so0(v){ return (typeof n0==='function')?n0(v):String(Math.round(v||0)) }
+  function tien(v){ return (typeof money==='function')?money(v):String(Math.round(v||0)) }
+  function dong(trv){
+    var x=Math.round((trv||0)*1e6);
+    try{ return x.toLocaleString('vi-VN')+' đ' }catch(e){ return String(x)+' d' }
+  }
+  function thuoc(ten){
+    var t=String(ten==null?'':ten).toUpperCase();
+    for(var i=0;i<TU.length;i++) if(t.indexOf(TU[i])>=0) return true;
+    return false;
+  }
+  function tinh(){
+    if(typeof D==='undefined'||!D||!D.sales||!D.months) return null;
+    var mi=(typeof MI==='number')?MI:0;
+    var ds=[];
+    D.sales.forEach(function(s){
+      if(!thuoc(s.n)) return;
+      var dt=0,m1=0,m2=0,shop=0,coBM=false;
+      (s.s||[]).forEach(function(x){
+        if(!x||x.ch2!=='MWG') return;
+        shop++;
+        if(x.mkm&&x.mkm[mi]) dt+=x.mkm[mi][1]||0;
+        if(x.bmS&&x.bmS[mi]){ coBM=true; m1+=x.bmS[mi][0]||0; m2+=x.bmS[mi][1]||0 }
+      });
+      if(!shop) return;
+      ds.push({n:s.n,shop:shop,dt:dt,m1:m1,m2:m2,coBM:coBM,
+               ck:dt*TL/100, bm:(m1*G1+m2*G2)/1e6});
+    });
+    return ds.length?{ds:ds,thang:D.months[mi]}:null;
+  }
+
+  function ve(){
+    var mp=el('v-month'); if(!mp) return;
+    var box=el('c-lockhai');
+    var K=tinh();
+    if(!K){ if(box) box.hidden=true; return }
+    if(!box){
+      box=document.createElement('div');
+      box.className='card';
+      box.id='c-lockhai';
+    }
+    box.hidden=false;
+    var neo=el('c-thidua');
+    if(neo&&neo.parentNode===mp){ if(neo.nextSibling!==box) mp.insertBefore(box,neo.nextSibling) }
+    else if(box.parentNode!==mp) mp.appendChild(box);
+
+    var coBM=K.ds.some(function(x){return x.coBM});
+    var h='<h2>💰 Chương trình riêng — Sale Lộc &amp; Sale Khải</h2>'+
+      '<div class="stamp">Chiết khấu <b>1,2% doanh thu OPPO</b> + <b>Bonus Model</b> theo phân khúc. '+
+      'Tháng '+K.thang+'.</div>';
+    h+='<div class="tvwrap"><table class="tv"><tr>'+
+       ['SALE','SHOP','DOANH THU OPPO','CHIẾT KHẤU 1,2%','BONUS MODEL','TỔNG NHẬN']
+         .map(function(x){return '<th>'+esc(x)+'</th>'}).join('')+'</tr>';
+    var tDt=0,tCk=0,tBm=0;
+    K.ds.forEach(function(x){
+      tDt+=x.dt; tCk+=x.ck; tBm+=x.coBM?x.bm:0;
+      h+='<tr>';
+      h+='<td>'+esc(x.n)+'</td>';
+      h+='<td>'+so0(x.shop)+'</td>';
+      h+='<td>'+tien(x.dt)+'</td>';
+      h+='<td><b style="color:var(--green)">'+dong(x.ck)+'</b></td>';
+      h+='<td>'+(x.coBM
+        ?('<b style="color:var(--green)">'+dong(x.bm)+'</b><small>'+so0(x.m1)+' máy 10–15M · '+so0(x.m2)+' máy ≥15M</small>')
+        :'<span style="color:var(--muted)">chờ số</span>')+'</td>';
+      h+='<td><b>'+dong(x.ck+(x.coBM?x.bm:0))+'</b></td>';
+      h+='</tr>';
+    });
+    if(K.ds.length>1){
+      h+='<tr style="background:var(--card2)"><td colspan="2"><b>TỔNG</b></td>'+
+         '<td><b>'+tien(tDt)+'</b></td>'+
+         '<td><b style="color:var(--green)">'+dong(tCk)+'</b></td>'+
+         '<td><b style="color:var(--green)">'+dong(tBm)+'</b></td>'+
+         '<td><b>'+dong(tCk+tBm)+'</b></td></tr>';
+    }
+    h+='</table></div>';
+    h+='<div class="stamp" style="margin-top:9px;line-height:1.55">'+
+       '<b>Chiết khấu</b> = 1,2% doanh thu OPPO của tất cả shop MWG mình phụ trách trong tháng. '+
+       '<b>Bonus Model</b> = máy OPPO phân khúc <b>10–15M × 80.000đ</b> + <b>từ 15M trở lên × 120.000đ</b>; '+
+       'máy dưới 10M không tính. Hai phần này <b>độc lập</b> với chương trình Bonus Shop trọng điểm ở trên.'+
+       (coBM?'':' <b style="color:var(--amber)">Bonus Model đang chờ số phân khúc chi tiết — có từ lần robot chạy 10h sáng mai.</b>')+
+       '</div>';
+    box.innerHTML=h;
+  }
+
+  function boc(ten){
+    if(typeof window[ten]!=='function') return;
+    var goc=window[ten];
+    window[ten]=function(){
+      var kq=goc.apply(this,arguments);
+      try{ ve() }catch(e){ if(window.console) console.warn('[lockhai] '+ten,e) }
+      return kq;
+    };
+  }
+  boc('renderMonth'); boc('renderTarget'); boc('renderHero');
+  try{ ve() }catch(e){}
+  setTimeout(function(){ try{ ve() }catch(e){} },700);
+  setTimeout(function(){ try{ ve() }catch(e){} },2200);
+  window.__lockhai={ve:ve,tinh:tinh};
 })();
 </script>
 </html>
