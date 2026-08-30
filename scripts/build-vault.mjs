@@ -138,6 +138,13 @@ function gopAll(D, ds) {
         });
       });
     }
+    if (s.bmL) {
+      if (!out.bmL) out.bmL = s.bmL.map(() => [0, 0]);
+      s.bmL.forEach((v, i) => {
+        if (!out.bmL[i] || !v) return;
+        out.bmL[i][0] += (v[0] || 0); out.bmL[i][1] += (v[1] || 0);
+      });
+    }
     if (s.pkD) {
       out.pkD = out.pkD || {};
       Object.keys(s.pkD).forEach((d3) => {
@@ -236,7 +243,7 @@ function saleTheoKenh(D, s, ch) {
   if (s.tgc && s.tgc[ch]) o.tgc = { [ch]: s.tgc[ch] };
   if (ch === 'IND' && s.si) o.si = s.si;   // sell-in chi co o kenh IND
   if (ch === 'IND' && s.tk) o.tk = s.tk;   // ton kho cung vay
-  if (ch === 'MWG') { if (s.dnB) o.dnB = s.dnB; if (s.mdB) o.mdB = s.mdB;
+  if (ch === 'MWG') { if (s.dnB) o.dnB = s.dnB; if (s.mdB) o.mdB = s.mdB; if (s.bmL) o.bmL = s.bmL;
     if (s.dmN) o.dmN = s.dmN; if (s.pkD) o.pkD = s.pkD; }
   return o;
 }
