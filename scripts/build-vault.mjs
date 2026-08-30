@@ -124,6 +124,29 @@ function gopAll(D, ds) {
       Object.keys(s.tgc).forEach((c) => { out.tgc[c] = out.tgc[c] || [0, 0];
         out.tgc[c][0] += s.tgc[c][0]; out.tgc[c][1] += s.tgc[c][1]; }); }
     out.shops += s.shops || 0; out.tg += s.tg || 0;
+    if (s.dmN) {
+      out._dmN = out._dmN || {};
+      Object.keys(s.dmN).forEach((d3) => {
+        out._dmN[d3] = out._dmN[d3] || {};
+        Object.keys(s.dmN[d3]).forEach((b3) => {
+          const G3 = out._dmN[d3][b3] || (out._dmN[d3][b3] = {});
+          (s.dmN[d3][b3] || []).forEach((x3) => {
+            G3[x3[0]] = G3[x3[0]] || [0, 0, 0, 0];
+            G3[x3[0]][0] += x3[1]; G3[x3[0]][1] += x3[2];
+            G3[x3[0]][2] += x3[3]; G3[x3[0]][3] += x3[4];
+          });
+        });
+      });
+    }
+    if (s.pkD) {
+      out.pkD = out.pkD || {};
+      Object.keys(s.pkD).forEach((d3) => {
+        if (!out.pkD[d3]) out.pkD[d3] = Array.from({ length: 7 }, () => [0, 0]);
+        (s.pkD[d3] || []).forEach((v3, k3) => {
+          if (out.pkD[d3][k3]) { out.pkD[d3][k3][0] += v3[0]; out.pkD[d3][k3][1] += v3[1]; }
+        });
+      });
+    }
     for (const c of Object.keys(s.ch || {})) {
       if (!out.ch[c]) out.ch[c] = cap(NM);
       cong(out.ch[c], s.ch[c]);
@@ -153,6 +176,19 @@ function gopAll(D, ds) {
           .sort((a, b) => b[1] - a[1]).slice(0, 10);
       }
     }
+  }
+  if (out._dmN) {
+    out.dmN = {};
+    Object.keys(out._dmN).forEach((d3) => {
+      out.dmN[d3] = {};
+      Object.keys(out._dmN[d3]).forEach((b3) => {
+        const G3 = out._dmN[d3][b3];
+        out.dmN[d3][b3] = Object.keys(G3)
+          .map((i3) => [+i3, G3[i3][0], G3[i3][1], G3[i3][2], G3[i3][3]])
+          .sort((a3, z3) => z3[1] - a3[1]).slice(0, 8);
+      });
+    });
+    delete out._dmN;
   }
   if (out._mdB) {
     out.mdB = {};
@@ -200,7 +236,8 @@ function saleTheoKenh(D, s, ch) {
   if (s.tgc && s.tgc[ch]) o.tgc = { [ch]: s.tgc[ch] };
   if (ch === 'IND' && s.si) o.si = s.si;   // sell-in chi co o kenh IND
   if (ch === 'IND' && s.tk) o.tk = s.tk;   // ton kho cung vay
-  if (ch === 'MWG') { if (s.dnB) o.dnB = s.dnB; if (s.mdB) o.mdB = s.mdB; }
+  if (ch === 'MWG') { if (s.dnB) o.dnB = s.dnB; if (s.mdB) o.mdB = s.mdB;
+    if (s.dmN) o.dmN = s.dmN; if (s.pkD) o.pkD = s.pkD; }
   return o;
 }
 
@@ -214,6 +251,7 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     segs: D.segs, sers: D.sers,
     chans: kenh ? [kenh] : D.chans,
     v: D.v, segsMkt: D.segsMkt || [], nhomPK: D.nhomPK || null,
+    dmT: D.dmT || null,
     shareKA: D.shareKA || null,
     src: D.src || null, tkMonths: D.tkMonths || [],
     tgK: D.tgK || null, sizes: D.sizes || [],
