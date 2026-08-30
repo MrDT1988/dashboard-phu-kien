@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.5';
+var APP_VER='2026-08-30.6';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5245,6 +5245,233 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     if(!b) return;
     if(window.TR==='W'&&b.dataset.ser!=='ALL') window.TR='M';
   },true);
+})();
+</script>
+<script id="app-thidua">
+(function(){
+  var SIZE_LOC='';
+  var NGAY_TH={1:31,2:28,3:31,4:30,5:31,6:30,7:31,8:31,9:30,10:31,11:30,12:31};
+  var ORD={S:0,A:1,B:2};
+
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+  function tien(v){ return (typeof money==='function')?money(v):String(Math.round(v||0)) }
+  function dong(trv){
+    var x=Math.round((trv||0)*1e6);
+    try{ return x.toLocaleString('vi-VN') }catch(e){ return String(x) }
+  }
+  function mauShare(p){
+    if(p===null||p===undefined) return '';
+    if(p<25) return 'color:var(--red);font-weight:700';
+    if(p>35) return 'color:var(--green);font-weight:700';
+    return '';
+  }
+  function idxThang(m){
+    var a=(typeof D!=='undefined'&&D&&D.months)?D.months:[];
+    for(var i=0;i<a.length;i++) if(a[i]===m) return i;
+    return -1;
+  }
+  function idxH1(){
+    var r=[];
+    for(var m=1;m<=6;m++){ var i=idxThang(m); if(i>=0) r.push(i) }
+    return r;
+  }
+  function ngayCuoi(sh){
+    if(!sh||!sh.dk||!sh.dk.length) return 0;
+    for(var i=sh.dk.length-1;i>=0;i--){
+      var c=sh.dk[i]||[];
+      if((c[8]||0)||(c[0]||0)) return i+1;
+    }
+    return 0;
+  }
+  function banDoSale(){
+    var mp={};
+    ((typeof D!=='undefined'&&D&&D.sales)?D.sales:[]).forEach(function(s){
+      (s.s||[]).forEach(function(x){ mp[x.n]=s.n });
+    });
+    return mp;
+  }
+  function tenNgan(s){
+    var t=String(s==null?'':s), i=t.indexOf(' - ');
+    return i>=0?t.slice(i+3):t;
+  }
+  function maShop(s){
+    var t=String(s==null?'':s), i=t.indexOf(' - ');
+    return i>=0?t.slice(0,i):'';
+  }
+
+  function tinh(){
+    if(typeof D==='undefined'||!D||!D.months) return null;
+    var o=(typeof scope==='function')?scope():null;
+    if(!o) return null;
+    var ds=(o.s||[]).filter(function(x){
+      return x&&x.ch2==='MWG'&&x.mkm&&(x.size==='S'||x.size==='A'||x.size==='B');
+    });
+    if(!ds.length) return null;
+    var loc=SIZE_LOC?ds.filter(function(x){return x.size===SIZE_LOC}):ds;
+    var H1=idxH1();
+    if(!H1.length) return null;
+    var mi=(typeof MI==='number')?MI:0;
+    var mNow=D.months[mi]||0;
+    var cuoi=(mi===D.months.length-1);
+    var dim=NGAY_TH[mNow]||30;
+    var mpS=banDoSale();
+    var rows=loc.map(function(sh){
+      var mk=sh.mkm||[];
+      var oH1=0,tH1=0,aH1=0;
+      H1.forEach(function(i){ var v=mk[i]||[]; oH1+=v[1]||0; aH1+=v[7]||0; tH1+=v[9]||0 });
+      var dtTb=oH1/H1.length;
+      var leH1=tH1-aH1;
+      var share=leH1>0?(oH1/leH1*100):0;
+      var v=mk[mi]||[];
+      var dtT=v[1]||0, leT=(v[9]||0)-(v[7]||0);
+      var pctT=leT>0?(dtT/leT*100):null;
+      var t10=dtTb*1.10, t15=dtTb*1.15, t20=dtTb*1.20;
+      var nd=cuoi?ngayCuoi(sh):dim;
+      var he=nd>0?(dim/nd):1;
+      var duT=dtT*he;
+      var moc=0, ty=0;
+      if(dtTb>0){
+        if(duT>=t20){ moc=20; ty=0.15 }
+        else if(duT>=t15){ moc=15; ty=0.1 }
+        else if(duT>=t10){ moc=10; ty=0.05 }
+      }
+      return {n:sh.n, sale:mpS[sh.n]||'', size:sh.size, dtTb:dtTb, share:share,
+              dtT:dtT, pctT:pctT, t10:t10, t15:t15, t20:t20, moc:moc,
+              thg:duT*ty/100, oH1:oH1, leH1:leH1, leT:leT, duT:duT, nd:nd};
+    });
+    rows.sort(function(a,b){
+      var sa=(ORD[a.size]===undefined)?9:ORD[a.size];
+      var sb=(ORD[b.size]===undefined)?9:ORD[b.size];
+      if(sa!==sb) return sa-sb;
+      return b.thg-a.thg;
+    });
+    var nSale={};
+    ds.forEach(function(x){ if(mpS[x.n]) nSale[mpS[x.n]]=1 });
+    return {rows:rows, tong:ds.length, thang:mNow, cuoi:cuoi, dim:dim,
+            nhieuSale:Object.keys(nSale).length>1};
+  }
+
+  function nutSize(k,ten,dang){
+    return '<button type="button" class="btn" data-tdsz="'+k+'" style="padding:5px 11px;font-size:12px'+
+      (dang?';border-color:var(--green);color:var(--green);font-weight:700':'')+'">'+esc(ten)+'</button>';
+  }
+
+  function veBang(K){
+    var co=K.nhieuSale;
+    var h=['SHOP'];
+    if(co) h.push('SALE');
+    h=h.concat(['SIZE','DT TB 2026','SHARE DT','DT THÁNG','%DT THÁNG','TT 10%','TT 15%','TT 20%','THƯỞNG DỰ KIẾN']);
+    var s='<table class="tv"><tr>'+h.map(function(x){return '<th>'+esc(x)+'</th>'}).join('')+'</tr>';
+    var tDtTb=0,tOH1=0,tLeH1=0,tDtT=0,tLeT=0,tThg=0;
+    K.rows.forEach(function(r){
+      tDtTb+=r.dtTb; tOH1+=r.oH1; tLeH1+=r.leH1; tDtT+=r.dtT; tLeT+=r.leT; tThg+=r.thg;
+      var ms=mauShare(r.share);
+      var hit='color:var(--green);font-weight:700';
+      s+='<tr>';
+      s+='<td style="'+ms+'">'+esc(tenNgan(r.n))+'<small>'+esc(maShop(r.n))+'</small></td>';
+      if(co) s+='<td style="text-align:left">'+esc(r.sale||'-')+'</td>';
+      s+='<td>'+esc(r.size)+'</td>';
+      s+='<td>'+tien(r.dtTb)+'</td>';
+      s+='<td style="'+ms+'">'+(r.share).toFixed(1)+'%</td>';
+      s+='<td>'+tien(r.dtT)+'</td>';
+      s+='<td style="'+(r.pctT===null?'':mauShare(r.pctT))+'">'+(r.pctT===null?'-':r.pctT.toFixed(1)+'%')+'</td>';
+      s+='<td style="'+(r.moc===10?hit:'')+'">'+(r.t10>0?tien(r.t10):'-')+'</td>';
+      s+='<td style="'+(r.moc===15?hit:'')+'">'+(r.t15>0?tien(r.t15):'-')+'</td>';
+      s+='<td style="'+(r.moc===20?hit:'')+'">'+(r.t20>0?tien(r.t20):'-')+'</td>';
+      s+='<td><b style="'+(r.thg>0?'color:var(--green)':'color:var(--muted)')+'">'+dong(r.thg)+'</b></td>';
+      s+='</tr>';
+    });
+    var shTong=tLeH1>0?(tOH1/tLeH1*100):0;
+    var pcTong=tLeT>0?(tDtT/tLeT*100):null;
+    s+='<tr style="background:var(--card2)">';
+    s+='<td colspan="'+(co?3:2)+'"><b>TỔNG — '+K.rows.length+' shop'+(SIZE_LOC?(' size '+esc(SIZE_LOC)):'')+'</b></td>';
+    s+='<td><b>'+tien(tDtTb)+'</b></td>';
+    s+='<td style="'+mauShare(shTong)+'">'+shTong.toFixed(1)+'%</td>';
+    s+='<td><b>'+tien(tDtT)+'</b></td>';
+    s+='<td style="'+(pcTong===null?'':mauShare(pcTong))+'">'+(pcTong===null?'-':pcTong.toFixed(1)+'%')+'</td>';
+    s+='<td>-</td><td>-</td><td>-</td>';
+    s+='<td><b style="color:var(--green)">'+dong(tThg)+'</b></td>';
+    s+='</tr></table>';
+    return s;
+  }
+
+  function ve(){
+    var mp=el('v-month'); if(!mp) return;
+    var box=el('c-thidua');
+    var K=tinh();
+    if(!K||!K.rows.length){
+      if(box) box.hidden=true;
+      return;
+    }
+    if(!box){
+      box=document.createElement('div');
+      box.className='card';
+      box.id='c-thidua';
+      mp.appendChild(box);
+    }
+    box.hidden=false;
+    if(box.parentNode!==mp) mp.appendChild(box);
+
+    var rui=K.rows.filter(function(r){return r.moc===0&&r.dtTb>0});
+    var ten=rui.slice(0,6).map(function(r){return tenNgan(r.n)}).join(', ');
+    var them=rui.length>6?(' và '+(rui.length-6)+' shop khác'):'';
+
+    var h='<h2>🏆 Chương trình thi đua tháng '+K.thang+'</h2>'+
+      '<div class="stamp">Bonus Shop trọng điểm (Size S, A, B) — mốc tăng trưởng doanh thu so với DT TB 2026. '+
+      'Vạch <b style="color:var(--red)">đỏ</b> = %OPPO/doanh thu bán lẻ (trừ Apple) dưới 25%; '+
+      '<b style="color:var(--green)">xanh</b> = trên 35%.</div>';
+
+    if(rui.length){
+      h+='<div style="margin-top:9px;padding:9px 11px;border-radius:10px;background:rgba(255,92,114,.10);'+
+         'border:1px solid rgba(255,92,114,.35);font-size:12px;line-height:1.5">'+
+         '⚠️ <b style="color:var(--red)">'+rui.length+' shop trọng điểm dự kiến CHƯA đạt mốc TT 10%</b> '+
+         'theo tốc độ bán hiện tại: <b>'+esc(ten)+'</b>'+esc(them)+' — cần đẩy hàng gấp trong các ngày còn lại.</div>';
+    }
+
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">'+
+       nutSize('','Tất cả size',SIZE_LOC==='')+
+       nutSize('S','Size S',SIZE_LOC==='S')+
+       nutSize('A','Size A',SIZE_LOC==='A')+
+       nutSize('B','Size B',SIZE_LOC==='B')+'</div>';
+
+    h+='<div class="tvwrap" id="tv-thidua">'+veBang(K)+'</div>';
+
+    h+='<div class="stamp" style="margin-top:9px;line-height:1.55">'+
+       '<b>DT TB 2026</b> = doanh thu OPPO trung bình/tháng của 6 tháng đầu năm 2026 (T1–T6), cố định. '+
+       '<b>Share DT</b> = %OPPO/doanh thu bán lẻ trừ Apple, cũng tính trên T1–T6. '+
+       '<b>DT tháng / %DT tháng</b> đổi theo tháng đang chọn. '+
+       '<b>TT 10/15/20%</b> = DT TB 2026 × 1,10 / 1,15 / 1,20 — so với doanh thu OPPO <b>dự phóng cuối tháng</b> '+
+       '(tốc độ bán trung bình/ngày hiện tại × '+K.dim+' ngày). '+
+       'Thưởng: đạt TT 10% → 0,05% doanh thu · TT 15% → 0,1% · TT 20% → 0,15% (lấy mốc cao nhất, không cộng dồn).'+
+       (K.cuoi?'':' Tháng đã kết thúc nên dự phóng = số thực tế.')+'</div>';
+
+    box.innerHTML=h;
+  }
+
+  document.addEventListener('click',function(e){
+    if(!e.target||!e.target.closest) return;
+    var b=e.target.closest('[data-tdsz]');
+    if(!b) return;
+    SIZE_LOC=b.getAttribute('data-tdsz')||'';
+    try{ ve() }catch(er){}
+  });
+
+  function boc(ten){
+    if(typeof window[ten]!=='function') return;
+    var goc=window[ten];
+    window[ten]=function(){
+      var kq=goc.apply(this,arguments);
+      try{ ve() }catch(e){ if(window.console) console.warn('[thidua] '+ten,e) }
+      return kq;
+    };
+  }
+  boc('renderMonth'); boc('renderTarget'); boc('renderHero'); boc('renderDaily');
+
+  try{ ve() }catch(e){}
+  setTimeout(function(){ try{ ve() }catch(e){} },600);
+  setTimeout(function(){ try{ ve() }catch(e){} },2000);
+  window.__thidua={ve:ve,tinh:tinh};
 })();
 </script>
 </html>
