@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.19';
+var APP_VER='2026-08-30.20';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5927,9 +5927,14 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
 </style>
 <script id="app-top3">
 (function(){
-  // CHOT 30/08: moi ngay chi BAT BUOC giai trinh 3 shop nang nhat.
-  // Cac shop con lai van hien nhung chi de THEO DOI. Doi so o dong duoi la doi ca hai cho.
-  var N=3;
+  // ================= NGUONG "TE QUA" — chot 30/08 =================
+  // Anh Thai: khong bat giai trinh moi ngay. Chi shop TE THAT SU moi phai tra loi.
+  // Ngay nao khong shop nao vuot nguong thi khong ai phai giai trinh — dung co ep du 3.
+  var N=3;            // tran: nhieu nhat 3 shop mot ngay
+  var NGAY_CHET=5;    // khong co S.O tu 5 ngay lien tiep tro len
+  var GIAM_SAU=30;    // giam tu 30% tro len so cung ky thang truoc
+  var NEN_MIN=10;     // ...voi dieu kien cung ky ban duoc it nhat 10 may
+  var SO_RULE=3;      // hoac dinh tu 3 rule tro len cung luc
 
   function el(i){ return document.getElementById(i) }
   function laSo(p){
@@ -5966,21 +5971,53 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     var m=maSo(s), t=tenNgan(s);
     return m?(m+' - '+t):t;
   }
-
   function ngayXem(){
     try{ return (typeof ngayMkt==='function')?ngayMkt():(D.maxDay||0) }catch(e){ return 0 }
   }
+
+  // Do muc "te that su" ngay tu so lieu ngay cua shop (data MWG)
+  function doNang(sh,d){
+    var dk=sh&&sh.dk?sh.dk:null;
+    if(!dk||!dk.length) return null;
+    var v=function(i){ var c=dk[i-1]; return c?(c[0]||0):0 };
+    var lien=0;
+    for(var i=d;i>=1;i--){ if(v(i)>0) break; lien++ }
+    var a=0;
+    for(var k=1;k<=d;k++) a+=v(k);
+    var dkp=sh.dkp||[], b=0;
+    for(var q=1;q<=d;q++){ var c2=dkp[q-1]; b+=c2?(c2[0]||0):0 }
+    var nang=false;
+    if(lien>=NGAY_CHET) nang=true;
+    if(b>=NEN_MIN&&a<b*(1-GIAM_SAU/100)) nang=true;
+    return {nang:nang, lien:lien, mat:Math.max(0,b-a)};
+  }
+
+  // Danh sach shop PHAI giai trinh hom nay (co the rong)
   function topNang(){
     try{
       if(!window.__canh||typeof window.__canh.ruleShop!=='function') return null;
       var o=(typeof scope==='function')?scope():null;
       var d=ngayXem();
       if(!o||!d) return null;
-      var ds=(window.__canh.ruleShop(o,d)||[]).slice();
-      ds.sort(function(a,b){ return (b.nang||0)-(a.nang||0) });
-      return ds.slice(0,N).map(function(x){ return x.n });
+      var ds=window.__canh.ruleShop(o,d)||[];
+      var mp={};
+      (o.s||[]).forEach(function(x){ if(x&&x.n) mp[x.n]=x });
+      var nang=[];
+      ds.forEach(function(x){
+        var t=doNang(mp[x.n],d);
+        var duRule=!!(x.ly&&x.ly.length>=SO_RULE);
+        var laNang=duRule||!!(t&&t.nang);
+        if(!laNang) return;
+        nang.push({n:x.n, diem:(x.nang||0)+(t&&t.nang?5:0)+(duRule?5:0), mat:t?t.mat:0});
+      });
+      nang.sort(function(a,b){
+        if(b.diem!==a.diem) return b.diem-a.diem;
+        return b.mat-a.mat;
+      });
+      return nang.slice(0,N).map(function(x){ return x.n });
     }catch(e){ return null }
   }
+
   function tenTuNut(r){
     var a=r.querySelector('.gt-btn');
     if(!a||!a.href) return '';
@@ -6015,8 +6052,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
         if(sp) t.appendChild(sp);
         t.setAttribute('data-gon','1');
       }
-      var laTop=top?(top.indexOf(ten)>=0):false;
-      if(laTop){ bb++; return }
+      if(top&&top.indexOf(ten)>=0){ bb++; return }
       td.push(r);
     });
 
@@ -6025,7 +6061,9 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
       head.className='td-head';
       head.style.cssText='margin:15px 0 9px;padding-top:13px;border-top:1px solid var(--line);'+
         'font-size:12px;font-weight:700;color:var(--amber)';
-      head.textContent='Theo dõi thêm — '+td.length+' shop, không bắt giải trình';
+      head.textContent=bb
+        ? ('Theo dõi thêm — '+td.length+' shop, chưa tới mức phải giải trình')
+        : ('Đang theo dõi — '+td.length+' shop, chưa shop nào tới mức phải giải trình');
       if(note) box.insertBefore(head,note); else box.appendChild(head);
       td.forEach(function(r){
         r.style.opacity='.72';
@@ -6050,45 +6088,29 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     }
 
     var sub=box.querySelector('.sub');
-    if(sub) sub.innerHTML='<b style="color:var(--red)">'+bb+' shop</b> phải giải trình hôm nay'+
-      (td.length?(' · <b style="color:var(--amber)">'+td.length+' shop</b> chỉ theo dõi'):'')+
-      '. Bấm <b>Giải trình</b> để mở biểu mẫu đã điền sẵn tên shop.';
-    if(note) note.innerHTML='<b>4 rule:</b> ① Giảm liên tục 3 ngày · ② Không có S.O liên tục 3 ngày · '+
-      '③ Rớt hơn 15% so bình quân của chính shop · ④ Giảm hơn 20% so cùng kỳ tháng trước.<br>'+
-      'Shop dính rule được chấm điểm nặng — <b>chỉ '+N+' shop nặng nhất mỗi ngày phải giải trình</b>, '+
-      'phần còn lại đưa xuống mục theo dõi để khỏi loãng.<br>'+
-      'Thẻ <b>Ảnh hưởng kết quả tháng</b> ở dưới chỉ để nắm tình hình — shop nào lọt rule sẽ tự nhảy lên đây.';
+    if(sub) sub.innerHTML=bb
+      ? ('<b style="color:var(--red)">'+bb+' shop</b> phải giải trình hôm nay'+
+         (td.length?(' · <b style="color:var(--amber)">'+td.length+' shop</b> chỉ theo dõi'):'')+
+         '. Bấm <b>Giải trình</b> để mở biểu mẫu đã điền sẵn tên shop.')
+      : ('<b style="color:var(--green)">Hôm nay không shop nào tới mức phải giải trình.</b>'+
+         (td.length?(' '+td.length+' shop bên dưới chỉ để theo dõi.'):''));
+    if(note) note.innerHTML='<b>Chỉ giải trình khi thật sự tệ</b> — không phải ngày nào cũng có. '+
+      'Một shop phải trả lời khi rơi vào ít nhất một mức nặng: '+
+      '<b>không có S.O từ '+NGAY_CHET+' ngày liên tiếp</b> · '+
+      '<b>giảm từ '+GIAM_SAU+'% so cùng kỳ</b> (nền cùng kỳ ≥ '+NEN_MIN+' máy) · '+
+      'hoặc <b>dính từ '+SO_RULE+' rule trở lên cùng lúc</b>. Nhiều shop vượt ngưỡng thì lấy '+N+' shop nặng nhất.<br>'+
+      'Thẻ <b>Ảnh hưởng kết quả tháng</b> ở dưới chỉ để nắm tình hình — shop nào vượt ngưỡng sẽ tự nhảy lên đây.';
 
     var m=document.createElement('span');
     m.className='t3-done'; m.style.display='none';
     box.appendChild(m);
   }
 
-  function veDS(top){
-    var list=el('a-list'); if(!list||!top) return;
-    [].slice.call(list.querySelectorAll('.al[data-shop]')).forEach(function(b){
-      var ly=b.querySelector('.gt-ly'); if(!ly) return;
-      if(ly.getAttribute('data-t3')==='1') return;
-      var ten=b.dataset?b.dataset.shop:'';
-      var laTop=top.indexOf(ten)>=0;
-      var lab=ly.querySelector('b');
-      if(lab){
-        lab.textContent=laTop?'Phải giải trình:':'Theo dõi:';
-        lab.style.color=laTop?'var(--red)':'var(--amber)';
-      }
-      ly.setAttribute('data-t3','1');
-    });
-  }
-
   var dang=false;
   function chay(){
     if(dang) return;
     dang=true;
-    try{
-      var top=topNang();
-      veThe(top);
-      veDS(top);
-    }catch(e){ if(window.console) console.warn('[top3]',e) }
+    try{ veThe(topNang()) }catch(e){ if(window.console) console.warn('[top3]',e) }
     dang=false;
   }
 
@@ -6105,7 +6127,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   setTimeout(function(){ try{ gan(); chay() }catch(e){} },700);
   setTimeout(function(){ try{ gan(); chay() }catch(e){} },1800);
   setInterval(function(){ try{ gan(); chay() }catch(e){} },2500);
-  window.__top3={chay:chay,topNang:topNang,N:N};
+  window.__top3={chay:chay,topNang:topNang,doNang:doNang,
+                 nguong:{N:N,NGAY_CHET:NGAY_CHET,GIAM_SAU:GIAM_SAU,NEN_MIN:NEN_MIN,SO_RULE:SO_RULE}};
 })();
 </script>
 <script id="app-lockhai">
