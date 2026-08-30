@@ -1073,6 +1073,39 @@
     if (pkAll) all.pkD = pkAll;
     Object.keys(pkSale).forEach(function (sn) { if (sales[sn]) sales[sn].pkD = pkSale[sn]; });
 
+    // 7d2. Bonus Model cua chuong trinh rieng Sale Loc & Khai — tinh o cap SALE.
+    //   10-15M -> 80.000d/may · 15-20M / 20-30M / >20M / >30M -> 120.000d/may · duoi 10M -> 0
+    //   Rieng model bi EP GIA theo ten thi an muc 120.000d bat ke phan khuc (giong DB TG).
+    //   Dung daily.rows vi day la nguon duy nhat co CA phan khuc LAN ten model tren cung mot dong.
+    if (DL && Array.isArray(DL.rows) && DL.rows.length) {
+      var EP_GIA = {};
+      ['OPPO Reno16 F 5G 8+128GB'].forEach(function (t) { EP_GIA[gonTen(t)] = 1; });
+      var BM_SEG = { '10-15M': 0, '15-20M': 1, '20-30M': 1, '>20M': 1, '>30M': 1 };
+      var dS2 = DL.sales || [], dG2 = DL.segments || [], dB2 = DL.brands || [], dM2 = DL.models || [];
+      var iOp = -1;
+      dB2.forEach(function (b, i) { if (String(b || '').toLowerCase() === 'oppo') iOp = i; });
+      var oSeg = {};
+      dG2.forEach(function (x, i) { var v = BM_SEG[String(x || '').trim()]; if (v !== undefined) oSeg[i] = v; });
+      var oEp = {};
+      dM2.forEach(function (t, i) { if (EP_GIA[gonTen(t)]) oEp[i] = 1; });
+      var bmRong = function () { var a = []; for (var q = 0; q < NM; q++) a.push([0, 0]); return a; };
+      var bmSale = {}, bmTong = bmRong();
+      if (iOp >= 0) {
+        DL.rows.forEach(function (r) {
+          if (r[4] !== iOp) return;
+          var i = MIDX[r[0]]; if (i === undefined) return;
+          var u = r[6] || 0; if (!u) return;
+          var b = oEp[r[8]] ? 1 : oSeg[r[3]];
+          if (b === undefined) return;
+          var sn = dS2[r[2]];
+          if (sn) { if (!bmSale[sn]) bmSale[sn] = bmRong(); bmSale[sn][i][b] += u; }
+          bmTong[i][b] += u;
+        });
+        all.bmL = bmTong;
+        Object.keys(bmSale).forEach(function (sn) { if (sales[sn]) sales[sn].bmL = bmSale[sn]; });
+      }
+    }
+
     // 7c. Khung gio ban (moi hang, thang hien tai) -> sh.hr = [[khung, may, dt]]
     var shb = kho('shop_hour_all_brand');
     if (shb && Object.keys(shb).length) {
@@ -1218,6 +1251,7 @@
       if (o.dnB) r.dnB = o.dnB;
       if (o.dmN) r.dmN = o.dmN;
       if (o.pkD) r.pkD = o.pkD;
+      if (o.bmL) r.bmL = o.bmL;
       if (o.tgc) r.tgc = o.tgc;
       if (o.si) r.si = o.si;
       var tk = tonKho(o); if (tk) r.tk = tk;   // ton kho IND theo model
