@@ -5010,6 +5010,12 @@ setInterval(function(){
     return out;
   }
 
+  function timGT(ten){
+    var g=(typeof D!=='undefined'&&D.gt)||null;
+    if(!g) return null;
+    for(var i=0;i<g.length;i++) if(g[i][0]===ten) return g[i];
+    return null;
+  }
   function veGiaiTrinh(o,d){
     var sec=el('v-alert'); if(!sec) return;
     var box=el('canh-gt');
@@ -5018,30 +5024,47 @@ setInterval(function(){
       sec.insertBefore(box, sec.firstElementChild);
     }
     var ds=ruleShop(o,d);
-    var h='<div class="sec"><h2>Phải giải trình — ngày '+d+'/'+mNow()+'</h2></div>'+
-      '<p class="sub">'+(ds.length?('<b style="color:var(--red)">'+ds.length+' shop</b> dính rule bắt buộc giải trình. '):'')+
+    ds.forEach(function(x){ x.gt=timGT(x.n) });
+    ds.sort(function(a,b){
+      if(!!a.gt!==!!b.gt) return a.gt?1:-1;
+      return b.nang-a.nang;
+    });
+    var xong=0; ds.forEach(function(x){ if(x.gt) xong++ });
+    var con=ds.length-xong;
+    var h='<div class="sec"><h2>Phải giải trình — ngày '+d+'/'+mNow()+'</h2></div>';
+    h+='<p class="sub">'+(ds.length?('<b style="color:var(--red)">'+con+' shop</b> chưa trả lời'+
+      (xong?(' · <b style="color:var(--green)">'+xong+' shop</b> đã giải trình'):'')+'. '):'')+
       'Bấm <b>Giải trình</b> để mở biểu mẫu đã điền sẵn tên shop.</p>';
     if(!ds.length){
       h+='<div class="empty">🎉 Không shop nào phải giải trình hôm nay</div>';
     } else {
       h+=ds.map(function(x){
-        var cl=x.ly[0][0];
+        var da=!!x.gt;
+        var cl=da?'--green':x.ly[0][0];
         var mo=x.ly.map(function(y){
           return '<span style="color:var('+y[0]+');font-weight:700">'+esc(y[1])+'</span> — '+y[2];
         }).join('<br>');
-        return '<div class="gt-row"><div class="al" style="cursor:default;align-items:flex-start">'+
-          '<span class="ic" style="background:color-mix(in srgb, var('+cl+') 16%, transparent);color:var('+cl+')">⛔</span>'+
+        if(da) mo+='<br><span style="color:var(--green);font-weight:700">✅ Đã giải trình '+esc(x.gt[1])+'</span>'+
+          (x.gt[2]?('<br><b>Vấn đề:</b> '+esc(x.gt[2])):'')+
+          (x.gt[3]?('<br><b>Hướng xử lý:</b> '+esc(x.gt[3])):'');
+        return '<div class="gt-row"'+(da?' style="opacity:.72"':'')+
+          '><div class="al" style="cursor:default;align-items:flex-start">'+
+          '<span class="ic" style="background:color-mix(in srgb, var('+cl+') 16%, transparent);color:var('+cl+')">'+
+          (da?'✅':'⛔')+'</span>'+
           '<span class="bd"><span class="t">'+esc(tenShop(x.n))+
           (x.sale?(' <span style="color:var(--muted);font-weight:400">· '+esc(x.sale)+'</span>'):'')+'</span>'+
           '<span class="d" style="white-space:normal;line-height:1.7">'+mo+'</span></span>'+
           '<span class="pill" style="background:color-mix(in srgb, var('+cl+') 14%, transparent);color:var('+cl+')">'+
-          x.ly.length+' lỗi</span></div>'+
-          '<a class="gt-btn" target="_blank" rel="noopener" href="'+gtUrl(x.n,x.sale)+'">Giải trình ↗</a></div>';
+          (da?'đã trả lời':(x.ly.length+' lỗi'))+'</span></div>'+
+          '<a class="gt-btn" target="_blank" rel="noopener" href="'+gtUrl(x.n,x.sale)+'">'+
+          (da?'Sửa ↗':'Giải trình ↗')+'</a></div>';
       }).join('');
     }
     h+='<div class="note"><b>4 rule bắt buộc giải trình:</b> ① Giảm liên tục 3 ngày · '+
       '② Không có S.O liên tục 3 ngày · ③ Rớt hơn 15% so với bình quân của chính shop · '+
-      '④ Giảm hơn 20% so cùng kỳ tháng trước. Một shop dính nhiều rule thì gộp chung một dòng.</div>';
+      '④ Giảm hơn 20% so cùng kỳ tháng trước. Một shop dính nhiều rule thì gộp chung một dòng.'+
+      ((typeof D!=='undefined'&&D.gt)?'':' <b>Chưa nối bảng câu trả lời</b> — app chưa biết ai đã giải trình.')+
+      '</div>';
     box.innerHTML=h;
   }
 
