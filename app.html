@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.26';
+var APP_VER='2026-08-30.27';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6371,4 +6371,86 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
 #o-mkt4>div>.mkt-nh small{display:inline !important;margin-left:3px}
 #o-mkt4>div b{font-size:20px;margin-top:6px;line-height:1.15}
 </style>
+<style id="app-css8">
+/* ===== GIAO DIEN SANG ===== */
+:root[data-theme="sang"]{
+  --bg:#f2f5f9; --card:#ffffff; --card2:#eef1f6; --line:#d9dfe9;
+  --ink:#141b24; --ink2:#46546a; --muted:#6c7787;
+  --green:#0a9463; --amber:#a3690c; --red:#cd2543;
+  --c1:#00875a; --c2:#3566b8; --c3:#a3690c; --c4:#963d7e;
+  --neutral:#8b96a6;
+}
+:root[data-theme="sang"] header{background:rgba(255,255,255,.94)}
+:root[data-theme="sang"] nav{background:rgba(255,255,255,.97)}
+:root[data-theme="sang"] .mask{background:rgba(0,0,0,.35)}
+/* nut dang chon: nen xanh dam thi chu phai trang */
+:root[data-theme="sang"] .segbar button.on,
+:root[data-theme="sang"] .pills button.on{color:#fff}
+/* thanh nen xam cua bieu do ngang */
+:root[data-theme="sang"] .meter,
+:root[data-theme="sang"] .hb .track,
+:root[data-theme="sang"] .gb .track{background:#e3e8ef}
+:root[data-theme="sang"] .gb .track .mk{background:#9aa6b6}
+/* the noi len khoi nen */
+:root[data-theme="sang"] .card{border:1px solid var(--line)}
+/* chu trong bieu do SVG dang ghi cung mau sang -> doi sang mau toi */
+:root[data-theme="sang"] svg text[fill="#e8edf5"]{fill:#141b24}
+:root[data-theme="sang"] svg text[fill="#7c8a9e"]{fill:#6c7787}
+/* cot dau bang dinh trai: cac khoi phu ghi cung mau nen toi */
+:root[data-theme="sang"] table.tv th:first-child,
+:root[data-theme="sang"] table.tv td:first-child,
+:root[data-theme="sang"] #tv-week table th:first-child,
+:root[data-theme="sang"] #tv-week table td:first-child,
+:root[data-theme="sang"] #tq-tdshop-b table th:first-child,
+:root[data-theme="sang"] #tq-tdshop-b table td:first-child,
+:root[data-theme="sang"] #ngay-shop-b table th:first-child,
+:root[data-theme="sang"] #ngay-shop-b table td:first-child,
+:root[data-theme="sang"] #ngay-md-b table th:first-child,
+:root[data-theme="sang"] #ngay-md-b table td:first-child{background:var(--card)}
+:root[data-theme="sang"] #nd-sel,
+:root[data-theme="sang"] .filt select{background:var(--card2);color:var(--ink)}
+:root[data-theme="sang"] #nut-sang span{font-size:14px}
+</style>
+<script id="app-sang">
+(function(){
+  // Giao dien SANG — chi doi bien mau, khong dung toi bo cuc.
+  // Nho dat trong localStorage, mo lan sau van giu.
+  var KEY='giao-dien';
+  function hienTai(){
+    try{ return localStorage.getItem(KEY)==='sang'?'sang':'toi' }catch(e){ return 'toi' }
+  }
+  function dat(t){
+    var r=document.documentElement;
+    if(t==='sang') r.setAttribute('data-theme','sang'); else r.removeAttribute('data-theme');
+    try{ localStorage.setItem(KEY,t) }catch(e){}
+    var m=document.querySelector('meta[name="theme-color"]');
+    if(m) m.setAttribute('content', t==='sang'?'#f4f6f9':'#0a0e14');
+    var b=document.getElementById('nut-sang');
+    if(b){
+      var sp=b.querySelector('span');
+      if(sp) sp.textContent=(t==='sang'?'☾':'☀');
+      b.title=(t==='sang'?'Chuyển nền tối':'Chuyển nền sáng');
+    }
+  }
+  function themNut(){
+    if(document.getElementById('nut-sang')) return;
+    var sync=document.getElementById('sync');
+    if(!sync||!sync.parentNode) return;
+    var b=document.createElement('button');
+    b.type='button';
+    b.className='btn icon';
+    b.id='nut-sang';
+    b.innerHTML='<span>☀</span>';
+    b.addEventListener('click',function(){ dat(hienTai()==='sang'?'toi':'sang') });
+    sync.parentNode.insertBefore(b,sync);
+    dat(hienTai());
+  }
+  try{ dat(hienTai()) }catch(e){}
+  themNut();
+  setTimeout(themNut,600);
+  setTimeout(themNut,2000);
+  setInterval(themNut,3000);
+  window.__sang={dat:dat,hienTai:hienTai};
+})();
+</script>
 </html>
