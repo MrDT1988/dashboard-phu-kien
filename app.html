@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.33';
+var APP_VER='2026-08-31.1';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6548,4 +6548,219 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
    hai nhanh, xoa node se lam ham do bao loi va chet ca the. */
 #p-ser{display:none !important}
 </style>
+<style id="app-css12">
+/* 4 o chi so cua the Do phu IND: 2x2 cho vua man hinh dien thoai */
+.ind-kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:14px}
+.ind-kpi>div{background:var(--card2);border-radius:10px;padding:9px 10px;font-size:10.5px;color:var(--muted)}
+.ind-kpi b{display:block;font-size:16px;color:var(--ink);margin-top:3px;font-weight:700}
+#c-ind .meter{margin:7px 0 5px}
+#ind-nhom-b table th:first-child,#ind-nhom-b table td:first-child{position:sticky;left:0;z-index:2;background:var(--card)}
+#ind-nhom-b table th:first-child{z-index:3}
+</style>
+
+<script id="app-ind">
+(function(){
+  // ==========================================================
+  // KENH IND — anh Thai 31/08:
+  //   "IND khong can share vi no khong y nghia nhieu. Thu can quan tam la
+  //    Doanh so doanh thu, sell in, ton kho, so luong shop co sell out,
+  //    so luong shop co sell in. Do phu sell out va sell in la quan trong
+  //    nhat voi IND (nhom normal, con nhom O.C thi se doanh thu de ve goi)"
+  //
+  // CHOT: don vi dem = DIEM BAN. Mau so = TOAN BO shop IND duoc giao.
+  // Nguon: sh.m[MI] (ban ra) va sh.si[MI][0] (sell-in OPPO) — ca hai da co san
+  // trong goi o cap shop, khong can sua robot.
+  // ==========================================================
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+  function so0(v){ return (typeof n0==='function')?n0(v):String(Math.round(v||0)) }
+  function tien(v){ return (typeof money==='function')?money(v):String(Math.round(v||0)) }
+
+  // O.C = shop thuoc chuong trinh OPPO CLUB (CENTER cot H Level).
+  // Level rong => Normal. Co ban du phong doc tu cot size shop cua IND.
+  function laOC(sh){
+    var t=String((sh&&(sh.lv||sh.size))||'').toUpperCase();
+    return t.indexOf('OPPO CLUB')>=0;
+  }
+  function mayThang(sh,i){
+    var c=sh.m&&sh.m[i]; return c?(c[0]||0):0;
+  }
+  function tienThang(sh,i){
+    var c=sh.m&&sh.m[i]; return c?(c[1]||0):0;
+  }
+  // null = shop nay khong co truong si -> chua biet, khac han voi 0 may
+  function siThang(sh,i){
+    if(!sh.si||!sh.si.length) return null;
+    var c=sh.si[i]; return c?(c[0]||0):0;
+  }
+
+  function dem(ds,i){
+    var k={shop:ds.length, so:0, si:0, may:0, dt:0, siMay:0, coSi:false};
+    ds.forEach(function(sh){
+      var u=mayThang(sh,i);
+      k.may+=u; k.dt+=tienThang(sh,i);
+      if(u>0) k.so++;
+      var v=siThang(sh,i);
+      if(v!==null){ k.coSi=true; k.siMay+=v; if(v>0) k.si++ }
+    });
+    return k;
+  }
+  function pct(a,b){ return b?(a/b*100):0 }
+
+  function thanh(p,mau){
+    var w=Math.max(0,Math.min(100,p));
+    return '<div class="meter"><i style="width:'+w.toFixed(1)+'%;background:'+mau+'"></i></div>';
+  }
+  function lech(nay,truoc,dv){
+    if(truoc===null||truoc===undefined) return '';
+    var g=nay-truoc;
+    if(!g) return '<small style="color:var(--muted)">bằng tháng trước</small>';
+    var c=g>0?'var(--green)':'var(--red)';
+    return '<small style="color:'+c+'">'+(g>0?'▲ +':'▼ −')+so0(Math.abs(g))+' '+dv+' so tháng trước</small>';
+  }
+
+  function khoiPhu(ten,nay,truoc,tong,mau,ghi){
+    var p=pct(nay,tong);
+    return '<div style="margin-bottom:13px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">'+
+        '<b style="font-size:13px">'+ten+'</b>'+
+        '<span style="font-size:13px"><b style="color:'+mau+'">'+so0(nay)+'</b>'+
+        '<span style="color:var(--muted)">/'+so0(tong)+' shop</span> '+
+        '<b style="color:'+mau+'">'+p.toFixed(0)+'%</b></span>'+
+      '</div>'+
+      thanh(p,mau)+
+      '<div style="display:flex;justify-content:space-between;gap:8px">'+
+        '<span style="font-size:11px;color:var(--muted)">'+ghi+'</span>'+
+        lech(nay,truoc,'shop')+
+      '</div></div>';
+  }
+
+  function bang(nhom,i){
+    var h='<table class="tv"><tr>'+
+      ['NHÓM','SHOP','CÓ S.O','PHỦ S.O','CÓ S.I','PHỦ S.I','MÁY BÁN','DOANH THU']
+        .map(function(x){ return '<th>'+esc(x)+'</th>' }).join('')+'</tr>';
+    var T={shop:0,so:0,si:0,may:0,dt:0,coSi:false};
+    nhom.forEach(function(g){
+      var k=dem(g.ds,i);
+      T.shop+=k.shop; T.so+=k.so; T.si+=k.si; T.may+=k.may; T.dt+=k.dt;
+      if(k.coSi) T.coSi=true;
+      h+='<tr><td><b>'+esc(g.t)+'</b></td>'+
+         '<td>'+so0(k.shop)+'</td>'+
+         '<td>'+so0(k.so)+'</td>'+
+         '<td><b style="color:var(--c1)">'+pct(k.so,k.shop).toFixed(0)+'%</b></td>'+
+         '<td>'+(k.coSi?so0(k.si):'—')+'</td>'+
+         '<td>'+(k.coSi?('<b style="color:var(--c2)">'+pct(k.si,k.shop).toFixed(0)+'%</b>'):'—')+'</td>'+
+         '<td>'+so0(k.may)+'</td>'+
+         '<td>'+tien(k.dt)+'</td></tr>';
+    });
+    h+='<tr style="background:var(--card2)"><td><b>TỔNG</b></td>'+
+       '<td><b>'+so0(T.shop)+'</b></td>'+
+       '<td><b>'+so0(T.so)+'</b></td>'+
+       '<td><b style="color:var(--c1)">'+pct(T.so,T.shop).toFixed(0)+'%</b></td>'+
+       '<td><b>'+(T.coSi?so0(T.si):'—')+'</b></td>'+
+       '<td><b style="color:var(--c2)">'+(T.coSi?pct(T.si,T.shop).toFixed(0)+'%':'—')+'</b></td>'+
+       '<td><b>'+so0(T.may)+'</b></td>'+
+       '<td><b>'+tien(T.dt)+'</b></td></tr>';
+    return h+'</table>';
+  }
+
+  // Ton kho lay o cap DAI LY (sheet SELL IN ghi nhap theo cong ty).
+  function tonKho(){
+    var ten=(typeof CUR!=='undefined'&&CUR&&CUR!=='__ALL__')?CUR:null;
+    var dl=(D.dlTon||[]).filter(function(x){
+      return !ten||((x.sale||[]).indexOf(ten)>=0);
+    });
+    if(!dl.length) return null;
+    var nhap=0,ban=0;
+    dl.forEach(function(x){ nhap+=x.nhap||0; ban+=x.ban||0 });
+    return {dl:dl.length,nhap:nhap,ban:ban,ton:nhap-ban};
+  }
+
+  function ve(){
+    var over=el('v-over'); if(!over) return;
+    var box=el('c-ind');
+    if(typeof SEG==='undefined'||SEG!=='IND'){
+      if(box&&box.parentNode) box.parentNode.removeChild(box);
+      return;
+    }
+    var o=null; try{ o=(typeof scope==='function')?scope():null }catch(e){}
+    if(!o) return;
+    var ds=(o.s||[]).filter(function(x){ return x&&x.ch2==='IND' });
+    if(!ds.length){
+      if(box&&box.parentNode) box.parentNode.removeChild(box);
+      return;
+    }
+    var i=(typeof MI==='number')?MI:0;
+    var thang=D.months[i];
+
+    var oc=ds.filter(laOC), nm=ds.filter(function(x){ return !laOC(x) });
+    var nhom=[];
+    if(oc.length) nhom.push({t:'O.C',ds:oc});
+    if(nm.length) nhom.push({t:'Normal',ds:nm});
+    if(!nhom.length) nhom=[{t:'Tất cả',ds:ds}];
+
+    var k=dem(ds,i), kp=(i>0)?dem(ds,i-1):null;
+    var tk=tonKho();
+
+    if(!box){
+      box=document.createElement('div');
+      box.className='card';
+      box.id='c-ind';
+    }
+    if(box.parentNode!==over||over.firstElementChild!==box) over.insertBefore(box,over.firstElementChild);
+
+    var h='<h2>📦 Độ phủ kênh IND — tháng '+thang+'</h2>'+
+      '<p class="sub">Với IND thì <b>độ phủ</b> mới là thứ nói lên sức khoẻ kênh, không phải thị phần. '+
+      'Mẫu số là <b>toàn bộ '+so0(ds.length)+' điểm bán</b> đang phụ trách — shop tháng này không bán vẫn nằm trong mẫu số.</p>';
+
+    h+='<div class="ind-kpi">'+
+      '<div>Doanh số<b>'+so0(k.may)+' máy</b></div>'+
+      '<div>Doanh thu<b>'+tien(k.dt)+'</b></div>'+
+      '<div>Sell-in tháng '+thang+'<b>'+(k.coSi?so0(k.siMay)+' máy':'chờ số')+'</b></div>'+
+      '<div>Tồn ước tính<b style="color:'+(tk&&tk.ton>0?'var(--amber)':'var(--green)')+'">'+
+        (tk?so0(tk.ton)+' máy':'—')+'</b></div>'+
+      '</div>';
+
+    h+='<div style="margin-top:15px">';
+    h+=khoiPhu('Độ phủ sell out',k.so,kp?kp.so:null,ds.length,'var(--c1)',
+      'Shop bán được ít nhất 1 máy trong tháng');
+    if(k.coSi){
+      h+=khoiPhu('Độ phủ sell in',k.si,kp&&kp.coSi?kp.si:null,ds.length,'var(--c2)',
+        'Shop có nhập hàng OPPO trong tháng');
+    } else {
+      h+='<div style="margin-bottom:13px"><b style="font-size:13px">Độ phủ sell in</b>'+
+        '<div class="note" style="margin-top:6px">Gói dữ liệu của kỳ này chưa kèm sell-in theo từng shop — '+
+        'chờ lần robot chạy 10:00 sáng mai.</div></div>';
+    }
+    h+='</div>';
+
+    h+='<div class="subhead" style="margin-top:4px">Tách O.C / Normal</div>'+
+       '<div class="tvwrap" id="ind-nhom-b">'+bang(nhom,i)+'</div>';
+
+    h+='<div class="note"><b>O.C</b> = shop thuộc chương trình OPPO CLUB · <b>Normal</b> = shop không có hạng. '+
+      'Với <b>Normal</b> thì nhìn <b>độ phủ</b> là chính — mở rộng số điểm có hàng, có bán. '+
+      'Với <b>O.C</b> thì nhìn <b>doanh thu</b>, vì phần này về theo gói.'+
+      (tk?(' Tồn tính ở cấp <b>đại lý</b> ('+so0(tk.dl)+' đại lý, nhập '+so0(tk.nhap)+
+          ' − bán '+so0(tk.ban)+'), vì sheet SELL IN ghi nhập theo công ty. '+
+          'Đây là <b>tồn ước tính</b>, chưa cộng tồn đầu năm và chưa trừ hàng trả về.'):'')+
+      '</div>';
+
+    box.innerHTML=h;
+  }
+
+  function boc(ten){
+    if(typeof window[ten]!=='function') return;
+    var goc=window[ten];
+    window[ten]=function(){
+      var kq=goc.apply(this,arguments);
+      try{ ve() }catch(e){ if(window.console) console.warn('[ind] '+ten,e) }
+      return kq;
+    };
+  }
+  boc('renderOver'); boc('renderHero'); boc('renderMonth');
+  function chay(){ try{ ve() }catch(e){ if(window.console) console.warn('[ind]',e) } }
+  setTimeout(chay,700); setTimeout(chay,2000); setInterval(chay,2500);
+  window.__ind={ve:ve,dem:dem,laOC:laOC};
+})();
+</script>
 </html>
