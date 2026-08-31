@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.30';
+var APP_VER='2026-08-30.31';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -3503,6 +3503,8 @@ function themSo(el,vals,opt){
  if(!rect.length)rect=[].slice.call(svg.querySelectorAll('rect'));
  if(rect.length!==vals.length)return 0;
  var fmt=(opt&&typeof opt.fmt==='function')?opt.fmt:function(v){return v};
+ // drawBars goc da ghi san so o cot cao nhat + cot cuoi -> xoa di keo chong chu.
+ [].slice.call(svg.querySelectorAll('text[fill="#e8edf5"]')).forEach(function(e){e.remove()});
  var co=Math.max(6,Math.min(10.5,360/rect.length));
  var NS='http://www.w3.org/2000/svg',n=0;
  rect.forEach(function(r,i){
@@ -6495,4 +6497,47 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   display:inline-flex;align-items:center;justify-content:center}
 #sync>span,#nut-sang>span{font-size:19px;line-height:1}
 </style>
+<style id="app-css10">
+/* Giao dien sang: cot dau dinh trai cua 2 bang nay con ghi cung #141b24 -> den si. */
+:root[data-theme="sang"] #tv-mkt-thang table th:first-child,
+:root[data-theme="sang"] #tv-mkt-thang table td:first-child,
+:root[data-theme="sang"] #shop5 table th:first-child,
+:root[data-theme="sang"] #shop5 table td:first-child{background:var(--card)}
+/* Quet chung: moi cho ghi cung mau nen toi / vien trang o style noi dong */
+:root[data-theme="sang"] [style*="background:#141b24"]{background:var(--card) !important}
+:root[data-theme="sang"] [style*="1px 0 0 rgba(255,255,255"]{box-shadow:1px 0 0 rgba(0,0,0,.10) !important}
+:root[data-theme="sang"] #tv-mkt-thang table th:first-child,
+:root[data-theme="sang"] #tv-mkt-thang table td:first-child,
+:root[data-theme="sang"] #shop5 table th:first-child,
+:root[data-theme="sang"] #shop5 table td:first-child{box-shadow:1px 0 0 rgba(0,0,0,.10)}
+</style>
+
+<script id="app-top10th">
+(function(){
+  // The TOP 10 da chuyen sang nguon mdB (data MWG), nhung hang chip chon THANG
+  // van con doc o.moM cua nguon cu -> kenh MWG khong co moM nen hang chip bi an.
+  // Khoi nay dung lai hang chip thang tu chinh mdB. Nut bam da co san (data-momo).
+  function el(i){ return document.getElementById(i) }
+  function ve(){
+    var c=el("c-model"); if(!c||c.hidden) return;
+    var pil=el("p-momo"); if(!pil) return;
+    var o=null; try{ o=(typeof scope==="function")?scope():null }catch(e){}
+    var mdB=o&&o.mdB; if(!mdB) return;
+    var ths=Object.keys(mdB).map(Number).sort(function(a,b){ return a-b });
+    if(!ths.length) return;
+    var cur=(typeof MO_THANG!=="undefined")?MO_THANG:null;
+    if(cur===null||(cur!==0&&ths.indexOf(cur)<0)) cur=ths[ths.length-1];
+    var ky=ths.join(",")+"|"+cur;
+    if(pil.getAttribute("data-ky")===ky&&!pil.hidden) return;
+    pil.hidden=false;
+    pil.setAttribute("data-ky",ky);
+    pil.innerHTML=ths.map(function(m){
+      return "<button data-momo=\""+m+"\""+(cur===m?" class=\"on\"":"")+">T"+m+"</button>"
+    }).join("")+"<button data-momo=\"0\""+(cur===0?" class=\"on\"":"")+">Cả năm</button>";
+  }
+  function chay(){ try{ ve() }catch(e){ if(window.console) console.warn("[top10th]",e) } }
+  setTimeout(chay,700); setTimeout(chay,2000); setInterval(chay,2500);
+  window.__top10th={ve:ve};
+})();
+</script>
 </html>
