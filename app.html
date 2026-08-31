@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.31';
+var APP_VER='2026-08-30.32';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6540,4 +6540,12 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   window.__top10th={ve:ve};
 })();
 </script>
+<style id="app-css11">
+/* 31/08 — anh Thai chot: bo han tab Find / Reno o the Doanh so & doanh thu.
+   Ly do: tach dong may chi co o data noi bo OPPO, khong co trong data MWG;
+   va TOP 10 san pham ben duoi da liet ke tung model roi -> trung thong tin.
+   CHI an bang CSS, KHONG xoa node: renderMonth() co dong pil.hidden = ... o ca
+   hai nhanh, xoa node se lam ham do bao loi va chet ca the. */
+#p-ser{display:none !important}
+</style>
 </html>
