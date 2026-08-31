@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.25';
+var APP_VER='2026-08-30.26';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6319,6 +6319,20 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   // Gop hai hang tab lam mot: Tuan/Thang/Quy  +  Tat ca/Reno/Find/Reno+Find
   // Truoc day nam hai hang roi nhau, tren dien thoai hang duoi hay bi day khuat.
   function el(i){ return document.getElementById(i) }
+  // Bon o chi so la flex-column -> moi the con thanh mot o rieng, chu 'tru Apple'
+  // bi day xuong dong. Gom nhan + small vao chung mot <span> de chung nam cung hang.
+  function gomNhan(){
+    var k=el('o-mkt4'); if(!k) return;
+    [].slice.call(k.children).forEach(function(d){
+      if(d.getAttribute('data-nh')==='1') return;
+      var b=d.querySelector('b'); if(!b) return;
+      var sp=document.createElement('span');
+      sp.className='mkt-nh';
+      [].slice.call(d.childNodes).forEach(function(n){ if(n!==b) sp.appendChild(n) });
+      d.insertBefore(sp,b);
+      d.setAttribute('data-nh','1');
+    });
+  }
   function gop(){
     var tr=el('p-trend'), ser=el('p-ser');
     if(!tr||!ser||!tr.parentNode) return;
@@ -6334,15 +6348,15 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     var goc=window[ten];
     window[ten]=function(){
       var kq=goc.apply(this,arguments);
-      try{ gop() }catch(e){}
+      try{ gop(); gomNhan() }catch(e){}
       return kq;
     };
   }
   boc('renderMonthly'); boc('renderMonth'); boc('renderOver');
-  setTimeout(function(){ try{ gop() }catch(e){} },700);
-  setTimeout(function(){ try{ gop() }catch(e){} },2000);
-  setInterval(function(){ try{ gop() }catch(e){} },2500);
-  window.__hangKy={gop:gop};
+  setTimeout(function(){ try{ gop(); gomNhan() }catch(e){} },700);
+  setTimeout(function(){ try{ gop(); gomNhan() }catch(e){} },2000);
+  setInterval(function(){ try{ gop(); gomNhan() }catch(e){} },2500);
+  window.__hangKy={gop:gop,gomNhan:gomNhan};
 })();
 </script>
 <style id="app-css7">
@@ -6353,7 +6367,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
 .hang-ky>.pills{margin:0}
 /* 3. Bon o chi so MWG: so to len, nhan "tru Apple" cung hang, bon so thang nhau */
 #o-mkt4>div{display:flex;flex-direction:column;justify-content:space-between;padding:10px 7px;min-height:64px}
-#o-mkt4>div small{display:inline !important;margin-left:2px}
+#o-mkt4>div>.mkt-nh{display:block;line-height:1.3}
+#o-mkt4>div>.mkt-nh small{display:inline !important;margin-left:3px}
 #o-mkt4>div b{font-size:20px;margin-top:6px;line-height:1.15}
 </style>
 </html>
