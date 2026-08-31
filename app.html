@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-31.3';
+var APP_VER='2026-08-31.4';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -7297,6 +7297,291 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   function chay(){ try{ ve() }catch(e){ if(window.console) console.warn('[indxe]',e) } }
   setTimeout(chay,1000); setTimeout(chay,2400); setInterval(chay,2700);
   window.__indxe={ve:ve,tinh:tinh,XE:XE,tenGoi:tenGoi,laA6c:laA6c};
+})();
+</script>
+<script id="app-huongdan">
+(function(){
+  // ==========================================================
+  // HUONG DAN TUNG SHOP — PK 10-20M  (31/08/2026)
+  //
+  //  Chi hien voi shop DUOI TRUNG BINH cua nhom CUNG SIZE - CUNG TINH,
+  //  co >=8 may 10-20M trong thang va hut >=2 may so TB nhom.
+  //  129 shop co so -> 47 shop duoi TB -> 26 shop duoc cap the.
+  //
+  //  Nguon: OVERVIEW TG 2026 / BC AI 2 khoi 7 -> AI OUTPUT 8 o P1.
+  //  NVBH lay CUA SO 2 THANG (thang nay + thang truoc) vi dau thang
+  //  moi nguoi chi ban 1-2 may -> mot thang la nhieu -> gianh nham nguoi.
+  //
+  //  Luat giu nguyen: SALE CHI THAY SHOP CUA MINH — loc theo scope().s,
+  //  khong bao gio doc cot sale trong DATA de quyet dinh hien thi.
+  // ==========================================================
+  var VER='huongdan.1';
+  var GFORM_HD='';            // link Google Form phan hoi "khong dung" — trong thi an nut
+
+  // ma, ten, sale, size, tinh, may, oppo, pctShop, pctNhom, hut, nvbh, gio, phanTramCoGio
+  var DATA=[
+   [954,'Vĩnh Kim','TRƯƠNG HỮU NHÂN','S','Tiền Giang',95,21,22.1,35.8,13,
+    '46995 - Lưu Nguyệt Dung^35^8^23^15^2^0;272756 - Phạm Minh Luân^32^6^19^16^2^0;62811 - Đỗ Kim Ngân^24^4^17^14^2^0;64695 - Nguyễn Thị Bích Tuyền^21^3^14^12^2^0;79008 - Nguyễn Ngọc Ái Duyên^20^5^25^11^2^0',
+    '07-10h^5^0^0;11-14h^20^6^30;15-18h^33^5^15;19-23h^14^4^29',40],
+   [435,'An Thái Trung','CAO CHÍ BẢO','S','Tiền Giang',65,12,18.5,35.8,11.3,
+    '169114 - Nguyễn Hoàng Quân^24^5^21^11^3^0;90889 - Trần Thị Diểm Trinh^18^2^11^8^1^0;104478 - Huỳnh Thị Thuý Hồng^17^5^29^8^1^0;33368 - Nguyễn Hữu Tuấn^15^0^0^8^0^0',
+    '07-10h^16^3^19;11-14h^19^4^21;15-18h^21^5^24;19-23h^7^0^0',47],
+   [716,'49/2 Ấp Bắc','TRƯƠNG HỮU NHÂN','S','Tiền Giang',70,14,20,35.8,11.1,
+    '258296 - Lương Duy Tâm^32^6^19^15^2^0;179239 - Nguyễn Hoàng Huỳnh Như^23^2^9^8^1^0;46977 - Huỳnh Thị Á Tiên^22^6^27^10^5^0;30663 - Hồ Thị Thanh Trúc^21^4^19^10^1^0;168129 - Trần Nguyễn Quốc Bảo^19^3^16^9^1^0;30317 - Nguyễn Đức Trọng^17^3^18^7^1^0',
+    '07-10h^6^0^0;11-14h^17^3^18;15-18h^17^4^24;19-23h^25^4^16',41],
+   [953,'Long Bình Điền','PHẠM HOÀNG NHÂN','S','Tiền Giang',93,23,24.7,35.8,10.3,
+    '160004 - Nguyễn Phước Đạt^32^5^16^14^3^0;83703 - Phan Thị Cẩm Tú^24^4^17^9^4^0;90898 - Châu Thị Trúc Đào^21^4^19^11^3^0;146137 - Đỗ Hiền Phong^20^3^15^13^2^0;113967 - Phan Thị Mộng Thu^18^4^22^12^2^0;134674 - Phan Ngọc Phú^17^3^18^10^2^0',
+    '07-10h^12^3^25;11-14h^21^2^10;15-18h^31^8^26;19-23h^17^6^35',45],
+   [9390,'Ba Tri','TRẦN THỊ QUỲNH NHƯ','A','Bến Tre',75,15,20,31.4,8.6,
+    '112271 - Nguyễn Tấn Hùng^41^9^22^27^7^0;279468 - Hạ Thị Thanh Tuyền^21^5^24^12^2^0;40184 - Nguyễn Văn Út^21^0^0^10^0^0;65036 - Nguyễn Thị Bé Lê^19^5^26^10^2^0;106596 - Võ Thị Hoài Thư^14^3^21^8^1^0;65224 - Đặng Thị Mộng Tuyền^14^3^21^7^3^0',
+    '07-10h^15^3^20;11-14h^14^4^29;15-18h^15^3^20;19-23h^17^5^29',46],
+   [744,'Trương Định','PHẠM HOÀNG NHÂN','C','Tiền Giang',26,3,11.5,43.3,8.3,
+    '43596 - Lê Thị Khoa^8^1^13^6^0^0',
+    '07-10h^2^0^0;11-14h^6^0^0;15-18h^4^0^0;19-23h^3^1^33',33],
+   [303,'920 Lý Thường Kiệt','TRƯƠNG HỮU NHÂN','A','Tiền Giang',43,7,16.3,31,6.3,
+    '260752 - Huỳnh Tấn Dương^15^3^20^12^3^0',
+    '07-10h^5^1^20;11-14h^6^0^0;15-18h^10^1^10;19-23h^2^1^50',31],
+   [9256,'Phú An','PHẠM TUẤN KHẢI','C','Tiền Giang',21,4,19,43.3,5.1,
+    '133346 - Nguyễn Ngọc Huyền^14^3^21^6^0^0;79916 - Nguyễn Thị Mỹ Huyền^12^2^17^9^2^0',
+    '07-10h^2^0^0;11-14h^2^1^50;15-18h^5^2^40;19-23h^5^3^60',37],
+   [3062,'Tân Thủy','TRẦN THỊ QUỲNH NHƯ','C','Bến Tre',36,6,16.7,30.3,4.9,
+    '58200 - Bùi Tuấn Phú^13^2^15^7^1^0;143214 - Nguyễn Chí Hùng^12^0^0^8^0^0',
+    '07-10h^4^1^25;11-14h^11^2^18;15-18h^5^1^20;19-23h^2^0^0',37],
+   [7008,'Long Định','PHẠM TUẤN KHẢI','D','Tiền Giang',19,5,26.3,46.9,3.9,'',
+    '07-10h^0^0^0;11-14h^1^0^0;15-18h^4^1^25;19-23h^4^1^25',41],
+   [1660,'25 Ấp Bắc','TRƯƠNG HỮU NHÂN','B','Tiền Giang',52,11,21.2,28.4,3.8,
+    '167500 - Nguyễn Hoàng Giang^19^4^21^9^4^0;113964 - Đoàn Thị Mỹ Huyền^17^3^18^11^2^0;194281 - Phạm Thị Ngọc Huyền^15^1^7^9^1^0;130658 - Nguyễn Chánh Thiện^12^0^0^5^0^0',
+    '07-10h^3^0^0;11-14h^16^3^19;15-18h^11^0^0;19-23h^15^1^7',47],
+   [1882,'Trung An','TRƯƠNG HỮU NHÂN','B','Tiền Giang',33,6,18.2,28.4,3.4,
+    '51348 - Lê Tấn Đạt^28^1^4^13^1^0;38088 - Nguyễn Hoàng Thái^15^4^27^8^2^0',
+    '07-10h^3^0^0;11-14h^5^0^0;15-18h^12^1^8;19-23h^11^3^27',47],
+   [9105,'Tân Thạch','TRƯƠNG HỮU NHÂN','B','Bến Tre',62,18,29,34.5,3.4,
+    '261385 - Lương Thị Tuyết Ngân^23^4^17^13^4^0;172382 - Đoàn Thế Anh^16^3^19^10^2^0;261394 - Nguyễn Tấn Hữu^16^3^19^9^3^0',
+    '07-10h^4^0^0;11-14h^10^3^30;15-18h^10^4^40;19-23h^15^6^40',38],
+   [627,'549B Bến Tre','TRẦN THỊ QUỲNH NHƯ','D','Bến Tre',17,4,23.5,42.1,3.2,'',
+    '07-10h^3^2^67;11-14h^3^1^33;15-18h^5^1^20;19-23h^6^1^17',49],
+   [863,'57/6 Lê Thị Hồng Gấm','TRƯƠNG HỮU NHÂN','A','Tiền Giang',65,17,26.2,31,3.2,
+    '130661 - Phan Duy Khải^25^6^24^19^6^0;253634 - Nguyễn Ngọc Trọng^15^4^27^6^0^0;32016 - Tôn Nữ Uyển Nhu^13^3^23^9^2^0',
+    '07-10h^9^1^11;11-14h^11^5^45;15-18h^5^1^20;19-23h^11^3^27',34],
+   [1887,'268 Quốc Lộ 60 (Mỏ Cày)','CHU TẤN LỘC','C','Bến Tre',20,3,15,30.3,3.1,'',
+    '07-10h^3^0^0;11-14h^6^0^0;15-18h^5^1^20;19-23h^1^1^100',43],
+   [2413,'770 Quốc Lộ 1A (Tân Lý Tây)','PHẠM TUẤN KHẢI','D','Tiền Giang',17,5,29.4,46.9,3,'',
+    '07-10h^1^1^100;11-14h^3^1^33;15-18h^1^0^0;19-23h^8^3^38',37],
+   [7142,'Hậu Thành (Chợ Cái Nứa)','PHẠM TUẤN KHẢI','D','Tiền Giang',10,2,20,46.9,2.7,'',
+    '07-10h^2^0^0;11-14h^3^1^33;15-18h^4^1^25;19-23h^0^0^0',60],
+   [1166,'Kiểng Phước (Vàm Láng)','PHẠM HOÀNG NHÂN','C','Tiền Giang',43,16,37.2,43.3,2.6,
+    '139132 - Lưu Thanh Hùng^14^3^21^7^1^0',
+    '07-10h^9^2^22;11-14h^11^2^18;15-18h^8^6^75;19-23h^5^1^20',46],
+   [2204,'Đông Hòa','PHẠM TUẤN KHẢI','C','Tiền Giang',13,3,23.1,43.3,2.6,'',
+    '07-10h^1^0^0;11-14h^1^0^0;15-18h^3^0^0;19-23h^0^0^0',23],
+   [9408,'An Hóa','CHU TẤN LỘC','D','Bến Tre',13,3,23.1,42.1,2.5,
+    '110331 - Nguyễn Thị Ngân^13^1^8^8^1^0',
+    '07-10h^2^0^0;11-14h^1^0^0;15-18h^4^1^25;19-23h^1^0^0',33],
+   [361,'Tân Hiệp','TRƯƠNG HỮU NHÂN','S','Tiền Giang',82,27,32.9,35.8,2.4,
+    '270493 - Trần Nguyễn Nhựt Sang^27^7^26^8^1^0;41426 - Trần Thị Bích Ngọc^17^4^24^11^2^0',
+    '07-10h^8^3^38;11-14h^8^6^75;15-18h^24^6^25;19-23h^33^13^39',39],
+   [552,'115 Nguyễn Trãi','PHẠM HOÀNG NHÂN','A','Tiền Giang',40,10,25,31,2.4,
+    '282434 - Nguyễn Thị Anh Thư^8^2^25^5^1^0;66108 - Trần Minh Phúc^8^0^0^3^0^0',
+    '07-10h^7^4^57;11-14h^10^5^50;15-18h^12^1^8;19-23h^11^4^36',47],
+   [5321,'Thạnh Phú','TRẦN THỊ QUỲNH NHƯ','C','Bến Tre',34,8,23.5,30.3,2.3,
+    '276784 - Nguyễn Văn Thái^25^6^24^12^4^0;108893 - Huỳnh Văn Nhàn^18^3^17^8^0^0;109457 - Võ Thành Phát^15^4^27^8^3^0',
+    '07-10h^10^1^10;11-14h^7^3^43;15-18h^11^2^18;19-23h^4^3^75',41],
+   [7051,'An Thái Đông (Chợ Cổ Cò)','CAO CHÍ BẢO','C','Tiền Giang',10,2,20,43.3,2.3,'',
+    '07-10h^2^1^50;11-14h^8^2^25;15-18h^1^0^0;19-23h^0^0^0',55],
+   [752,'591B Đồng Khởi','TRẦN THỊ QUỲNH NHƯ','S','Bến Tre',275,97,35.3,36,2,
+    '62734 - Nguyễn Thị Anh Thư^34^8^24^18^3^0;202671 - Nguyễn Ngọc Nguyên^32^4^13^12^0^0',
+    '07-10h^33^12^36;11-14h^48^18^38;15-18h^84^29^35;19-23h^82^32^39',45]
+  ];
+
+  var MO={};                  // shop nao dang mo rong
+
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+  function so1(v){ var x=Math.round((v||0)*10)/10; return String(x).replace('.',',') }
+
+  // Ma shop = day so DAU TIEN trong ten shop:
+  // "TGDD - 189 - TGD_TGI_CLA - 3/59 Quoc Lo 1A" -> 189
+  // Khong dung bieu thuc chinh quy de file khong chua dau gach nguoc.
+  function maSo(n){
+    var t=String(n==null?'':n), i=0, a=-1;
+    for(i=0;i<t.length;i++){
+      var c=t.charCodeAt(i);
+      if(c>=48&&c<=57){ if(a<0) a=i } else if(a>=0) return t.slice(a,i);
+    }
+    return a>=0?t.slice(a):'';
+  }
+  function tenGon(n){
+    if(typeof tenNgan==='function'){ try{ return tenNgan(n) }catch(e){} }
+    return String(n==null?'':n);
+  }
+  function laMWG(){ return (typeof SEG!=='undefined')&&SEG==='MWG' }
+
+  // Danh sach ma shop MA TAI KHOAN NAY DUOC XEM.
+  // Day la cho giu luat "sale chi thay shop cua minh".
+  function shopDuocXem(){
+    var o=null;
+    try{ o=(typeof scope==='function')?scope():null }catch(e){}
+    if(!o||!o.s) return null;
+    var m={}, co=0;
+    o.s.forEach(function(x){
+      if(!x||x.ch2!=='MWG') return;
+      var c=maSo(x.n); if(c){ m[c]=1; co++ }
+    });
+    return co?m:{};
+  }
+
+  function locDong(){
+    var cho=shopDuocXem();
+    if(cho===null) return null;
+    return DATA.filter(function(r){ return cho[String(r[0])] });
+  }
+
+  function bocNguoi(s){
+    if(!s) return [];
+    return String(s).split(';').map(function(x){
+      var p=x.split('^');
+      return { ten:p[0]||'', may:+p[1]||0, opp:+p[2]||0, pct:+p[3]||0,
+               nay:+p[4]||0, nayOpp:+p[5]||0, moi:p[6]==='1' };
+    });
+  }
+  function bocGio(s){
+    if(!s) return [];
+    return String(s).split(';').map(function(x){
+      var p=x.split('^');
+      return { nhan:p[0]||'', may:+p[1]||0, opp:+p[2]||0, pct:+p[3]||0 };
+    });
+  }
+
+  function mauPct(p,chuan){
+    if(p<chuan-8) return 'var(--red)';
+    if(p<chuan) return 'var(--yellow)';
+    return 'var(--green)';
+  }
+
+  function veNguoi(ds){
+    if(!ds.length){
+      return '<div class="note" style="margin-top:6px">Shop này không có nhân viên nào bán đủ 8 máy 10–20M trong 2 tháng. '+
+             'Doanh số trải đều nhiều người — hướng xử lý chính là khung giờ bên dưới.</div>';
+    }
+    var h='<table class="tv" style="margin-top:6px"><tr>'+
+      '<th style="text-align:left">Nhân viên xuất hàng</th><th>2 tháng</th><th>OPPO</th><th>%</th><th>Tháng này</th></tr>';
+    ds.forEach(function(p){
+      var m=mauPct(p.pct,30);
+      h+='<tr><td style="text-align:left">'+esc(p.ten)+
+         (p.moi?' <b style="color:var(--yellow)">mới</b>':'')+'</td>'+
+         '<td>'+p.may+'</td><td>'+p.opp+'</td>'+
+         '<td style="color:'+m+';font-weight:700">'+p.pct+'%</td>'+
+         '<td>'+p.nay+' / '+p.nayOpp+'</td></tr>';
+    });
+    h+='</table>';
+    return h;
+  }
+
+  function veGio(ds,cov){
+    var max=0;
+    ds.forEach(function(g){ if(g.may>max) max=g.may });
+    var h='<div style="margin-top:8px">';
+    ds.forEach(function(g){
+      var w=max?Math.round(g.may/max*100):0;
+      var m=mauPct(g.pct,30);
+      h+='<div style="display:flex;align-items:center;gap:8px;margin-top:4px;font-size:12px">'+
+         '<span style="width:52px;color:var(--muted)">'+esc(g.nhan)+'</span>'+
+         '<span style="flex:1;height:9px;border-radius:5px;background:var(--card2);overflow:hidden">'+
+         '<span style="display:block;height:9px;width:'+w+'%;background:'+m+'"></span></span>'+
+         '<span style="width:100px;text-align:right">'+g.may+' máy &middot; '+
+         '<b style="color:'+m+'">'+g.pct+'%</b></span></div>';
+    });
+    h+='</div>';
+    var canh=cov<35
+      ? 'Chỉ '+cov+'% đơn có giờ đọc được — khung giờ ở shop này chỉ đọc tham khảo.'
+      : 'Tính trên '+cov+'% đơn có giờ đọc được.';
+    h+='<div class="note" style="margin-top:6px">'+canh+'</div>';
+    return h;
+  }
+
+  function veShop(r){
+    var ma=String(r[0]), mo=!!MO[ma];
+    var nguoi=bocNguoi(r[10]), gio=bocGio(r[11]);
+    var m=mauPct(r[7],r[8]);
+    var h='<div style="border:1px solid rgba(255,255,255,.10);border-radius:11px;'+
+      'padding:10px 12px;margin-top:8px;background:var(--card2)">';
+    h+='<div data-hdshop="'+esc(ma)+'" style="cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+       '<b style="font-size:13px">'+esc(r[1])+'</b>'+
+       '<span style="font-size:11px;color:var(--muted)">'+esc(ma)+' &middot; size '+esc(r[3])+' &middot; '+esc(r[4])+'</span>'+
+       '<span style="margin-left:auto;font-size:12px">'+
+       '<b style="color:'+m+'">'+so1(r[7])+'%</b>'+
+       '<span style="color:var(--muted)"> / TB nhóm '+so1(r[8])+'%</span></span>'+
+       '<span style="font-size:12px;color:var(--red);font-weight:700;width:100%">Đang hụt '+so1(r[9])+' máy 10–20M/tháng'+
+       ' <span style="color:var(--muted);font-weight:400">('+r[6]+'/'+r[5]+' máy)</span>'+
+       ' <span style="color:var(--muted);font-weight:400">'+(mo?'&#9650; thu gọn':'&#9660; xem việc cần làm')+'</span></span>'+
+       '</div>';
+    if(mo){
+      h+='<div style="margin-top:8px">';
+      h+='<div class="subhead">1 &middot; Giành lại người bán</div>'+veNguoi(nguoi);
+      h+='<div class="subhead" style="margin-top:10px">2 &middot; Đặt PG khung nào</div>'+veGio(gio,r[12]);
+      if(GFORM_HD){
+        h+='<div style="margin-top:8px"><a class="link" target="_blank" rel="noopener" href="'+
+           GFORM_HD+'">Báo lại: đề xuất này không đúng</a></div>';
+      }
+      h+='</div>';
+    }
+    h+='</div>';
+    return h;
+  }
+
+  function ve(){
+    var mp=el('v-alert'); if(!mp) return;
+    var box=el('c-huongdan');
+    var ds=laMWG()?locDong():null;
+    if(!ds||!ds.length){ if(box) box.hidden=true; return }
+    if(!box){
+      box=document.createElement('div');
+      box.className='card';
+      box.id='c-huongdan';
+      mp.appendChild(box);
+    }
+    box.hidden=false;
+    if(box.parentNode!==mp) mp.appendChild(box);
+
+    var hut=0;
+    ds.forEach(function(r){ hut+=r[9] });
+
+    var h='<h2>&#127919; Việc cần làm ở từng shop &mdash; phân khúc 10–20M</h2>';
+    h+='<div class="stamp">Chỉ liệt kê shop đang <b>dưới trung bình của nhóm cùng size &middot; cùng tỉnh</b> '+
+       'và hụt từ 2 máy trở lên. Shop đạt chuẩn nhóm không hiện ở đây.</div>';
+    h+='<div class="note" style="margin-top:8px">'+ds.length+' shop &middot; cộng lại đang hụt <b style="color:var(--red)">'+
+       so1(hut)+' máy 10–20M mỗi tháng</b>. Bấm vào từng shop để xem giải pháp.</div>';
+    ds.forEach(function(r){ h+=veShop(r) });
+    h+='<div class="note" style="margin-top:10px">Người bán lấy cửa sổ <b>2 tháng</b> (tháng này + tháng trước) '+
+       'để tránh đầu tháng một người mới bán 1–2 máy đã bị gọi tên. Cột <b>Tháng này</b> ghi <i>máy / OPPO</i> của riêng tháng đang xem. '+
+       'Nhãn <b>mới</b> = người chỉ xuất hiện tháng này, cần đào tạo sản phẩm trước khi nói chuyện chỉ tiêu.</div>';
+    box.innerHTML=h;
+  }
+
+  document.addEventListener('click',function(e){
+    if(!e.target||!e.target.closest) return;
+    var b=e.target.closest('[data-hdshop]');
+    if(!b) return;
+    var ma=b.getAttribute('data-hdshop')||'';
+    MO[ma]=!MO[ma];
+    try{ ve() }catch(er){}
+  });
+
+  function boc(ten){
+    if(typeof window[ten]!=='function') return;
+    var goc=window[ten];
+    window[ten]=function(){
+      var kq=goc.apply(this,arguments);
+      try{ ve() }catch(e){ if(window.console) console.warn('[huongdan] '+ten,e) }
+      return kq;
+    };
+  }
+  boc('renderAlerts'); boc('render'); boc('renderMonth');
+
+  try{ ve() }catch(e){}
+  setTimeout(function(){ try{ ve() }catch(e){} },700);
+  setTimeout(function(){ try{ ve() }catch(e){} },2200);
+  window.__huongdan={ve:ve,DATA:DATA,ver:VER,loc:locDong,ma:maSo};
 })();
 </script>
 </html>
