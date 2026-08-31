@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.24';
+var APP_VER='2026-08-30.25';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6314,4 +6314,46 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   window.__loc={chinh:chinh};
 })();
 </script>
+<script id="app-hangky">
+(function(){
+  // Gop hai hang tab lam mot: Tuan/Thang/Quy  +  Tat ca/Reno/Find/Reno+Find
+  // Truoc day nam hai hang roi nhau, tren dien thoai hang duoi hay bi day khuat.
+  function el(i){ return document.getElementById(i) }
+  function gop(){
+    var tr=el('p-trend'), ser=el('p-ser');
+    if(!tr||!ser||!tr.parentNode) return;
+    var w=el('hang-ky');
+    if(w&&tr.parentNode===w&&ser.parentNode===w&&tr.nextElementSibling===ser) return;
+    if(!w){ w=document.createElement('div'); w.className='hang-ky'; w.id='hang-ky' }
+    if(w.parentNode!==tr.parentNode||w.nextSibling!==tr) tr.parentNode.insertBefore(w,tr);
+    w.appendChild(tr);
+    w.appendChild(ser);
+  }
+  function boc(ten){
+    if(typeof window[ten]!=='function') return;
+    var goc=window[ten];
+    window[ten]=function(){
+      var kq=goc.apply(this,arguments);
+      try{ gop() }catch(e){}
+      return kq;
+    };
+  }
+  boc('renderMonthly'); boc('renderMonth'); boc('renderOver');
+  setTimeout(function(){ try{ gop() }catch(e){} },700);
+  setTimeout(function(){ try{ gop() }catch(e){} },2000);
+  setInterval(function(){ try{ gop() }catch(e){} },2500);
+  window.__hangKy={gop:gop};
+})();
+</script>
+<style id="app-css7">
+/* 1. Hang tab phu tu xuong dong — tren dien thoai 9 nut thang khong bi cat mat */
+.pills.sm{flex-wrap:wrap}
+/* 2. Gop Tuan/Thang/Quy va Reno/Find ve cung mot hang */
+.hang-ky{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:0 0 9px}
+.hang-ky>.pills{margin:0}
+/* 3. Bon o chi so MWG: so to len, nhan "tru Apple" cung hang, bon so thang nhau */
+#o-mkt4>div{display:flex;flex-direction:column;justify-content:space-between;padding:10px 7px;min-height:64px}
+#o-mkt4>div small{display:inline !important;margin-left:2px}
+#o-mkt4>div b{font-size:20px;margin-top:6px;line-height:1.15}
+</style>
 </html>
