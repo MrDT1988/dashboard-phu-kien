@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-31.2';
+var APP_VER='2026-08-31.3';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6880,11 +6880,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     h+='<div class="note"><b>Phủ S.O</b> = số điểm bán được ít nhất 1 máy trong tháng, chia cho toàn bộ '+
       so0(ds.length)+' điểm bán phụ trách. <b>Phủ S.I</b> tính y hệt nhưng đếm điểm bán có nhập hàng. '+
       '<b>S.I phụ kiện</b> là số lượng phụ kiện nhập vào, tách riêng khỏi máy.</div>';
-    h+='<div class="note" style="border-left:3px solid var(--amber);padding-left:9px">'+
-      '<b>Chương trình tháng &amp; chương trình theo xe</b> — em chưa dựng vì chưa có luật tính. '+
-      'Anh cho em biết: đạt bao nhiêu máy (hoặc bao nhiêu doanh thu) thì được <b>1 xe</b>, '+
-      'tính theo <b>đại lý</b> hay theo <b>điểm bán</b>, và tính trong <b>1 tháng</b> hay <b>luỹ kế</b> — '+
-      'là em ráp vào đây được ngay.</div>';
+    // (khoi hoi luat 'chuong trinh theo xe' da go — luat da co, xem khoi app-indxe)
     box.innerHTML=h;
   }
 
@@ -7045,6 +7041,262 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   function chay(){ try{ ve() }catch(e){ if(window.console) console.warn('[ind2]',e) } }
   setTimeout(chay,900); setTimeout(chay,2200); setInterval(chay,2600);
   window.__ind2={ve:ve,nguong:NGUONG_TD};
+})();
+</script>
+<style id="app-css14">
+#c-ind-xe table.tv td small{display:block;color:var(--muted);font-size:9.5px;margin-top:1px}
+#c-ind-xe table.tv th:first-child,#c-ind-xe table.tv td:first-child{position:sticky;left:0;z-index:2;background:var(--card)}
+#c-ind-xe table.tv th:first-child{z-index:3}
+#c-ind-xe details.xe-ds{margin:9px 0 0;border-top:1px solid var(--line);padding-top:8px}
+#c-ind-xe details.xe-ds>summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--ink2);padding:3px 0}
+#c-ind-xe details.xe-ds table.tv td:first-child{white-space:normal;min-width:200px}
+</style>
+
+<script id="app-indxe">
+(function(){
+  // ==========================================================
+  // CHUONG TRINH THANG — THUONG SALE IND (bê nguyên luật từ DB TG, 31/08)
+  //
+  //  Ap dung cho Sale IND, KHONG gom Khanh / Thuan / Loi (nhom O.C).
+  //  Gop theo XE: Xe 1 = Tien+Tai · Xe 2 = Thai+An · Xe 3 = Khoa+Nhan
+  //  DT     = doanh thu thuc te
+  //  Center = 80% DT  (doanh thu tinh thuong)
+  //  Moi Xe: 2 Luong co ban 6.000.000d/thang
+  //  Muc thuong tra theo TONG so may CA XE (cong 2 sale roi moi tra bac,
+  //  ra dung 1 muc chung, lay muc cao nhat dat duoc, KHONG cong don):
+  //     <100 may 3.2% · >100 4.2% · >150 4.7% · >200 5.2% · >250 5.7%
+  //  Rieng doanh thu tu model A6c: moi moc THAP HON 1% so bac chuan.
+  //  Do phu Shop S.O = shop co ban / shop dang ky cua CA XE (gop 2 sale).
+  //     Duoi 60% phat 1.000.000d/Xe — dung 1 lan cho ca xe, tru vao Luong Sale.
+  //  Luong Sale = 2 Luong co ban + Tien thuong chung (da tru phat)
+  //  LD  = 0.5% x Center
+  //  %HR = (LD + Luong Sale) / Center
+  //
+  //  Kiem chung nguoc voi Xe 1 ben DB TG: DT 476,4 -> Center 381,1 (x0.8) ·
+  //  76 may -> 3.2% · LD 1,9 · Luong Sale 12 + 11 - 1 phat = 22 · %HR 6.3%.
+  // ==========================================================
+  var XE=[ {t:'Xe 1', s:['TIẾN','TÀI']},
+           {t:'Xe 2', s:['THÁI','AN']},
+           {t:'Xe 3', s:['KHOA','NHÂN']} ];
+  var NGOAI=['KHÁNH','THUẦN','LỢI'];   // nhom O.C — khong ap dung chuong trinh nay
+  var TY_CENTER=0.8;                   // Center = 80% DT
+  var LUONG_CB=6;                      // trieu / nguoi / thang
+  var SO_NGUOI=2;                      // moi xe 2 luong co ban
+  var PHAT=1;                          // trieu / xe khi do phu < 60%
+  var NGUONG_PHU=60;                   // %
+  var TY_LD=0.5;                       // % cua Center
+  var GIAM_A6C=1;                      // A6c thap hon 1 diem % so bac chuan
+  var BAC=[ {may:250,p:5.7}, {may:200,p:5.2}, {may:150,p:4.7}, {may:100,p:4.2} ];
+  var BAC_NEN=3.2;                     // duoi 100 may
+
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+  function so0(v){ return (typeof n0==='function')?n0(v):String(Math.round(v||0)) }
+  // Ghi tien y het DB TG (476,4M) de anh Thai doi chieu hai ben cho nhanh
+  function M(v){
+    var x=Math.round((v||0)*10)/10;
+    return String(x).replace('.',',')+'M';
+  }
+  function laIND(){ return (typeof SEG!=='undefined')&&SEG==='IND' }
+  function chiSo(){ return (typeof MI==='number')?MI:0 }
+
+  // Ten goi = tu CUOI cung cua ho ten. So khop DUNG BANG, khong dung indexOf —
+  // 'AN' nam trong 'TOÀN', 'LAN'... se ghep nham neu dung indexOf.
+  function tenGoi(n){
+    var p=String(n==null?'':n).trim().toUpperCase().split(/\s+/);
+    return p.length?p[p.length-1]:'';
+  }
+  function laA6c(ten){
+    var t=String(ten==null?'':ten).trim().toUpperCase();
+    if(t.indexOf('A6C')!==0) return false;
+    var c=t.charAt(3);
+    return c===''||c===' '||c==='+'||(c>='0'&&c<='9');
+  }
+  function bacCua(may){
+    for(var i=0;i<BAC.length;i++) if(may>BAC[i].may) return BAC[i].p;
+    return BAC_NEN;
+  }
+
+  // Gom so cua 1 sale o kenh IND trong thang i
+  function gopSale(sale,i){
+    var k={may:0,dt:0,shop:0,ban:0,ds:[]};
+    (sale.s||[]).forEach(function(sh){
+      if(!sh||sh.ch2!=='IND') return;
+      k.shop++;
+      var c=sh.m&&sh.m[i], u=c?(c[0]||0):0, r=c?(c[1]||0):0;
+      k.may+=u; k.dt+=r;
+      if(u>0){ k.ban++; k.ds.push({n:sh.n,u:u,r:r,sale:tenGoi(sale.n)}) }
+    });
+    return k;
+  }
+  // Doanh thu A6c cua 1 sale o kenh IND trong thang — lay tu bang top model
+  // theo thang cua chinh kenh do (chd.IND.moM). Tra ve null neu khong co bang.
+  function dtA6c(sale,i){
+    var cd=(sale.chd||{}).IND;
+    if(!cd||!cd.moM) return null;
+    var th=D.months[i], ds=cd.moM[th]||cd.moM[String(th)];
+    if(!ds) return 0;
+    var t=0;
+    ds.forEach(function(x){ if(laA6c(x[0])) t+=x[2]||0 });
+    return t;
+  }
+
+  function tinh(i){
+    var sales=(D&&D.sales)?D.sales:[];
+    if(!sales.length) return null;
+    var dung=[], thieu=[], ngoai=[], chuaXep=[], coMoM=false;
+    XE.forEach(function(x){
+      var co=sales.filter(function(s){ return x.s.indexOf(tenGoi(s.n))>=0 });
+      if(!co.length) return;
+      var K={t:x.t, ten:x.s, co:co.map(function(s){return tenGoi(s.n)}),
+             may:0, dt:0, shop:0, ban:0, a6:0, a6Biet:true, ds:[]};
+      co.forEach(function(s){
+        var g=gopSale(s,i);
+        K.may+=g.may; K.dt+=g.dt; K.shop+=g.shop; K.ban+=g.ban;
+        K.ds=K.ds.concat(g.ds);
+        var a=dtA6c(s,i);
+        if(a===null) K.a6Biet=false; else { K.a6+=a; coMoM=true }
+      });
+      if(!K.shop) return;
+      K.center=K.dt*TY_CENTER;
+      K.phu=K.shop?(K.ban/K.shop*100):0;
+      K.muc=bacCua(K.may);
+      K.mucA6=Math.max(0,K.muc-GIAM_A6C);
+      var cA6=Math.min(K.a6,K.dt)*TY_CENTER;
+      K.thuong=(K.center-cA6)*K.muc/100 + cA6*K.mucA6/100;
+      K.phat=(K.phu<NGUONG_PHU)?PHAT:0;
+      K.cb=LUONG_CB*SO_NGUOI;
+      K.luong=K.cb+K.thuong-K.phat;
+      K.ld=K.center*TY_LD/100;
+      K.hr=K.center?((K.ld+K.luong)/K.center*100):0;
+      K.ds.sort(function(a,b){ return b.r-a.r });
+      if(co.length<x.s.length) thieu.push(K.t);
+      dung.push(K);
+    });
+    sales.forEach(function(s){
+      var g=tenGoi(s.n);
+      if(NGOAI.indexOf(g)>=0){ ngoai.push(g); return }
+      var co=false;
+      XE.forEach(function(x){ if(x.s.indexOf(g)>=0) co=true });
+      if(co) return;
+      var n=(s.s||[]).filter(function(sh){ return sh&&sh.ch2==='IND' }).length;
+      if(n) chuaXep.push(g);
+    });
+    return dung.length?{xe:dung,thieu:thieu,ngoai:ngoai,chuaXep:chuaXep,coMoM:coMoM}:null;
+  }
+
+  function veBang(K){
+    var h='<div class="tvwrap"><table class="tv"><tr>'+
+      ['XE','SHOP S.O','S.O','DT','CENTER','MỨC THƯỞNG','TIỀN THƯỞNG','LƯƠNG CƠ BẢN','LƯƠNG SALE','LĐ','%HR']
+        .map(function(x){ return '<th>'+esc(x)+'</th>' }).join('')+'</tr>';
+    var T={may:0,dt:0,center:0,thuong:0,cb:0,luong:0,ld:0};
+    K.xe.forEach(function(x){
+      T.may+=x.may; T.dt+=x.dt; T.center+=x.center;
+      T.thuong+=x.thuong; T.cb+=x.cb; T.luong+=x.luong; T.ld+=x.ld;
+      var mauPhu=(x.phu<NGUONG_PHU)?'var(--red)':'var(--green)';
+      h+='<tr>';
+      h+='<td><b>'+esc(x.t)+'</b><small>'+esc(x.co.join(' + '))+'</small></td>';
+      h+='<td><b style="color:'+mauPhu+'">'+so0(x.ban)+'/'+so0(x.shop)+'</b>'+
+         '<small style="color:'+mauPhu+'">'+x.phu.toFixed(0)+'%</small></td>';
+      h+='<td>'+so0(x.may)+' máy</td>';
+      h+='<td>'+M(x.dt)+'</td>';
+      h+='<td>'+M(x.center)+'</td>';
+      h+='<td><b>'+x.muc.toFixed(1)+'%</b>'+(x.a6>0?'<small>A6c '+x.mucA6.toFixed(1)+'%</small>':'')+'</td>';
+      h+='<td><b style="color:var(--green)">'+M(x.thuong)+'</b></td>';
+      h+='<td>'+M(x.cb)+'</td>';
+      h+='<td><b>'+M(x.luong)+'</b>'+(x.phat?'<small style="color:var(--red)">đã trừ phạt '+M(x.phat)+'</small>':'')+'</td>';
+      h+='<td>'+M(x.ld)+'</td>';
+      h+='<td><b>'+x.hr.toFixed(1)+'%</b></td>';
+      h+='</tr>';
+    });
+    if(K.xe.length>1){
+      var hr=T.center?((T.ld+T.luong)/T.center*100):0;
+      h+='<tr style="background:var(--card2)"><td><b>TỔNG</b></td><td>—</td>'+
+         '<td><b>'+so0(T.may)+' máy</b></td>'+
+         '<td><b>'+M(T.dt)+'</b></td>'+
+         '<td><b>'+M(T.center)+'</b></td>'+
+         '<td>—</td>'+
+         '<td><b style="color:var(--green)">'+M(T.thuong)+'</b></td>'+
+         '<td><b>'+M(T.cb)+'</b></td>'+
+         '<td><b>'+M(T.luong)+'</b></td>'+
+         '<td><b>'+M(T.ld)+'</b></td>'+
+         '<td><b>'+hr.toFixed(1)+'%</b></td></tr>';
+    }
+    return h+'</table></div>';
+  }
+
+  function veShop(K){
+    var h='';
+    K.xe.forEach(function(x){
+      if(!x.ds.length) return;
+      h+='<details class="xe-ds"><summary>'+esc(x.t)+' — '+x.ds.length+' shop có bán'+
+         ' <span style="color:var(--muted)">(trong '+so0(x.shop)+' shop đăng ký)</span></summary>'+
+         '<div class="tvwrap"><table class="tv"><tr><th>SHOP</th><th>SỐ LƯỢNG</th><th>DOANH THU</th></tr>';
+      x.ds.forEach(function(s){
+        h+='<tr><td>'+esc(s.n)+'<small>'+esc(s.sale)+'</small></td>'+
+           '<td>'+so0(s.u)+' máy</td><td><b>'+M(s.r)+'</b></td></tr>';
+      });
+      h+='</table></div></details>';
+    });
+    return h;
+  }
+
+  function ve(){
+    var mp=el('v-month');
+    var box=el('c-ind-xe');
+    if(!laIND()||!mp){ if(box&&box.parentNode) box.parentNode.removeChild(box); return }
+    var i=chiSo(), K=tinh(i);
+    if(!K){ if(box&&box.parentNode) box.parentNode.removeChild(box); return }
+    if(!box){ box=document.createElement('div'); box.className='card'; box.id='c-ind-xe' }
+    var neo=el('c-ind-thang');
+    if(neo&&neo.parentNode===mp){ if(neo.nextSibling!==box) mp.insertBefore(box,neo.nextSibling) }
+    else if(box.parentNode!==mp) mp.insertBefore(box,mp.firstElementChild);
+
+    var h='<h2>🏍️ Chương trình tháng — Thưởng Sale IND</h2>'+
+      '<p class="sub">Tháng '+D.months[i]+'. Gộp theo <b>Xe</b>, không xét riêng từng người. '+
+      'Không áp dụng cho '+esc(NGOAI.join(' / '))+' (nhóm O.C).</p>';
+    h+=veBang(K);
+    h+=veShop(K);
+
+    h+='<div class="note"><b>Cách tính</b> — <b>Center</b> = 80% DT. '+
+      '<b>Mức thưởng</b> tra theo <b>tổng số máy cả xe</b> (cộng 2 sale rồi mới tra bậc, '+
+      'ra đúng 1 mức chung, lấy mức cao nhất đạt được, không cộng dồn): '+
+      'dưới 100 máy 3,2% · trên 100 là 4,2% · trên 150 là 4,7% · trên 200 là 5,2% · trên 250 là 5,7%. '+
+      'Riêng doanh thu từ <b>A6c</b> thấp hơn 1% so với bậc chuẩn. '+
+      '<b>Độ phủ Shop S.O</b> = shop có bán / shop đăng ký của cả xe — dưới '+NGUONG_PHU+'% phạt '+
+      M(PHAT)+'/xe, đúng 1 lần cho cả xe, trừ vào Lương Sale. '+
+      '<b>Lương Sale</b> = 2 lương cơ bản '+M(LUONG_CB)+' + tiền thưởng chung (đã trừ phạt). '+
+      '<b>LĐ</b> = 0,5% × Center. <b>%HR</b> = (LĐ + Lương Sale) / Center.</div>';
+
+    var canh=[];
+    if(K.thieu.length) canh.push('<b>'+esc(K.thieu.join(', '))+'</b> hiện chỉ thấy được số của một sale trong xe — '+
+      'bậc thưởng tra theo tổng cả xe nên cần đủ hai người mới ra đúng mức.');
+    if(K.chuaXep.length) canh.push('Sale <b>'+esc(K.chuaXep.join(', '))+'</b> có shop IND nhưng chưa được xếp vào xe nào — '+
+      'anh cho em biết thuộc xe mấy để em bổ sung.');
+    if(!K.coMoM) canh.push('Chưa đọc được doanh thu <b>A6c</b> nên đang tính đủ mức chuẩn cho toàn bộ doanh thu — '+
+      'tiền thưởng hiện <b>cao hơn</b> thực tế một chút.');
+    else canh.push('Doanh thu <b>A6c</b> lấy từ bảng top model theo tháng của kênh IND. '+
+      'Nếu A6c rơi khỏi top của tháng nào thì phần đó chưa được trừ 1% — so lại với DB TG khi thấy lệch.');
+    if(canh.length){
+      h+='<div class="note" style="border-left:3px solid var(--amber);padding-left:9px">'+
+         canh.map(function(x){ return '• '+x }).join('<br>')+'</div>';
+    }
+    box.innerHTML=h;
+  }
+
+  function boc(ten){
+    if(typeof window[ten]!=='function') return;
+    var goc=window[ten];
+    window[ten]=function(){
+      var kq=goc.apply(this,arguments);
+      try{ ve() }catch(e){ if(window.console) console.warn('[indxe] '+ten,e) }
+      return kq;
+    };
+  }
+  boc('renderOver'); boc('renderMonth');
+  function chay(){ try{ ve() }catch(e){ if(window.console) console.warn('[indxe]',e) } }
+  setTimeout(chay,1000); setTimeout(chay,2400); setInterval(chay,2700);
+  window.__indxe={ve:ve,tinh:tinh,XE:XE,tenGoi:tenGoi,laA6c:laA6c};
 })();
 </script>
 </html>
