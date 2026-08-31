@@ -913,17 +913,19 @@ body {
 #chart-ind-sellout-group, #chart-ind-sellin-group { height: 240px !important; max-height: 240px; }
 .mini-week-table-wrap { margin-top:10px; }
 /* ---- Tab của cụm "O.C / Normal theo tháng" ---- */
-.ind-oc-tabnav { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:2px 0 14px; }
-.ind-oc-tab { padding:7px 16px; border:1px solid var(--border-color); border-radius:16px; background:var(--bg-input); font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; color:var(--text-secondary); transition:background .15s ease, color .15s ease, border-color .15s ease; }
-.ind-oc-tab:hover { background:var(--bg-card-hover); border-color:rgba(34,229,160,0.3); }
-.ind-oc-tab.active { background:var(--oppo-green-dark); border-color:var(--oppo-green); color:#04140e; box-shadow:0 0 10px rgba(34,229,160,0.35); }
+.ind-oc-tabnav, .ind-ton-tabnav { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:2px 0 14px; }
+.ind-oc-tab, .ind-ton-tab { padding:7px 16px; border:1px solid var(--border-color); border-radius:16px; background:var(--bg-input); font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; color:var(--text-secondary); transition:background .15s ease, color .15s ease, border-color .15s ease; }
+.ind-oc-tab:hover, .ind-ton-tab:hover { background:var(--bg-card-hover); border-color:rgba(34,229,160,0.3); }
+.ind-oc-tab.active, .ind-ton-tab.active { background:var(--oppo-green-dark); border-color:var(--oppo-green); color:#04140e; box-shadow:0 0 10px rgba(34,229,160,0.35); }
+/* Số đại lý đi kèm tên Sale — nhạt hơn tên để tên vẫn là thứ đọc trước. */
+.ind-ton-tab .dem { font-weight:600; opacity:.82; margin-left:5px; font-size:11px; }
 .ind-oc-doc { margin-left:auto; padding:6px 12px; border:1px dashed var(--border-color); border-radius:14px; background:transparent; font-family:inherit; font-size:11.5px; font-weight:600; cursor:pointer; color:var(--text-secondary); }
 .ind-oc-doc:hover { color:var(--text-primary); border-color:var(--oppo-green); }
 .ind-oc-doc::before { content:"ⓘ "; }
 /* Thẻ con nằm trong thẻ mẹ rồi thì không cần viền/nền/đổ bóng chồng lên nhau nữa. */
 #ind-oc-cum .ind-oc-panel .chart-container { background:transparent; border:0; box-shadow:none; padding:0; }
 #ind-oc-cum .ind-oc-panel .chart-container:hover { box-shadow:none; border:0; }
-@media (max-width: 640px) { .ind-oc-tab { flex:1 1 auto; padding:7px 10px; } .ind-oc-doc { margin-left:0; } }
+@media (max-width: 640px) { .ind-oc-tab { flex:1 1 auto; padding:7px 10px; } .ind-oc-doc { margin-left:0; } .ind-ton-tab { padding:6px 11px; font-size:11.5px; } }
 .mini-week-table { border-collapse:collapse; width:100%; font-size:7.5px; table-layout:fixed; }
 .mini-week-table td { padding:2px 1px; text-align:center; border:1px solid var(--border-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text-primary); }
 .mini-week-table tr.mwt-week td { background:rgba(34,229,160,0.10); font-weight:700; color:var(--text-primary); }
@@ -2782,9 +2784,15 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header" style="margin-top:20px;">
             <div>
                 <h3>Tồn theo đại lý</h3>
-                <div class="chart-sub">Đại lý có nhiều chi nhánh được <b>gộp chung</b> vì sheet SELL IN ghi nhập theo công ty còn Sell Out ghi theo từng điểm bán. Bấm tên đại lý để mở chi tiết từng model.</div>
+                <div class="chart-sub">Bấm tên Sale để chỉ xem đại lý của Sale đó. Đại lý có nhiều chi nhánh được <b>gộp chung</b> vì sheet SELL IN ghi nhập theo công ty còn Sell Out ghi theo từng điểm bán. Bấm tên đại lý để mở chi tiết từng model.</div>
             </div>
         </div>
+        <!-- Tab theo Sale: 169 đại lý trong một bảng là quá dài để dò bằng mắt.
+             Anh Thái 29/08: "để cho các tab theo sale, bấm vào sale nào thì ra
+             tồn đại lý theo sale đó cho gọn bảng lại". Danh sách Sale dựng từ
+             chính dữ liệu nên Sale nghỉ/mới vào đều tự đúng. -->
+        <nav class="ind-ton-tabnav" id="ind-ton-dl-tabs"></nav>
+        <div class="chart-sub" id="ind-ton-dl-tomtat" style="margin:-6px 0 10px;"></div>
         <div class="table-scroll" style="max-height:none;">
             <table class="data-table" id="ind-ton-dl-table">
                 <thead><tr>
@@ -7151,6 +7159,11 @@ function tonKhoIndOTen(ten, dam) {
     return '<td title="' + escapeHtml(day) + '">' + (dam ? '<b>' + chu + '</b>' : chu) + '</td>';
 }
 
+/* Sale đang chọn ở bảng "Tồn theo đại lý". null = xem tất cả.
+   Để ngoài hàm vẽ để bấm Sale xong, đổi bộ lọc Tháng/Shop vẽ lại vẫn giữ nguyên
+   Sale đang xem — không bắt anh Thái bấm lại từ đầu. */
+let tonKhoIndSale = null;
+
 function computeIndTonKho() {
     const rows = DATA.sell_in_rows || [];
     const idToName = indStoreIdToName();
@@ -7353,8 +7366,51 @@ function renderIndTonKho() {
             + '<td class="num">' + (pct === null ? '-' : pct.toFixed(0) + '%') + '</td></tr>';
     }).join('') : '<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-secondary);">Không có model nào còn tồn (theo bộ lọc hiện tại).</td></tr>';
 
+    /* ---- TAB THEO SALE cho bảng "Tồn theo đại lý" ------------------------
+       169 đại lý trong một bảng thì không dò bằng mắt được. Bấm tên Sale là
+       bảng rút xuống còn đại lý của Sale đó.
+       Một đại lý nhiều chi nhánh có thể do NHIỀU Sale phụ trách -> nó xuất hiện
+       ở tab của từng người, đúng thực tế chứ không ép chia một người. */
+    const dsSale = [];
+    K.dsDaiLy.forEach(x => (x.sale.length ? x.sale : ['(Không rõ)']).forEach(s => {
+        if (dsSale.indexOf(s) < 0) dsSale.push(s);
+    }));
+    dsSale.sort((a, b) => shortSaleName(a).localeCompare(shortSaleName(b), 'vi'));
+    const cuaSale = (x, s) => (s === null) || (s === '(Không rõ)' ? !x.sale.length : x.sale.indexOf(s) >= 0);
+    // Sale đang chọn mà biến mất khỏi dữ liệu (đổi bộ lọc) thì quay về "Tất cả".
+    if (tonKhoIndSale !== null && dsSale.indexOf(tonKhoIndSale) < 0) tonKhoIndSale = null;
+
+    const tabs = document.getElementById('ind-ton-dl-tabs');
+    if (tabs) {
+        const oTab = (giaTri, nhan) => {
+            const n = K.dsDaiLy.filter(x => cuaSale(x, giaTri)).length;
+            return '<button type="button" class="ind-ton-tab' + (tonKhoIndSale === giaTri ? ' active' : '')
+                + '" data-sale="' + escapeHtml(giaTri === null ? '' : giaTri) + '">'
+                + escapeHtml(nhan) + '<span class="dem">' + n + '</span></button>';
+        };
+        tabs.innerHTML = oTab(null, 'Tất cả')
+            + dsSale.map(s => oTab(s, shortSaleName(s))).join('');
+        tabs.querySelectorAll('.ind-ton-tab').forEach(b => {
+            b.addEventListener('click', () => {
+                tonKhoIndSale = b.dataset.sale || null;
+                renderIndTonKho();
+            });
+        });
+    }
+
+    const dsHien = K.dsDaiLy.filter(x => cuaSale(x, tonKhoIndSale));
+    const tomTat = document.getElementById('ind-ton-dl-tomtat');
+    if (tomTat) {
+        const tonHien = dsHien.reduce((a, x) => a + x.ton, 0);
+        tomTat.innerHTML = tonKhoIndSale === null
+            ? ('Đang xem <b>tất cả ' + dsHien.length + '</b> đại lý · tồn <b>' + fmtInt(tonHien) + '</b> máy.')
+            : ('Sale <b>' + escapeHtml(shortSaleName(tonKhoIndSale)) + '</b>: <b>' + dsHien.length
+               + '</b> đại lý · tồn <b>' + fmtInt(tonHien) + '</b> máy. '
+               + '<span style="color:var(--text-secondary);">(3 ô số ở trên và bảng model vẫn là số của cả vùng.)</span>');
+    }
+
     // ---- bang theo dai ly
-    dlBody.innerHTML = K.dsDaiLy.length ? K.dsDaiLy.map((x, i) => {
+    dlBody.innerHTML = dsHien.length ? dsHien.map((x, i) => {
         const top = x.md.filter(r => r.ton > 0)[0];
         const mau = x.ton > 0 ? 'var(--ton-du)' : (x.ton < 0 ? 'var(--ton-am)' : 'var(--text-secondary)');
         const idCt = 'ind-ton-ct-' + i;
@@ -7384,7 +7440,10 @@ function renderIndTonKho() {
             + '<td class="num">' + fmtInt(x.ban) + '</td>'
             + '<td class="num" style="color:' + mau + '; font-weight:700;">' + fmtInt(x.ton) + '</td>'
             + '<td>' + (top ? (top.n + ' — ' + fmtInt(top.ton) + ' máy') : '-') + '</td></tr>' + ct;
-    }).join('') : '<tr><td colspan="8" style="text-align:center; padding:16px; color:var(--text-secondary);">Không có dữ liệu (theo bộ lọc hiện tại).</td></tr>';
+    }).join('') : '<tr><td colspan="8" style="text-align:center; padding:16px; color:var(--text-secondary);">'
+        + (tonKhoIndSale === null ? 'Không có dữ liệu (theo bộ lọc hiện tại).'
+            : 'Sale ' + escapeHtml(shortSaleName(tonKhoIndSale)) + ' chưa có đại lý nào ghép được sell-in.')
+        + '</td></tr>';
 
     dlBody.querySelectorAll('.ind-ton-dl-row').forEach(tr => {
         tr.addEventListener('click', () => {
@@ -13917,10 +13976,10 @@ body.zoom-on { overflow: hidden; }
 </script>
 
 
-<script src="scripts/demo-mau.js?v=202608301650"></script>
-<script src="scripts/demo-ve.js?v=202608301650"></script>
-<script src="scripts/demo-chart-shim.js?v=202608301650"></script>
-<script src="scripts/demo-bang.js?v=202608301650"></script>
-<script src="scripts/demo-bo-cuc.js?v=202608301650"></script>
-<script src="scripts/demo-sang.js?v=202608301650"></script>
+<script src="scripts/demo-mau.js?v=202608310015"></script>
+<script src="scripts/demo-ve.js?v=202608310015"></script>
+<script src="scripts/demo-chart-shim.js?v=202608310015"></script>
+<script src="scripts/demo-bang.js?v=202608310015"></script>
+<script src="scripts/demo-bo-cuc.js?v=202608310015"></script>
+<script src="scripts/demo-sang.js?v=202608310015"></script>
 </html>
