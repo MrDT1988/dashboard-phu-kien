@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.29';
+var APP_VER='2026-08-30.30';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6476,4 +6476,23 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   window.__sang={dat:dat,hienTai:hienTai};
 })();
 </script>
+<style id="app-css9">
+/* app-css9 (30/08): toast truoc gio khong he co CSS -> moi thong bao deu vo hinh. */
+.toast{position:fixed;left:12px;right:12px;bottom:calc(80px + env(safe-area-inset-bottom));
+  z-index:80;max-width:560px;margin:0 auto;background:var(--card2);color:var(--ink);
+  border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:0;transform:translateY(10px);pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease}
+.toast.on{opacity:1;transform:none;pointer-events:auto}
+.toast a{color:var(--green);font-weight:700}
+:root[data-theme="sang"] .toast{box-shadow:0 10px 30px rgba(20,27,36,.18)}
+@keyframes qxoay{to{transform:rotate(360deg)}}
+.btn.icon>span{display:inline-block}
+.btn.icon.spin>span{animation:qxoay .9s linear infinite}
+.btn:disabled{opacity:.55}
+.btn.icon:active{transform:scale(.92)}
+#sync,#nut-sang{width:42px;height:42px;padding:0;border-radius:11px;
+  display:inline-flex;align-items:center;justify-content:center}
+#sync>span,#nut-sang>span{font-size:19px;line-height:1}
+</style>
 </html>
