@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-31.1';
+var APP_VER='2026-08-31.2';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6761,6 +6761,290 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   function chay(){ try{ ve() }catch(e){ if(window.console) console.warn('[ind]',e) } }
   setTimeout(chay,700); setTimeout(chay,2000); setInterval(chay,2500);
   window.__ind={ve:ve,dem:dem,laOC:laOC};
+})();
+</script>
+<style id="app-css13">
+/* Cot dau dinh trai cua 3 bang IND moi */
+#ind-thang-b table th:first-child,#ind-thang-b table td:first-child,
+#ind-td-b table th:first-child,#ind-td-b table td:first-child{position:sticky;left:0;z-index:2;background:var(--card)}
+#ind-thang-b table th:first-child,#ind-td-b table th:first-child{z-index:3}
+#ind-td-b table td:nth-child(2){max-width:170px;overflow:hidden;text-overflow:ellipsis}
+#c-ind-canh .gt-row{display:flex;gap:8px;align-items:stretch;margin-bottom:7px}
+#c-ind-canh .gt-row>.al{flex:1 1 auto;min-width:0}
+</style>
+
+<script id="app-ind2">
+(function(){
+  // ==========================================================
+  // KENH IND — 3 phan con lai (anh Thai 31/08):
+  //   2. Chi tiet thang : sell out / sell in / shop co S.O / shop co S.I / sell in PK
+  //   3. Chi tiet shop  : nhom TRONG DIEM doanh thu > 50 trieu/thang
+  //   4. Canh bao       : shop chua nhap hang · shop chua co sell out so cung ky
+  // Tat ca chi hien khi dang xem kenh IND. Roi khoi IND thi go han khoi trang.
+  //
+  // Nguon: sh.m[i] = [may, doanh thu trieu] · sh.si[i] = [OPPO, PK, khac]
+  // ==========================================================
+  var NGUONG_TD = 50;   // trieu dong / thang -> shop trong diem
+  var GFORM='https://docs.google.com/forms/d/e/1FAIpQLScY0RRpM6nCiCKD_KfS5I_x4VCYCbJgpT43RRKKJmZkjrq7fA/viewform?usp=pp_url&entry.1084610876=';
+
+  function el(i){ return document.getElementById(i) }
+  function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
+  function so0(v){ return (typeof n0==='function')?n0(v):String(Math.round(v||0)) }
+  function tien(v){ return (typeof money==='function')?money(v):String(Math.round(v||0)) }
+  function laIND(){ return (typeof SEG!=='undefined')&&SEG==='IND' }
+  function chiSo(){ return (typeof MI==='number')?MI:0 }
+  function laOC(sh){
+    var t=String((sh&&(sh.lv||sh.size))||'').toUpperCase();
+    return t.indexOf('OPPO CLUB')>=0;
+  }
+  function may(sh,i){ var c=sh.m&&sh.m[i]; return c?(c[0]||0):0 }
+  function dt(sh,i){ var c=sh.m&&sh.m[i]; return c?(c[1]||0):0 }
+  function siO(sh,i){ if(!sh.si||!sh.si.length) return null; var c=sh.si[i]; return c?(c[0]||0):0 }
+  function siPK(sh,i){ if(!sh.si||!sh.si.length) return null; var c=sh.si[i]; return c?(c[1]||0):0 }
+  function pct(a,b){ return b?(a/b*100):0 }
+  function gtUrl(ten,ly){ return GFORM+encodeURIComponent(ly?(ten+' · '+ly):ten) }
+  // Ten diem ban IND thuong dai; cat phan dia chi phia sau cho de nhin
+  function tenNgan(s){
+    var t=String(s==null?'':s).trim();
+    var p=t.split(/\s+[-–]\s+/);
+    return (p.length>1?p.slice(0,2).join(' - '):t)||t;
+  }
+
+  function dsIND(){
+    var o=null; try{ o=(typeof scope==='function')?scope():null }catch(e){}
+    if(!o) return null;
+    var ds=(o.s||[]).filter(function(x){ return x&&x.ch2==='IND' });
+    return ds.length?ds:null;
+  }
+  function go(box,cha,neo){
+    if(!cha) return;
+    if(box.parentNode!==cha){
+      if(neo&&neo.parentNode===cha) cha.insertBefore(box,neo); else cha.appendChild(box);
+    }
+  }
+  function xoa(id){
+    var b=el(id); if(b&&b.parentNode) b.parentNode.removeChild(b);
+  }
+  function tao(id){
+    var b=el(id);
+    if(!b){ b=document.createElement('div'); b.className='card'; b.id=id }
+    return b;
+  }
+
+  // ---------- 2. CHI TIET THANG ----------
+  function veThang(ds){
+    var mp=el('v-month'); if(!mp) return;
+    var box=tao('c-ind-thang');
+    go(box,mp,mp.firstElementChild);
+    var M=D.months, coSi=ds.some(function(x){ return x.si&&x.si.length });
+    var h='<h2>📈 Chi tiết tháng — kênh IND</h2>'+
+      '<p class="sub">Bán ra, nhập vào và độ phủ của <b>'+so0(ds.length)+' điểm bán</b> theo từng tháng. '+
+      'Chênh dương nghĩa là tháng đó nhập nhiều hơn bán — hàng đang dồn ở đại lý.</p>';
+    h+='<div class="tvwrap" id="ind-thang-b"><table class="tv"><tr>'+
+      ['THÁNG','SELL OUT','SELL IN','CHÊNH','SHOP CÓ S.O','PHỦ S.O','SHOP CÓ S.I','PHỦ S.I','S.I PHỤ KIỆN','DOANH THU']
+        .map(function(x){ return '<th>'+esc(x)+'</th>' }).join('')+'</tr>';
+    var T={so:0,si:0,pk:0,dt:0};
+    for(var i=0;i<M.length;i++){
+      var so=0,sin=0,pk=0,tt=0,nSo=0,nSi=0,cS=false;
+      for(var j=0;j<ds.length;j++){
+        var sh=ds[j], u=may(sh,i);
+        so+=u; tt+=dt(sh,i); if(u>0) nSo++;
+        var v=siO(sh,i);
+        if(v!==null){ cS=true; sin+=v; if(v>0) nSi++; pk+=siPK(sh,i)||0 }
+      }
+      T.so+=so; T.si+=sin; T.pk+=pk; T.dt+=tt;
+      var ch=cS?(sin-so):null;
+      var laNay=(i===chiSo());
+      h+='<tr'+(laNay?' style="background:var(--card2)"':'')+'>';
+      h+='<td>'+(laNay?'<b>T'+M[i]+'</b>':'T'+M[i])+'</td>';
+      h+='<td>'+so0(so)+'</td>';
+      h+='<td>'+(cS?so0(sin):'—')+'</td>';
+      h+='<td>'+(ch===null?'—':('<b style="color:'+(ch>0?'var(--amber)':'var(--green)')+'">'+
+          (ch>0?'+':'')+so0(ch)+'</b>'))+'</td>';
+      h+='<td>'+so0(nSo)+'</td>';
+      h+='<td><b style="color:var(--c1)">'+pct(nSo,ds.length).toFixed(0)+'%</b></td>';
+      h+='<td>'+(cS?so0(nSi):'—')+'</td>';
+      h+='<td>'+(cS?('<b style="color:var(--c2)">'+pct(nSi,ds.length).toFixed(0)+'%</b>'):'—')+'</td>';
+      h+='<td>'+(cS?so0(pk):'—')+'</td>';
+      h+='<td>'+tien(tt)+'</td>';
+      h+='</tr>';
+    }
+    h+='<tr style="background:var(--card2)"><td><b>CẢ NĂM</b></td>'+
+       '<td><b>'+so0(T.so)+'</b></td>'+
+       '<td><b>'+(coSi?so0(T.si):'—')+'</b></td>'+
+       '<td><b>'+(coSi?((T.si-T.so>0?'+':'')+so0(T.si-T.so)):'—')+'</b></td>'+
+       '<td>—</td><td>—</td><td>—</td><td>—</td>'+
+       '<td><b>'+(coSi?so0(T.pk):'—')+'</b></td>'+
+       '<td><b>'+tien(T.dt)+'</b></td></tr>';
+    h+='</table></div>';
+    h+='<div class="note"><b>Phủ S.O</b> = số điểm bán được ít nhất 1 máy trong tháng, chia cho toàn bộ '+
+      so0(ds.length)+' điểm bán phụ trách. <b>Phủ S.I</b> tính y hệt nhưng đếm điểm bán có nhập hàng. '+
+      '<b>S.I phụ kiện</b> là số lượng phụ kiện nhập vào, tách riêng khỏi máy.</div>';
+    h+='<div class="note" style="border-left:3px solid var(--amber);padding-left:9px">'+
+      '<b>Chương trình tháng &amp; chương trình theo xe</b> — em chưa dựng vì chưa có luật tính. '+
+      'Anh cho em biết: đạt bao nhiêu máy (hoặc bao nhiêu doanh thu) thì được <b>1 xe</b>, '+
+      'tính theo <b>đại lý</b> hay theo <b>điểm bán</b>, và tính trong <b>1 tháng</b> hay <b>luỹ kế</b> — '+
+      'là em ráp vào đây được ngay.</div>';
+    box.innerHTML=h;
+  }
+
+  // ---------- 3. CHI TIET SHOP: nhom trong diem ----------
+  function veShop(ds){
+    var mp=el('v-find'); if(!mp) return;
+    var box=tao('c-ind-shop');
+    go(box,mp,mp.firstElementChild);
+    var i=chiSo(), thang=D.months[i];
+    var rows=ds.map(function(sh){
+      return {sh:sh, u:may(sh,i), r:dt(sh,i),
+              up:(i>0?may(sh,i-1):null), rp:(i>0?dt(sh,i-1):null),
+              si:siO(sh,i), oc:laOC(sh)};
+    });
+    var td=rows.filter(function(x){ return x.r>NGUONG_TD })
+               .sort(function(a,b){ return b.r-a.r });
+    var tongR=0; rows.forEach(function(x){ tongR+=x.r });
+    var rTd=0; td.forEach(function(x){ rTd+=x.r });
+
+    var h='<h2>⭐ Shop trọng điểm IND — tháng '+thang+'</h2>'+
+      '<p class="sub">Điểm bán có doanh thu <b>trên '+NGUONG_TD+' triệu</b> trong tháng. '+
+      'Đây là nhóm phải bám sát — mất một shop ở đây bằng mất cả chục shop nhỏ.</p>';
+    h+='<div class="ind-kpi">'+
+      '<div>Shop trọng điểm<b>'+so0(td.length)+'/'+so0(rows.length)+'</b></div>'+
+      '<div>Doanh thu nhóm này<b>'+tien(rTd)+'</b></div>'+
+      '<div>Chiếm của cả kênh<b>'+pct(rTd,tongR).toFixed(0)+'%</b></div>'+
+      '<div>Doanh thu TB/shop<b>'+(td.length?tien(rTd/td.length):'—')+'</b></div>'+
+      '</div>';
+
+    if(!td.length){
+      h+='<div class="empty" style="margin-top:14px">Tháng '+thang+' chưa có điểm bán nào vượt '+
+         NGUONG_TD+' triệu.</div>';
+      box.innerHTML=h; return;
+    }
+    h+='<div class="tvwrap" id="ind-td-b"><table class="tv"><tr>'+
+      ['#','ĐIỂM BÁN','NHÓM','MÁY','DOANH THU','SO THÁNG TRƯỚC','SELL IN','ĐƠN GIÁ TB']
+        .map(function(x){ return '<th>'+esc(x)+'</th>' }).join('')+'</tr>';
+    td.forEach(function(x,k){
+      var g=(x.rp!==null&&x.rp>0)?((x.r-x.rp)/x.rp*100):null;
+      h+='<tr>';
+      h+='<td>'+(k+1)+'</td>';
+      h+='<td>'+esc(tenNgan(x.sh.n))+'</td>';
+      h+='<td>'+(x.oc?'<b style="color:var(--c1)">O.C</b>':'<span style="color:var(--muted)">Normal</span>')+'</td>';
+      h+='<td>'+so0(x.u)+'</td>';
+      h+='<td><b>'+tien(x.r)+'</b></td>';
+      h+='<td>'+(g===null?'<small style="color:var(--muted)">mới</small>'
+            :('<b style="color:'+(g>=0?'var(--green)':'var(--red)')+'">'+(g>=0?'▲ +':'▼ ')+
+              g.toFixed(0)+'%</b>'))+'</td>';
+      h+='<td>'+(x.si===null?'—':(x.si>0?so0(x.si):'<b style="color:var(--red)">0</b>'))+'</td>';
+      h+='<td>'+(x.u?tien(Math.round(x.r/x.u*10)/10):'—')+'</td>';
+      h+='</tr>';
+    });
+    h+='</table></div>';
+    var chet=td.filter(function(x){ return x.si===0 });
+    h+='<div class="note">Ngưỡng trọng điểm đang để <b>'+NGUONG_TD+' triệu/tháng</b>. '+
+      (chet.length?('<b style="color:var(--red)">'+chet.length+' shop trọng điểm tháng này chưa nhập hàng</b> — '+
+        'đây là nhóm phải gọi trước tiên, vì bán tốt mà không nhập là sắp đứt hàng. '):'')+
+      'Cột “so tháng trước” tính trên doanh thu.</div>';
+    box.innerHTML=h;
+  }
+
+  // ---------- 4. CANH BAO ----------
+  function dong(ten,ly,mo,pill,mau,ic){
+    return '<div class="gt-row">'+
+      '<button class="al" data-tenshop="'+esc(ten)+'">'+
+        '<span class="ic" style="background:color-mix(in srgb, var('+mau+') 16%, transparent);color:var('+mau+')">'+ic+'</span>'+
+        '<span class="bd"><span class="t">'+esc(tenNgan(ten))+'</span>'+
+        '<span class="d">'+mo+'</span></span>'+
+        '<span class="pill" style="background:color-mix(in srgb, var('+mau+') 14%, transparent);color:var('+mau+')">'+esc(pill)+'</span>'+
+      '</button>'+
+      '<a class="gt-btn" target="_blank" rel="noopener" href="'+gtUrl(ten,ly)+'">Giải trình ↗</a>'+
+      '</div>';
+  }
+  function veCanh(ds){
+    var sec=el('v-alert'); if(!sec) return;
+    var box=tao('c-ind-canh');
+    go(box,sec,sec.firstElementChild);
+    var i=chiSo(), thang=D.months[i];
+    var coSi=ds.some(function(x){ return x.si&&x.si.length });
+
+    // (a) chua nhap hang thang nay nhung van dang ban
+    var chuaNhap=[];
+    if(coSi){
+      ds.forEach(function(sh){
+        var v=siO(sh,i); if(v===null||v>0) return;
+        var u=may(sh,i), r=dt(sh,i);
+        if(u<=0) return;                     // khong ban thi de o nhom (b)
+        chuaNhap.push({sh:sh,u:u,r:r});
+      });
+      chuaNhap.sort(function(a,b){ return b.r-a.r });
+    }
+    // (b) chua co sell out thang nay ma cung ky thang truoc van ban duoc
+    var chuaBan=[];
+    if(i>0){
+      ds.forEach(function(sh){
+        if(may(sh,i)>0) return;
+        var p=may(sh,i-1); if(p<=0) return;
+        chuaBan.push({sh:sh,p:p,rp:dt(sh,i-1)});
+      });
+      chuaBan.sort(function(a,b){ return b.p-a.p });
+    }
+
+    var h='<h2>🚩 Cảnh báo kênh IND — tháng '+thang+'</h2>';
+    if(!chuaNhap.length&&!chuaBan.length){
+      h+='<p class="sub">Tháng '+thang+' chưa có điểm bán nào rơi vào hai trường hợp cần giải trình.</p>';
+      box.innerHTML=h; return;
+    }
+    h+='<p class="sub"><b style="color:var(--red)">'+(chuaNhap.length+chuaBan.length)+' điểm bán</b> cần giải trình. '+
+      'Bấm <b>Giải trình</b> để mở biểu mẫu đã điền sẵn tên shop.</p>';
+
+    if(chuaNhap.length){
+      h+='<div class="subhead" style="margin-top:12px;color:var(--red)">Chưa nhập hàng tháng '+thang+
+         ' — '+chuaNhap.length+' shop</div><div id="ind-canh-1">';
+      chuaNhap.forEach(function(x){
+        h+=dong(x.sh.n, x.sh.__sale||'',
+          'Đang bán <b>'+so0(x.u)+' máy</b> ('+tien(x.r)+') nhưng <b>chưa nhập máy nào</b> trong tháng — sắp đứt hàng',
+          'S.I = 0','--red','📦');
+      });
+      h+='</div>';
+    }
+    if(chuaBan.length){
+      h+='<div class="subhead" style="margin-top:15px;color:var(--amber)">Chưa có sell out, cùng kỳ tháng trước vẫn bán — '+
+         chuaBan.length+' shop</div><div id="ind-canh-2">';
+      chuaBan.forEach(function(x){
+        h+=dong(x.sh.n, x.sh.__sale||'',
+          'Tháng trước bán <b>'+so0(x.p)+' máy</b> ('+tien(x.rp)+'), tháng này <b>chưa bán được máy nào</b>',
+          '0 máy','--amber','⛔');
+      });
+      h+='</div>';
+    }
+    h+='<div class="note">Hai rule này chỉ chạy trên kênh IND. '+
+      '<b>Chưa nhập hàng</b> lấy từ sheet SELL IN nhóm OPPO. '+
+      '<b>Chưa có sell out</b> so đúng với chính shop đó ở tháng liền trước, '+
+      'shop tháng trước cũng không bán thì không tính là bất thường.</div>';
+    box.innerHTML=h;
+  }
+
+  function ve(){
+    if(!laIND()){
+      xoa('c-ind-thang'); xoa('c-ind-shop'); xoa('c-ind-canh');
+      return;
+    }
+    var ds=dsIND();
+    if(!ds){ xoa('c-ind-thang'); xoa('c-ind-shop'); xoa('c-ind-canh'); return }
+    veThang(ds); veShop(ds); veCanh(ds);
+  }
+
+  function boc(ten){
+    if(typeof window[ten]!=='function') return;
+    var goc=window[ten];
+    window[ten]=function(){
+      var kq=goc.apply(this,arguments);
+      try{ ve() }catch(e){ if(window.console) console.warn('[ind2] '+ten,e) }
+      return kq;
+    };
+  }
+  boc('renderOver'); boc('renderMonth'); boc('renderAlerts'); boc('drawFind');
+  function chay(){ try{ ve() }catch(e){ if(window.console) console.warn('[ind2]',e) } }
+  setTimeout(chay,900); setTimeout(chay,2200); setInterval(chay,2600);
+  window.__ind2={ve:ve,nguong:NGUONG_TD};
 })();
 </script>
 </html>
