@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.28';
+var APP_VER='2026-08-30.29';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6410,6 +6410,11 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
 :root[data-theme="sang"] #nd-sel,
 :root[data-theme="sang"] .filt select{background:var(--card2);color:var(--ink)}
 :root[data-theme="sang"] #nut-sang span{font-size:14px}
+/* Vien ngan nhom cua bang Chi tiet shop ghi cung mau trang -> tren nen sang phai doi */
+:root[data-theme="sang"] [style*="border-left:2px solid rgba(255,255,255"]{border-left-color:#c6cedb !important}
+/* Vien dinh cot dau bang cung ghi cung mau trang */
+:root[data-theme="sang"] table.tv th:first-child,
+:root[data-theme="sang"] table.tv td:first-child{box-shadow:1px 0 0 rgba(0,0,0,.10)}
 /* Bang mau bieu do thi phan ghi cung trong the SVG — doi cho ro tren nen sang.
    Nang nhat la #EDEFF2 (gan trang), tren nen sang gan nhu vo hinh. */
 :root[data-theme="sang"] svg [fill="#EDEFF2"]{fill:#a7b1bf}
