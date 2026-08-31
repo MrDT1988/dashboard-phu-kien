@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.32';
+var APP_VER='2026-08-30.33';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6235,7 +6235,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
       h+='<td>'+tien(x.dt)+'</td>';
       h+='<td><b style="color:var(--green)">'+dong(x.ck)+'</b></td>';
       h+='<td>'+(x.coBM
-        ?('<b style="color:var(--green)">'+dong(x.bm)+'</b><small>'+so0(x.m1)+' máy 10–15M · '+so0(x.m2)+' máy ≥15M</small>')
+        ?('<b style="color:var(--green)">'+dong(x.bm)+'</b><small>'+so0(x.m1)+' máy ×80.000đ · '+so0(x.m2)+' máy ×120.000đ'+'</small>')
         :'<span style="color:var(--muted)">chờ số</span>')+'</td>';
       h+='<td><b>'+dong(x.ck+(x.coBM?x.bm:0))+'</b></td>';
       h+='</tr>';
