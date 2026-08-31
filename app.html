@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-30.27';
+var APP_VER='2026-08-30.28';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6410,6 +6410,24 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
 :root[data-theme="sang"] #nd-sel,
 :root[data-theme="sang"] .filt select{background:var(--card2);color:var(--ink)}
 :root[data-theme="sang"] #nut-sang span{font-size:14px}
+/* Bang mau bieu do thi phan ghi cung trong the SVG — doi cho ro tren nen sang.
+   Nang nhat la #EDEFF2 (gan trang), tren nen sang gan nhu vo hinh. */
+:root[data-theme="sang"] svg [fill="#EDEFF2"]{fill:#a7b1bf}
+:root[data-theme="sang"] svg [stroke="#EDEFF2"]{stroke:#a7b1bf}
+:root[data-theme="sang"] svg [fill="#2AD998"]{fill:#0a9463}
+:root[data-theme="sang"] svg [stroke="#2AD998"]{stroke:#0a9463}
+:root[data-theme="sang"] svg [fill="#6E8CF0"]{fill:#3f66d0}
+:root[data-theme="sang"] svg [stroke="#6E8CF0"]{stroke:#3f66d0}
+:root[data-theme="sang"] svg [fill="#8B98A9"]{fill:#5f6b7c}
+:root[data-theme="sang"] svg [stroke="#8B98A9"]{stroke:#5f6b7c}
+:root[data-theme="sang"] svg [fill="#FF9147"]{fill:#dd6d1c}
+:root[data-theme="sang"] svg [stroke="#FF9147"]{stroke:#dd6d1c}
+/* O mau trong hang chu giai dat mau bang style noi dong */
+:root[data-theme="sang"] [style*="EDEFF2"]{background:#a7b1bf !important}
+:root[data-theme="sang"] [style*="2AD998"]{background:#0a9463 !important}
+:root[data-theme="sang"] [style*="6E8CF0"]{background:#3f66d0 !important}
+:root[data-theme="sang"] [style*="8B98A9"]{background:#5f6b7c !important}
+:root[data-theme="sang"] [style*="FF9147"]{background:#dd6d1c !important}
 </style>
 <script id="app-sang">
 (function(){
