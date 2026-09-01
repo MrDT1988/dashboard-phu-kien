@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-09-01.1';
+var APP_VER='2026-09-01.2';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5039,7 +5039,8 @@ setInterval(function(){
       }
 
       // 1. giam lien tuc 3 ngay
-      if(lien<nguongDut&&d>=4&&v(d-3)>=2&&v(d)<v(d-1)&&v(d-1)<v(d-2)&&v(d-2)<v(d-3)){
+      // GIU Y NHU CU: chan trung van la lien<3, khong doi theo nguong moi
+      if(lien<3&&d>=4&&v(d-3)>=2&&v(d)<v(d-1)&&v(d-1)<v(d-2)&&v(d-2)<v(d-3)){
         ly.push(['--red','Giảm liên tục 3 ngày',
           so0(v(d-3))+' → '+so0(v(d-2))+' → '+so0(v(d-1))+' → <b>'+so0(v(d))+'</b> máy']);
         nang+=3;
@@ -5049,7 +5050,7 @@ setInterval(function(){
       var tong=0,soN=0;
       for(var k=1;k<=d;k++){ if(tt(k)>0){ tong+=v(k); soN++ } }
       var tb=soN?(tong/soN):0;
-      if(lien<nguongDut&&tb>=2&&v(d)<tb*0.85){
+      if(lien<3&&tb>=2&&v(d)<tb*0.85){
         ly.push(['--amber','Rớt sâu so với bình quân',
           'Hôm nay '+so0(v(d))+' máy · bình quân '+tb.toFixed(1)+' máy/ngày ('+
           Math.round((1-v(d)/tb)*100)+'% dưới mức)']);
@@ -6054,10 +6055,11 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
         return b.mat-a.mat;
       });
       // Shop DUT SELL OUT luon phai giai trinh — khong bi tran N cat.
-      // Tran N chi con ap cho cac rule mem (giam sau, du rule).
+      // Cac rule cu VAN GIU NGUYEN tran N=3 shop nang nhat; shop dut la CONG THEM,
+      // khong chiem cho cua 3 shop do (anh Thai 01/09: giu rule cu, chi bo sung).
       var bat=[], phu=[];
       nang.forEach(function(x){ (x.dut?bat:phu).push(x) });
-      return bat.concat(phu.slice(0,Math.max(0,N-bat.length))).map(function(x){ return x.n });
+      return bat.concat(phu.slice(0,N)).map(function(x){ return x.n });
     }catch(e){ return [] }
   }
 
@@ -6143,9 +6145,10 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     if(note) note.innerHTML='<b>Đứt sell out là phải giải trình — không có trần.</b> '+
       'Shop <b>size S/A/B</b> (có PG OPPO) đứt từ <b>'+NGAY_SAB+' ngày</b>; '+
       'shop <b>size C/D</b> đứt từ <b>'+NGAY_KHAC+' ngày</b>. Chuỗi đứt tính nối sang cả tháng trước.<br>'+
-      'Các lý do còn lại — <b>giảm từ '+GIAM_SAU+'% so cùng kỳ</b> (nền cùng kỳ ≥ '+NEN_MIN+' máy) '+
-      'hoặc <b>dính từ '+SO_RULE+' rule cùng lúc</b> — vẫn giữ trần <b>'+N+' shop nặng nhất/ngày</b> '+
-      'để không gọi tên tràn lan.<br>'+
+      '<b>Bốn rule cũ giữ nguyên</b> — giảm liên tục 3 ngày · rớt hơn 15% so bình quân shop · '+
+      'giảm hơn 20% so cùng kỳ · và mức nặng <b>giảm từ '+GIAM_SAU+'% so cùng kỳ</b> (nền cùng kỳ ≥ '+NEN_MIN+' máy) hoặc <b>dính từ '+SO_RULE+' rule cùng lúc</b>, '+
+      'vẫn lấy <b>'+N+' shop nặng nhất/ngày</b> như trước. Shop đứt sell out là <b>cộng thêm</b> vào danh sách, '+
+      'không chiếm chỗ của '+N+' shop đó.<br>'+
       'Shop chưa tới ngưỡng nằm ở thẻ <b>Shop có vấn đề cần theo dõi</b> bên dưới.';
 
     var m=document.createElement('span');
