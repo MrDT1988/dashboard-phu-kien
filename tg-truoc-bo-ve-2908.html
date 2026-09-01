@@ -1352,6 +1352,37 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 /* Chật quá thì cho cuộn ngang, đừng bóp chữ nhỏ đến mức không đọc nổi. */
 .mini-week-table-wrap { overflow-x:auto; }
 
+/* ================= BIỂU ĐỒ TO HƠN — TAB TỔNG QUAN & CHI TIẾT IND ===========
+   Anh Thái 29/08: "làm các chart lớn hơn để note số trong cột".
+   Số trong cột KHÔNG phải bật/tắt được — bản vẽ chỉ ghi số vào mảnh nào CAO
+   HƠN 17px, thấp hơn thì chữ đè lên nhau không đọc nổi. Nên muốn thấy nhiều số
+   hơn thì cách duy nhất là cho biểu đồ cao lên: mảnh cao lên theo, số tự hiện.
+   Đo trên số thật: 320 -> 400px làm mảnh nhỏ nhất của cột T8 từ 14px lên 18px,
+   tức là vừa đủ ngưỡng ghi số.
+   Chỉ áp cho HAI tab anh Thái duyệt trước; MWG/KA giữ nguyên chờ duyệt xong. */
+/* Phải đặt HEIGHT thật, không phải max-height: Chart.js tự tính chiều cao thẻ
+   vẽ theo thẻ cha, max-height chỉ CHẶN TRẦN chứ không đẩy nó cao lên. Đo 29/08:
+   để max-height 400 mà "Reno & Find theo tháng" vẫn chỉ cao 172px, "Sell Out
+   O.C/Normal" 240px — tức là chưa cao thêm được chút nào.
+   Dùng !important vì Chart.js ghi thẳng style.height vào thẻ. Không sao: thẻ vẽ
+   của Chart.js đã trong suốt, cái nhìn thấy là lớp phủ SVG vẽ theo đúng khổ này.
+   Biểu đồ nào vẽ ra ngắn hơn khổ (vòng tròn, thanh ngang) thì coKhung() tự co
+   khung lại, không để lại khoảng trắng. */
+#panel-overview .chart-container canvas,
+#panel-ind .chart-container canvas { height: 400px !important; max-height: 400px; }
+#panel-overview .chart-container.chart-tall canvas,
+#panel-ind .chart-container.chart-tall canvas { height: 460px !important; max-height: 460px; }
+
+/* ---- GẤP PHẦN DIỄN GIẢI DÀI SAU NÚT "CÁCH ĐỌC" ----
+   Anh Thái 29/08: "giải thích bên dưới chỉ giải thích những cái chưa có".
+   Mỗi biểu đồ đang kèm 2-5 dòng chữ đặc; trên điện thoại chữ choán chỗ hơn cả
+   biểu đồ. Mặc định gấp hết lại, cần thì bấm mở ra. */
+.dm-hang-doc { display:flex; justify-content:flex-end; margin:-4px 0 8px; }
+.dm-nut-doc { padding:5px 12px; border:1px dashed var(--border-color); border-radius:14px; background:transparent; font-family:inherit; font-size:11.5px; font-weight:600; cursor:pointer; color:var(--text-secondary); }
+.dm-nut-doc:hover { color:var(--text-primary); border-color:var(--oppo-green); }
+.dm-nut-doc::before { content:"\2139 "; }
+.dm-gap-doc .chart-sub { display:none !important; }
+
 /* ---- BỎ HẲN DẤU SAO / TÔ VÀNG CỘT THÁNG HIỆN TẠI ----
    Anh Thái 29/08: "bỏ toàn bộ các ngôi sao highlight tháng hiện tại đi, nhìn
    rối quá, trả về bình thường cho tối giản". Có tới HAI cơ chế cùng đánh dấu
@@ -1404,6 +1435,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 
 <div class="db-tg-panel" id="panel-overview">
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Overview TG</h2>
+<div class="dm-hang-doc"><button type="button" class="dm-nut-doc" data-vung="panel-overview" aria-expanded="false">Cách đọc</button></div>
+
 
     <div class="chart-sub" style="margin-bottom:10px;">4 thẻ dưới đây mặc định là số liệu <b>tháng gần nhất có dữ liệu</b>, kèm so sánh với tháng liền trước (MoM) - riêng tháng đang xem nếu <b>chưa đủ dữ liệu cả tháng</b> (đang chốt giữa tháng) thì tự so <b>cùng kỳ ngày</b> với tháng trước thay vì so cả tháng. Có thể đổi Tháng/Kênh/Shop/Sale bằng bộ lọc bên dưới. Sheet nguồn hiện chỉ có dữ liệu từ T1/2026 nên chưa so được cùng kỳ năm trước (YoY) / lũy kế năm — sẽ bổ sung khi có đủ dữ liệu 2025.</div>
     <div class="filter-bar" style="margin-bottom:14px;">
@@ -1485,17 +1518,11 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <h3>Doanh số theo kênh theo tháng</h3>
             <div class="chart-sub">Số máy Sellout — số thực, không quy đổi %.</div>
             <canvas id="chart-channel-month-units"></canvas>
-            <div class="mini-month-table-wrap">
-                <table class="mini-month-table" id="mini-table-units"></table>
-            </div>
         </div>
         <div class="chart-container chart-tall">
             <h3>Doanh thu theo kênh theo tháng</h3>
             <div class="chart-sub">Đơn vị: đồng — số thực, không quy đổi %.</div>
             <canvas id="chart-channel-month-revenue"></canvas>
-            <div class="mini-month-table-wrap">
-                <table class="mini-month-table" id="mini-table-revenue"></table>
-            </div>
         </div>
     </section>
 
@@ -2502,6 +2529,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 </div>
 <div class="db-tg-panel" id="panel-ind" hidden>
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Chi tiết Kênh IND (OPPO Club)</h2>
+<div class="dm-hang-doc"><button type="button" class="dm-nut-doc" data-vung="panel-ind" aria-expanded="false">Cách đọc</button></div>
+
 
     <h2 class="part-title" style="margin:4px 0 14px; padding-left:15px; position:relative;"><span style="position:absolute; left:0; top:0; bottom:0; width:5px; border-radius:3px; background:#64748b;"></span>Phần 1 — Overview IND<span class="part-sub">Bức tranh chung: KPI tháng, theo tuần, theo nhóm O.C/Normal, theo Sale, theo Shop</span></h2>
 
@@ -4700,7 +4729,8 @@ function renderWeeklyRevenueChart() {
         const colgroup = '<colgroup><col style="width:55px;">' + ALL_2026_WEEKS.map(()=>'<col>').join('') + '</colgroup>';
         const weekRow = '<tr class="mwt-week"><td class="mwt-label">Tuần</td>' + labels.map(l => `<td>${l}</td>`).join('') + '</tr>';
         const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
-        const totalRow = '<tr class="mwt-value" style="font-weight:800;"><td class="mwt-label">TỔNG</td>' + totalByWeek.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
+        // Dòng TỔNG bỏ đi: biểu đồ đã ghi tổng ngay trên đỉnh từng cột tuần.
+        const totalRow = '';
         // DT: đơn vị tỷ đồng, không ghi đơn vị trong từng ô (đã ghi chú ở tiêu đề phía trên biểu đồ).
         const dtRow = '<tr class="mwt-value" style="border-top:2px solid rgba(255,255,255,0.15);"><td class="mwt-label">DT</td>' + revByWeek.map(v => `<td>${v ? (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}) : '-'}</td>`).join('') + '</tr>';
         tbl.innerHTML = colgroup + weekRow
@@ -7819,12 +7849,15 @@ function renderIndSelloutMiniTable() {
     const avgShopCount = activeMonths.length ? Math.round(activeMonths.reduce((s,m) => s + shopsByMonth[m].size, 0) / activeMonths.length) : 0;
     const headRow = '<tr class="mwt-week"><td class="mwt-label"></td><td>2026</td>' + months.map(m => `<td>T${m}</td>`).join('') + '</tr>';
     const fmtVndBil = v => (v / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+    /* CHỈ GIỮ DÒNG MÀ BIỂU ĐỒ KHÔNG VẼ.
+       Anh Thái 29/08: "bỏ luôn bảng mini". Bỏ sạch thì mất số thật — nên bỏ
+       đúng phần THỪA: ba dòng O.C / Normal / Tổng biểu đồ đã ghi sẵn trong cột
+       và trên đỉnh cột rồi, để lại chỉ tổ rối. Hai dòng Shop S.O và D.Thu thì
+       KHÔNG có ở đâu khác, phải giữ. Bảng 5 dòng còn 2 dòng. */
     tbl.innerHTML = headRow
         + miniSummaryRowHtml('Shop S.O', avgShopCount, shopCells, fmtInt)
-        + miniSummaryRowHtml('O.C', ocCells.reduce((a,b)=>a+b,0), ocCells, fmtInt)
-        + miniSummaryRowHtml('Normal', normalCells.reduce((a,b)=>a+b,0), normalCells, fmtInt)
-        + miniSummaryRowHtml('Tổng', totalSoCells.reduce((a,b)=>a+b,0), totalSoCells, fmtInt)
         + miniSummaryRowHtml('D.Thu', revCells.reduce((a,b)=>a+b,0), revCells, fmtVndBil);
+    void totalSoCells; void ocCells; void normalCells;   // biểu đồ đã vẽ
 }
 function renderIndSellInMiniTable() {
     const { months, shopsByMonth, ocByMonth, normalByMonth, oppoByMonth, pkByMonth } = computeIndSellInMiniSummary();
@@ -7843,14 +7876,16 @@ function renderIndSellInMiniTable() {
     const avgShopCount = activeMonths.length ? Math.round(activeMonths.reduce((s,m) => s + shopsByMonth[m].size, 0) / activeMonths.length) : 0;
     const headRow = '<tr class="mwt-week"><td class="mwt-label"></td><td>2026</td>' + months.map(m => `<td>T${m}</td>`).join('') + '</tr>';
     const fmtVndBil = v => (v / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+    /* Chỉ giữ dòng biểu đồ KHÔNG vẽ — xem ghi chú ở bảng Sell Out phía trên.
+       O.C / Normal đã nằm trong cột. "Tổng OPPO" khác với O.C+Normal (nó tính
+       trên TOÀN BỘ shop, không tách nhóm) nên vẫn phải giữ. */
     tbl.innerHTML = headRow
         + miniSummaryRowHtml('Shop S.I', avgShopCount, shopCells, fmtInt)
-        + miniSummaryRowHtml('O.C', ocCells.reduce((a,b)=>a+b,0), ocCells, fmtInt)
-        + miniSummaryRowHtml('Normal', normalCells.reduce((a,b)=>a+b,0), normalCells, fmtInt)
         + miniSummaryRowHtml('Tổng OPPO', oppoCells.reduce((a,b)=>a+b,0), oppoCells, fmtInt)
         + miniSummaryRowHtml('Tổng PK', pkCells.reduce((a,b)=>a+b,0), pkCells, fmtInt)
         // D.Thu chỉ có của OPPO (sheet SELL IN không có đơn giá PK nên không tính được doanh thu PK).
         + miniSummaryRowHtml('D.Thu', revCells.reduce((a,b)=>a+b,0), revCells, fmtVndBil);
+    void ocCells; void normalCells;   // biểu đồ đã vẽ
 }
 // "Doanh số theo tuần — Cả năm 2026" RIÊNG cho kênh IND, tách O.C/Normal (thay cho "Bộ lọc chung —
 // Chi tiết IND" đã bỏ) - dùng lại ind_daily_by_date (đã có sẵn theo Shop + theo ngày, phủ đủ năm) +
@@ -7937,7 +7972,8 @@ function renderIndWeeklyChart() {
         const colgroup = '<colgroup><col style="width:55px;">' + ALL_2026_WEEKS.map(() => '<col>').join('') + '</colgroup>';
         const weekRow = '<tr class="mwt-week"><td class="mwt-label">Tuần</td>' + labels.map(l => `<td>${l}</td>`).join('') + '</tr>';
         const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
-        const totalRow = '<tr class="mwt-value" style="font-weight:800;"><td class="mwt-label">TỔNG</td>' + totalArr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
+        // Dòng TỔNG bỏ đi: biểu đồ đã ghi tổng ngay trên đỉnh từng cột tuần.
+        const totalRow = '';
         // DT: đơn vị tỷ đồng (B), giống hàng DT ở "Doanh số theo tuần" bên Tổng quan.
         const dtRow = '<tr class="mwt-value" style="border-top:2px solid rgba(255,255,255,0.15);"><td class="mwt-label">DT</td>' + dtData.map(v => `<td>${v ? (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}) : '-'}</td>`).join('') + '</tr>';
         tbl.innerHTML = colgroup + weekRow + rowHtml('O.C', ocData) + rowHtml('Normal', normalData) + totalRow + dtRow;
@@ -7979,6 +8015,37 @@ document.querySelectorAll('.ind-sale-metric-btn:not(.ka-market-share-metric-btn)
     });
 });
 refreshIndCluster();
+
+/* ---- Nút "Cách đọc" cho cả một tab -----------------------------------------
+   Gấp toàn bộ đoạn diễn giải dài trong tab lại; bấm là mở ra hết. Mặc định GẤP:
+   anh Thái xem hằng ngày, đọc thuộc rồi, chỉ người mới mới cần đọc.
+   Nhớ lựa chọn trong máy nên mở ra một lần là lần sau vào vẫn mở. */
+(function () {
+    var KHO = 'dbtg-gap-cach-doc';
+    function dat(vung, gap) {
+        var el = document.getElementById(vung);
+        if (!el) return;
+        el.classList.toggle('dm-gap-doc', gap);
+        var nut = document.querySelector('.dm-nut-doc[data-vung="' + vung + '"]');
+        if (nut) {
+            nut.setAttribute('aria-expanded', gap ? 'false' : 'true');
+            nut.textContent = gap ? 'Cách đọc' : 'Ẩn cách đọc';
+        }
+    }
+    var gapSan = true;
+    try { gapSan = localStorage.getItem(KHO) !== 'mo'; } catch (e) {}
+    document.querySelectorAll('.dm-nut-doc').forEach(function (nut) {
+        var vung = nut.dataset.vung;
+        dat(vung, gapSan);
+        nut.addEventListener('click', function () {
+            var dangGap = document.getElementById(vung).classList.contains('dm-gap-doc');
+            dat(vung, !dangGap);
+            try { localStorage.setItem(KHO, dangGap ? 'mo' : 'gap'); } catch (e) {}
+            // Gấp/mở làm đổi chiều cao thẻ -> đánh thức biểu đồ vẽ lại cho đúng khổ.
+            window.dispatchEvent(new Event('resize'));
+        });
+    });
+})();
 
 /* ---- Tab của cụm "O.C / Normal theo tháng" -------------------------------
    Biểu đồ nằm trong tab ĐANG ẨN thì Chart.js đo bề ngang ra 0 và ghi cứng
@@ -8637,7 +8704,8 @@ function renderKaWeeklyChart() {
         const colgroup = '<colgroup><col style="width:55px;">' + ALL_2026_WEEKS.map(() => '<col>').join('') + '</colgroup>';
         const weekRow = '<tr class="mwt-week"><td class="mwt-label">Tuần</td>' + labels.map(l => `<td>${l}</td>`).join('') + '</tr>';
         const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
-        const totalRow = '<tr class="mwt-value" style="font-weight:800;"><td class="mwt-label">TỔNG</td>' + totalByWeek.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
+        // Dòng TỔNG bỏ đi: biểu đồ đã ghi tổng ngay trên đỉnh từng cột tuần.
+        const totalRow = '';
         const dtArr = ALL_2026_WEEKS.map(wk => dtByWeek[wk]);
         const dtRow = '<tr class="mwt-value" style="border-top:2px solid rgba(255,255,255,0.15);"><td class="mwt-label">DT</td>' + dtArr.map(v => `<td>${v ? (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}) : '-'}</td>`).join('') + '</tr>';
         tbl.innerHTML = colgroup + weekRow + subs.map(s => rowHtml(s, ALL_2026_WEEKS.map(wk => (bySub[s]&&bySub[s][wk])||0))).join('') + totalRow + dtRow;

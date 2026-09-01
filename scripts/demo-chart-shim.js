@@ -474,8 +474,22 @@
        DB TG khong nhat quan. */
     var lonNhat = Math.max.apply(null, tongC.concat([0]));
     var canRutGon = lonNhat >= 1e6;
+    /* % SO VOI CO T TRUOC, ghi thang tren dinh cot.
+       Truoc day con so nay chi nam o dong "So thang truoc" cua bang mini ben
+       duoi — ma bang mini thi lap lai y het cai cot nen anh Thai bao bo. Dua len
+       dinh cot thi bo duoc ca cai bang ma van con so.
+       CHI cho bieu do THEO THANG: theo ngay/theo tuan thi 53 cot, ghi vao la
+       dac kin chu; va bieu do 100% thi % tang truong khong co nghia. */
+    var tang = null;
+    if (!laPT && nhan.length <= 14 && /^\s*T?\d{1,2}\s*$/.test(String(nhan[0] || ''))) {
+      tang = tongC.map(function (v, i) {
+        if (!i || !tongC[i - 1] || !v) return null;
+        return (v - tongC[i - 1]) / tongC[i - 1] * 100;
+      });
+      if (tang.filter(function (x) { return x != null; }).length < 2) tang = null;
+    }
     window.DMV.veChong(hop.__ve, nhan, sr, {
-      W: W, H: Hv, duong: duong, rutGon: canRutGon,
+      W: W, H: Hv, duong: duong, rutGon: canRutGon, tang: tang,
       fx: nhan.length > 20 ? 7 : (nhan.length > 12 ? 9.5 : 11),
       dec: laPT ? 1 : (tongC.some(function (t) { return t > 0 && t < 60; }) ? 1 : 0),
       dv: laPT ? '%' : '',

@@ -177,7 +177,13 @@
     var tong = nhan.map(function (_, i) {
       return series.reduce(function (a, s) { return a + (s.v[i] || 0); }, 0);
     });
-    var mx = Math.max.apply(null, tong) || 1, top = mx * 1.14;
+    /* opt.tang = mảng % tăng/giảm so với cột trước, ghi ngay trên đỉnh cột.
+       Trước đây con số này chỉ nằm ở dòng "So tháng trước" của bảng mini bên
+       dưới — mà bảng mini thì lặp lại y hệt cột nên anh Thái bảo bỏ. Đưa lên
+       đỉnh cột thì liếc một cái là thấy tháng nào lên tháng nào xuống, và bỏ
+       được cả cái bảng. Cần thêm chỗ trống phía trên nên nới trần lên 1,22. */
+    var coTang = !!(opt.tang && opt.tang.length) && nhan.length <= 20;
+    var mx = Math.max.apply(null, tong) || 1, top = mx * (coTang ? 1.24 : 1.14);
     var bw = Math.min(opt.bw || 999, iw / nhan.length * (opt.ke || 0.94));
     var dai = nhan.length > 20;
     var cs = opt.cs || (dai ? 9.5 : 13);
@@ -215,6 +221,15 @@
         } else {
           s += '<text x="' + cx + '" y="' + yt.toFixed(1) + '" text-anchor="middle" style="font:700 ' + cs
             + 'px ' + DP['--font'] + ';fill:' + cv('--ink') + '">' + ghi(tong[i]) + '</text>';
+        }
+        // % so với cột trước, đặt ngay trên số tổng
+        if (coTang && opt.tang[i] != null && isFinite(opt.tang[i])) {
+          var g = opt.tang[i];
+          var mauG = g > 0.05 ? cv('--pos') : (g < -0.05 ? cv('--neg') : cv('--mut'));
+          var dau = g > 0.05 ? '▲' : (g < -0.05 ? '▼' : '');
+          s += '<text x="' + cx + '" y="' + (yt - cs - 1.5).toFixed(1) + '" text-anchor="middle" style="font:700 '
+            + Math.max(cs - 3, 8) + 'px ' + DP['--font'] + ';fill:' + mauG + '">'
+            + dau + p1(Math.abs(g)) + '%</text>';
         }
       }
       s += '<text x="' + cx + '" y="' + (H - 7) + '" text-anchor="middle" style="font:600 '
