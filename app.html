@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-09-01.3';
+var APP_VER='2026-09-01.4';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5080,6 +5080,34 @@ setInterval(function(){
         }
       }
 
+      // ---- 5. MAT THI PHAN tai chinh shop do (anh Thai chot 01/09) ----
+      // Bon rule tren deu chi so shop voi CHINH NO. Rule nay so shop voi CAI CHO
+      // ngay tai shop do -> bat duoc ca hai loi ma bon rule kia khong thay:
+      //   a) shop di ngang nhung cho tang  -> dang mat shop ma khong ai bao
+      //   b) shop giam nhung cho giam manh hon -> bi bat giai trinh oan
+      // Dung CHUNG cong thuc share() ben app-top3 de hai noi khong bao gio lech nhau.
+      var T3=(window.__top3&&window.__top3.nguong)||{};
+      var MS=(typeof T3.MAT_SHARE==='number')?T3.MAT_SHARE:3;
+      var sh5=(window.__top3&&typeof window.__top3.share==='function')?window.__top3.share(sh,d):null;
+      if(sh5){
+        if(sh5.giam>=MS){
+          ly.push(['--red','Mất '+sh5.giam.toFixed(1)+' điểm thị phần',
+            'Share '+sh5.truoc.toFixed(1)+'% → <b>'+sh5.nay.toFixed(1)+'%</b> · chợ '+
+            so0(sh5.choTruoc)+' → '+so0(sh5.choNay)+' máy (ngày 1–'+d+')']);
+          nang+=4;
+        } else if(sh5.giam<=0){
+          // VAN AN TOAN: giam theo cho ma share van giu -> KHONG phai loi cua sale.
+          // Ha rule 4 xuong vang va bo diem nang -> khong con du suc len Phan 1.
+          for(var z=0;z<ly.length;z++){
+            if(String(ly[z][1]).indexOf('Giảm hơn 20%')===0){
+              ly[z][0]='--amber';
+              ly[z][1]='Giảm theo chợ — thị phần vẫn giữ';
+              ly[z][2]=ly[z][2]+' · share '+sh5.truoc.toFixed(1)+'% → '+sh5.nay.toFixed(1)+'%';
+              nang-=3;
+            }
+          }
+        }
+      }
       if(ly.length) out.push({n:sh.n,sale:sh.__sale||'',ly:ly,nang:nang});
     });
     out.sort(function(a,b){ return b.nang-a.nang });
@@ -5976,6 +6004,24 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   var GIAM_SAU=30;    // giam tu 30% tro len so cung ky thang truoc
   var NEN_MIN=10;     // ...voi dieu kien cung ky ban duoc it nhat 10 may
   var SO_RULE=3;      // hoac dinh tu 3 rule tro len cung luc
+  var MAT_SHARE=3;    // CHOT 01/09 anh Thai: tut tu 3 diem % thi phan la nguy hiem, phai xu ly gap
+  var CHO_SHARE=20;   // ...voi dieu kien cho tai shop do ban >=20 may CA HAI KY moi dem so %
+
+  // THI PHAN OPPO tai chinh shop do, cong don tu ngay 1 den ngay d.
+  //   dk[n][0] = may OPPO ban tai shop · dk[n][8] = tong may CA CHO tai shop do
+  //   dkp[]    = dung hai o do nhung cua thang truoc -> so cung ky, cung so ngay
+  // Tra ve null khi mot trong hai ky co nen cho qua nho: % tren nen nho la so ao.
+  function share(sh,d){
+    var dk=sh&&sh.dk?sh.dk:null; if(!dk||!dk.length) return null;
+    var dkp=sh.dkp||[], oN=0,cN=0,oT=0,cT=0;
+    for(var w=1;w<=d;w++){
+      var e1=dk[w-1];  if(e1){ oN+=e1[0]||0; cN+=e1[8]||0 }
+      var e2=dkp[w-1]; if(e2){ oT+=e2[0]||0; cT+=e2[8]||0 }
+    }
+    if(cN<CHO_SHARE||cT<CHO_SHARE) return null;
+    var sN=oN/cN*100, sT=oT/cT*100;
+    return {nay:sN, truoc:sT, giam:sT-sN, choNay:cN, choTruoc:cT};
+  }
 
   function el(i){ return document.getElementById(i) }
   function laSo(p){
@@ -6049,6 +6095,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     var nang=false;
     if(dut) nang=true;
     if(b>=NEN_MIN&&a<b*(1-GIAM_SAU/100)) nang=true;
+    var sh9=share(sh,d);
+    if(sh9&&sh9.giam>=MAT_SHARE) nang=true;   // tut thi phan: tu no da du nang
     return {nang:nang, dut:dut, lien:lien, mat:Math.max(0,b-a)};
   }
 
@@ -6219,8 +6267,9 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   setTimeout(function(){ try{ gan(); chay() }catch(e){} },700);
   setTimeout(function(){ try{ gan(); chay() }catch(e){} },1800);
   setInterval(function(){ try{ gan(); chay() }catch(e){} },2500);
-  window.__top3={chay:chay,topNang:topNang,doNang:doNang,nguongDut:nguongDut,
-                 nguong:{N:N,NGAY_SAB:NGAY_SAB,NGAY_KHAC:NGAY_KHAC,GIAM_SAU:GIAM_SAU,NEN_MIN:NEN_MIN,SO_RULE:SO_RULE}};
+  window.__top3={chay:chay,topNang:topNang,doNang:doNang,nguongDut:nguongDut,share:share,
+                 nguong:{N:N,NGAY_SAB:NGAY_SAB,NGAY_KHAC:NGAY_KHAC,GIAM_SAU:GIAM_SAU,NEN_MIN:NEN_MIN,SO_RULE:SO_RULE,
+                         MAT_SHARE:MAT_SHARE,CHO_SHARE:CHO_SHARE}};
 })();
 </script>
 <script id="app-lockhai">
