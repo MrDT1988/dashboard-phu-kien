@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-08-31.4';
+var APP_VER='2026-09-01.1';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -5011,17 +5011,35 @@ setInterval(function(){
       var tt=function(i){ var c=dk[i-1]; return c?(c[8]||0):0 };
       var ly=[], nang=0;
 
-      // 2. khong co S.O lien tuc >= 3 ngay
+      // 2. DUT SELL OUT — nguong theo SIZE SHOP (anh Thai chot 01/09):
+      //    size S/A/B co PG OPPO -> 2 ngay la phai giai trinh
+      //    size con lai            -> 3 ngay
+      var szS=String(sh.size||'').toUpperCase();
+      var coPG=(szS==='S'||szS==='A'||szS==='B');
+      var nguongDut=coPG?2:3;
       var lien=0, choTT=0;
       for(var i=d;i>=1;i--){ if(v(i)>0) break; lien++; choTT+=tt(i) }
-      if(lien>=3){
-        ly.push(['--red','Không có S.O '+lien+' ngày liên tiếp',
-          'Chợ vẫn bán '+so0(choTT)+' máy trong '+lien+' ngày đó']);
+      // chuoi cham ngay 1 -> dem tiep sang thang truoc, chi khi thang truoc shop co ban
+      if(lien>=d){
+        var dkq=sh.dkp||[], coCu=false, z;
+        for(z=0;z<dkq.length;z++){ if(dkq[z]&&(dkq[z][0]||0)>0){ coCu=true; break } }
+        if(coCu){
+          for(var j=dkq.length;j>=1;j--){
+            var cq=dkq[j-1];
+            if(cq&&(cq[0]||0)>0) break;
+            lien++; choTT+=cq?(cq[8]||0):0;
+          }
+        }
+      }
+      if(lien>=nguongDut){
+        ly.push(['--red','Đứt sell out '+lien+' ngày liên tiếp',
+          'Shop size '+(szS||'?')+(coPG?' — có PG OPPO nên ngưỡng là ':' — ngưỡng ')+
+          nguongDut+' ngày · chợ vẫn bán '+so0(choTT)+' máy trong '+lien+' ngày đó']);
         nang+=3;
       }
 
       // 1. giam lien tuc 3 ngay
-      if(lien<3&&d>=4&&v(d-3)>=2&&v(d)<v(d-1)&&v(d-1)<v(d-2)&&v(d-2)<v(d-3)){
+      if(lien<nguongDut&&d>=4&&v(d-3)>=2&&v(d)<v(d-1)&&v(d-1)<v(d-2)&&v(d-2)<v(d-3)){
         ly.push(['--red','Giảm liên tục 3 ngày',
           so0(v(d-3))+' → '+so0(v(d-2))+' → '+so0(v(d-1))+' → <b>'+so0(v(d))+'</b> máy']);
         nang+=3;
@@ -5031,7 +5049,7 @@ setInterval(function(){
       var tong=0,soN=0;
       for(var k=1;k<=d;k++){ if(tt(k)>0){ tong+=v(k); soN++ } }
       var tb=soN?(tong/soN):0;
-      if(lien<3&&tb>=2&&v(d)<tb*0.85){
+      if(lien<nguongDut&&tb>=2&&v(d)<tb*0.85){
         ly.push(['--amber','Rớt sâu so với bình quân',
           'Hôm nay '+so0(v(d))+' máy · bình quân '+tb.toFixed(1)+' máy/ngày ('+
           Math.round((1-v(d)/tb)*100)+'% dưới mức)']);
@@ -5107,7 +5125,7 @@ setInterval(function(){
       }).join('');
     }
     h+='<div class="note"><b>4 rule bắt buộc giải trình:</b> ① Giảm liên tục 3 ngày · '+
-      '② Không có S.O liên tục 3 ngày · ③ Rớt hơn 15% so với bình quân của chính shop · '+
+      '② Đứt sell out — size S/A/B (có PG OPPO) 2 ngày, size còn lại 3 ngày · ③ Rớt hơn 15% so với bình quân của chính shop · '+
       '④ Giảm hơn 20% so cùng kỳ tháng trước. Một shop dính nhiều rule thì gộp chung một dòng.'+
       ((typeof D!=='undefined'&&D.gt)?'':' <b>Chưa nối bảng câu trả lời</b> — app chưa biết ai đã giải trình.')+
       '</div>';
@@ -5940,7 +5958,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   // 2. Shop co van de can theo doi — gop tat ca shop con lai, moi shop mot dong
   // Theo doi thi truong da chuyen sang tab Chi tiet ngay (nam dau tien).
   var N=3;            // tran: nhieu nhat 3 shop mot ngay
-  var NGAY_CHET=5;    // khong co S.O tu 5 ngay lien tiep tro len
+  var NGAY_SAB=2;     // DUT SELL OUT shop size S/A/B (co PG OPPO) — 2 ngay
+  var NGAY_KHAC=3;    // DUT SELL OUT shop size con lai — 3 ngay
   var GIAM_SAU=30;    // giam tu 30% tro len so cung ky thang truoc
   var NEN_MIN=10;     // ...voi dieu kien cung ky ban duoc it nhat 10 may
   var SO_RULE=3;      // hoac dinh tu 3 rule tro len cung luc
@@ -5984,20 +6003,33 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     try{ return (typeof ngayMkt==='function')?ngayMkt():(D.maxDay||0) }catch(e){ return 0 }
   }
 
+  function nguongDut(sh){
+    var z=String((sh&&sh.size)||'').toUpperCase();
+    return (z==='S'||z==='A'||z==='B')?NGAY_SAB:NGAY_KHAC;
+  }
   function doNang(sh,d){
     var dk=sh&&sh.dk?sh.dk:null;
     if(!dk||!dk.length) return null;
     var v=function(i){ var c=dk[i-1]; return c?(c[0]||0):0 };
+    var dkp=sh.dkp||[];
     var lien=0;
     for(var i=d;i>=1;i--){ if(v(i)>0) break; lien++ }
+    if(lien>=d){
+      var coCu=false, z;
+      for(z=0;z<dkp.length;z++){ if(dkp[z]&&(dkp[z][0]||0)>0){ coCu=true; break } }
+      if(coCu){
+        for(var j=dkp.length;j>=1;j--){ var cq=dkp[j-1]; if(cq&&(cq[0]||0)>0) break; lien++ }
+      }
+    }
     var a=0;
     for(var k=1;k<=d;k++) a+=v(k);
-    var dkp=sh.dkp||[], b=0;
+    var b=0;
     for(var q=1;q<=d;q++){ var c2=dkp[q-1]; b+=c2?(c2[0]||0):0 }
+    var dut=(lien>=nguongDut(sh));
     var nang=false;
-    if(lien>=NGAY_CHET) nang=true;
+    if(dut) nang=true;
     if(b>=NEN_MIN&&a<b*(1-GIAM_SAU/100)) nang=true;
-    return {nang:nang, lien:lien, mat:Math.max(0,b-a)};
+    return {nang:nang, dut:dut, lien:lien, mat:Math.max(0,b-a)};
   }
 
   function topNang(){
@@ -6014,13 +6046,18 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
         var t=doNang(mp[x.n],d);
         var duRule=!!(x.ly&&x.ly.length>=SO_RULE);
         if(!(duRule||(t&&t.nang))) return;
-        nang.push({n:x.n, diem:(x.nang||0)+((t&&t.nang)?5:0)+(duRule?5:0), mat:t?t.mat:0});
+        nang.push({n:x.n, dut:!!(t&&t.dut),
+          diem:(x.nang||0)+((t&&t.dut)?20:0)+((t&&t.nang)?5:0)+(duRule?5:0), mat:t?t.mat:0});
       });
       nang.sort(function(a,b){
         if(b.diem!==a.diem) return b.diem-a.diem;
         return b.mat-a.mat;
       });
-      return nang.slice(0,N).map(function(x){ return x.n });
+      // Shop DUT SELL OUT luon phai giai trinh — khong bi tran N cat.
+      // Tran N chi con ap cho cac rule mem (giam sau, du rule).
+      var bat=[], phu=[];
+      nang.forEach(function(x){ (x.dut?bat:phu).push(x) });
+      return bat.concat(phu.slice(0,Math.max(0,N-bat.length))).map(function(x){ return x.n });
     }catch(e){ return [] }
   }
 
@@ -6103,10 +6140,12 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
       rong.textContent='🎉 Không shop nào phải giải trình hôm nay';
       if(note) box.insertBefore(rong,note); else box.appendChild(rong);
     }
-    if(note) note.innerHTML='<b>Chỉ giải trình khi thật sự tệ</b> — không phải ngày nào cũng có. '+
-      'Ngưỡng: <b>không có S.O từ '+NGAY_CHET+' ngày liên tiếp</b> · '+
-      '<b>giảm từ '+GIAM_SAU+'% so cùng kỳ</b> (nền cùng kỳ ≥ '+NEN_MIN+' máy) · '+
-      'hoặc <b>dính từ '+SO_RULE+' rule trở lên cùng lúc</b>. Nhiều shop vượt thì lấy '+N+' shop nặng nhất.<br>'+
+    if(note) note.innerHTML='<b>Đứt sell out là phải giải trình — không có trần.</b> '+
+      'Shop <b>size S/A/B</b> (có PG OPPO) đứt từ <b>'+NGAY_SAB+' ngày</b>; '+
+      'shop <b>size C/D</b> đứt từ <b>'+NGAY_KHAC+' ngày</b>. Chuỗi đứt tính nối sang cả tháng trước.<br>'+
+      'Các lý do còn lại — <b>giảm từ '+GIAM_SAU+'% so cùng kỳ</b> (nền cùng kỳ ≥ '+NEN_MIN+' máy) '+
+      'hoặc <b>dính từ '+SO_RULE+' rule cùng lúc</b> — vẫn giữ trần <b>'+N+' shop nặng nhất/ngày</b> '+
+      'để không gọi tên tràn lan.<br>'+
       'Shop chưa tới ngưỡng nằm ở thẻ <b>Shop có vấn đề cần theo dõi</b> bên dưới.';
 
     var m=document.createElement('span');
@@ -6157,8 +6196,8 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   setTimeout(function(){ try{ gan(); chay() }catch(e){} },700);
   setTimeout(function(){ try{ gan(); chay() }catch(e){} },1800);
   setInterval(function(){ try{ gan(); chay() }catch(e){} },2500);
-  window.__top3={chay:chay,topNang:topNang,doNang:doNang,
-                 nguong:{N:N,NGAY_CHET:NGAY_CHET,GIAM_SAU:GIAM_SAU,NEN_MIN:NEN_MIN,SO_RULE:SO_RULE}};
+  window.__top3={chay:chay,topNang:topNang,doNang:doNang,nguongDut:nguongDut,
+                 nguong:{N:N,NGAY_SAB:NGAY_SAB,NGAY_KHAC:NGAY_KHAC,GIAM_SAU:GIAM_SAU,NEN_MIN:NEN_MIN,SO_RULE:SO_RULE}};
 })();
 </script>
 <script id="app-lockhai">
