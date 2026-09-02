@@ -816,3 +816,55 @@ function TG_xemLich() {
   Logger.log(JSON.stringify(t));
   return t;
 }
+
+/* ===========================================================================
+ * SUA COT DOANH THU THANG 8 CUA SHEET CENTER
+ * Thang 1-7: 100% dong co Doanh thu = Gia x Sellout. Rieng thang 8 hong:
+ * 2.189/5.138 dong bo trong, so con lai khong khop (ban 3 may chi ghi gia 1 may).
+ * Hau qua: T8 hien 13,8B thay vi ~48B; ASP 2,7M thay vi 9,35M; MoM -66,5%
+ * thay vi +16%. Doi chieu so MWG tu gui (31,8B) da xac nhan.
+ * CHAY TG_soiCotDT() TRUOC - ham do khong sua gi, chi bao cao.
+ * =========================================================================*/
+
+function TG_soiCotDT() {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CENTER');
+  var n = sh.getLastRow();
+  var bao = { tongDong: n };
+  var ct = sh.getRange(1, 22, Math.min(n, 40), 1).getFormulas();
+  var coCT = ct.filter(function (r) { return r[0] !== ''; });
+  bao.congThucTrong40DongDau = coCT.length;
+  bao.viDuCongThuc = coCT.length ? coCT[0][0].slice(0, 80) : '(khong co - so cung)';
+  var thang = sh.getRange(1, 2, n, 1).getValues();
+  var dau = -1, cuoi = -1;
+  for (var i = 0; i < n; i++) {
+    if (Number(thang[i][0]) === 8) { if (dau < 0) dau = i + 1; cuoi = i + 1; }
+  }
+  bao.dongDauT8 = dau; bao.dongCuoiT8 = cuoi;
+  if (dau > 0) {
+    var so = cuoi - dau + 1;
+    var v = sh.getRange(dau, 1, so, 22).getValues();
+    var ctV = sh.getRange(dau, 22, so, 1).getFormulas();
+    var cCT = 0, trong = 0, khop = 0, lech = 0, thieu = 0, may = 0, dtCu = 0, dtMoi = 0;
+    for (var j = 0; j < so; j++) {
+      if (ctV[j][0] !== '') cCT++;
+      var gia = Number(v[j][17]) || 0, sl = Number(v[j][19]) || 0, dt = Number(v[j][21]) || 0;
+      if (!gia || !sl) { thieu++; continue; }
+      may += sl; dtCu += dt; dtMoi += gia * sl;
+      if (v[j][21] === '' || v[j][21] === null) trong++;
+      else if (Math.abs(dt - gia * sl) < 1000) khop++;
+      else lech++;
+    }
+    bao.soDongT8 = so; bao.dongCoCongThucTrongV = cCT;
+    bao.dongTrongDT = trong; bao.dongKhopGiaXSL = khop; bao.dongLECH = lech;
+    bao.dongThieuGiaHoacSL = thieu; bao.tongMay = may;
+    bao.doanhThuHienTai = Math.round(dtCu / 1e6) / 1000 + 'B';
+    bao.doanhThuSauKhiSua = Math.round(dtMoi / 1e6) / 1000 + 'B';
+  }
+  Logger.log(JSON.stringify(bao));
+  return bao;
+}
+/* Ham TG_suaDoanhThuT8 DA BI XOA (02/09/2026).
+ * Ly do: cot Doanh thu la CONG THUC =R2*T2 chay song, khong phai so cung.
+ * Ghi de bang setValues() se pha cong thuc -> thang sau nhap so lai phai sua tay.
+ * Neu thay so doanh thu sai, chay TG_soiCotDT() de biet dong nao hong, roi
+ * keo lai cong thuc trong sheet - dung ghi de bang script. */
