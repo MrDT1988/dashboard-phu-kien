@@ -2472,7 +2472,7 @@ function TG_soiAppData() {
  *   leader -> CHI 1 KENH, nhung thay tat ca sale co shop trong kenh do
  *   sale   -> chi shop cua minh (du kenh nao)
  * ==========================================================================*/
-function TGV_TGV_gopAll(D, ds) {
+function TGV_gopAll(D, ds) {
   const NM = D.months.length, N = D.lastDoy || 0;
   const cap = (n) => Array.from({ length: n }, () => [0, 0]);
   const so = (n) => Array.from({ length: n }, () => 0);
@@ -2675,7 +2675,7 @@ function TGV_saleTheoKenh(D, s, ch) {
 
 // Giai trinh: chi giu dong cua shop THUOC pham vi nguoi nay — giu dung luat
 // 'sale nao thay so cua sale do'. Noi theo MA SO trong ten shop.
-function TGV_TGV_maSo(s) {
+function TGV_maSo(s) {
   var t = String(s || ''), i = 0, r = [];
   while (i < t.length) {
     var c = t.charCodeAt(i);
