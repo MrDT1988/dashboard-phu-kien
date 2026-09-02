@@ -617,11 +617,24 @@
     if (cu) cu.remove();
     var d = document.createElement('div');
     d.id = 'dbtg-the-ai';
+    // The nay dinh co dinh o goc duoi trai, nen no CHE MAT chu o phan noi dung nam duoi no
+    // (anh Thai bao "tieu de Phan 2 bi chong chu" - that ra la the nay de len). Nay de mo san
+    // (opacity .22) cho doc xuyen qua duoc, ro han len khi dua chuot vao / cham vao / bam vao
+    // nut ben trong. Van bam duoc binh thuong, chi la khong con che chu nua.
     d.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9985;' +
       'background:#141b24;border:1px solid rgba(255,255,255,.14);border-radius:11px;' +
       'padding:8px 10px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;' +
       'font-size:12.5px;color:#e8edf2;box-shadow:0 6px 22px rgba(0,0,0,.42);' +
-      'max-width:calc(100vw - 24px)';
+      'max-width:calc(100vw - 24px);opacity:.22;transition:opacity .18s ease';
+    function ro() { d.style.opacity = '1'; }
+    function mo() { d.style.opacity = '.22'; }
+    d.addEventListener('mouseenter', ro);
+    d.addEventListener('mouseleave', mo);
+    d.addEventListener('focusin', ro);
+    d.addEventListener('focusout', mo);
+    // Man hinh cam ung khong co hover: cham lan dau la ro han, cham ra ngoai thi mo lai.
+    d.addEventListener('touchstart', ro, { passive: true });
+    document.addEventListener('touchstart', function (e) { if (!d.contains(e.target)) mo(); }, { passive: true });
     function veThuong() {
       d.innerHTML =
         '<div style="display:flex;align-items:center;gap:10px">' +
@@ -3839,6 +3852,18 @@ window.__exportDataMwg = DATA; // lưu lại để nút "Xuất HTML" dùng, kh�
 
 // Cố định sẵn khung 12 tháng cho mọi bảng/biểu đồ theo tháng — tháng nào chưa có dữ liệu sẽ tự hiện 0, khi có dữ liệu mới sẽ tự điền vào đúng cột, không cần đổi bố cục
 const ALL_12_MONTHS = Array.from({length: 12}, (_, i) => i + 1);
+// Thang CHUA CO SO LIEU (vi du dau thang 9 thi T9-T12 con trong) truoc day hien "0 (-100,0%)"
+// mau do o cac bang theo thang - nhin nhu doanh so sup do trong khi that ra thang do chua bat dau.
+// THANG_CO_SO danh dau thang nao co it nhat 1 may hoac 1 dong doanh thu trong TOAN BO du lieu.
+// Chi dua vao tong toan bo, khong dua vao tung dong: mot kenh ban 0 may trong thang ma thang do
+// van co so o kenh khac thi do la thong tin THAT, van phai hien 0 va % giam nhu cu.
+const THANG_CO_SO = (function () {
+    const co = {};
+    (DATA.crosstab || []).forEach(r => { if (r.sellout || r.rev) co[r.m] = true; });
+    return co;
+})();
+function thangChuaCoSo(m) { return !THANG_CO_SO[m]; }
+const O_THANG_TRONG = '<span style="color:var(--text-secondary);">\u2013</span>';
 // Biên chế PG kênh MWG theo file HR mới nhất anh cung cấp (69 PG có tên thật + 3 vị trí "Cần Load PG" đang tuyển) — thay cho số đếm từ dữ liệu bán hàng, chỉ áp dụng cho THÁNG MỚI NHẤT (Roster không có lịch sử theo tháng)
 const MWG_HR_PG_ROSTER_TOTAL = 72;
 // Size Shop MWG (S/A/B/C/D) khớp theo Store ID thật (khớp với Target 2026 / store_id trong CENTER) — ghép từ Partner ID -> Store ID -> Size đã có ở dashboard MWG
@@ -3861,6 +3886,16 @@ function buildAllWeeksOfYear(year) {
     return weeks;
 }
 const ALL_2026_WEEKS = buildAllWeeksOfYear(2026);
+// Ve du 53 tuan thi tu tuan hien tai tro di la mot vung trong dai: bieu do mat gan 1/3 chieu
+// ngang cho cot rong, cac cot co so bi bop lai kho doc. Ham nay cat den tuan cuoi CUNG CO SO,
+// chua them 1 tuan trong o duoi cho thay ro ranh gioi "het so lieu".
+// Khong co so gi thi tra ve du 53 tuan nhu cu (de bieu do khong rong hoac).
+function tuanCanVe(coSo) {
+    let cuoi = -1;
+    for (let i = 0; i < ALL_2026_WEEKS.length; i++) { if (coSo(ALL_2026_WEEKS[i])) cuoi = i; }
+    if (cuoi < 0) return ALL_2026_WEEKS;
+    return ALL_2026_WEEKS.slice(0, Math.min(ALL_2026_WEEKS.length, cuoi + 2));
+}
 // Nhãn ngắn gọn "W1".."W53" theo yêu cầu anh Thái (không cần chi tiết ngày) - đánh số theo đúng thứ tự tuần trong năm.
 function fmtWeekLabel(iso) {
     const idx = ALL_2026_WEEKS.indexOf(iso);
@@ -4717,6 +4752,7 @@ function renderChannelMonthTable() {
     });
 
     function growthCell(arr, i, fmt) {
+        if (thangChuaCoSo(months[i])) return O_THANG_TRONG;
         const cur = arr[i];
         if (i === 0) return `${fmt(cur)}`;
         const prev = arr[i-1];
@@ -4803,15 +4839,17 @@ function renderWeeklyRevenueChart() {
     const weekUnits = DATA.week_channel_units || {};
     const weekRev = DATA.week_revenue || {};
     const weekModels = DATA.week_channel_models || {};
-    const labels = ALL_2026_WEEKS.map(fmtWeekLabel);
-    const totalByWeek = ALL_2026_WEEKS.map(wk => CHANNEL_GROUP_ORDER.reduce((s,c) => s + ((weekUnits[wk] && weekUnits[wk][c]) || 0), 0));
+    // Chi ve toi tuan cuoi cung co so (xem tuanCanVe) thay vi keo het W53.
+    const TUAN = tuanCanVe(wk => CHANNEL_GROUP_ORDER.some(c => (weekUnits[wk] && weekUnits[wk][c]) > 0));
+    const labels = TUAN.map(fmtWeekLabel);
+    const totalByWeek = TUAN.map(wk => CHANNEL_GROUP_ORDER.reduce((s,c) => s + ((weekUnits[wk] && weekUnits[wk][c]) || 0), 0));
     // Giống biểu đồ "Doanh số theo tuần — Cả năm 2026 (IND)": tooltip hiện breakdown theo model, và số
     // tổng từng cột hiện phía trên đầu cột (chỉ gắn datalabel vào dataset TRÊN CÙNG của stack - KA - để
     // không lặp lại nhãn, font nhỏ vừa đúng chiều ngang cột).
     const datasets = CHANNEL_GROUP_ORDER.map((c, idx) => {
         const ds = {
             label: c,
-            data: ALL_2026_WEEKS.map(wk => (weekUnits[wk] && weekUnits[wk][c]) || 0),
+            data: TUAN.map(wk => (weekUnits[wk] && weekUnits[wk][c]) || 0),
             backgroundColor: channelColor[c] || '#8b98a9',
             stack: 's1',
             barPercentage: 0.95,
@@ -4828,7 +4866,7 @@ function renderWeeklyRevenueChart() {
         }
         return ds;
     });
-    const revByWeek = ALL_2026_WEEKS.map(wk => weekRev[wk] || 0);
+    const revByWeek = TUAN.map(wk => weekRev[wk] || 0);
 
     const canvasEl = document.getElementById('chart-weekly-revenue');
     if (canvasEl) {
@@ -4842,7 +4880,7 @@ function renderWeeklyRevenueChart() {
                 plugins: {
                     legend: { position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
                     tooltip: { callbacks: { label: ctx => {
-                        const wk = ALL_2026_WEEKS[ctx.dataIndex];
+                        const wk = TUAN[ctx.dataIndex];
                         const breakdown = (weekModels[wk] && weekModels[wk][ctx.dataset.label]) || {};
                         return groupMonthTooltipLines(ctx.dataset.label, ctx.parsed.y, breakdown);
                     } } }
@@ -4862,9 +4900,9 @@ function renderWeeklyRevenueChart() {
         // dung cai anh Thai bao khong duoc de (soi tai khoan that 28/08).
         const dongKenh = CHANNEL_GROUP_ORDER.map(c => ({
             ten: c,
-            so: ALL_2026_WEEKS.map(wk => (weekUnits[wk] && weekUnits[wk][c]) || 0),
+            so: TUAN.map(wk => (weekUnits[wk] && weekUnits[wk][c]) || 0),
         }));
-        const colgroup = '<colgroup><col style="width:55px;">' + ALL_2026_WEEKS.map(()=>'<col>').join('') + '</colgroup>';
+        const colgroup = '<colgroup><col style="width:55px;">' + TUAN.map(()=>'<col>').join('') + '</colgroup>';
         const weekRow = '<tr class="mwt-week"><td class="mwt-label">Tuần</td>' + labels.map(l => `<td>${l}</td>`).join('') + '</tr>';
         const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
         // Dòng TỔNG bỏ đi: biểu đồ đã ghi tổng ngay trên đỉnh từng cột tuần.
@@ -4951,6 +4989,7 @@ function renderRenoFindSection() {
     }
 
     function growthCell(arr, i, fmt) {
+        if (thangChuaCoSo(ALL_12_MONTHS[i])) return O_THANG_TRONG;
         const cur = arr[i];
         if (i === 0) return `${fmt(cur)}`;
         const prev = arr[i - 1];
@@ -5893,6 +5932,7 @@ function renderIndGroupMonthlyTable() {
     if (!head || !body) return;
     head.innerHTML = '<th>Nhóm</th><th></th>' + months.map(m => '<th class="num">T' + m + '</th>').join('') + '<th class="num">Tổng</th>';
     function growthCell(arr, i, fmt) {
+        if (thangChuaCoSo(ALL_12_MONTHS[i])) return O_THANG_TRONG;
         const cur = arr[i];
         const prev = arr[i-1];
         if (i === 0 || !prev) return fmt(cur);
@@ -6034,6 +6074,7 @@ function renderIndSaleMonthlyTable() {
     head.innerHTML = '<th>Sale</th><th></th>' + months.map(m => '<th class="num">T' + m + '</th>').join('') + '<th class="num">Tổng</th>';
 
     function growthCell(arr, i, fmt) {
+        if (thangChuaCoSo(ALL_12_MONTHS[i])) return O_THANG_TRONG;
         const cur = arr[i];
         const prev = arr[i-1];
         if (i === 0 || !prev) return fmt(cur);
@@ -8053,10 +8094,12 @@ function computeIndWeeklyOcNormal() {
 let indWeeklyChart = null;
 function renderIndWeeklyChart() {
     const { ocByWeek, normalByWeek, dtByWeek, ocModelsByWeek, normalModelsByWeek } = computeIndWeeklyOcNormal();
-    const labels = ALL_2026_WEEKS.map(fmtWeekLabel);
-    const ocData = ALL_2026_WEEKS.map(wk => ocByWeek[wk]);
-    const normalData = ALL_2026_WEEKS.map(wk => normalByWeek[wk]);
-    const dtData = ALL_2026_WEEKS.map(wk => dtByWeek[wk]);
+    // Chi ve toi tuan cuoi cung co so (xem tuanCanVe) thay vi keo het W53.
+    const TUAN = tuanCanVe(wk => (ocByWeek[wk] || 0) + (normalByWeek[wk] || 0) > 0);
+    const labels = TUAN.map(fmtWeekLabel);
+    const ocData = TUAN.map(wk => ocByWeek[wk]);
+    const normalData = TUAN.map(wk => normalByWeek[wk]);
+    const dtData = TUAN.map(wk => dtByWeek[wk]);
     const totalArr = ocData.map((v, i) => v + normalData[i]);
     const canvasEl = document.getElementById('chart-ind-weekly');
     if (canvasEl) {
@@ -8093,7 +8136,7 @@ function renderIndWeeklyChart() {
                     legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 11 } } },
                     // Rê chuột vào cột để xem chi tiết theo từng model - giống 2 biểu đồ tháng O.C/Normal bên dưới.
                     tooltip: { callbacks: { label: ctx => {
-                        const wk = ALL_2026_WEEKS[ctx.dataIndex];
+                        const wk = TUAN[ctx.dataIndex];
                         const breakdown = ctx.dataset.label === 'O.C' ? ocModelsByWeek[wk] : normalModelsByWeek[wk];
                         return groupMonthTooltipLines(ctx.dataset.label, ctx.parsed.y, breakdown);
                     } } }
@@ -8107,7 +8150,7 @@ function renderIndWeeklyChart() {
     }
     const tbl = document.getElementById('mini-table-ind-weekly');
     if (tbl) {
-        const colgroup = '<colgroup><col style="width:55px;">' + ALL_2026_WEEKS.map(() => '<col>').join('') + '</colgroup>';
+        const colgroup = '<colgroup><col style="width:55px;">' + TUAN.map(() => '<col>').join('') + '</colgroup>';
         const weekRow = '<tr class="mwt-week"><td class="mwt-label">Tuần</td>' + labels.map(l => `<td>${l}</td>`).join('') + '</tr>';
         const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
         // Dòng TỔNG bỏ đi: biểu đồ đã ghi tổng ngay trên đỉnh từng cột tuần.
@@ -8804,10 +8847,12 @@ let kaWeeklyChart = null;
 function renderKaWeeklyChart() {
     const { bySub, dtByWeek } = computeKaWeeklyBySubchannel();
     const subs = kaSubchannelList();
-    const labels = ALL_2026_WEEKS.map(fmtWeekLabel);
-    const totalByWeek = ALL_2026_WEEKS.map(wk => subs.reduce((s, sub) => s + ((bySub[sub] && bySub[sub][wk]) || 0), 0));
+    // Chi ve toi tuan cuoi cung co so (xem tuanCanVe) thay vi keo het W53.
+    const TUAN = tuanCanVe(wk => subs.some(sub => (bySub[sub] && bySub[sub][wk]) > 0));
+    const labels = TUAN.map(fmtWeekLabel);
+    const totalByWeek = TUAN.map(wk => subs.reduce((s, sub) => s + ((bySub[sub] && bySub[sub][wk]) || 0), 0));
     const datasets = subs.map((sub, idx) => {
-        const data = ALL_2026_WEEKS.map(wk => (bySub[sub] && bySub[sub][wk]) || 0);
+        const data = TUAN.map(wk => (bySub[sub] && bySub[sub][wk]) || 0);
         const ds = { label: sub, data, backgroundColor: KA_SUBCHANNEL_COLORS[sub] || '#8b98a9', stack: 's1', barPercentage: 0.95, categoryPercentage: 0.98 };
         if (idx === subs.length - 1) {
             ds.datalabels = {
@@ -8839,14 +8884,14 @@ function renderKaWeeklyChart() {
     }
     const tbl = document.getElementById('mini-table-ka-weekly');
     if (tbl) {
-        const colgroup = '<colgroup><col style="width:55px;">' + ALL_2026_WEEKS.map(() => '<col>').join('') + '</colgroup>';
+        const colgroup = '<colgroup><col style="width:55px;">' + TUAN.map(() => '<col>').join('') + '</colgroup>';
         const weekRow = '<tr class="mwt-week"><td class="mwt-label">Tuần</td>' + labels.map(l => `<td>${l}</td>`).join('') + '</tr>';
         const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
         // Dòng TỔNG bỏ đi: biểu đồ đã ghi tổng ngay trên đỉnh từng cột tuần.
         const totalRow = '';
-        const dtArr = ALL_2026_WEEKS.map(wk => dtByWeek[wk]);
+        const dtArr = TUAN.map(wk => dtByWeek[wk]);
         const dtRow = '<tr class="mwt-value" style="border-top:2px solid rgba(255,255,255,0.15);"><td class="mwt-label">DT</td>' + dtArr.map(v => `<td>${v ? (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}) : '-'}</td>`).join('') + '</tr>';
-        tbl.innerHTML = colgroup + weekRow + subs.map(s => rowHtml(s, ALL_2026_WEEKS.map(wk => (bySub[s]&&bySub[s][wk])||0))).join('') + totalRow + dtRow;
+        tbl.innerHTML = colgroup + weekRow + subs.map(s => rowHtml(s, TUAN.map(wk => (bySub[s]&&bySub[s][wk])||0))).join('') + totalRow + dtRow;
     }
 }
 renderKaWeeklyChart();
