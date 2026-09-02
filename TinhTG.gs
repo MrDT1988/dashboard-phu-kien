@@ -782,3 +782,37 @@ function TG_traKetQua_(phan) {
   if (!txt) return { error: 'Chua chot ky lan nao. Chay ham TG_chotKy() mot lan.' };
   return txt; // đã là chuỗi JSON
 }
+
+/**
+ * TG_datLich — dat lich TU DONG chot ky, chay TRONG Apps Script.
+ *
+ * VI SAO: mode=tinh chi DOC lai goi da chot san (nhanh, khong ton gi). Neu khong
+ * ai bam chot ky thi goi do dung yen. Lich nay chay TG_chotKy moi 2 gio, hoan
+ * toan tren may chu Google: khong can may anh Thai bat, khong can token, khong
+ * can robot GitHub. Co so moi tren sheet -> cham nhat 2 tieng sau F5 la ra so.
+ *
+ * Chay ham nay MOT LAN. Chay lai cung khong sao: no xoa lich cu cua TG_chotKy
+ * truoc khi tao lich moi nen khong bao gio bi nhan doi.
+ */
+function TG_datLich() {
+  var cu = ScriptApp.getProjectTriggers();
+  var daXoa = 0;
+  for (var i = 0; i < cu.length; i++) {
+    if (cu[i].getHandlerFunction() === 'TG_chotKy') { ScriptApp.deleteTrigger(cu[i]); daXoa++; }
+  }
+  ScriptApp.newTrigger('TG_chotKy').timeBased().everyHours(2).create();
+  var con = ScriptApp.getProjectTriggers()
+    .filter(function (t) { return t.getHandlerFunction() === 'TG_chotKy'; }).length;
+  var bao = 'Da xoa ' + daXoa + ' lich cu, dat lich moi: TG_chotKy moi 2 gio. Dang co ' + con + ' lich.';
+  Logger.log(bao);
+  return bao;
+}
+
+/** Xem dang co nhung lich nao (de kiem lai). */
+function TG_xemLich() {
+  var t = ScriptApp.getProjectTriggers().map(function (x) {
+    return x.getHandlerFunction() + ' | ' + x.getEventType();
+  });
+  Logger.log(JSON.stringify(t));
+  return t;
+}
