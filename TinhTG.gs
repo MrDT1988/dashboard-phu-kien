@@ -2971,7 +2971,7 @@ function TG_kiemPhamViApp() {
     });
   });
 
-  var loi = [], chiTiet = [], soKiem = 0, soLotTen = 0, soLotShop = 0;
+  var loi = [], chiTiet = [], trungTen = [], soKiem = 0, soLotTen = 0, soLotShop = 0;
   var xep = tenTatCa.slice();
   var hangCua = function (n) { return (xep.indexOf(n) + 1) + '/' + xep.length; };
 
@@ -3007,13 +3007,24 @@ function TG_kiemPhamViApp() {
       if (chuoi.indexOf(String(khac).toLowerCase()) >= 0) dinh.push(khac);
     });
     if (dinh.length) {
-      var noi = {};
+      var noi = {}, trung = {}, soThat = 0;
       dinh.forEach(function (kh) {
-        noi[kh] = TG_timDuong_(G, String(kh).toLowerCase(), 3);
+        var duong = TG_timDuong_(G, String(kh).toLowerCase(), 8);
+        /* Bo qua o "stf" — do la danh sach PG cua tung shop. Shop trong goi da
+           duoc kiem o buoc 2 (chac chan la shop cua chinh ho), nen mot cai ten
+           nam trong stf la NHAN VIEN CUA SHOP HO PHU TRACH, tinh co trung ten
+           voi mot sale khac. Do khong phai ro ri: xoa di thi sale mat luon bang
+           PG cua chinh minh. Van ghi lai o "trungTen" de con doi chieu. */
+        var conLai = duong.filter(function (p) { return !/\.stf\[\d+\]\[0\]$/.test(p); });
+        if (conLai.length) { noi[kh] = conLai; soThat++; }
+        else trung[kh] = duong;
       });
-      chiTiet.push({ cua: ten, lot: noi });
-      loi.push('sale "' + ten + '": con dau vet cua ' + dinh.length + ' sale khac');
-      soLotTen++;
+      if (soThat) {
+        chiTiet.push({ cua: ten, lot: noi });
+        loi.push('sale "' + ten + '": con dau vet cua ' + soThat + ' sale khac');
+        soLotTen++;
+      }
+      if (Object.keys(trung).length) trungTen.push({ cua: ten, pg: trung });
     }
   });
 
@@ -3037,6 +3048,7 @@ function TG_kiemPhamViApp() {
     goiLotTen: soLotTen, goiLotShop: soLotShop,
     loi: loi.slice(0, 20),
     chiTiet: chiTiet.slice(0, 20),
+    trungTen: trungTen.slice(0, 20),
     giay: Math.round((Date.now() - t0) / 100) / 10,
   };
   Logger.log(JSON.stringify(ket));
