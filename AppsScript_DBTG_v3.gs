@@ -102,6 +102,7 @@ function doGet(e) {
   var mode = p.mode || 'data';
 
   // ---------- CHE DO MOI ----------
+  if (mode === 'lammoi') return jsonOutput_(goiRobotDungLaiGoi_());
   if (mode === 'cpmeta') return jsonOutput_(docMeta_(SHEET_NAME));
   if (mode === 'cpart')  return textOutput_(docManh_(SHEET_NAME, parseInt(p.i || '0', 10)));
 
@@ -314,4 +315,67 @@ function getCheckpoint_(sheetName) {
   if (!f) return jsonOutput_({ exists: false });
   var content = f.getBlob().getDataAsString();
   return ContentService.createTextOutput(content).setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ==================== NUT "LAM MOI NGAY" TREN DB TG ====================
+   VI SAO CO: robot dung lai goi du lieu theo lich. Anh Thai nhap so xong luc
+   22h thi phai cho toi luot ke tiep moi thay. Nut nay goi robot chay ngay.
+
+   VI SAO PHAI DI VONG QUA DAY: goi GitHub API can mot ma truy cap. DB TG nam
+   tren GitHub Pages CONG KHAI — nhet ma vao do la mat ma. Apps Script chay o
+   phia may chu nen giu ma an toan.
+
+   CAI DAT (lam mot lan):
+     1. GitHub > Settings > Developer settings > Personal access tokens >
+        Fine-grained tokens > Generate new token
+          - Repository access: chi chon  mrdt1988/dashboard-phu-kien
+          - Permissions > Repository permissions > Actions: Read and write
+          - Expiration: chon 1 nam, nho gia han
+     2. Chep ma do.
+     3. Apps Script > Project Settings > Script Properties > Add:
+          GH_TOKEN = <ma vua chep>
+     4. Deploy > Manage deployments > sua > Deploy (de ban moi co hieu luc).
+
+   CHUA CAI THI KHONG HONG GI: nut bao "chua bat", moi thu con lai chay nhu cu.
+   ==================================================================== */
+var GH_REPO = 'mrdt1988/dashboard-phu-kien';
+var GH_WORKFLOW = 'cap-nhat-du-lieu.yml';
+
+function goiRobotDungLaiGoi_() {
+  var tok = PropertiesService.getScriptProperties().getProperty('GH_TOKEN');
+  if (!tok) return { ok: false, error: 'Chua bat: thieu GH_TOKEN trong Script Properties' };
+
+  // Chan bam lien tuc: moi 10 phut chi cho goi mot lan. Robot chay ~15-40 phut,
+  // bam dep nhau chi lam hang doi dai chu khong nhanh hon.
+  var props = PropertiesService.getScriptProperties();
+  var lan = Number(props.getProperty('GH_LAN_GOI') || 0);
+  var con = 10 * 60 * 1000 - (Date.now() - lan);
+  if (lan && con > 0) {
+    return { ok: false, error: 'Vua goi robot roi. Cho them ' + Math.ceil(con / 60000) + ' phut.' };
+  }
+
+  var url = 'https://api.github.com/repos/' + GH_REPO + '/actions/workflows/' +
+            GH_WORKFLOW + '/dispatches';
+  var res = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    muteHttpExceptions: true,
+    headers: {
+      Authorization: 'Bearer ' + tok,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+    payload: JSON.stringify({ ref: 'main', inputs: { force: '0' } }),
+  });
+  var ma = res.getResponseCode();
+  if (ma === 204) {
+    props.setProperty('GH_LAN_GOI', String(Date.now()));
+    return { ok: true, ghiChu: 'Da goi robot. Xong sau khoang 15-40 phut thi F5 lai trang.' };
+  }
+  return { ok: false, error: 'GitHub tra ma ' + ma + ': ' + res.getContentText().slice(0, 180) };
+}
+
+/* Chay tay de kiem tra da cai dat dung chua. */
+function kiemTraNutLamMoi() {
+  Logger.log(JSON.stringify(goiRobotDungLaiGoi_()));
 }
