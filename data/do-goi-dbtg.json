@@ -1,11 +1,11 @@
 {
- "doLuc": "2026-09-02T04:06:34.285Z",
+ "doLuc": "2026-09-02T04:28:47.412Z",
  "ghiChu": "Chi la kich thuoc (MB) de tinh buoc \"DB TG doc goi ma hoa\". Khong co so lieu kinh doanh.",
  "center": {
   "ten": "CENTER (so noi bo OPPO, 3 kenh)",
   "thoMB": 6.1,
-  "nenMB": 0.6,
-  "tiLeNen": "9.1%",
+  "nenMB": 0.5,
+  "tiLeNen": "9%",
   "truongNangNhat": [
    "crosstab 2.5 MB",
    "overview_daily_by_date 1.9 MB",
