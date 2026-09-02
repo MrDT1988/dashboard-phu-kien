@@ -776,6 +776,16 @@ function TG_chotKy() {
 
 /** Dùng trong doGet: trả về nội dung đã tính sẵn. */
 function TG_traKetQua_(phan) {
+  /* BOC TOAN BO TRONG try/catch.
+     Apps Script nem loi ra ngoai doGet thi tra ve mot trang HTML bao loi, va
+     trang do KHONG co header CORS -> trinh duyet chi thay "Failed to fetch",
+     khong doc duoc ly do that. Da mat mot luc moi lan ra la do thieu
+     SALE_CODES. Nay loi gi cung tra ve JSON doc duoc. */
+  try { return TG_traKetQuaThat_(phan); }
+  catch (e) { return { error: String(e && e.message || e) }; }
+}
+
+function TG_traKetQuaThat_(phan) {
   phan = String(phan || 'center');
   /* DUONG CHAY TAY QUA HTTP.
      Trinh don chon ham trong trinh soan Apps Script rat kho bam tu dong (menu
@@ -787,6 +797,7 @@ function TG_traKetQua_(phan) {
   if (phan === 'soiapp')  return { soi: TG_soiAppData() };
   if (phan === 'appindex') return TG_traIndexApp_();
   if (phan === 'dunggoi')  return TG_dungGoiApp();
+  if (phan === 'kiempv')   return TG_kiemPhamViApp();
 
   /* Lay goi cua dung mot nguoi: phan = "goi/<id>/<ban bam>".
      Nhet ca ba thu vao MOT tham so "phan" de KHONG phai sua Ma.gs — file do
@@ -2878,4 +2889,97 @@ function TG_datLichGoiApp() {
   var bao = 'Da xoa ' + daXoa + ' lich cu, dat lich moi: TG_dungGoiApp moi 2 gio.';
   Logger.log(bao);
   return bao;
+}
+
+/* ============================================================================
+ * CHANG 2 — BO KIEM RO RI PHAM VI, CHAY THANG TREN MAY CHU
+ * ----------------------------------------------------------------------------
+ * Chay TREN GOI THAT cua tung nguoi, KHONG can ma PIN (kiem trươc khi luu).
+ *
+ * Phep kiem manh nhat la QUET DAU VET: doi chuoi JSON cua goi ra chu thuong roi
+ * tim ten CUA MOI SALE KHAC. An tren man hinh khong tinh la an — du lieu nam
+ * trong goi la mo F12 doc duoc. Chinh phep quet nay tung bat duoc loi bang tra
+ * cuu daily.sales con nguyen ten cac sale khac trong khi cac dong da loc dung
+ * (xem chu thich trong pham-vi-dbtg.mjs).
+ *
+ * Chay: ?mode=tinh&phan=kiempv   — chi doc, khong luu gi.
+ * ==========================================================================*/
+function TG_kiemPhamViApp() {
+  var t0 = Date.now();
+  var kq = TG_dungAppData_();
+  var D = kq.data;
+  var tenTatCa = (D.sales || []).map(function (s) { return s.n; });
+
+  // Ban do goc: sale nao co nhung shop nao, kenh nao co nhung shop nao.
+  var shopCuaSale = {}, shopCuaKenh = {};
+  (D.sales || []).forEach(function (s) {
+    shopCuaSale[s.n] = {};
+    (s.s || []).forEach(function (x) {
+      shopCuaSale[s.n][x.n] = 1;
+      var ch = x.ch2 || x.ch;
+      if (ch) { shopCuaKenh[ch] = shopCuaKenh[ch] || {}; shopCuaKenh[ch][x.n] = 1; }
+    });
+  });
+
+  var loi = [], soKiem = 0, soLotTen = 0, soLotShop = 0;
+  var xep = tenTatCa.slice();
+  var hangCua = function (n) { return (xep.indexOf(n) + 1) + '/' + xep.length; };
+
+  tenTatCa.forEach(function (ten) {
+    var G;
+    try { G = TGV_phamVi(D, [ten], 'sale', hangCua(ten), null); }
+    catch (e) { loi.push('sale "' + ten + '": cat goi loi — ' + e.message); return; }
+    soKiem++;
+
+    // 1. Goi chi duoc chua dung mot sale, va la chinh ho
+    var dsTen = (G.sales || []).map(function (s) { return s.n; });
+    if (dsTen.length !== 1 || dsTen[0] !== ten) {
+      loi.push('sale "' + ten + '": goi chua ' + dsTen.length + ' sale');
+      soLotTen++;
+    }
+
+    // 2. Shop trong goi phai thuoc ve chinh ho
+    var duoc = shopCuaSale[ten] || {};
+    var lot = [];
+    (G.sales || []).forEach(function (s) {
+      (s.s || []).forEach(function (x) { if (!duoc[x.n]) lot.push(x.n); });
+    });
+    if (lot.length) { loi.push('sale "' + ten + '": ' + lot.length + ' shop ngoai pham vi'); soLotShop++; }
+
+    // 3. QUET DAU VET: ten sale khac khong duoc xuat hien o BAT KY dau trong goi
+    var chuoi = JSON.stringify(G).toLowerCase();
+    var dinh = [];
+    tenTatCa.forEach(function (khac) {
+      if (khac === ten) return;
+      if (chuoi.indexOf(String(khac).toLowerCase()) >= 0) dinh.push(khac);
+    });
+    if (dinh.length) {
+      loi.push('sale "' + ten + '": con dau vet cua ' + dinh.length + ' sale khac');
+      soLotTen++;
+    }
+  });
+
+  // Leader: chi duoc thay shop cua dung kenh cua minh
+  var soLeader = 0;
+  Object.keys(shopCuaKenh).forEach(function (kenh) {
+    var G;
+    try { G = TGV_phamVi(D, tenTatCa, 'leader', null, kenh); }
+    catch (e) { loi.push('leader ' + kenh + ': cat goi loi — ' + e.message); return; }
+    soLeader++;
+    var duoc = shopCuaKenh[kenh] || {}, lot = [];
+    (G.sales || []).forEach(function (s) {
+      (s.s || []).forEach(function (x) { if (!duoc[x.n]) lot.push(x.n); });
+    });
+    if (lot.length) { loi.push('leader ' + kenh + ': ' + lot.length + ' shop ngoai kenh'); soLotShop++; }
+  });
+
+  var ket = {
+    dat: loi.length === 0,
+    soSaleDaKiem: soKiem, soLeaderDaKiem: soLeader,
+    goiLotTen: soLotTen, goiLotShop: soLotShop,
+    loi: loi.slice(0, 20),
+    giay: Math.round((Date.now() - t0) / 100) / 10,
+  };
+  Logger.log(JSON.stringify(ket));
+  return ket;
 }
