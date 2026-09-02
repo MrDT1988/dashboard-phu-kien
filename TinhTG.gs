@@ -776,8 +776,16 @@ function TG_chotKy() {
 
 /** Dùng trong doGet: trả về nội dung đã tính sẵn. */
 function TG_traKetQua_(phan) {
+  /* DUONG CHAY TAY QUA HTTP.
+     Trinh don chon ham trong trinh soan Apps Script rat kho bam tu dong (menu
+     dong lai truoc khi kip chon). Cac "phan" duoi day cho phep goi thang mot ham
+     chan doan bang URL: ?mode=tinh&phan=<ten>. Chi doc, KHONG sua gi trong sheet. */
+  if (phan === 'soiphu')  return { soi: TG_soiSheetPhu() };
+  if (phan === 'soicot')  return { soi: TG_soiCotDT() };
+  if (phan === 'xemlich') return { lich: TG_xemLich() };
+
   var ten = TG_TEP[phan];
-  if (!ten) return { error: 'phan phai la center hoac mwg' };
+  if (!ten) return { error: 'phan phai la center | mwg | soiphu | soicot | xemlich' };
   var txt = TG_docTep_(ten);
   if (!txt) return { error: 'Chua chot ky lan nao. Chay ham TG_chotKy() mot lan.' };
   return txt; // đã là chuỗi JSON
