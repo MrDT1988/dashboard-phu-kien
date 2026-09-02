@@ -549,29 +549,55 @@
     };
     // "TGD_TGI_CLA" -> "tgicla" (bo tien to loai shop vi 2 sheet ghi khac nhau: TGD / DMS / DMS3)
     var geo = function (c) { var p = String(c).split('_'); return p.length >= 3 ? norm(p[1] + p[2]) : norm(c); };
+    // 02/09: dong nhat gach noi — " – " / " — " (en/em dash) thanh " - " truoc khi tach
+    var dash = function (s) { return String(s || '').replace(/\s[\u2013\u2014]\s/g, ' - '); };
 
     var SEGA = [], SEGAI = {};   // danh muc phan khuc ben MAIN (co the khac ben OPPO)
     if (MAIN.shop_segment_crosstab) {
-      var exact = {}, loose = {};
+      var exact = {}, loose = {}, oppoMWG = [];
       shopOrder.forEach(function (st) {
         if (shops[st].chan !== 'MWG') return;
-        var p = String(st).split(' - ');
+        var p = dash(st).split(' - ');   // 02/09: ten OPPO co shop dung gach dai " – " (9408 An Hoa)
         if (p.length < 4) return;
         var addr = norm(p.slice(3).join(' '));
         var ke = norm(p[2]) + '|' + addr, kl = geo(p[2]) + '|' + addr;
+        oppoMWG.push({ st: st, g: geo(p[2]), a: addr });
         if (!(ke in exact)) exact[ke] = st; else exact[ke] = null;   // trung -> bo, khong doan bua
         if (!(kl in loose)) loose[kl] = st; else loose[kl] = null;
       });
 
       var mainShops = {};
       MAIN.shop_segment_crosstab.forEach(function (r) { mainShops[r.shop] = r.sale || ''; });
+      var chuaKhop = [];
       Object.keys(mainShops).forEach(function (s) {
-        var p = String(s).split(' - ');
+        var p = dash(s).split(' - ');
         var addr = norm(p.slice(1).join(' '));
         var hit = exact[norm(p[0]) + '|' + addr] || loose[geo(p[0]) + '|' + addr];
         if (hit) { mapMain[s] = hit; mkt.matched++; }
-        else mkt.unmatched.push(s);
+        else chuaKhop.push({ s: s, g: geo(p[0]), a: addr });
       });
+      /* ==== them 02/09/2026 — noi not shop DATA MWG <-> OPPO (12 shop MWG tung rot) ====
+         Tang 3: shop CHUA khop hai ben do lech tien to loai shop (DMS3 vs DMS) hoac lech ma dia ly
+                 (BTR_BAT vs BTR_BTR) -> so trong nhom chua khop: geo+dia chi, roi dia chi.
+         Tang 4: shop doi ten (Cai Lay -> Cai Lay 1) -> cung geo, dia chi la tien to cua nhau,
+                 duy nhat trong toan bo shop OPPO. Cho phep nhieu ten MAIN cung tro ve mot shop OPPO
+                 (so theo ngay tu cong don) — dung cho shop doi ten giua nam. */
+      var daDung = {};
+      Object.keys(mapMain).forEach(function (k) { daDung[mapMain[k]] = 1; });
+      chuaKhop.forEach(function (u) {
+        if (mapMain[u.s]) return;
+        var c = oppoMWG.filter(function (o) { return !daDung[o.st] && o.g === u.g && o.a === u.a; });
+        if (c.length !== 1) c = oppoMWG.filter(function (o) { return !daDung[o.st] && o.a === u.a; });
+        if (c.length === 1) { mapMain[u.s] = c[0].st; daDung[c[0].st] = 1; mkt.matched++; }
+      });
+      chuaKhop.forEach(function (u) {
+        if (mapMain[u.s]) return;
+        var c = oppoMWG.filter(function (o) {
+          return o.g === u.g && o.a && u.a && (u.a.indexOf(o.a) === 0 || o.a.indexOf(u.a) === 0); });
+        if (c.length === 1) { mapMain[u.s] = c[0].st; daDung[c[0].st] = 1; mkt.matched++; }
+      });
+      chuaKhop.forEach(function (u) { if (!mapMain[u.s]) mkt.unmatched.push(u.s); });
+      /* ==== het khoi them 02/09/2026 ==== */
 
       // danh muc phan khuc ben MAIN, giu thu tu theo segment_order neu co
       var ordRaw = kho('segment_order');
@@ -931,6 +957,7 @@
         var st = veShopOppo(tenMain); if (!st || !shops[st]) return;
         var dayMap = sdd[tenMain] || {};
         var cur = null, prv = null;
+        var oNo = function (n) { var z = new Array(n); for (var q = 0; q < n; q++) z[q] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]; return z; };
         Object.keys(dayMap).forEach(function (k) {
           var p = String(k).split('-'); if (p.length < 2) return;
           var m = +p[0], d = +p[1];
@@ -945,7 +972,6 @@
                    c.pk1020_oppo_units || 0, c.pk1020_oppo_rev || 0,
                    c.pk1020_total_units || 0, c.pk1020_total_rev || 0];
           if (!v[0] && !v[8]) return;
-          var oNo = function (n) { var z = new Array(n); for (var q = 0; q < n; q++) z[q] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0]; return z; };
           if (m === CUR_M && d >= 1 && d <= DIM_CUR) {
             if (!cur) cur = oNo(DIM_CUR);
             for (var k1 = 0; k1 < 14; k1++) cur[d - 1][k1] += v[k1];
@@ -958,6 +984,10 @@
         var lamTron = function (x) { return x.map(function (v) {
           return [v[0], tr(v[1]), v[2], tr(v[3]), v[4], tr(v[5]), v[6], tr(v[7]), v[8], tr(v[9]),
                   v[10], tr(v[11]), v[12], tr(v[13])]; }); };
+        /* 02/09: shop co so thang truoc nhung thang nay CHUA ban ngay nao -> van phai co dk (toan 0)
+           de rule "dut sell out" trong app dem duoc chuoi trang noi tu thang truoc. Truoc day dk
+           bi bo trong -> ruleShop() bo qua shop -> shop trang tu ngay 1 khong bao gio bi goi. */
+        if (!cur && prv) cur = oNo(DIM_CUR);
         if (cur) shops[st].dk = lamTron(cur);
         if (prv) shops[st].dkp = lamTron(prv);
       });
