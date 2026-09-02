@@ -769,6 +769,17 @@ function TG_chotKy() {
   TG_luuTep_(TG_TEP.mwg, JSON.stringify({ chotLuc: bienNhan.chotLuc, soDong: rowsM.length, data: dataM }));
   bienNhan.mwg = { dong: rowsM.length };
 
+  /* DUNG LUON GOI RIENG TUNG NGUOI cho App Sale.
+     VI SAO GAN VAO DAY: giao dien "Trinh kich hoat" cua Apps Script khong cho
+     dat lich bang may (o chon nguon su kien khong nhan cu bam), ma neu de goi
+     tu dung yen thi sale mo app ra van thay so cu — dung cai loi da phai sua
+     hom 02/09. Gan vao day thi moi lan chot ky xong la goi cung moi theo.
+     Chot ky ~40 giay + dung goi ~51 giay = ~1,5 phut, con xa han 6 phut.
+     BOC try/catch RIENG: chot ky hong thi van thu dung goi, va nguoc lai —
+     hai viec khong duoc keo nhau xuong. */
+  try { bienNhan.goiApp = TG_dungGoiApp(); }
+  catch (e) { bienNhan.goiAppLoi = String(e && e.message || e); }
+
   bienNhan.giay = Math.round((new Date().getTime() - t0) / 100) / 10;
   Logger.log(JSON.stringify(bienNhan));
   return bienNhan;
