@@ -2921,7 +2921,7 @@ function TG_kiemPhamViApp() {
     });
   });
 
-  var loi = [], soKiem = 0, soLotTen = 0, soLotShop = 0;
+  var loi = [], chiTiet = [], soKiem = 0, soLotTen = 0, soLotShop = 0;
   var xep = tenTatCa.slice();
   var hangCua = function (n) { return (xep.indexOf(n) + 1) + '/' + xep.length; };
 
@@ -2946,7 +2946,10 @@ function TG_kiemPhamViApp() {
     });
     if (lot.length) { loi.push('sale "' + ten + '": ' + lot.length + ' shop ngoai pham vi'); soLotShop++; }
 
-    // 3. QUET DAU VET: ten sale khac khong duoc xuat hien o BAT KY dau trong goi
+    // 3. QUET DAU VET: ten sale khac khong duoc xuat hien o BAT KY dau trong goi.
+    //    Bao ro TEN NAO lot vao KHOA NAO — khong bao chung chung, vi con phai
+    //    phan biet ro ri that voi trung ten (vi du "(Khong ro)" la nhan mac dinh
+    //    chu khong phai mot nguoi).
     var chuoi = JSON.stringify(G).toLowerCase();
     var dinh = [];
     tenTatCa.forEach(function (khac) {
@@ -2954,6 +2957,17 @@ function TG_kiemPhamViApp() {
       if (chuoi.indexOf(String(khac).toLowerCase()) >= 0) dinh.push(khac);
     });
     if (dinh.length) {
+      var noi = {};
+      dinh.forEach(function (kh) {
+        var k = String(kh).toLowerCase(), o = [];
+        Object.keys(G).forEach(function (khoa) {
+          try {
+            if (JSON.stringify(G[khoa]).toLowerCase().indexOf(k) >= 0) o.push(khoa);
+          } catch (e) {}
+        });
+        noi[kh] = o;
+      });
+      chiTiet.push({ cua: ten, lot: noi });
       loi.push('sale "' + ten + '": con dau vet cua ' + dinh.length + ' sale khac');
       soLotTen++;
     }
@@ -2978,6 +2992,7 @@ function TG_kiemPhamViApp() {
     soSaleDaKiem: soKiem, soLeaderDaKiem: soLeader,
     goiLotTen: soLotTen, goiLotShop: soLotShop,
     loi: loi.slice(0, 20),
+    chiTiet: chiTiet.slice(0, 6),
     giay: Math.round((Date.now() - t0) / 100) / 10,
   };
   Logger.log(JSON.stringify(ket));
