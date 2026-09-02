@@ -122,7 +122,17 @@ async function layMotLan(lanThu) {
     ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}),
   });
   try {
-    const ctx = await browser.newContext({ viewport: { width: 1400, height: 1000 } });
+    // MUI GIO: bat buoc dat Asia/Ho_Chi_Minh.
+    // Apps Script tra o ngay ve dang chuoi UTC ("2026-08-30T17:00:00.000Z" = 0h ngay 31/8 gio VN).
+    // tg.html doc lai bang getFullYear/getMonth/getDate - tuc la theo GIO CUA MAY DANG CHAY.
+    // May chu GitHub chay theo UTC nen doc thanh 30/8 -> TOAN BO ngay bi lui 1 ngay: App Sale bao
+    // "den ngay 30" trong khi sheet da co 31, bang nhiet theo ngay va cac tuan cung lech theo.
+    // Dat mui gio VN cho trinh duyet an => robot doc y het may cua anh Thai.
+    const ctx = await browser.newContext({
+      viewport: { width: 1400, height: 1000 },
+      timezoneId: 'Asia/Ho_Chi_Minh',
+      locale: 'vi-VN',
+    });
     const page = await ctx.newPage();
     // Chia khoa cho duong Apps Script. Phai bom TRUOC khi trang chay dong dau tien,
     // vi tg.html goi Apps Script ngay luc nap. Lay tu GitHub Secret AS_KEY —

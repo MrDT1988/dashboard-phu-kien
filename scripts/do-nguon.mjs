@@ -73,18 +73,23 @@ if (process.env.FORCE === '1') ra(true, 'FORCE=1');
 
 let cu = null;
 try { cu = JSON.parse(fs.readFileSync(MOC_CU, 'utf8')); } catch { /* chua co */ }
-if (!cu || !cu.sheets) ra(true, 'chua co moc cu');
 
+/* PHAI HOI SHEET TRUOC ROI MOI XET "co moc cu chua".
+   Truoc day thieu moc cu la thoat NGAY, ma MOC_MOI chi duoc ghi sau doan hoi sheet
+   -> khong bao gio co file moc -> lan nao cung "chua co moc cu" -> lan nao cung chay
+   day du, buoc do thanh vo dung. Nay hoi sheet truoc, ghi moc, roi moi quyet dinh. */
 const moi = { doLuc: new Date().toISOString(), sheets: {} };
 for (const s of SHEETS) {
   try {
     moi.sheets[s] = await hoiMotSheet(s);
-    log(`${s}: ${moi.sheets[s]} dong (cu: ${cu.sheets[s] ?? '-'})`);
+    log(`${s}: ${moi.sheets[s]} dong (cu: ${(cu && cu.sheets && cu.sheets[s]) ?? '-'})`);
   } catch (e) {
     ra(true, `khong hoi duoc sheet "${s}": ${e.message}`);
   }
 }
 fs.writeFileSync(MOC_MOI, JSON.stringify(moi, null, 1));
+
+if (!cu || !cu.sheets) ra(true, 'chua co moc cu (da ghi moc cho lan sau)');
 
 for (const s of SHEETS) {
   if (moi.sheets[s] !== cu.sheets[s]) ra(true, `sheet "${s}" doi so dong`);
