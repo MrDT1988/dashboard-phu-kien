@@ -1210,6 +1210,24 @@ var TG_BUILD_APP_DATA = (function () {
       (MWG.crosstab || []).forEach(function (r) { seen[r.m] = 1; });
       MONTHS = Object.keys(seen).map(Number).sort(function (a, b) { return a - b; });
     }
+    /* QUY TAC 02/09/2026 (anh Thai chot): chi so chi tiet kenh MWG lay tu DATA MWG.
+       DATA MWG ve som hon CENTER (so OPPO chot) nhieu ngay, nen truc thang phai lay
+       HOP cua hai ben - neu chi lay CENTER thi thang moi nhat cua MWG bi cat mat. */
+    (function themThangCuaDataMWG() {
+      var nhan = (MAIN && MAIN.month_labels) || [];
+      var co = {};
+      ((MAIN && MAIN.shop_rows_brand4) || []).forEach(function (r) {
+        var b = ((r && r.brands) || {}).Oppo || {};
+        var a = b.monthly_units || [];
+        for (var q = 0; q < a.length; q++) {
+          if (!a[q]) continue;
+          var m = nhan[q] ? parseInt(String(nhan[q]).replace(/\D/g, ''), 10) : (q + 1);
+          if (m) co[m] = 1;
+        }
+      });
+      Object.keys(co).forEach(function (m) { if (MONTHS.indexOf(+m) < 0) MONTHS.push(+m); });
+      MONTHS.sort(function (a, b) { return a - b; });
+    })();
     var NM = MONTHS.length;
     var MIDX = {}; MONTHS.forEach(function (m, i) { MIDX[m] = i; });
     var CUR_M = MONTHS[NM - 1], PRV_M = NM > 1 ? MONTHS[NM - 2] : null;
@@ -1367,6 +1385,15 @@ var TG_BUILD_APP_DATA = (function () {
       if (!u && !rv && !ac) return;
       if (r.activated != null) src.act = true;
       var ch = r.channel || '?';
+      /* So cua kenh MWG lay tu DATA MWG (khoi ben duoi), khong lay tu CENTER.
+         RIENG kich hoat thi van giu CENTER vi DATA MWG khong co truong nay. */
+      if (ch === 'MWG') {
+        if (ac) {
+          var tgAc = [all, saleOf(r.sales), shops[r.store]];
+          for (var qAc = 0; qAc < tgAc.length; qAc++) if (tgAc[qAc]) tgAc[qAc].ac[i] += ac;
+        }
+        return;
+      }
       var si = SEGI[r.segment];
       var ri = SERI[r.series]; if (ri === undefined) ri = KHAC;
       var isCur = r.m === CUR_M;
@@ -1454,6 +1481,8 @@ var TG_BUILD_APP_DATA = (function () {
       else if (PRV_M && mo === PRV_M) { key = 'dp'; lim = DIM_PRV; }
       var byCh = MWG.overview_daily_by_date[iso];
       Object.keys(byCh).forEach(function (ch) {
+        // So theo NGAY cua kenh MWG lay tu DATA MWG (khoi 7b0 ben duoi)
+        if (ch === 'MWG') return;
         var byStore = byCh[ch];
         Object.keys(byStore).forEach(function (st) {
           var v = byStore[st] || {};
@@ -1832,6 +1861,83 @@ var TG_BUILD_APP_DATA = (function () {
     function veShopOppo(tenMain) { return mapMain[tenMain] || (shops[tenMain] ? tenMain : null); }
     function thangCua(byMonth, m) { return byMonth ? (byMonth[m] || byMonth[String(m)]) : null; }
 
+    /* =================================================================
+     * QUY TAC 02/09/2026 (anh Thai chot, ap dung ca DB TG lan App Sale):
+     * TAT CA chi so chi tiet cua kenh MWG lay tu DATA MWG, khong lay CENTER.
+     * Ly do: DATA MWG la so doi tra nhung co theo NGAY va ve som hon CENTER
+     * nhieu ngay -> sale co so de trien khai ngay trong thang.
+     * Nguon: MAIN.shop_model_data[shopMAIN][thang][model] = {units, rev, brand}
+     *   du ca shop / thang / model. Series suy tu ten model; phan khuc suy tu
+     *   gia ban thuc (doanh thu / so may).
+     * NGOAI LE - vi DATA MWG KHONG CO truong do, khong phai lua chon:
+     *   - kich hoat (activated): van lay CENTER
+     *   - target: van lay CENTER, do la chi tieu OPPO giao chu khong phai so ban
+     * ============================================================== */
+    function serieTuTen(ten) {
+      var t = String(ten || '').toUpperCase();
+      if (t.indexOf('FIND') >= 0) return 'Find Series';
+      if (t.indexOf('RENO') >= 0) return 'Reno Series';
+      if (/\b[AK]\d/.test(t)) return 'A Series';
+      return null;
+    }
+    var PK_RANGE = SEGS.map(function (nhan) {
+      var so = (String(nhan).match(/\d+(?:[.,]\d+)?/g) || [])
+        .map(function (x) { return parseFloat(x.replace(',', '.')) * 1e6; });
+      if (/[<\u2264]/.test(nhan)) return [0, so[0] || Infinity];
+      if (/[>\u2265]/.test(nhan)) return [so[0] || 0, Infinity];
+      if (so.length >= 2) return [so[0], so[1]];
+      return [0, Infinity];
+    });
+    function pkTuGia(gia) {
+      for (var q = 0; q < PK_RANGE.length; q++)
+        if (gia >= PK_RANGE[q][0] && gia < PK_RANGE[q][1]) return q;
+      return PK_RANGE.length ? PK_RANGE.length - 1 : undefined;
+    }
+    (function napKenhMWG() {
+      var smdM = MAIN && MAIN.shop_model_data;
+      if (!smdM || !Object.keys(smdM).length) return;   // khong co nguon -> giu CENTER
+      src.mwgTuDataMwg = true;
+      Object.keys(smdM).forEach(function (tenMain) {
+        var st = veShopOppo(tenMain); if (!st || !shops[st]) return;
+        if (shops[st].chan !== 'MWG') return;
+        var byM = smdM[tenMain] || {};
+        Object.keys(byM).forEach(function (mk) {
+          var m = parseInt(String(mk).replace(/\D/g, ''), 10);
+          var i = MIDX[m]; if (i === undefined) return;
+          var isCur = (m === CUR_M);
+          var cell = byM[mk] || {};
+          Object.keys(cell).forEach(function (mdl) {
+            var v = cell[mdl] || {};
+            if (String(v.brand || '').toUpperCase() !== 'OPPO') return;
+            var u = v.units || 0, rv = v.rev || 0;
+            if (!u && !rv) return;
+            var ri = SERI[serieTuTen(mdl)]; if (ri === undefined) ri = KHAC;
+            var si = u ? pkTuGia(rv / u) : undefined;
+            var tg = [all, saleOf(shops[st].sale), shops[st]];
+            for (var t = 0; t < tg.length; t++) {
+              var o = tg[t]; if (!o) continue;
+              o.m[i][0] += u; o.m[i][1] += rv;
+              addCh(o, 'MWG', i, u, rv);
+              if (si !== undefined) { o.sg[si][0] += u; o.sg[si][1] += rv;
+                if (isCur) { o.sgM[si][0] += u; o.sgM[si][1] += rv; } }
+              if (ri >= 0) { o.sr[ri][0] += u; o.sr[ri][1] += rv;
+                if (isCur) { o.srM[ri][0] += u; o.srM[ri][1] += rv; } }
+              if (isCur && u) { if (!o.mo[mdl]) o.mo[mdl] = [0, 0];
+                o.mo[mdl][0] += u; o.mo[mdl][1] += rv; }
+              if (si !== undefined) {
+                if (!o.sgm) { o.sgm = []; for (var z0 = 0; z0 < SEGS.length; z0++) o.sgm.push(pairs(NM)); }
+                o.sgm[si][i][0] += u; o.sgm[si][i][1] += rv;
+              }
+              if (ri >= 0) {
+                if (!o.srm) { o.srm = []; for (var z1 = 0; z1 < SERS.length; z1++) o.srm.push(pairs(NM)); }
+                o.srm[ri][i][0] += u; o.srm[ri][i][1] += rv;
+              }
+            }
+          });
+        });
+      });
+    })();
+
     // 7a. Top model moi hang (thang hien tai)  -> sh.md = [[ten, hang, may, dt]]
     var smd = kho('shop_model_data');
     if (smd && Object.keys(smd).length) {
@@ -1849,6 +1955,39 @@ var TG_BUILD_APP_DATA = (function () {
         if (ds.length) shops[st].md = ds.slice(0, 10);
       });
     }
+
+    /* 7b0. SO THEO NGAY CUA KENH MWG - lay tu DATA MWG (quy tac 02/09/2026).
+       Nguon: MAIN.shop_day_data[shopMAIN]['<thang>-<ngay>'] = {oppo_units, oppo_rev, ...}
+       Day cung la cho quyet dinh maxDay (so lieu chay toi ngay may) cho thang hien
+       tai - CENTER ve cham nen neu doi CENTER thi thang moi se rong tron. */
+    (function napNgayKenhMWG() {
+      var sdd0 = kho('shop_day_data');
+      if (!sdd0 || !Object.keys(sdd0).length) return;
+      Object.keys(sdd0).forEach(function (tenMain) {
+        var st = veShopOppo(tenMain); if (!st || !shops[st]) return;
+        var sh = shops[st]; if (sh.chan !== 'MWG') return;
+        var sl = sales[sh.sale] || null;
+        var dayMap = sdd0[tenMain] || {};
+        Object.keys(dayMap).forEach(function (k) {
+          var p = String(k).split('-'); if (p.length < 2) return;
+          var m = +p[0], d = +p[1];
+          if (!m || !d || MIDX[m] === undefined) return;
+          var c = dayMap[k] || {};
+          var u = c.oppo_units || 0, rv = c.oppo_rev || 0;
+          if (!u && !rv) return;
+          var doy = doyOf(YEAR, m, d);
+          if (doy > lastDoy) lastDoy = doy;
+          addDy(all, doy, u, rv); addDy(chdOf(all, 'MWG'), doy, u, rv);
+          if (sl) { addDy(sl, doy, u, rv); addDy(chdOf(sl, 'MWG'), doy, u, rv); }
+          if (m === CUR_M && d >= 1 && d <= DIM_CUR) {
+            sh.d[d - 1] += u;
+            if (u && d > maxDay) maxDay = d;
+          } else if (PRV_M && m === PRV_M && d >= 1 && d <= DIM_PRV) {
+            sh.dp[d - 1] += u;
+          }
+        });
+      });
+    })();
 
     // 7b. Thi phan theo NGAY tai shop -> sh.dk (thang nay) / sh.dkp (thang truoc) = [oppoMay, tongMay]
     var sdd = kho('shop_day_data');
