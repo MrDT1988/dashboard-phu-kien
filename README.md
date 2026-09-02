@@ -13,4 +13,9 @@ Base: https://mrdt1988.github.io/dashboard-phu-kien/
 | MT | Sellout OPPO Mien Trung | /mt.html |
 
 Luong chinh sua: MWG (nguon goc) -> Sale + TG (phan Chi tiet MWG).
-Du lieu doc truc tiep tu Google Sheets qua Apps Script / gviz - F5 la ra so moi.
+Du lieu KHONG doc truc tiep. Robot (GitHub Actions `cap-nhat-du-lieu.yml`) mo DB TG,
+lay so ve roi dong thanh goi ma hoa trong `data/`. Trang doc goi do.
+Lich dung goi: moi 20 phut trong khung 09:00-13:40 VN, va 22:00 VN.
+Muon co ngay: admin bam nut "Lam moi ngay" canh dong moc so lieu tren DB TG,
+hoac Actions > Cap nhat so lieu App > Run workflow.
+Nhan duoi tieu de luon ghi ro: so toi ngay nao, goi dung luc nao, da bao nhieu gio.

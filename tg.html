@@ -277,6 +277,90 @@
     return null;
   })().catch(function (e) { console.warn('Khong mo duoc goi DB TG:', e && e.message); return null; });
 
+  /* ===== NHAN MOC SO LIEU (02/09) ========================================
+     BAY DA VAP: trang khong he noi so lieu cu tuoi hay khong.
+       - Chay bang GOI: initFn() duoc goi thang, loadAndRender KHONG chay, nen
+         o #last-updated / #mwg-last-updated de TRONG. Goi dung tu 10h sang hom
+         truoc, chot o ngay 23, ma tren man hinh khong co mot dau hieu nao.
+       - Chay bang duong lui (Apps Script that): in "Du lieu tai luc <bay gio>"
+         — dung, nhung giong het truong hop tren neu nhin luot.
+     Ket qua: mo trang sang 02/09 van tuong dang xem so moi.
+     Tu gio ghi DUNG HAI MOC: so toi ngay nao, va goi dung luc nao.
+     ===================================================================== */
+  window.__nhanMoc = function (el, ghiChuNguon) {
+    if (typeof el === 'string') el = document.getElementById(el);
+    if (!el) return;
+    var nguon = ghiChuNguon ? ' · ' + ghiChuNguon : '';
+    Promise.resolve(window.__goiDBTG || null).then(function (goi) {
+      var moc = goi && goi.moc;
+      if (!moc || !moc.updated) {
+        // Duong lui: doc thang Apps Script -> so dung la so cua luc nay.
+        el.textContent = 'Đọc trực tiếp từ Google Sheets lúc ' +
+          new Date().toLocaleString('vi-VN') + nguon;
+        el.style.color = '';
+        el.style.fontWeight = '';
+        el.title = 'Số đọc thẳng từ nguồn, không qua gói.';
+        return;
+      }
+      var t = new Date(moc.updated);
+      var gio = Math.floor((Date.now() - t.getTime()) / 3600000);
+      var thg = (moc.months && moc.months.length) ? moc.months[moc.months.length - 1] : 0;
+      var hai = function (n) { return (n < 10 ? '0' : '') + n; };
+      var tuoi = gio < 1 ? 'vừa dựng xong' : ('đã ' + gio + ' giờ trước');
+      el.textContent =
+        (moc.maxDay && thg ? 'Số liệu tới ngày ' + hai(moc.maxDay) + '/' + hai(thg) + ' · ' : '') +
+        'gói dựng lúc ' + t.toLocaleString('vi-VN') + ' (' + tuoi + ')' + nguon;
+      el.style.fontWeight = gio >= 6 ? '700' : '';
+      el.style.color = gio >= 20 ? '#ff8080' : (gio >= 6 ? '#ffc266' : '');
+      el.title = 'Gói dữ liệu do robot dựng lại theo lịch. Số nhập vào Sheet SAU mốc dựng ' +
+                 'thì chưa có ở đây — chờ lượt dựng kế tiếp hoặc bấm "Làm mới ngay".';
+      try { window.__nutLamMoi(el, goi && goi.ai); } catch (e1) {}
+    }).catch(function () {});
+  };
+
+  /* Nut "Lam moi ngay" — CHI admin. Bam la robot dung lai goi ngay, khong phai
+     cho luot 20 phut ke tiep. Duong di:
+        trang -> Apps Script (?mode=lammoi) -> GitHub API workflow_dispatch
+     Ma GitHub nam trong Script Properties cua Apps Script, KHONG nam trong file
+     nay (file nay cong khai tren GitHub Pages). Apps Script chua cai dat thi nut
+     bao ro "chua bat", khong lam hong gi. */
+  var AS_URL_LAMMOI =
+    'https://script.google.com/macros/s/AKfycbwmfOzNub6Ao6jmdc6RsIu1P1162aYXfB_ib25RuVByIIWI-aqFoVvINWZMM5FAI15n/exec';
+  window.__nutLamMoi = function (el, ai) {
+    if (!el || el.id !== 'last-updated') return;          // chi dat MOT nut
+    if (!ai || ai.r !== 'admin') return;                  // leader/sale khong duoc dung
+    if (document.getElementById('dbtg-lam-moi')) return;
+    var b = document.createElement('button');
+    b.id = 'dbtg-lam-moi';
+    b.textContent = '⟳ Làm mới ngay';
+    b.style.cssText = 'margin-left:9px;padding:2px 9px;font:inherit;font-size:11px;font-weight:700;' +
+      'border-radius:6px;border:1px solid rgba(255,255,255,.25);background:transparent;' +
+      'color:inherit;cursor:pointer;vertical-align:baseline';
+    b.onclick = function () {
+      b.disabled = true;
+      var cu = b.textContent;
+      b.textContent = 'Đang gọi robot...';
+      fetch(AS_URL_LAMMOI + '?mode=lammoi', { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (kq) {
+          if (kq && kq.ok) {
+            b.textContent = '✓ Đã gọi — xong sau ~15 phút thì F5';
+          } else {
+            b.textContent = '✗ ' + ((kq && kq.error) || 'không gọi được');
+            b.disabled = false;
+          }
+        })
+        .catch(function (e) {
+          b.textContent = '✗ ' + (e && e.message ? e.message : 'lỗi mạng');
+          b.disabled = false;
+        })
+        .then(function () {
+          setTimeout(function () { if (!b.disabled) b.textContent = cu; }, 12000);
+        });
+    };
+    el.appendChild(b);
+  };
+
   /* Chup lai ham initDashboard / loadAndRender NGAY TAI CHO GOI.
      Bat buoc phai chup, vi hai khoi <script> deu khai bao trung ten o tang
      toan cuc — khoi sau de len khoi truoc. Chup dong bo thi moi dung ham
@@ -536,6 +620,11 @@
         try { window.__theNguoiDung(goi.ai || window.__aiDangXem); } catch (e) {}
         try {
           initFn(goi[khoa]);
+          // Chay bang goi thi loadAndRender khong chay -> phai tu ghi moc so lieu,
+          // neu khong o nhan de trong va khong ai biet so cu toi dau.
+          try {
+            window.__nhanMoc(khoa === 'dataMwg' ? 'mwg-last-updated' : 'last-updated');
+          } catch (e0) {}
           // Don man hinh SAU khi ve xong. Doi mot nhip cho bieu do kip dung.
           var ai2 = goi.ai || window.__aiDangXem;
           var kenh2 = (goi.center && goi.center.channels_list) ||
@@ -3681,7 +3770,7 @@ async function loadAndRender() {
 
         if (loadingEl) loadingEl.style.display = 'none';
         const updEl = document.getElementById('last-updated');
-        if (updEl) updEl.textContent = 'Dữ liệu tải lúc: ' + new Date().toLocaleString('vi-VN') + ' · ' + sourceNote;
+        if (updEl) window.__nhanMoc(updEl, sourceNote);
         initDashboard(DATA);
     } catch (err) {
         console.error('Lỗi tải/tính dashboard:', err);
@@ -10411,7 +10500,7 @@ async function loadAndRender() {
 
         if (loadingEl) loadingEl.style.display = 'none';
         const updEl = document.getElementById('mwg-last-updated');
-        if (updEl) updEl.textContent = 'Dữ liệu tải lúc: ' + new Date().toLocaleString('vi-VN') + ' · ' + sourceNote;
+        if (updEl) window.__nhanMoc(updEl, sourceNote);
         initDashboard(DATA);
     } catch (err) {
         console.error('Lỗi tải/ tính dashboard:', err);

@@ -1,11 +1,20 @@
-# Tu dong lam moi so lieu cho App Sale/ASM.
+# Tu dong lam moi so lieu cho DB TG + App Sale/ASM.
 # Chay tren may chu cua GitHub - KHONG can may cua anh Thai bat.
+#
+# SUA 02/09: truoc day chi chay 1 lan/ngay luc 10h sang. Anh Thai cap nhat so
+# hoi 22h toi 01/09 -> goi du lieu van la ban 10h sang 01/09 (chot o ngay 23),
+# va DB TG khong he bao la so cu. Gio chay day trong khung gio co so, cong them
+# mot luot toi de don so nhap buoi toi.
+#
+# Chay day ma van re: buoc "Do nguon" hoi Apps Script dung MOT cau (sheet co
+# bao nhieu dong). Bang voi lan truoc -> thoat trong ~1 phut, khong mo Playwright.
 name: Cap nhat so lieu App
 
 on:
   schedule:
-    # 03:00 UTC = 10:00 sang gio Viet Nam. Chay moi ngay.
-    - cron: '0 3 * * *'
+    # Gio UTC. Viet Nam = UTC+7.
+    - cron: '*/20 2-6 * * *'  # 09:00-13:40 gio VN, moi 20 phut (khung doi tac tra so)
+    - cron: '0 15 * * *'      # 22:00 gio VN - don so anh Thai nhap buoi toi
   workflow_dispatch:        # cho phep bam chay tay tren GitHub
     inputs:
       force:
@@ -32,13 +41,28 @@ jobs:
         with:
           node-version: '20'
 
+      # ---- BUOC RE: co gi moi khong? ----------------------------------------
+      # Dat TRUOC buoc cai Playwright (buoc do mot minh da vai phut).
+      # Nghi ngo la cho chay tiep - tha chay thua con hon bo sot mot ngay so.
+      - name: Do nguon (re, ~1 phut)
+        id: do
+        env:
+          AS_KEY: ${{ secrets.AS_KEY }}
+          FORCE: ${{ github.event.inputs.force }}
+          # Bam tay (nut "Lam moi ngay" tren DB TG, hoac Run workflow) thi chay
+          # thang, khong do. Chi lich tu dong moi phai qua buoc do.
+          SU_KIEN: ${{ github.event_name }}
+        run: node scripts/do-nguon.mjs
+
       - name: Cai trinh duyet an
+        if: steps.do.outputs.co_moi == '1'
         run: |
           npm init -y >/dev/null 2>&1 || true
           npm i --no-audit --no-fund playwright@1.49.1
           npx playwright install --with-deps chromium
 
       - name: Lay so lieu moi tu DB TG
+        if: steps.do.outputs.co_moi == '1'
         env:
           SITE_URL: https://mrdt1988.github.io/dashboard-phu-kien
           FORCE: ${{ github.event.inputs.force }}
@@ -50,12 +74,14 @@ jobs:
       # Chia thanh cac goi MA HOA rieng tung nguoi. app-data.json (ban goc, chua ma hoa)
       # CHI ton tai trong lan chay nay, KHONG BAO GIO duoc luu vao repo.
       - name: Ma hoa theo tung nguoi
+        if: steps.do.outputs.co_moi == '1'
         env:
           SALE_CODES: ${{ secrets.SALE_CODES }}
           AS_KEY: ${{ secrets.AS_KEY }}
         run: node scripts/build-vault.mjs
 
       - name: Soi goi that cua tung nguoi (chong ro ri)
+        if: steps.do.outputs.co_moi == '1'
         env:
           SALE_CODES: ${{ secrets.SALE_CODES }}
         run: node scripts/kiem-goi-that.mjs
@@ -64,7 +90,7 @@ jobs:
       # len repo). Nhung ket qua kiem thi VAN phai luu, neu khong khong ai biet
       # vi sao hong: log Action doc khong duoc tu may anh Thai.
       - name: Luu ket qua soi goi (du hong hay khong)
-        if: always()
+        if: always() && steps.do.outputs.co_moi == '1'
         run: |
           if [ ! -f data/ket-qua-kiem-goi.json ]; then exit 0; fi
           git config user.name  "github-actions[bot]"
@@ -79,8 +105,12 @@ jobs:
           done
 
       - name: Luu lai neu co thay doi
+        if: steps.do.outputs.co_moi == '1'
         run: |
           rm -f app-data.json          # tuyet doi khong day ban chua ma hoa len
+          # Moc nguon CHI duoc ghi khi da dung goi xong. Ghi som thi mot lan
+          # dung that bai se lam luot sau tuong "khong co gi moi" roi bo qua luon.
+          if [ -f /tmp/moc-nguon-moi.json ]; then cp /tmp/moc-nguon-moi.json data/moc-nguon.json; fi
           # DUNG "git diff": no CHI thay file da duoc theo doi. Goi DB TG moi
           # (data/dbtg-<id>.json) la file MOI TINH nen git diff khong thay ->
           # workflow tuong "khong co gi doi" roi bo qua. Phai dung git status.
