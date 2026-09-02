@@ -868,3 +868,135 @@ function TG_soiCotDT() {
  * Ghi de bang setValues() se pha cong thuc -> thang sau nhap so lai phai sua tay.
  * Neu thay so doanh thu sai, chay TG_soiCotDT() de biet dong nao hong, roi
  * keo lai cong thuc trong sheet - dung ghi de bang script. */
+
+/* ============================================================================
+ * CHANG 2 — PHAN 1: BON SHEET PHU
+ * ----------------------------------------------------------------------------
+ * tg.html khong chi doc CENTER va DATA MWG. No con doc them 4 sheet nua roi VA
+ * vao goi truoc khi ve. Neu Apps Script bo qua 4 sheet nay thi goi cua sale se
+ * thieu Target, thieu Sell In, va dung SAI ten sale phu trach kenh IND.
+ *
+ *   Target 2026     cot B = Store ID, cot C = Target doanh thu
+ *   SELL IN         Store ID | Retailer | Province | Thang | Product | Nhom | SL
+ *   SHOP THEO SALE  A=StoreID B=Store C=Sales D=Channel E=Size shop  (chi IND)
+ *   Share KA        thi phan FPT + Viettel, hai bang canh nhau
+ *
+ * Sheet nao khong co thi bo qua em ai, KHONG lam hong ca goi — giong het cach
+ * tg.html xu ly (no bat try/catch tung sheet mot).
+ * ==========================================================================*/
+
+var TG_SHEET_PHU = {
+  TARGET: 'Target 2026',
+  SELL_IN: 'SELL IN',
+  SHOP_SALE: 'SHOP THEO SALE',
+  SHARE_KA: 'Share KA',
+};
+
+/** Doc ca sheet, tra ve mang dong (da bo dong tieu de). Khong co sheet -> []. */
+function TG_docSheetPhu_(ten) {
+  try {
+    var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ten);
+    if (!sh) { Logger.log('Khong co sheet "' + ten + '" - bo qua.'); return []; }
+    var n = sh.getLastRow(), c = sh.getLastColumn();
+    if (n < 2 || c < 1) return [];
+    var v = sh.getRange(1, 1, n, c).getValues();
+    v.shift(); // bo tieu de, giong tg.html
+    return v;
+  } catch (e) {
+    Logger.log('Loi doc sheet "' + ten + '": ' + e.message + ' - bo qua.');
+    return [];
+  }
+}
+
+function TG_soPhu_(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  var n = parseFloat(String(v).replace(/,/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
+/**
+ * Va 3 sheet phu vao goi CENTER — dung thu tu va dung cach tg.html lam
+ * (xem tg.html doan 3775-3830). Tra ve bang thong ke de doi chieu.
+ */
+function TG_ganSheetPhu_(A) {
+  var tk = {};
+
+  // ---- 1. Target theo Store ID ----
+  var tRows = TG_docSheetPhu_(TG_SHEET_PHU.TARGET);
+  var target = {};
+  tRows.forEach(function (r) {
+    if (!r || r.length < 3) return;
+    var id = (r[1] !== undefined && r[1] !== '') ? String(r[1]).trim() : '';
+    if (id) target[id] = TG_soPhu_(r[2]);
+  });
+  var khop = 0;
+  (A.store_rows || []).forEach(function (r) {
+    if (r.store_id != null && target[String(r.store_id).trim()] !== undefined) {
+      r.target = target[String(r.store_id).trim()];
+      if (r.target > 0) khop++;
+    } else { r.target = 0; }
+  });
+  tk.targetDong = Object.keys(target).length;
+  tk.targetKhop = khop;
+
+  // ---- 2. SELL IN (chi kenh IND dung) ----
+  A.sell_in_rows = TG_docSheetPhu_(TG_SHEET_PHU.SELL_IN);
+  tk.sellInDong = A.sell_in_rows.length;
+
+  // ---- 3. SHOP THEO SALE — nguon CHUAN cho Sale phu trach + Goi O.C cua IND ----
+  var sRows = TG_docSheetPhu_(TG_SHEET_PHU.SHOP_SALE);
+  var theoTen = {}, mucTheoTen = {};
+  sRows.forEach(function (r) {
+    if (!r || r.length < 3) return;
+    var ten = String(r[1] || '').trim();
+    var sale = String(r[2] || '').trim();
+    var kenh = String(r[3] || '').trim().toUpperCase();
+    var muc = String(r[4] || '').trim();
+    if (kenh !== 'IND') return;              // sheet chi dung cho IND
+    if (ten && sale) theoTen[ten] = sale;
+    if (ten && muc) mucTheoTen[ten] = muc;
+  });
+  A.shop_sale_map = theoTen;
+  A.shop_level_map = mucTheoTen;
+
+  var vaCross = 0, vaSale = 0, vaMuc = 0;
+  if (Object.keys(theoTen).length) {
+    (A.crosstab || []).forEach(function (rec) {
+      if (rec.channel !== 'IND' || !rec.store) return;
+      var s = theoTen[rec.store];
+      if (s && s !== rec.sales) { rec.sales = s; vaCross++; }
+    });
+    (A.store_rows || []).forEach(function (r) {
+      if (r.channel !== 'IND' || !r.store) return;
+      var s = theoTen[r.store];
+      if (s && s !== r.sale) { r.sale = s; vaSale++; }
+      var m = mucTheoTen[r.store];
+      if (m && m !== r.level) { r.level = m; vaMuc++; }
+    });
+    // sales_list phai theo Sale ĐÃ VÁ, khong con theo CENTER nua
+    var tapSale = {};
+    (A.store_rows || []).forEach(function (r) { if (r.sale) tapSale[r.sale] = 1; });
+    (A.crosstab || []).forEach(function (r) { if (r.sales) tapSale[r.sales] = 1; });
+    A.sales_list = Object.keys(tapSale).sort();
+  }
+  tk.vaCrosstab = vaCross; tk.vaStoreSale = vaSale; tk.vaStoreMuc = vaMuc;
+  tk.soSale = (A.sales_list || []).length;
+
+  return tk;
+}
+
+/** Doc rieng Share KA (thi phan FPT + Viettel) - di kem goi MWG. */
+function TG_docShareKa_() {
+  return TG_docSheetPhu_(TG_SHEET_PHU.SHARE_KA);
+}
+
+/** Chay tay de xem 4 sheet phu doc ra sao, KHONG sua gi. */
+function TG_soiSheetPhu() {
+  var bao = {};
+  Object.keys(TG_SHEET_PHU).forEach(function (k) {
+    var r = TG_docSheetPhu_(TG_SHEET_PHU[k]);
+    bao[TG_SHEET_PHU[k]] = r.length + ' dong' + (r.length ? ' x ' + r[0].length + ' cot' : '');
+  });
+  Logger.log(JSON.stringify(bao));
+  return bao;
+}
