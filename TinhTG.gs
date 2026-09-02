@@ -776,6 +776,7 @@ function TG_chotKy() {
 
 /** Dùng trong doGet: trả về nội dung đã tính sẵn. */
 function TG_traKetQua_(phan) {
+  phan = String(phan || 'center');
   /* DUONG CHAY TAY QUA HTTP.
      Trinh don chon ham trong trinh soan Apps Script rat kho bam tu dong (menu
      dong lai truoc khi kip chon). Cac "phan" duoi day cho phep goi thang mot ham
@@ -784,6 +785,17 @@ function TG_traKetQua_(phan) {
   if (phan === 'soicot')  return { soi: TG_soiCotDT() };
   if (phan === 'xemlich') return { lich: TG_xemLich() };
   if (phan === 'soiapp')  return { soi: TG_soiAppData() };
+  if (phan === 'appindex') return TG_traIndexApp_();
+  if (phan === 'dunggoi')  return TG_dungGoiApp();
+
+  /* Lay goi cua dung mot nguoi: phan = "goi/<id>/<ban bam>".
+     Nhet ca ba thu vao MOT tham so "phan" de KHONG phai sua Ma.gs — file do
+     dang co phien lam viec khac dung chung, cham vao la de dam nhau. Khi nao
+     ranh se don lai cho gon. */
+  if (phan.indexOf('goi/') === 0) {
+    var pt = phan.split('/');
+    return TG_traGoiNguoi_(pt[1], pt[2]);
+  }
 
   var ten = TG_TEP[phan];
   if (!ten) return { error: 'phan phai la center | mwg | soiphu | soicot | soiapp | xemlich' };
@@ -2431,4 +2443,439 @@ function TG_soiAppData() {
   var kq = TG_dungAppData_();
   Logger.log(JSON.stringify(kq.thongKe));
   return kq.thongKe;
+}
+
+
+/* ============================================================================
+ * CHANG 2 — PHAN 3: CAT PHAN CUA TUNG NGUOI
+ * ----------------------------------------------------------------------------
+ * NGUYEN VAN phan cat pham vi cua scripts/build-vault.mjs (ham gopAll /
+ * saleTheoKenh / maSo / locGT / phamVi), chi them tien to TGV_ cho khoi dam ten
+ * voi cac ham khac trong file nay. KHONG doi mot dong logic nao.
+ *
+ * Nguyen tac giu nguyen tu ban cu: CAT O TANG DONG GOI, khong phai tang giao
+ * dien. An tren man hinh thi du lieu VAN NAM trong goi cua ho — mo F12 la doc
+ * duoc. Cat o day thi du lieu KHONG CO trong goi. Khong co gi de ma lo.
+ *
+ *   admin  -> toan tinh, du 3 kenh
+ *   leader -> CHI 1 KENH, nhung thay tat ca sale co shop trong kenh do
+ *   sale   -> chi shop cua minh (du kenh nao)
+ * ==========================================================================*/
+function TGV_TGV_gopAll(D, ds) {
+  const NM = D.months.length, N = D.lastDoy || 0;
+  const cap = (n) => Array.from({ length: n }, () => [0, 0]);
+  const so = (n) => Array.from({ length: n }, () => 0);
+  const NSG = (D.segsMkt || []).length;
+  const out = {
+    m: cap(NM), ac: so(NM), dy: so(N), dr: so(N), ch: {},
+    sg: cap(D.segs.length), sgM: cap(D.segs.length),
+    sr: cap(D.sers.length), srM: cap(D.sers.length),
+    chd: {}, shops: 0, tg: 0,
+  };
+  const cong = (a, b) => { if (!b) return; for (let i = 0; i < a.length; i++) { a[i][0] += b[i][0]; a[i][1] += b[i][1]; } };
+  const congD = (a, b) => { if (!b) return; for (let i = 0; i < a.length; i++) a[i] += (b[i] || 0); };
+  const congQ = (a, b) => { if (!b) return; for (let i = 0; i < a.length; i++) for (let k = 0; k < 4; k++) a[i][k] += (b[i] ? b[i][k] : 0); };
+  const quad = (n) => Array.from({ length: n }, () => [0, 0, 0, 0]);
+  const gomModel = (cu, them) => {
+    const g = {};
+    [...(cu || []), ...(them || [])].forEach(([n2, u, r]) => { g[n2] = g[n2] || [0, 0]; g[n2][0] += u; g[n2][1] += r; });
+    return Object.keys(g).map((n2) => [n2, g[n2][0], g[n2][1]]).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  };
+  const gomTon = (cu, them) => {
+    if (!them) return cu;
+    const key = (x) => String(x).toUpperCase().replace(/\s+/g, ' ').replace(/\s*\+\s*/g, '+').trim();
+    const g = {};
+    [...(cu || []), ...them].forEach(([n2, nhap, ban]) => {
+      const k = key(n2);
+      if (!g[k]) g[k] = { n: n2, nhap: 0, ban: 0 };
+      g[k].nhap += nhap; g[k].ban += ban;
+    });
+    return Object.keys(g).map((k) => [g[k].n, g[k].nhap, g[k].ban, g[k].nhap - g[k].ban])
+      .sort((a2, b2) => b2[3] - a2[3]);
+  };
+  const gomSellin = (a, b) => {
+    if (!b) return a;
+    const r = a || Array.from({ length: NM }, () => [0, 0, 0]);
+    for (let i = 0; i < NM; i++) for (let k = 0; k < 3; k++) r[i][k] += (b[i] ? b[i][k] : 0);
+    return r;
+  };
+
+  for (const s of ds) {
+    cong(out.m, s.m); congD(out.dy, s.dy); congD(out.dr, s.dr);
+    congD(out.ac, s.ac);
+    cong(out.sg, s.sg); cong(out.sgM, s.sgM); cong(out.sr, s.sr); cong(out.srM, s.srM);
+    if (s.mo) out.mo = gomModel(out.mo, s.mo);
+    if (s.sgm) { if (!out.sgm) out.sgm = s.sgm.map((x) => x.map(() => [0, 0]));
+      s.sgm.forEach((sg2, k) => sg2.forEach((v, i) => { out.sgm[k][i][0] += v[0]; out.sgm[k][i][1] += v[1]; })); }
+    if (s.srm) { if (!out.srm) out.srm = s.srm.map((x) => x.map(() => [0, 0]));
+      s.srm.forEach((ser, k) => ser.forEach((v, i) => { out.srm[k][i][0] += v[0]; out.srm[k][i][1] += v[1]; })); }
+    if (s.moM) { out.moM = out.moM || {};
+      Object.keys(s.moM).forEach((m) => { out.moM[m] = gomModel(out.moM[m], s.moM[m]).slice(0, 12); }); }
+    if (s.si) out.si = gomSellin(out.si, s.si);
+    // ngay x hang ca nam: cong thang tung o
+    if (s.dnB) {
+      if (!out.dnB) out.dnB = s.dnB.map(() => [0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+      s.dnB.forEach((v, i) => {
+        if (!out.dnB[i] || !v) return;
+        for (let k = 0; k < 14; k++) out.dnB[i][k] += (v[k] || 0);
+      });
+    }
+    // top model tung hang tung thang: cong het roi moi cat top 10
+    if (s.mdB) {
+      out._mdB = out._mdB || {};
+      Object.keys(s.mdB).forEach((m2) => {
+        out._mdB[m2] = out._mdB[m2] || {};
+        Object.keys(s.mdB[m2]).forEach((h2) => {
+          const g2 = out._mdB[m2][h2] || (out._mdB[m2][h2] = {});
+          (s.mdB[m2][h2] || []).forEach(([n3, u3, r3]) => {
+            g2[n3] = g2[n3] || [0, 0]; g2[n3][0] += u3; g2[n3][1] += r3;
+          });
+        });
+      });
+    }
+    if (s.tk) out.tk = gomTon(out.tk, s.tk);
+    if (s.tgc) { out.tgc = out.tgc || {};
+      Object.keys(s.tgc).forEach((c) => { out.tgc[c] = out.tgc[c] || [0, 0];
+        out.tgc[c][0] += s.tgc[c][0]; out.tgc[c][1] += s.tgc[c][1]; }); }
+    out.shops += s.shops || 0; out.tg += s.tg || 0;
+    if (s.dmN) {
+      out._dmN = out._dmN || {};
+      Object.keys(s.dmN).forEach((d3) => {
+        out._dmN[d3] = out._dmN[d3] || {};
+        Object.keys(s.dmN[d3]).forEach((b3) => {
+          const G3 = out._dmN[d3][b3] || (out._dmN[d3][b3] = {});
+          (s.dmN[d3][b3] || []).forEach((x3) => {
+            G3[x3[0]] = G3[x3[0]] || [0, 0, 0, 0];
+            G3[x3[0]][0] += x3[1]; G3[x3[0]][1] += x3[2];
+            G3[x3[0]][2] += x3[3]; G3[x3[0]][3] += x3[4];
+          });
+        });
+      });
+    }
+    if (s.bmL) {
+      if (!out.bmL) out.bmL = s.bmL.map(() => [0, 0]);
+      s.bmL.forEach((v, i) => {
+        if (!out.bmL[i] || !v) return;
+        out.bmL[i][0] += (v[0] || 0); out.bmL[i][1] += (v[1] || 0);
+      });
+    }
+    if (s.pkD) {
+      out.pkD = out.pkD || {};
+      Object.keys(s.pkD).forEach((d3) => {
+        if (!out.pkD[d3]) out.pkD[d3] = Array.from({ length: 7 }, () => [0, 0]);
+        (s.pkD[d3] || []).forEach((v3, k3) => {
+          if (out.pkD[d3][k3]) { out.pkD[d3][k3][0] += v3[0]; out.pkD[d3][k3][1] += v3[1]; }
+        });
+      });
+    }
+    for (const c of Object.keys(s.ch || {})) {
+      if (!out.ch[c]) out.ch[c] = cap(NM);
+      cong(out.ch[c], s.ch[c]);
+    }
+    for (const c of Object.keys(s.chd || {})) {
+      const src = s.chd[c];
+      if (!out.chd[c]) out.chd[c] = {
+        m: cap(NM), ac: so(NM), dy: so(N), dr: so(N),
+        sg: cap(D.segs.length), sgM: cap(D.segs.length),
+        sr: cap(D.sers.length), srM: cap(D.sers.length),
+      };
+      const t = out.chd[c];
+      cong(t.m, src.m); congD(t.dy, src.dy); congD(t.dr, src.dr);
+      congD(t.ac, src.ac);
+      cong(t.sg, src.sg); cong(t.sgM, src.sgM); cong(t.sr, src.sr); cong(t.srM, src.srM);
+      if (src.mo) t.mo = gomModel(t.mo, src.mo);
+      if (src.mkt) {
+        if (!t.mkt) t.mkt = { m: Array.from({ length: NM }, () => [0, 0, 0, 0]), br: [] };
+        for (let i = 0; i < NM; i++) for (let k = 0; k < 4; k++) t.mkt.m[i][k] += src.mkt.m[i][k];
+        if (src.mkt.sg && NSG) { if (!t.mkt.sg) t.mkt.sg = quad(NSG); congQ(t.mkt.sg, src.mkt.sg); }
+        if (src.mkt.sgY && NSG) { if (!t.mkt.sgY) t.mkt.sgY = quad(NSG); congQ(t.mkt.sgY, src.mkt.sgY); }
+        const g = {};
+        [...(t.mkt.br || []), ...(src.mkt.br || [])].forEach(([b, u, r]) => {
+          g[b] = g[b] || [0, 0]; g[b][0] += u; g[b][1] += r;
+        });
+        t.mkt.br = Object.keys(g).map((b) => [b, g[b][0], g[b][1]])
+          .sort((a, b) => b[1] - a[1]).slice(0, 10);
+      }
+    }
+  }
+  if (out._dmN) {
+    out.dmN = {};
+    Object.keys(out._dmN).forEach((d3) => {
+      out.dmN[d3] = {};
+      Object.keys(out._dmN[d3]).forEach((b3) => {
+        const G3 = out._dmN[d3][b3];
+        out.dmN[d3][b3] = Object.keys(G3)
+          .map((i3) => [+i3, G3[i3][0], G3[i3][1], G3[i3][2], G3[i3][3]])
+          .sort((a3, z3) => z3[1] - a3[1]).slice(0, 8);
+      });
+    });
+    delete out._dmN;
+  }
+  if (out._mdB) {
+    out.mdB = {};
+    Object.keys(out._mdB).forEach((m2) => {
+      out.mdB[m2] = {};
+      Object.keys(out._mdB[m2]).forEach((h2) => {
+        const g2 = out._mdB[m2][h2];
+        out.mdB[m2][h2] = Object.keys(g2).map((n3) => [n3, g2[n3][0], g2[n3][1]])
+          .sort((a2, b2) => b2[1] - a2[1]).slice(0, 10);
+      });
+    });
+    delete out._mdB;
+  }
+  if (out.chd.MWG && out.chd.MWG.mkt) out.mkt = out.chd.MWG.mkt;
+  return out;
+}
+
+// Cat 1 sale xuong con dung 1 kenh — dung cho Leader
+function TGV_saleTheoKenh(D, s, ch) {
+  const cd = (s.chd || {})[ch];
+  const shops = (s.s || []).filter((x) => x.ch2 === ch);
+  if (!cd && !shops.length) return null;
+  const cap = (n) => Array.from({ length: n }, () => [0, 0]);
+  const rong = {
+    m: cap(D.months.length), dy: [], dr: [],
+    sg: cap(D.segs.length), sgM: cap(D.segs.length),
+    sr: cap(D.sers.length), srM: cap(D.sers.length),
+  };
+  const c = cd || rong;
+  const o = {
+    n: s.n, shops: shops.length,
+    tg: shops.reduce((t, x) => t + (x.tg || 0), 0),
+    m: c.m, dy: c.dy || [], dr: c.dr || [],
+    ch: { [ch]: c.m },
+    sg: c.sg, sgM: c.sgM, sr: c.sr, srM: c.srM,
+    chd: { [ch]: c },
+    s: shops,
+  };
+  if (c.mkt) o.mkt = c.mkt;
+  if (c.ac) o.ac = c.ac;
+  if (c.mo) o.mo = c.mo;
+  if (c.srm) o.srm = c.srm;
+  if (c.sgm) o.sgm = c.sgm;
+  if (c.moM) o.moM = c.moM;
+  if (s.tgc && s.tgc[ch]) o.tgc = { [ch]: s.tgc[ch] };
+  if (ch === 'IND' && s.si) o.si = s.si;   // sell-in chi co o kenh IND
+  if (ch === 'IND' && s.tk) o.tk = s.tk;   // ton kho cung vay
+  if (ch === 'MWG') { if (s.dnB) o.dnB = s.dnB; if (s.mdB) o.mdB = s.mdB; if (s.bmL) o.bmL = s.bmL;
+    if (s.dmN) o.dmN = s.dmN; if (s.pkD) o.pkD = s.pkD; }
+  return o;
+}
+
+// Giai trinh: chi giu dong cua shop THUOC pham vi nguoi nay — giu dung luat
+// 'sale nao thay so cua sale do'. Noi theo MA SO trong ten shop.
+function TGV_TGV_maSo(s) {
+  var t = String(s || ''), i = 0, r = [];
+  while (i < t.length) {
+    var c = t.charCodeAt(i);
+    if (c >= 48 && c <= 57) {
+      var j = i;
+      while (j < t.length) { var d = t.charCodeAt(j); if (d < 48 || d > 57) break; j++; }
+      var so = t.slice(i, j);
+      if (so.length >= 2 && so.length <= 5) r.push(so);
+      i = j;
+    } else i++;
+  }
+  return r;
+}
+function TGV_locGT(gtAll, ds) {
+  if (!Array.isArray(gtAll) || !gtAll.length) return null;
+  var ten = [];
+  ds.forEach(function (s) { (s.s || []).forEach(function (x) { if (x && x.n) ten.push(x.n); }); });
+  if (!ten.length) return null;
+  var maCua = ten.map(TGV_maSo);
+  var out = [];
+  gtAll.forEach(function (gt) {
+    var ma = TGV_maSo(gt[0]);
+    if (!ma.length) return;
+    for (var i = 0; i < ten.length; i++) {
+      var mb = maCua[i], khop = false;
+      for (var k = 0; k < ma.length; k++) if (mb.indexOf(ma[k]) >= 0) { khop = true; break; }
+      if (khop) { out.push([ten[i], gt[1], gt[2], gt[3]]); return; }
+    }
+  });
+  return out.length ? out : null;
+}
+function TGV_phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
+  let ds = D.sales.filter((s) => tenSales.includes(s.n));
+  if (kenh) ds = ds.map((s) => TGV_saleTheoKenh(D, s, kenh)).filter(Boolean)
+                   .sort((a, b) => b.m.reduce((t, x) => t + x[1], 0) - a.m.reduce((t, x) => t + x[1], 0));
+  const o = {
+    updated: D.updated, months: D.months, maxDay: D.maxDay,
+    dimCur: D.dimCur, dimPrv: D.dimPrv, year: D.year, lastDoy: D.lastDoy,
+    segs: D.segs, sers: D.sers,
+    chans: kenh ? [kenh] : D.chans,
+    v: D.v, segsMkt: D.segsMkt || [], nhomPK: D.nhomPK || null,
+    dmT: D.dmT || null,
+    gt: TGV_locGT(D.gtAll, ds),
+    shareKA: D.shareKA || null,
+    src: D.src || null, tkMonths: D.tkMonths || [],
+    tgK: D.tgK || null, sizes: D.sizes || [],
+    tkLe: (vaiTro === 'admin' || vaiTro === 'leader') ? (D.tkLe || null) : null,
+    // Ton kho chi co o kenh IND -> Leader kenh khac khong nhan gi
+    dlTon: (kenh && kenh !== 'IND') ? []
+      : (D.dlTon || []).filter((x) => (x.sale || []).some((sn) => tenSales.includes(sn))),
+    vaiTro, kenh: kenh || null,
+    all: TGV_gopAll(D, ds), sales: ds,
+  };
+  // Headcount la so nguoi cua ca kenh — chi dua cho quan ly vung va leader dung kenh do
+  if (D.hc && vaiTro !== 'sale') {
+    o.hc = {};
+    (kenh ? [kenh] : D.chans).forEach((c) => { if (D.hc[c]) o.hc[c] = D.hc[c]; });
+  }
+  if (vaiTro === 'admin') { o.mktNote = D.mktNote; o.all.mkt = D.all.mkt; o.all.chd = D.all.chd; o.all.si = D.all.si; o.all.tk = D.all.tk; if (D.all.tgc) o.all.tgc = D.all.tgc; }
+  if (hangCuaToi) o.hang = hangCuaToi;   // "4/16" — biet minh dung dau ma khong thay so nguoi khac
+  return o;
+}
+
+
+/* ============================================================================
+ * CHANG 2 — PHAN 3b: DANH TINH, CAT GOI, VA DUONG TRA GOI CHO TUNG NGUOI
+ * ----------------------------------------------------------------------------
+ * MA PIN KHONG NAM TRONG MA NGUON. No nam trong Thuoc tinh tap lenh (Project
+ * Settings > Script Properties) ten SALE_CODES, dung dinh dang y het GitHub
+ * Secret cu:
+ *   { "admin":  { "pin": "...", "ten": "Duy Thái" },
+ *     "leader": { "MWG": "...", "KA": "...", "IND": "..." },
+ *     "sales":  { "CAO CHÍ BẢO": "...", ... } }
+ *
+ * MA PIN KHONG DI QUA DUONG TRUYEN. App gui BAN BAM sha256(pin + "|" + id),
+ * khong gui pin. Nho vay pin khong nam trong nhat ky may chu, khong nam trong
+ * lich su trinh duyet, khong nam trong URL.
+ *
+ * ID cua moi nguoi la ban bam cua ten+vai tro nen CO DINH qua moi lan dung goi
+ * (khac ban cu: moi lan robot chay lai la sinh id ngau nhien moi).
+ * ==========================================================================*/
+
+var TG_TEP_APP_INDEX = 'TG_app_index.json';
+var TG_TIEN_TO_GOI  = 'TG_app_';
+
+function TG_bamHex_(s) {
+  var b = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s, Utilities.Charset.UTF_8);
+  var h = '';
+  for (var i = 0; i < b.length; i++) {
+    var x = (b[i] < 0 ? b[i] + 256 : b[i]).toString(16);
+    h += (x.length === 1 ? '0' : '') + x;
+  }
+  return h;
+}
+function TG_idNguoi_(ten, vaiTro) { return TG_bamHex_('DBTG|' + vaiTro + '|' + ten).slice(0, 16); }
+
+function TG_docMaNguoi_() {
+  var raw = PropertiesService.getScriptProperties().getProperty('SALE_CODES');
+  if (!raw) throw new Error('Chua dat SALE_CODES trong Thuoc tinh tap lenh.');
+  var o; try { o = JSON.parse(raw); } catch (e) { throw new Error('SALE_CODES khong phai JSON hop le.'); }
+  return o;
+}
+
+/* So khop ten go tay voi ten trong du lieu — giu nguyen cach cua build-vault:
+   uu tien khop chinh xac, roi ha xuong khop khong dau. */
+function TG_chuanTen_(x) { return String(x || '').normalize('NFC').replace(/\s+/g, ' ').trim().toUpperCase(); }
+function TG_khongDau_(x) {
+  return TG_chuanTen_(x).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/Đ/g, 'D');
+}
+
+/**
+ * Dung goi cho TUNG NGUOI roi luu vao Drive. Chay tren lich rieng, KHONG chung
+ * voi TG_chotKy de moi lan chay deu gon trong gioi han 6 phut cua Google.
+ */
+function TG_dungGoiApp() {
+  var t0 = Date.now();
+  var ma = TG_docMaNguoi_();
+  var kq = TG_dungAppData_();
+  var D = kq.data;
+
+  var tenTatCa = (D.sales || []).map(function (s) { return s.n; });
+  var mapChinhXac = {}, mapKhongDau = {};
+  tenTatCa.forEach(function (n) {
+    mapChinhXac[TG_chuanTen_(n)] = n;
+    var k = TG_khongDau_(n);
+    mapKhongDau[k] = (mapKhongDau[k] === undefined || mapKhongDau[k] === n) ? n : null;
+  });
+  var doiTen = function (x) {
+    if (mapChinhXac[TG_chuanTen_(x)]) return mapChinhXac[TG_chuanTen_(x)];
+    return mapKhongDau[TG_khongDau_(x)] || null;
+  };
+
+  var xep = (D.sales || []).slice().sort(function (a, b) {
+    return b.m.reduce(function (t, x) { return t + x[1]; }, 0) -
+           a.m.reduce(function (t, x) { return t + x[1]; }, 0);
+  }).map(function (s) { return s.n; });
+  var hangCua = function (n) { return (xep.indexOf(n) + 1) + '/' + xep.length; };
+
+  var index = [], bao = [], boQua = [];
+  function them(ten, vaiTro, pin, sales, kenh) {
+    if (!pin || !/^\d{6,12}$/.test(String(pin))) { boQua.push(ten + ' (ma phai 6-12 chu so)'); return; }
+    var doi = sales.map(doiTen).filter(Boolean);
+    if (!doi.length) { boQua.push(ten + ' (khong khop sale nao)'); return; }
+    var goi = TGV_phamVi(D, doi, vaiTro, vaiTro === 'sale' ? hangCua(doi[0]) : null, kenh);
+    if (!goi.sales.length) { boQua.push(ten + ' (khong co sale trong pham vi)'); return; }
+    var id = TG_idNguoi_(ten, vaiTro);
+    var txt = JSON.stringify(goi);
+    TG_luuTep_(TG_TIEN_TO_GOI + id + '.json', txt);
+    index.push({ id: id, n: ten, r: vaiTro, bam: TG_bamHex_(String(pin) + '|' + id) });
+    bao.push(vaiTro + ' ' + ten + ' — ' + goi.sales.length + ' sale, ' +
+             Math.round(txt.length / 1024) + ' KB');
+  }
+
+  if (ma.admin && ma.admin.pin) them(ma.admin.ten || 'Toàn Tiền Giang', 'admin', ma.admin.pin, tenTatCa, null);
+  Object.keys(ma.leader || {}).forEach(function (kenh) {
+    var v = ma.leader[kenh];
+    them('Leader ' + kenh, 'leader', (typeof v === 'string' ? v : v.pin), tenTatCa, kenh);
+  });
+  Object.keys(ma.sales || {}).forEach(function (ten) {
+    var that = doiTen(ten);
+    if (!that) { boQua.push(ten + ' (khong co trong du lieu)'); return; }
+    them(that, 'sale', ma.sales[ten], [that]);
+  });
+
+  TG_luuTep_(TG_TEP_APP_INDEX, JSON.stringify({
+    updated: D.updated, maxDay: D.maxDay, months: D.months, users: index,
+  }));
+
+  var ket = {
+    soNguoi: index.length, boQua: boQua,
+    giay: Math.round((Date.now() - t0) / 100) / 10,
+    nguon: kq.thongKe,
+  };
+  Logger.log(JSON.stringify(ket));
+  Logger.log(bao.join('\n'));
+  return ket;
+}
+
+/** Danh sach nguoi cho man hinh dang nhap — CHI ten + vai tro, khong co ban bam. */
+function TG_traIndexApp_() {
+  var txt = TG_docTep_(TG_TEP_APP_INDEX);
+  if (!txt) return { error: 'Chua dung goi app lan nao. Chay TG_dungGoiApp().' };
+  var o = JSON.parse(txt);
+  return {
+    updated: o.updated, maxDay: o.maxDay, months: o.months,
+    users: (o.users || []).map(function (u) { return { id: u.id, n: u.n, r: u.r }; }),
+  };
+}
+
+/** Tra goi cua DUNG mot nguoi, sau khi doi chieu ban bam. */
+function TG_traGoiNguoi_(id, bam) {
+  if (!id || !bam) return { error: 'Thieu id hoac ma.' };
+  var txt = TG_docTep_(TG_TEP_APP_INDEX);
+  if (!txt) return { error: 'Chua dung goi app lan nao.' };
+  var o = JSON.parse(txt);
+  var u = (o.users || []).filter(function (x) { return x.id === id; })[0];
+  if (!u) return { error: 'Khong co nguoi nay.' };
+  if (String(bam).toLowerCase() !== String(u.bam).toLowerCase()) return { error: 'Sai ma.' };
+  var goi = TG_docTep_(TG_TIEN_TO_GOI + id + '.json');
+  if (!goi) return { error: 'Chua co goi cho nguoi nay.' };
+  return goi; // da la chuoi JSON
+}
+
+/** Chay tay MOT LAN: dat lich tu dung goi app moi 2 gio (lech 30 phut voi chot ky). */
+function TG_datLichGoiApp() {
+  var cu = ScriptApp.getProjectTriggers(), daXoa = 0;
+  for (var i = 0; i < cu.length; i++) {
+    if (cu[i].getHandlerFunction() === 'TG_dungGoiApp') { ScriptApp.deleteTrigger(cu[i]); daXoa++; }
+  }
+  ScriptApp.newTrigger('TG_dungGoiApp').timeBased().everyHours(2).create();
+  var bao = 'Da xoa ' + daXoa + ' lich cu, dat lich moi: TG_dungGoiApp moi 2 gio.';
+  Logger.log(bao);
+  return bao;
 }
