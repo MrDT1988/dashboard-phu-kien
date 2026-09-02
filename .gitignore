@@ -2,3 +2,9 @@ app-data.json
 tg_raw.json
 *.bak
 patch_*.py
+
+# Rac cua may khi chay bo kiem (node scripts/kiem-*.mjs can jsdom).
+# CI tu cai lay goi no can, khong doc tu day.
+node_modules/
+package.json
+package-lock.json
