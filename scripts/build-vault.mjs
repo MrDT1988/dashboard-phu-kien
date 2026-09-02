@@ -46,6 +46,21 @@ function maHoa(obj, pin) {
   };
 }
 
+function locTon(D, ds, vaiTro, kenh, tenSales) {
+  if (kenh && kenh !== 'IND') return [];
+  const trongPV = new Set();
+  (ds || []).forEach((s) => (s.s || []).forEach((x) => { if (x && x.n) trongPV.add(x.n); }));
+  const cuaToi = new Set(tenSales || []);
+  const giu = (D.dlTon || []).filter((x) => (x.sale || []).some((sn) => cuaToi.has(sn)));
+  if (vaiTro === 'admin') return giu;
+  return giu.map((x) => ({
+    n: x.n,
+    cn: (x.cn || []).filter((t) => trongPV.has(t)),
+    sale: (x.sale || []).filter((sn) => cuaToi.has(sn)),
+    nhap: x.nhap, ban: x.ban, ton: x.ton, md: x.md,
+  }));
+}
+
 // Cong lai phan "toan bo" cho dung pham vi cua tung nguoi
 function gopAll(D, ds) {
   const NM = D.months.length, N = D.lastDoy || 0;
@@ -298,9 +313,13 @@ function phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     src: D.src || null, tkMonths: D.tkMonths || [],
     tgK: D.tgK || null, sizes: D.sizes || [],
     tkLe: (vaiTro === 'admin' || vaiTro === 'leader') ? (D.tkLe || null) : null,
-    // Ton kho chi co o kenh IND -> Leader kenh khac khong nhan gi
-    dlTon: (kenh && kenh !== 'IND') ? []
-      : (D.dlTon || []).filter((x) => (x.sale || []).some((sn) => tenSales.includes(sn))),
+    // Ton kho chi co o kenh IND -> Leader kenh khac khong nhan gi.
+    // MOT DAI LY CO NHIEU CHI NHANH, cac chi nhanh do co the thuoc nhieu sale.
+    // Ban cu chi LOC DONG nhung bung nguyen mang sale[] va cn[] -> sale A mo F12
+    // la doc duoc ten sale B va ten shop cua B. Bo kiem 02/09 bat dung cho nay.
+    // Nay cat hai mang do xuong dung pham vi nguoi xem; tong nhap/ban/ton van giu
+    // (hang nam o kho dai ly, sale phai biet tong moi dat hang duoc).
+    dlTon: locTon(D, ds, vaiTro, kenh, tenSales),
     vaiTro, kenh: kenh || null,
     all: gopAll(D, ds), sales: ds,
   };
