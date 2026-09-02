@@ -2707,6 +2707,34 @@ function TGV_locGT(gtAll, ds) {
   });
   return out.length ? out : null;
 }
+/* Bang ton theo DAI LY. Mot dai ly co nhieu chi nhanh, cac chi nhanh do CO THE
+   thuoc ve nhieu sale khac nhau. Ban cu chi LOC dong (giu dong nao co ten minh)
+   nhung van bung nguyen o "sale" va "cn" -> sale A mo F12 la doc duoc ten sale B
+   va ten cac shop cua B. Bo kiem 02/09 bat dung cho nay.
+   Nay: giu nguyen tong ton cua dai ly (dung — hang nam o kho dai ly, sale phai
+   biet tong), nhung CAT ten nguoi va ten chi nhanh xuong con dung pham vi cua ho. */
+function TGV_locTon(D, ds, vaiTro, kenh, tenSales) {
+  if (kenh && kenh !== 'IND') return [];        // ton kho chi co o kenh IND
+  var trongPV = {};
+  (ds || []).forEach(function (s) {
+    (s.s || []).forEach(function (x) { if (x && x.n) trongPV[x.n] = 1; });
+  });
+  var cuaToi = {};
+  (tenSales || []).forEach(function (n) { cuaToi[n] = 1; });
+  var giu = (D.dlTon || []).filter(function (x) {
+    return (x.sale || []).some(function (sn) { return cuaToi[sn]; });
+  });
+  if (vaiTro === 'admin') return giu;
+  return giu.map(function (x) {
+    return {
+      n: x.n,
+      cn:   (x.cn   || []).filter(function (t)  { return trongPV[t]; }),
+      sale: (x.sale || []).filter(function (sn) { return cuaToi[sn]; }),
+      nhap: x.nhap, ban: x.ban, ton: x.ton, md: x.md
+    };
+  });
+}
+
 function TGV_phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
   let ds = D.sales.filter((s) => tenSales.includes(s.n));
   if (kenh) ds = ds.map((s) => TGV_saleTheoKenh(D, s, kenh)).filter(Boolean)
@@ -2724,8 +2752,7 @@ function TGV_phamVi(D, tenSales, vaiTro, hangCuaToi, kenh) {
     tgK: D.tgK || null, sizes: D.sizes || [],
     tkLe: (vaiTro === 'admin' || vaiTro === 'leader') ? (D.tkLe || null) : null,
     // Ton kho chi co o kenh IND -> Leader kenh khac khong nhan gi
-    dlTon: (kenh && kenh !== 'IND') ? []
-      : (D.dlTon || []).filter((x) => (x.sale || []).some((sn) => tenSales.includes(sn))),
+    dlTon: TGV_locTon(D, ds, vaiTro, kenh, tenSales),
     vaiTro, kenh: kenh || null,
     all: TGV_gopAll(D, ds), sales: ds,
   };
@@ -2904,6 +2931,29 @@ function TG_datLichGoiApp() {
  *
  * Chay: ?mode=tinh&phan=kiempv   — chi doc, khong luu gi.
  * ==========================================================================*/
+/* Tim DUONG DAN chinh xac cua mot chuoi trong goi — khong bao chung chung kieu
+   "nam o khoa sales" nua. Phai doc duoc "sales[0].s[3].stf[1][0]" moi phan biet
+   duoc ro ri that (ten sale khac) voi trung ten (mot PG tinh co trung ten sale). */
+function TG_timDuong_(o, kim, tran) {
+  var ra = [];
+  (function di(v, p) {
+    if (ra.length >= tran || v === null || v === undefined) return;
+    var t = typeof v;
+    if (t === 'string') { if (v.toLowerCase().indexOf(kim) >= 0) ra.push(p); return; }
+    if (t !== 'object') return;
+    if (Object.prototype.toString.call(v) === '[object Array]') {
+      for (var i = 0; i < v.length && ra.length < tran; i++) di(v[i], p + '[' + i + ']');
+      return;
+    }
+    var ks = Object.keys(v);
+    for (var j = 0; j < ks.length && ra.length < tran; j++) {
+      if (String(ks[j]).toLowerCase().indexOf(kim) >= 0) ra.push(p + '.{' + ks[j] + '}');
+      di(v[ks[j]], p + '.' + ks[j]);
+    }
+  })(o, '');
+  return ra;
+}
+
 function TG_kiemPhamViApp() {
   var t0 = Date.now();
   var kq = TG_dungAppData_();
@@ -2959,13 +3009,7 @@ function TG_kiemPhamViApp() {
     if (dinh.length) {
       var noi = {};
       dinh.forEach(function (kh) {
-        var k = String(kh).toLowerCase(), o = [];
-        Object.keys(G).forEach(function (khoa) {
-          try {
-            if (JSON.stringify(G[khoa]).toLowerCase().indexOf(k) >= 0) o.push(khoa);
-          } catch (e) {}
-        });
-        noi[kh] = o;
+        noi[kh] = TG_timDuong_(G, String(kh).toLowerCase(), 3);
       });
       chiTiet.push({ cua: ten, lot: noi });
       loi.push('sale "' + ten + '": con dau vet cua ' + dinh.length + ' sale khac');
@@ -2992,7 +3036,7 @@ function TG_kiemPhamViApp() {
     soSaleDaKiem: soKiem, soLeaderDaKiem: soLeader,
     goiLotTen: soLotTen, goiLotShop: soLotShop,
     loi: loi.slice(0, 20),
-    chiTiet: chiTiet.slice(0, 6),
+    chiTiet: chiTiet.slice(0, 20),
     giay: Math.round((Date.now() - t0) / 100) / 10,
   };
   Logger.log(JSON.stringify(ket));
