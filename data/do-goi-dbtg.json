@@ -1,31 +1,31 @@
 {
- "doLuc": "2026-09-01T03:08:35.729Z",
+ "doLuc": "2026-09-02T03:09:36.534Z",
  "ghiChu": "Chi la kich thuoc (MB) de tinh buoc \"DB TG doc goi ma hoa\". Khong co so lieu kinh doanh.",
  "center": {
   "ten": "CENTER (so noi bo OPPO, 3 kenh)",
-  "thoMB": 6,
+  "thoMB": 5.4,
   "nenMB": 0.5,
-  "tiLeNen": "9%",
+  "tiLeNen": "9.2%",
   "truongNangNhat": [
-   "crosstab 2.4 MB",
-   "overview_daily_by_date 1.8 MB",
-   "sell_in_rows 0.7 MB",
+   "crosstab 2.5 MB",
+   "overview_daily_by_date 1.9 MB",
    "ind_daily_by_date 0.6 MB",
    "store_month_lookup 0.1 MB",
    "series_detail_crosstab 0.1 MB",
    "store_rows 0.1 MB",
-   "week_channel_models 0 MB"
+   "week_channel_models 0 MB",
+   "channel_month_headcount 0 MB"
   ]
  },
  "dataMwg": {
   "ten": "DATA MWG (so thi truong)",
-  "thoMB": 22.3,
+  "thoMB": 22.5,
   "nenMB": 2.3,
   "tiLeNen": "10.2%",
   "truongNangNhat": [
    "shop_day_data 6.6 MB",
    "shop_model_data 5.5 MB",
-   "shop_segment_crosstab 3.5 MB",
+   "shop_segment_crosstab 3.6 MB",
    "daily 3.2 MB",
    "shop_staff_pk1020 2 MB",
    "crosstab 0.8 MB",
