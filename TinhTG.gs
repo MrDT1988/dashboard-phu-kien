@@ -798,6 +798,8 @@ function TG_traKetQuaThat_(phan) {
   if (phan === 'appindex') return TG_traIndexApp_();
   if (phan === 'dunggoi')  return TG_dungGoiApp();
   if (phan === 'kiempv')   return TG_kiemPhamViApp();
+  if (phan === 'datlichgoi') return { bao: TG_datLichGoiApp() };
+  if (phan === 'datlich')    return { bao: TG_datLich() };
 
   /* Lay goi cua dung mot nguoi: phan = "goi/<id>/<ban bam>".
      Nhet ca ba thu vao MOT tham so "phan" de KHONG phai sua Ma.gs — file do
