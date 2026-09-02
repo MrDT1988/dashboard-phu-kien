@@ -212,6 +212,12 @@
     var st = new Blob([nen]).stream().pipeThrough(new DecompressionStream('gzip'));
     return JSON.parse(await new Response(st).text());
   }
+  /* Dia chi Apps Script. Khai bao o day vi __goiDBTG dung toi no.
+     Phai goi qua window.fetch (da duoc va o dau file de tu gan chia khoa),
+     KHONG dung _fetch goc — _fetch khong kem chia khoa nen Apps Script tu choi. */
+  var AS_EXEC =
+    'https://script.google.com/macros/s/AKfycbwmfOzNub6Ao6jmdc6RsIu1P1162aYXfB_ib25RuVByIIWI-aqFoVvINWZMM5FAI15n/exec';
+
   window.__goiDBTG = (async function () {
     /* ROBOT PHAI DI DUONG CU.
        Robot mo dung trang nay de LAY SO LIEU MOI ve roi dong goi lai. Neu no
@@ -247,6 +253,49 @@
         if (!ai) { window.__goiHong = true; window.__aiDangXem = null; return null; }
       }
       window.__aiDangXem = ai;
+
+      /* ===== DUONG MOI: APPS SCRIPT DA TINH SAN (02/09) =======================
+         Truoc day trang nay tai 152.000 dong tho ve TRINH DUYET roi moi tinh.
+         Vi qua nang nen phai de them ba tang chong do: checkpoint trong trinh
+         duyet, robot GitHub mo trang de dong goi, va goi ma hoa tung nguoi.
+         Moi tang la mot cho de so lieu cu di. Ngay 02/09 ca ba cung lo ra.
+
+         Gio phep tinh chay ngay tren Apps Script (giong Dashboard Mien Trung):
+         F5 la doc thang ket qua da tinh, khong qua ban sao nao.
+
+         CHI ADMIN di duong nay o chang 1. Leader/sale van doc goi ma hoa nhu cu
+         vi goi do da duoc cat pham vi san; cat pham vi ngay tren Apps Script la
+         viec cua chang 2. Lam vay de khong ai nhin thay du lieu ngoai pham vi
+         chi vi mot buoc chuyen kien truc. */
+      if (ai.r === 'admin' && !window.__BO_QUA_TINH) {
+        try {
+          var tMoi = Date.now();
+          var hai = await Promise.all([
+            fetch(AS_EXEC + '?mode=tinh&phan=center', { cache: 'no-store' }),
+            fetch(AS_EXEC + '?mode=tinh&phan=mwg', { cache: 'no-store' }),
+          ]);
+          if (hai[0].ok && hai[1].ok) {
+            var goiC = await hai[0].json();
+            var goiM = await hai[1].json();
+            if (goiC && goiC.data && goiM && goiM.data) {
+              console.log('DB TG: doc so da tinh tu Apps Script trong ' +
+                Math.round((Date.now() - tMoi) / 100) / 10 + 's');
+              try { localStorage.setItem(KHO_AI, JSON.stringify(ai)); } catch (e) {}
+              return {
+                center: goiC.data,
+                dataMwg: goiM.data,
+                shareKa: goiM.data && goiM.data.shareKa ? goiM.data.shareKa : null,
+                moc: { updated: goiC.chotLuc, maxDay: goiM.data.maxDay, months: goiM.data.months },
+                ai: ai,
+                nguon: 'apps-script',
+              };
+            }
+          }
+          console.warn('DB TG: duong Apps Script chua san sang, quay ve goi cu.');
+        } catch (e) {
+          console.warn('DB TG: loi doc Apps Script (' + (e && e.message) + '), quay ve goi cu.');
+        }
+      }
 
       var ma = null;
       try { ma = localStorage.getItem(KHO_MA); } catch (e) {}
