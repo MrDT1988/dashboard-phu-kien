@@ -4116,7 +4116,8 @@ const PRODUCT_TARGETS = {
 })();
 /* them 03/09/2026 — Bao cao tuan/thang (scripts/bc.js) can target kenh + phan bo target theo Sale.
    Chi DUA RA ngoai de doc, khong sua gi. computeSaleTargetAllocation la function declaration nen goi duoc. */
-window.__bcTarget = function () { return { kenh: CHANNEL_TARGETS, sp: PRODUCT_TARGETS, sale: computeSaleTargetAllocation }; };
+window.__bcTarget = function () { return { kenh: CHANNEL_TARGETS, sp: PRODUCT_TARGETS, sale: computeSaleTargetAllocation,
+    kaSub: kaStoreSubchannelByName, kaThuTu: KA_SUBCHANNEL_ORDER, kaMau: KA_SUBCHANNEL_COLORS, ocLevel: classifyIndLevel, ocTarget: OC_TARGET_PER_SHOP, ocThuTu: OC_LEVEL_ORDER }; };
 const channelColor = CHANNEL_GROUP_COLORS_JS;
 
 function fmtVND(v) {
@@ -14290,6 +14291,7 @@ body.zoom-on { overflow: hidden; }
 <script src="scripts/demo-bo-cuc.js?v=202609010322"></script>
 <script src="scripts/demo-sang.js?v=202609010322"></script>
 <!-- 03/09/2026: Bao cao tuan / thang — lop trinh bay moi (anh Thai chot khung 03/09). Go 2 dong nay la ve y nhu cu. -->
-<link rel="stylesheet" href="scripts/bc.css?v=202609031000">
-<script src="scripts/bc.js?v=202609031000"></script>
+<link rel="stylesheet" href="scripts/bc.css?v=202609031100">
+<script src="scripts/bc.js?v=202609031100"></script>
+<script src="scripts/bc-chitiet.js?v=202609031100"></script>
 </html>
