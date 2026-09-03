@@ -591,8 +591,8 @@
   var dem = 0;
   var t = setInterval(function () {
     if (napDuLieu()) { clearInterval(t); if (dungKhung()) { napKy(); apThietBi(); veTatCa(); } }
-    else if (++dem > 600) clearInterval(t);   // 3 phút
-  }, 300);
+    else if (++dem > 7200) clearInterval(t);   // 60 phút — đường Apps Script có khi tải > 3 phút (đã dính 03/09)
+  }, 500);
   window.__bc = { st: st, veTatCa: veTatCa, gom: gom, khoangKy: khoangKy, kyTruoc: kyTruoc, chuoiKy: chuoiKy, modelKy: modelKy, gomSeries: gomSeries, boiCanh: boiCanh,
     dangKy: function (pid, cau) { DANG_KY[pid] = cau; if (D) { chuanBiPanel(pid, cau.muon); veTatCa(); } },
     ui: { el: el, esc: esc, fInt: fInt, fTy: fTy, fTyNgan: fTyNgan, fTr: fTr, pct: pct, chip: chip, khoi: khoi, chot: chot, nutChon: nutChon, bangMini: bangMini, khungBieuDo: khungBieuDo, cauCotChong: cauCotChong, cauVong: cauVong, mau: mau, PK: PK, sang: sang, thanhNho: thanhNho, tenShopNgan: tenShopNgan, hexMo: hexMo, congNgay: congNgay, ngayVN: ngayVN, soNgay: soNgay, soNgayThang: soNgayThang, thangCua: thangCua, iso: iso },
