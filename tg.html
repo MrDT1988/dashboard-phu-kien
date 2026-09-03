@@ -3549,20 +3549,25 @@ async function fetchShopSaleMap(baseUrl) {
         rows.shift(); // bỏ header
         const byStoreName = {};
         const levelByStoreName = {};
+        const byStoreId = {};        // 03/09/2026: Store ID -> Sale, MOI KENH (MWG khop qua PARTNER_TO_STORE_ID)
+        const channelByStoreName = {};
         rows.forEach(r => {
             if (!r || r.length < 3) return;
+            const storeId = (r[0] === null || r[0] === undefined) ? '' : String(r[0]).trim();
             const storeName = (r[1] || '').toString().trim();
             const sale = (r[2] || '').toString().trim();
             const channel = (r[3] || '').toString().trim().toUpperCase();
             const level = (r[4] || '').toString().trim();
-            if (channel !== 'IND') return; // sheet chỉ cần dùng cho IND
-            if (storeName && sale) byStoreName[storeName] = sale;
-            if (storeName && level) levelByStoreName[storeName] = level;
+            /* 03/09/2026 — LUAT NGUON (anh Thai): sheet SHOP THEO SALE la nguon DUY NHAT cho Sale phu trach,
+               AP DUNG MOI KENH (truoc chi IND). Goi O.C (cot E) van chi dung cho IND. */
+            if (storeName && sale) { byStoreName[storeName] = sale; channelByStoreName[storeName] = channel; }
+            if (storeId && sale) byStoreId[storeId] = sale;
+            if (channel === 'IND' && storeName && level) levelByStoreName[storeName] = level;
         });
-        return { byStoreName, levelByStoreName };
+        return { byStoreName, levelByStoreName, byStoreId, channelByStoreName };
     } catch (err) {
         console.warn('Không tải được sheet "SHOP THEO SALE" (IND sẽ tạm dùng lại Sale/Gói trong CENTER):', err.message);
-        return { byStoreName: {}, levelByStoreName: {} };
+        return { byStoreName: {}, levelByStoreName: {}, byStoreId: {}, channelByStoreName: {} };
     }
 }
 
@@ -3832,6 +3837,7 @@ async function loadAndRender() {
         const shopTheoSale = await fetchShopSaleMap(APPS_SCRIPT_URL);
         DATA.shop_sale_map = shopTheoSale.byStoreName;
         DATA.shop_level_map = shopTheoSale.levelByStoreName;
+        DATA.shop_sale_by_id = shopTheoSale.byStoreId;          // 03/09: cho tab MWG (bc-chitiet.js) khop qua Store ID
 
         // Ghi đè NGAY TẠI ĐÂY (1 chỗ duy nhất) Sale phụ trách + Gói O.C cho MỌI bản ghi IND trong crosstab
         // + store_rows, dùng sheet "SHOP THEO SALE" làm nguồn CHUẨN thay cho CENTER (anh Thái yêu cầu
@@ -3844,18 +3850,27 @@ async function loadAndRender() {
         // Sale/Gói cũ của CENTER (fallback an toàn).
         if (DATA.shop_sale_map && Object.keys(DATA.shop_sale_map).length) {
             let patchedCrosstab = 0, patchedStoreRows = 0, patchedLevel = 0;
+            /* 03/09/2026 — LUAT NGUON: Sale theo SHOP THEO SALE cho MOI KENH (khong con loc IND). Goi O.C van chi IND. */
             DATA.crosstab.forEach(rec => {
-                if (rec.channel !== 'IND' || !rec.store) return;
+                if (!rec.store) return;
                 const trueSale = DATA.shop_sale_map[rec.store];
                 if (trueSale && trueSale !== rec.sales) { rec.sales = trueSale; patchedCrosstab++; }
             });
             DATA.store_rows.forEach(r => {
-                if (r.channel !== 'IND' || !r.store) return;
+                if (!r.store) return;
                 const trueSale = DATA.shop_sale_map[r.store];
                 if (trueSale && trueSale !== r.sale) { r.sale = trueSale; patchedStoreRows++; }
+                if (r.channel !== 'IND') return;
                 const trueLevel = DATA.shop_level_map[r.store];
                 if (trueLevel && trueLevel !== r.level) { r.level = trueLevel; patchedLevel++; }
             });
+            // overview_daily_by_date (ngay -> kenh -> shop -> {sale,...}) cung mang sale cua CENTER -> va luon
+            let patchedDaily = 0;
+            Object.keys(DATA.overview_daily_by_date || {}).forEach(iso => {
+                const byCh = DATA.overview_daily_by_date[iso];
+                Object.keys(byCh).forEach(ch => { Object.keys(byCh[ch]).forEach(st => { const t = DATA.shop_sale_map[st]; if (t && byCh[ch][st].sale !== t) { byCh[ch][st].sale = t; patchedDaily++; } }); });
+            });
+            console.log('SHOP THEO SALE -> overview_daily_by_date: da va ' + patchedDaily + ' o');
             console.log('Đã vá Sale/Gói IND theo "SHOP THEO SALE": ' + patchedCrosstab + ' dòng crosstab, ' + patchedStoreRows + ' Sale + ' + patchedLevel + ' Gói ở store_rows đổi khác CENTER.');
         }
 
@@ -9750,7 +9765,8 @@ function hourSlotLabel(h) {
 // Danh sách phân Size shop do anh Thái cung cấp (khớp theo cột "Mã siêu thị xuất hàng" = PARTNER ID trong file gốc), cập nhật thủ công khi có danh sách mới
 const SHOP_SIZE_BY_STORE_ID = {"189": "S", "752": "S", "456": "S", "823": "S", "361": "S", "724": "S", "614": "S", "953": "S", "954": "S", "435": "S", "9390": "A", "716": "S", "303": "A", "1660": "B", "1840": "B", "155": "A", "552": "A", "1498": "A", "650": "A", "9257": "A", "1570": "B", "1051": "A", "863": "A", "1683": "B", "938": "A", "647": "B", "1457": "C", "6270": "B", "644": "C", "9105": "B", "5321": "C", "1348": "A", "1882": "B", "434": "B", "1050": "B", "3063": "C", "2342": "C", "1982": "C", "627": "D", "10510": "C", "6325": "D", "2410": "B", "7051": "C", "5248": "C", "3062": "C", "1166": "C", "1887": "C", "5499": "C", "13861": "C", "1503": "C", "2054": "D", "744": "C", "984": "B", "2413": "D", "1784": "C", "2245": "C", "7340": "C", "2870": "C", "12327": "C", "1581": "C", "9256": "C", "2244": "D", "2755": "C", "9189": "D", "8076": "C", "1922": "D", "1677": "D", "8742": "C", "2204": "C", "7803": "D", "2469": "D", "2881": "D", "7146": "C", "7095": "C", "6600": "D", "9236": "D", "5751": "D", "2740": "D", "6324": "D", "7825": "D", "9201": "D", "9987": "D", "7008": "D", "1397": "D", "10731": "D", "7610": "D", "9408": "D", "7826": "D", "6883": "D", "8983": "D", "7755": "D", "10177": "D", "6977": "D", "7094": "D", "7142": "D", "13900": "D", "10006": "D", "7125": "D", "6881": "D", "7620": "D", "7701": "D", "7611": "D", "7249": "D", "7693": "D", "7084": "D", "6929": "D", "7093": "D", "10344": "D", "8011": "D", "10471": "D", "7692": "D", "10544": "D", "10705": "D", "10479": "D", "6997": "D", "7318": "D", "7009": "D", "12061": "D", "7562": "D", "7092": "D", "9976": "D", "7702": "D", "7621": "D", "6909": "D"};
 // PARTNER ID (= Mã siêu thị xuất hàng trong DATA MWG) -> STORE ID thật (khớp với cột Store ID trong sheet Target 2026) — 2 mã khác nhau cho cùng 1 shop
-const PARTNER_TO_STORE_ID = {"189": "789", "752": "782", "456": "791", "823": "783", "361": "7742", "724": "790", "614": "11545", "953": "12325", "954": "12245", "435": "10169", "9390": "29770", "716": "531", "303": "6835", "1660": "17677", "1840": "18662", "155": "12888", "552": "11763", "1498": "16807", "650": "11759", "9257": "29695", "1570": "17019", "1051": "13561", "863": "792", "1683": "18290", "938": "12184", "647": "11947", "1457": "16504", "6270": "28260", "644": "11666", "9105": "29608", "5321": "24688", "1348": "14735", "1882": "19516", "434": "10170", "1050": "13560", "3063": "22454", "2342": "21369", "1982": "20426", "627": "11762", "10510": "30228", "6325": "28262", "2410": "21489", "7051": "28376", "5248": "24678", "3062": "22287", "1166": "14087", "1887": "19589", "5499": "28722", "13861": "31168", "1503": "16505", "2054": "20837", "744": "13162", "984": "14086", "2413": "21486", "1784": "18666", "2245": "21295", "7340": "28807", "2870": "22292", "12327": "30972", "1581": "17505", "9256": "29815", "2244": "21252", "2755": "22000", "9189": "29548", "8076": "29162", "1922": "20235", "1677": "18438", "8742": "29450", "2204": "20751", "7803": "28916", "2469": "21702", "2881": "22486", "7146": "28424", "7095": "28464", "6600": "28263", "9236": "29633", "5751": "24952", "2740": "22026", "6324": "28249", "7825": "28932", "9201": "29697", "9987": "30036", "7008": "28297", "1397": "16924", "10731": "30413", "7610": "28978", "9408": "29788", "7826": "28860", "6883": "28152", "8983": "29618", "7755": "28782", "10177": "30119", "6977": "28401", "7094": "28402", "7142": "28434", "13900": "31191", "10006": "30067", "7125": "28433", "6881": "28151", "7620": "28813", "7701": "28746", "7611": "28723", "7249": "28516", "7693": "28814", "7084": "28377", "6929": "28250", "7093": "28386", "10344": "30166", "8011": "29012", "10471": "30235", "7692": "28912", "10544": "30334", "10705": "30387", "10479": "30238", "6997": "28430", "7318": "28651", "7009": "28308", "12061": "30847", "7562": "28718", "7092": "28432", "9976": "29955", "7702": "28759", "7621": "28720", "6909": "28400"};
+window.__bcMwg = window.__bcMwg || {};
+const PARTNER_TO_STORE_ID = window.__bcMwg.partnerToStore = {"189": "789", "752": "782", "456": "791", "823": "783", "361": "7742", "724": "790", "614": "11545", "953": "12325", "954": "12245", "435": "10169", "9390": "29770", "716": "531", "303": "6835", "1660": "17677", "1840": "18662", "155": "12888", "552": "11763", "1498": "16807", "650": "11759", "9257": "29695", "1570": "17019", "1051": "13561", "863": "792", "1683": "18290", "938": "12184", "647": "11947", "1457": "16504", "6270": "28260", "644": "11666", "9105": "29608", "5321": "24688", "1348": "14735", "1882": "19516", "434": "10170", "1050": "13560", "3063": "22454", "2342": "21369", "1982": "20426", "627": "11762", "10510": "30228", "6325": "28262", "2410": "21489", "7051": "28376", "5248": "24678", "3062": "22287", "1166": "14087", "1887": "19589", "5499": "28722", "13861": "31168", "1503": "16505", "2054": "20837", "744": "13162", "984": "14086", "2413": "21486", "1784": "18666", "2245": "21295", "7340": "28807", "2870": "22292", "12327": "30972", "1581": "17505", "9256": "29815", "2244": "21252", "2755": "22000", "9189": "29548", "8076": "29162", "1922": "20235", "1677": "18438", "8742": "29450", "2204": "20751", "7803": "28916", "2469": "21702", "2881": "22486", "7146": "28424", "7095": "28464", "6600": "28263", "9236": "29633", "5751": "24952", "2740": "22026", "6324": "28249", "7825": "28932", "9201": "29697", "9987": "30036", "7008": "28297", "1397": "16924", "10731": "30413", "7610": "28978", "9408": "29788", "7826": "28860", "6883": "28152", "8983": "29618", "7755": "28782", "10177": "30119", "6977": "28401", "7094": "28402", "7142": "28434", "13900": "31191", "10006": "30067", "7125": "28433", "6881": "28151", "7620": "28813", "7701": "28746", "7611": "28723", "7249": "28516", "7693": "28814", "7084": "28377", "6929": "28250", "7093": "28386", "10344": "30166", "8011": "29012", "10471": "30235", "7692": "28912", "10544": "30334", "10705": "30387", "10479": "30238", "6997": "28430", "7318": "28651", "7009": "28308", "12061": "30847", "7562": "28718", "7092": "28432", "9976": "29955", "7702": "28759", "7621": "28720", "6909": "28400"};
 const EXCLUDED_SHOPS = new Set([
     'AAR_BTR_BAT - 21A1 Trần Hưng Đạo (Ba Tri)',
     'AAR_TGI_GCO - 313 Nguyễn Huệ',
@@ -14295,7 +14311,7 @@ body.zoom-on { overflow: hidden; }
 <script src="scripts/demo-bo-cuc.js?v=202609010322"></script>
 <script src="scripts/demo-sang.js?v=202609010322"></script>
 <!-- 03/09/2026: Bao cao tuan / thang — lop trinh bay moi (anh Thai chot khung 03/09). Go 2 dong nay la ve y nhu cu. -->
-<link rel="stylesheet" href="scripts/bc.css?v=202609031100">
-<script src="scripts/bc.js?v=202609031100"></script>
-<script src="scripts/bc-chitiet.js?v=202609031100"></script>
+<link rel="stylesheet" href="scripts/bc.css?v=202609031200">
+<script src="scripts/bc.js?v=202609031200"></script>
+<script src="scripts/bc-chitiet.js?v=202609031200"></script>
 </html>
