@@ -3422,11 +3422,14 @@ async function fetchRowsFromAppsScript(baseUrl, sheetName, startRow) {
 
     if (msgEl) msgEl.textContent = 'Đang kiểm tra kích thước dữ liệu...';
     let info;
-    try {
-        info = await fetchJSON(baseUrl + '?' + sheetParam + '&mode=info', 120000);
-    } catch (err) {
-        throw new Error('Không gọi được Apps Script (bước info): ' + err.message);
+    /* 03/09/2026: Apps Script thinh thoang tra 404 (trang loi chung cua Google, ~1 lan/3 goi) roi lai OK ngay.
+       Truoc day buoc info khong thu lai -> "Chot ky ngay" cua anh Thai chet ngay tu dau. Gio thu 3 lan, cach 4s. */
+    let infoErr = null;
+    for (let lanInfo = 1; lanInfo <= 3 && !info; lanInfo++) {
+        try { info = await fetchJSON(baseUrl + '?' + sheetParam + '&mode=info', 120000); }
+        catch (err) { infoErr = err; if (msgEl) msgEl.textContent = 'Apps Script chưa trả lời (lần ' + lanInfo + '/3): ' + err.message + ' — thử lại...'; await sleep(4000); }
     }
+    if (!info) throw new Error('Không gọi được Apps Script (bước info, đã thử 3 lần): ' + (infoErr && infoErr.message));
     if (info && info.error) throw new Error('Apps Script báo lỗi: ' + info.error);
     const lastRow = info.lastRow;
     if (!lastRow || lastRow < 2) throw new Error('Sheet "' + sheetName + '" không có dữ liệu (lastRow=' + lastRow + ')');
@@ -10207,11 +10210,12 @@ async function fetchRowsFromAppsScript(baseUrl, startRow) {
     // Bước 1: hỏi tổng số dòng
     if (msgEl) msgEl.textContent = 'Đang kiểm tra kích thước dữ liệu...';
     let info;
-    try {
-        info = await fetchJSON(baseUrl + '?mode=info', 120000);
-    } catch (err) {
-        throw new Error('Không gọi được Apps Script (bước info): ' + err.message);
+    let infoErr = null;   // 03/09/2026: thu lai 3 lan nhu ban CENTER (Apps Script hay tra 404 tam thoi)
+    for (let lanInfo = 1; lanInfo <= 3 && !info; lanInfo++) {
+        try { info = await fetchJSON(baseUrl + '?mode=info', 120000); }
+        catch (err) { infoErr = err; if (msgEl) msgEl.textContent = 'Apps Script chưa trả lời (lần ' + lanInfo + '/3) — thử lại...'; await sleep(4000); }
     }
+    if (!info) throw new Error('Không gọi được Apps Script (bước info, đã thử 3 lần): ' + (infoErr && infoErr.message));
     if (info && info.error) throw new Error('Apps Script báo lỗi: ' + info.error);
     const lastRow = info.lastRow;
     if (!lastRow || lastRow < 2) throw new Error('Sheet không có dữ liệu (lastRow=' + lastRow + ')');
