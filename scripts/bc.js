@@ -88,10 +88,10 @@
   function soNgayThang(m) { return new Date(Date.UTC(2026, m, 0)).getUTCDate(); }
   function khoangKy(cd, id, nguon) {   // -> {tu, den, denCo, do, nhan, nhanNgan}; nguon 'mwg' -> lịch ngày của DATA MWG
     var NG = nguon === 'mwg' ? napNgayMWG() : NGAY; var cuoi = NG[NG.length - 1] || '';
-    if (cd === 'tuan') { var t = TUAN.filter(function (x) { return x.iso === id; })[0]; var doT = cuoi < t.den; return { tu: t.tu, den: t.den, denCo: doT ? (cuoi < t.tu ? t.tu : cuoi) : t.den, do: doT, nhan: 'Tuần ' + t.so, nhanNgan: 'W' + t.so, chiTiet: ngayVN(t.tu) + ' – ' + ngayVN(t.den), so: t.so, nguon: nguon }; }
+    if (cd === 'tuan') { var t = TUAN.filter(function (x) { return x.iso === id; })[0]; var doT = cuoi < t.den; return { tu: t.tu, den: t.den, denCo: doT ? (cuoi < t.tu ? t.tu : cuoi) : t.den, do: doT, chuaCo: cuoi < t.tu, nhan: 'Tuần ' + t.so, nhanNgan: 'W' + t.so, chiTiet: ngayVN(t.tu) + ' – ' + ngayVN(t.den), so: t.so, nguon: nguon, cuoiNguon: cuoi }; }
     var m = +id, tu = '2026-' + String(m).padStart(2, '0') + '-01', den = '2026-' + String(m).padStart(2, '0') + '-' + String(soNgayThang(m)).padStart(2, '0');
     var doDo = cuoi >= tu && cuoi < den;
-    return { tu: tu, den: den, denCo: doDo ? cuoi : (cuoi < tu ? tu : den), do: doDo, nhan: 'Tháng ' + m + '/2026', nhanNgan: 'T' + m, chiTiet: doDo ? 'đến ' + ngayVN(cuoi) : '1 – ' + ngayVN(den), so: m, nguon: nguon };
+    return { tu: tu, den: den, denCo: doDo ? cuoi : (cuoi < tu ? tu : den), do: doDo, chuaCo: cuoi < tu, nhan: 'Tháng ' + m + '/2026', nhanNgan: 'T' + m, chiTiet: doDo ? 'đến ' + ngayVN(cuoi) : '1 – ' + ngayVN(den), so: m, nguon: nguon, cuoiNguon: cuoi };
   }
   function kyTruoc(cd, k) {   // kỳ liền trước, so cùng số ngày nếu kỳ này đang dở
     var r;
@@ -296,7 +296,7 @@
 
     /* --- Thanh kỳ --- */
     var bar = el('div', 'bc-ky-bar');
-    bar.innerHTML = '<div><div class="bc-ky-ten">' + esc(k.nhan) + ' <small>' + esc(k.chiTiet) + '</small></div><div class="bc-ky-ss">' + (kt ? 'So với <b>' + esc(kt.nhan) + '</b>' + (kt.cungKy ? ' — cùng số ngày (' + soNgay(k.tu, k.denCo) + ' ngày)' : '') : 'Chưa có kỳ trước để so') + (k.do ? ' · <b>kỳ đang dở</b>, số đến ' + ngayVN(k.denCo) : '') + '</div></div>';
+    bar.innerHTML = '<div><div class="bc-ky-ten">' + esc(k.nhan) + ' <small>' + esc(k.chiTiet) + '</small></div><div class="bc-ky-ss">' + (k.chuaCo ? '<b class="bc-giam-chu">CENTER chưa có số kỳ này</b> (mới tới ' + ngayVN(k.cuoiNguon) + ') — tab MWG có thể đã có vì DATA MWG cập nhật theo ngày · ' : '') + (kt ? 'So với <b>' + esc(kt.nhan) + '</b>' + (kt.cungKy ? ' — cùng số ngày (' + soNgay(k.tu, k.denCo) + ' ngày)' : '') : 'Chưa có kỳ trước để so') + (k.do ? ' · <b>kỳ đang dở</b>, số đến ' + ngayVN(k.denCo) : '') + '</div></div>';
     grid.appendChild(bar);
 
     /* --- 1. KPI --- */
@@ -554,7 +554,10 @@
     var sel = $('#bc-ky'); if (!sel) return; var ds = dsKy(st.cd); sel.innerHTML = '';
     ds.forEach(function (x) { var o = document.createElement('option'); o.value = x.id; o.textContent = x.ten + (x.phu ? ' · ' + x.phu : ''); sel.appendChild(o); });
     if (st.ky == null || !ds.some(function (x) { return String(x.id) === String(st.ky); })) {
-      var cuoi = ds[ds.length - 1];
+      // Mặc định: kỳ gần nhất mà CENTER (Tổng quan/KA/IND) đã có số — DATA MWG có thể đi trước vài ngày
+      var cuoiC = NGAY[NGAY.length - 1] || '';
+      var coC = ds.filter(function (x) { return st.cd === 'tuan' ? x.t.coSo : ('2026-' + String(x.id).padStart(2, '0') + '-01') <= cuoiC; });
+      var cuoi = coC[coC.length - 1] || ds[ds.length - 1];
       // Tuần đang dở mới có 1–2 ngày số thì mặc định mở tuần đủ 7 ngày gần nhất (anh vẫn chọn tuần dở được)
       if (st.cd === 'tuan' && cuoi && cuoi.do && ds.length > 1) { var cuoiAll = [NGAY[NGAY.length - 1], NGAY_MWG[NGAY_MWG.length - 1]].filter(Boolean).sort().pop(); if (soNgay(cuoi.t.tu, cuoiAll) <= 2) cuoi = ds[ds.length - 2]; }
       st.ky = cuoi ? cuoi.id : null;
