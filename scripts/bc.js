@@ -238,15 +238,17 @@
       options: {
         layout: { padding: { top: 22 } },
         plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'rectRounded', color: mau('chuPhu'), font: { size: 12 } } },
-          tooltip: { callbacks: { footer: function (it) { return 'Tổng: ' + fmt(tong[it[0].dataIndex]); } } },
-          tongTren: { fmt: fmt, tong: tong } },
+          tooltip: { callbacks: { footer: function (it) { return 'Tổng: ' + fmt(tong[it[0].dataIndex]); } } } },
         scales: { x: { stacked: true, grid: { display: false }, ticks: { color: mau('chuPhu'), font: { size: 11 } } }, y: { stacked: true, grid: { color: mau('luoi') }, ticks: { color: mau('chuPhu'), font: { size: 11 }, callback: function (v) { return opt.tien ? fTyNgan(v) : fInt(v); } }, border: { display: false } } }
       },
-      plugins: [tongTrenPlugin]
+      plugins: [tongTrenPlugin({ fmt: fmt, tong: tong })],
+      __tongTren: true
     };
   }
-  var tongTrenPlugin = { id: 'tongTren', afterDatasetsDraw: function (c) {
-    var o = c.options.plugins.tongTren; if (!o) return; var ctx = c.ctx, meta = null;
+  /* Nhãn tổng trên đầu cột. Giữ tong/fmt trong closure — KHÔNG để trong options (Chart.js v4 bọc options
+     bằng proxy, Math.round(proxy) ném "Cannot convert object to primitive value"). Bị shim phủ nên chỉ là dự phòng. */
+  function tongTrenPlugin(o) { return { id: 'tongTren', afterDatasetsDraw: function (c) {
+    if (!o || c.$bcTatTong) return; var ctx = c.ctx, meta = null;
     for (var i = c.data.datasets.length - 1; i >= 0; i--) { if (c.isDatasetVisible(i)) { meta = c.getDatasetMeta(i); break; } }
     if (!meta) return;
     ctx.save(); ctx.font = '700 11.5px ' + (Chart.defaults.font.family || 'sans-serif'); ctx.fillStyle = mau('chu'); ctx.textAlign = 'center';
@@ -257,7 +259,7 @@
       ctx.fillText(o.fmt(o.tong[i]), x, y - 6);
     });
     ctx.restore();
-  } };
+  } }; }
   function cauVong(labels, data, colors, fmt) {
     var tong = data.reduce(function (s, v) { return s + v; }, 0) || 1;
     return {
@@ -428,7 +430,7 @@
       var bd = khungBieuDo({ cao: 320, tabs: [{ ten: 'Doanh số', cau: function () {
         var cfg = cauCotChong(labels, kenhCoSo.map(function (c) { return { label: c, data: ws.map(function (t) { return (wu[t.iso] || {})[c] || 0; }), backgroundColor: ws.map(function (t) { return trongKy(t) ? mau(c) : hexMo(mau(c), 0.38); }) }; }));
         cfg.data.datasets.forEach(function (d) { d.maxBarThickness = 28; d.datalabels.display = false; });
-        cfg.options.plugins.tongTren.fmt = function (v) { return v >= 1000 ? (v / 1000).toFixed(1) + 'k' : fInt(v); };
+        cfg.plugins = [tongTrenPlugin({ fmt: function (v) { return v >= 1000 ? (v / 1000).toFixed(1) + 'k' : fInt(v); }, tong: labels.map(function (_, i) { return kenhCoSo.reduce(function (s, c) { return s + ((wu[ws[i].iso] || {})[c] || 0); }, 0); }) })];
         cfg.options.scales.x.ticks.font = { size: 10 }; cfg.options.scales.x.ticks.autoSkip = false; cfg.options.scales.x.ticks.maxRotation = 0;
         cfg.options.scales.x.ticks.callback = function (v, i) { return (i % 2 === 0 || ws.length <= 20) ? labels[i] : ''; };
         return cfg; } }] });
@@ -499,6 +501,17 @@
 
   /* ============ 5. Khung trang: thanh chọn, tab, thiết bị ============ */
   var goc = null;
+  var DANG_KY = {};   // panelId -> { ve: function(root, ctx), muon: [regex tiêu đề khối cũ giữ lại] }
+  var GOC = {};       // panelId -> .bc-root
+  function chuanBiPanel(pid, muon) {
+    var p = document.getElementById(pid); if (!p || GOC[pid]) return GOC[pid] || null;
+    var giu = [];
+    Array.prototype.forEach.call(p.querySelectorAll('h3'), function (h) { var t = h.textContent.replace(/\s+/g, ' ').trim(); if ((muon || []).some(function (re) { return re.test(t); })) { var c = h.closest('.table-section, .chart-container, section, .ct-card') || h.parentElement; if (c && !giu.some(function (g) { return g.el === c; })) giu.push({ ten: t, el: c }); } });
+    Array.prototype.forEach.call(p.children, function (c) { c.classList.add('bc-cu'); });
+    var r = el('div', 'bc-root'); p.appendChild(r);
+    GOC[pid] = r; r.__muon = giu;
+    return r;
+  }
   function dungKhung() {
     var header = $('.dashboard-header'); if (!header) return false;
     var xuat = $('#export-html-btn'); if (xuat) xuat.style.display = 'none';
@@ -519,9 +532,10 @@
       var giu = [];
       Array.prototype.forEach.call(p.querySelectorAll('h3'), function (h) { var t = h.textContent.trim(); if (/^(Chiến lược Kênh|Chính sách cho Nhân sự|Tổng Chương trình Bán hàng)/i.test(t)) { var c = h.closest('.table-section, .chart-container, section, .ct-card') || h.parentElement; if (c && giu.indexOf(c) < 0) giu.push({ ten: t, el: c }); } });
       window.__bcKhoiCu = giu;
-      Array.prototype.forEach.call(p.children, function (c) { if (c.tagName === 'H2' && !c.classList.contains('part-title')) return; c.classList.add('bc-cu'); });
-      goc = el('div', 'bc-root'); p.appendChild(goc);
+      Array.prototype.forEach.call(p.children, function (c) { c.classList.add('bc-cu'); });
+      goc = el('div', 'bc-root'); p.appendChild(goc); GOC['panel-overview'] = goc;
     }
+    Object.keys(DANG_KY).forEach(function (pid) { chuanBiPanel(pid, DANG_KY[pid].muon); });
     return true;
   }
   function napKy() {
@@ -543,9 +557,17 @@
     document.querySelectorAll('.bc-tb button').forEach(function (b) { b.classList.toggle('on', b.dataset.tb === tb); });
     setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 60);
   }
+  function boiCanh() {
+    var cd = st.cd, k = khoangKy(cd, st.ky), kt = kyTruoc(cd, k);
+    return { cd: cd, k: k, kt: kt, ktKy: kt ? (cd === 'tuan' ? khoangKy('tuan', kt.tu) : khoangKy('thang', k.so - 1)) : null, tenKyTruoc: kt ? kt.nhan + (kt.cungKy ? ' (cùng số ngày)' : '') : '' };
+  }
   function veTatCa() {
     charts.forEach(function (c) { c.huy(); }); charts = [];
     if (goc) { try { veTongQuan(goc); } catch (e) { console.error('bc Tổng quan:', e); goc.innerHTML = '<p class="bc-trong">Lỗi dựng Tổng quan: ' + esc(e.message) + '</p>'; } }
+    Object.keys(DANG_KY).forEach(function (pid) {
+      var r = GOC[pid] || chuanBiPanel(pid, DANG_KY[pid].muon); if (!r) return;
+      try { r.innerHTML = ''; DANG_KY[pid].ve(r, boiCanh()); } catch (e) { console.error('bc ' + pid + ':', e); r.innerHTML = '<p class="bc-trong">Lỗi dựng tab: ' + esc(e.message) + '</p>'; }
+    });
     setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
   }
   // Đổi Sáng/Tối -> vẽ lại biểu đồ (màu khác nhau)
@@ -557,5 +579,8 @@
     if (napDuLieu()) { clearInterval(t); if (dungKhung()) { napKy(); apThietBi(); veTatCa(); } }
     else if (++dem > 600) clearInterval(t);   // 3 phút
   }, 300);
-  window.__bc = { st: st, veTatCa: veTatCa, gom: gom, khoangKy: khoangKy };
+  window.__bc = { st: st, veTatCa: veTatCa, gom: gom, khoangKy: khoangKy, kyTruoc: kyTruoc, chuoiKy: chuoiKy, modelKy: modelKy, gomSeries: gomSeries, boiCanh: boiCanh,
+    dangKy: function (pid, cau) { DANG_KY[pid] = cau; if (D) { chuanBiPanel(pid, cau.muon); veTatCa(); } },
+    ui: { el: el, esc: esc, fInt: fInt, fTy: fTy, fTyNgan: fTyNgan, fTr: fTr, pct: pct, chip: chip, khoi: khoi, chot: chot, nutChon: nutChon, bangMini: bangMini, khungBieuDo: khungBieuDo, cauCotChong: cauCotChong, cauVong: cauVong, mau: mau, PK: PK, sang: sang, thanhNho: thanhNho, tenShopNgan: tenShopNgan, hexMo: hexMo, congNgay: congNgay, ngayVN: ngayVN, soNgay: soNgay, soNgayThang: soNgayThang, thangCua: thangCua, iso: iso },
+    du: function () { return { D: D, OD: OD, NGAY: NGAY, TUAN: TUAN, THANG: THANG, kenhCoSo: kenhCoSo, modelSeries: modelSeries, modelSeg: modelSeg, B: window.__exportDataMain || null }; } };
 })();
