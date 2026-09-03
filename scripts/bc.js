@@ -41,7 +41,15 @@
   /* ============ 2. Lớp dữ liệu (đọc từ DATA của tg.html, không sửa gì) ============ */
   var D = null;       // DATA CENTER (window.__exportDataMwg — tên cũ, chính là dữ liệu OPPO 3 kênh)
   var OD = null;      // overview_daily_by_date
-  var NGAY = [];      // các ngày có số, tăng dần
+  var NGAY = [];      // các ngày có số (CENTER), tăng dần
+  var NGAY_MWG = [];  // các ngày có số của DATA MWG (tab MWG dùng lịch này — luật nguồn 03/09)
+  function napNgayMWG() {
+    var B = window.__exportDataMain; if (!B || !B.daily || NGAY_MWG.length) return NGAY_MWG;
+    var co = {}; (B.daily.rows || []).forEach(function (r) { co['2026-' + String(r[0]).padStart(2, '0') + '-' + String(r[1]).padStart(2, '0')] = 1; });
+    NGAY_MWG = Object.keys(co).sort();
+    TUAN.forEach(function (t) { t.coSoMWG = NGAY_MWG.some(function (n) { return n >= t.tu && n <= t.den; }); });
+    return NGAY_MWG;
+  }
   var TUAN = [];      // [{iso, so, tu, den, coSo}]
   var THANG = [];     // [1..n] có số
   var kenhCoSo = [];  // phạm vi kênh của người xem
@@ -71,16 +79,19 @@
 
   /* Danh sách kỳ có số */
   function dsKy(cd) {
-    if (cd === 'tuan') return TUAN.filter(function (t) { return t.coSo; }).map(function (t) { return { id: t.iso, ten: 'Tuần ' + t.so, phu: ngayVN(t.tu) + ' – ' + ngayVN(t.den) + (t.do ? ' (đang dở)' : ''), t: t }; });
-    var cuoi = NGAY[NGAY.length - 1], mCuoi = cuoi ? thangCua(cuoi) : 0;
-    return THANG.map(function (m) { var doDo = m === mCuoi && +cuoi.slice(8, 10) < soNgayThang(m); return { id: m, ten: 'Tháng ' + m + '/2026', phu: doDo ? 'đang dở, đến ' + ngayVN(cuoi) : '', m: m, do: doDo }; });
+    napNgayMWG();
+    var cuoiAll = [NGAY[NGAY.length - 1], NGAY_MWG[NGAY_MWG.length - 1]].filter(Boolean).sort().pop();
+    if (cd === 'tuan') return TUAN.filter(function (t) { return t.coSo || t.coSoMWG; }).map(function (t) { var doDo = cuoiAll < t.den; return { id: t.iso, ten: 'Tuần ' + t.so, phu: ngayVN(t.tu) + ' – ' + ngayVN(t.den) + (doDo ? ' (đang dở)' : ''), t: t, do: doDo }; });
+    var mCuoi = cuoiAll ? thangCua(cuoiAll) : 0, ms = THANG.slice(); for (var m2 = 1; m2 <= mCuoi; m2++) if (ms.indexOf(m2) < 0) ms.push(m2); ms.sort(function (a, b) { return a - b; });
+    return ms.map(function (m) { var doDo = m === mCuoi && +cuoiAll.slice(8, 10) < soNgayThang(m); return { id: m, ten: 'Tháng ' + m + '/2026', phu: doDo ? 'đang dở, đến ' + ngayVN(cuoiAll) : '', m: m, do: doDo }; });
   }
   function soNgayThang(m) { return new Date(Date.UTC(2026, m, 0)).getUTCDate(); }
-  function khoangKy(cd, id) {   // -> {tu, den, denCo, do, nhan, nhanNgan}
-    if (cd === 'tuan') { var t = TUAN.filter(function (x) { return x.iso === id; })[0]; return { tu: t.tu, den: t.den, denCo: t.denCo, do: t.do, nhan: 'Tuần ' + t.so, nhanNgan: 'W' + t.so, chiTiet: ngayVN(t.tu) + ' – ' + ngayVN(t.den), so: t.so }; }
+  function khoangKy(cd, id, nguon) {   // -> {tu, den, denCo, do, nhan, nhanNgan}; nguon 'mwg' -> lịch ngày của DATA MWG
+    var NG = nguon === 'mwg' ? napNgayMWG() : NGAY; var cuoi = NG[NG.length - 1] || '';
+    if (cd === 'tuan') { var t = TUAN.filter(function (x) { return x.iso === id; })[0]; var doT = cuoi < t.den; return { tu: t.tu, den: t.den, denCo: doT ? (cuoi < t.tu ? t.tu : cuoi) : t.den, do: doT, nhan: 'Tuần ' + t.so, nhanNgan: 'W' + t.so, chiTiet: ngayVN(t.tu) + ' – ' + ngayVN(t.den), so: t.so, nguon: nguon }; }
     var m = +id, tu = '2026-' + String(m).padStart(2, '0') + '-01', den = '2026-' + String(m).padStart(2, '0') + '-' + String(soNgayThang(m)).padStart(2, '0');
-    var cuoi = NGAY[NGAY.length - 1]; var doDo = cuoi >= tu && cuoi < den;
-    return { tu: tu, den: den, denCo: doDo ? cuoi : den, do: doDo, nhan: 'Tháng ' + m + '/2026', nhanNgan: 'T' + m, chiTiet: doDo ? 'đến ' + ngayVN(cuoi) : '1 – ' + ngayVN(den), so: m };
+    var doDo = cuoi >= tu && cuoi < den;
+    return { tu: tu, den: den, denCo: doDo ? cuoi : (cuoi < tu ? tu : den), do: doDo, nhan: 'Tháng ' + m + '/2026', nhanNgan: 'T' + m, chiTiet: doDo ? 'đến ' + ngayVN(cuoi) : '1 – ' + ngayVN(den), so: m, nguon: nguon };
   }
   function kyTruoc(cd, k) {   // kỳ liền trước, so cùng số ngày nếu kỳ này đang dở
     var r;
@@ -105,9 +116,10 @@
         Object.keys(byCh[ch]).forEach(function (s) {
           var v = byCh[ch][s], ds = v.sellout || 0, dt = v.rev || 0;
           K.ds += ds; K.dt += dt; r.ds += ds; r.dt += dt;
-          var sh = r.shop[s] || (r.shop[s] = { ds: 0, dt: 0, kenh: ch, sale: v.sale });
+          var saleThat = (D.shop_sale_map && D.shop_sale_map[s]) || v.sale;   // LUẬT NGUỒN: sale theo SHOP THEO SALE
+          var sh = r.shop[s] || (r.shop[s] = { ds: 0, dt: 0, kenh: ch, sale: saleThat });
           sh.ds += ds; sh.dt += dt; if (ds) K.shop[s] = 1;
-          var sl = v.sale || '(Không rõ)';
+          var sl = saleThat || '(Không rõ)';
           var sa = r.sale[sl] || (r.sale[sl] = { ds: 0, dt: 0, kenh: {} });
           sa.ds += ds; sa.dt += dt; sa.kenh[ch] = (sa.kenh[ch] || 0) + ds;
         });
@@ -544,7 +556,7 @@
     if (st.ky == null || !ds.some(function (x) { return String(x.id) === String(st.ky); })) {
       var cuoi = ds[ds.length - 1];
       // Tuần đang dở mới có 1–2 ngày số thì mặc định mở tuần đủ 7 ngày gần nhất (anh vẫn chọn tuần dở được)
-      if (st.cd === 'tuan' && cuoi && cuoi.t.do && soNgay(cuoi.t.tu, cuoi.t.denCo) <= 2 && ds.length > 1) cuoi = ds[ds.length - 2];
+      if (st.cd === 'tuan' && cuoi && cuoi.do && ds.length > 1) { var cuoiAll = [NGAY[NGAY.length - 1], NGAY_MWG[NGAY_MWG.length - 1]].filter(Boolean).sort().pop(); if (soNgay(cuoi.t.tu, cuoiAll) <= 2) cuoi = ds[ds.length - 2]; }
       st.ky = cuoi ? cuoi.id : null;
     }
     sel.value = st.ky;
@@ -559,7 +571,9 @@
   }
   function boiCanh() {
     var cd = st.cd, k = khoangKy(cd, st.ky), kt = kyTruoc(cd, k);
-    return { cd: cd, k: k, kt: kt, ktKy: kt ? (cd === 'tuan' ? khoangKy('tuan', kt.tu) : khoangKy('thang', k.so - 1)) : null, tenKyTruoc: kt ? kt.nhan + (kt.cungKy ? ' (cùng số ngày)' : '') : '' };
+    var kM = khoangKy(cd, st.ky, 'mwg'), ktM = kyTruoc(cd, kM);
+    return { cd: cd, k: k, kt: kt, ktKy: kt ? (cd === 'tuan' ? khoangKy('tuan', kt.tu) : khoangKy('thang', k.so - 1)) : null, tenKyTruoc: kt ? kt.nhan + (kt.cungKy ? ' (cùng số ngày)' : '') : '',
+      mwg: { k: kM, kt: ktM, tenKyTruoc: ktM ? ktM.nhan + (ktM.cungKy ? ' (cùng số ngày)' : '') : '' } };
   }
   function veTatCa() {
     charts.forEach(function (c) { c.huy(); }); charts = [];
