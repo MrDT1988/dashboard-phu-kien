@@ -47,6 +47,11 @@
     /* ===================== MWG ===================== */
     function veMWG(root, ctx) {
       var d = du(), B = d.B; if (!B || !B.daily) { root.innerHTML = '<p class="bc-trong">Chưa có dữ liệu DATA MWG trong phạm vi này.</p>'; return; }
+      /* LUẬT NGUỒN (anh Thái 03/09): tab MWG dùng LỊCH NGÀY của DATA MWG (ctx.mwg), không dùng lịch CENTER */
+      if (ctx.mwg) ctx = Object.assign({}, ctx, { k: ctx.mwg.k, kt: ctx.mwg.kt, tenKyTruoc: ctx.mwg.tenKyTruoc });
+      /* LUẬT NGUỒN: Sale phụ trách shop = sheet SHOP THEO SALE (khớp Store ID thật qua PARTNER_TO_STORE_ID), không dùng cột Sale của DATA MWG */
+      var P2S = (window.__bcMwg && window.__bcMwg.partnerToStore) || {}, SALE_ID = d.D.shop_sale_by_id || {};
+      var saleCua = function (meta) { var code = meta && meta.store_code ? String(meta.store_code) : ''; var id = P2S[code] || code; var sl = SALE_ID[id]; return sl ? { sale: sl, chuaGan: false } : { sale: (meta && meta.sale) || '(Không rõ)', chuaGan: true }; };
       var DL = B.daily, R = DL.rows, HANG = DL.brands, SEG = DL.segments, SALE = DL.sales, SIZE = DL.sizes, MODEL = DL.models;
       var iOppo = HANG.findIndex(function (h) { return /oppo/i.test(h); });
       var trongKhoang = function (tu, den) { return function (r) { var ng = '2026-' + pad2(r[0]) + '-' + pad2(r[1]); return ng >= tu && ng <= den; }; };
@@ -62,7 +67,7 @@
       function shopMWG(tu, den) {   // từ shop_day_data: shop -> {oppoU, oppoDt, ssU, xmU, apU, totU, totDt, sale, size}
         var SD = B.shop_day_data || {}, meta = {}; (B.shop_rows_brand4 || []).forEach(function (s) { meta[s.shop] = s; });
         var out = {};
-        Object.keys(SD).forEach(function (shop) { var m = meta[shop] || {}, o = { oppoU: 0, oppoDt: 0, ssU: 0, xmU: 0, apU: 0, totU: 0, totDt: 0, sale: m.sale || '(Không rõ)', size: m.shop_size || '?' };
+        Object.keys(SD).forEach(function (shop) { var m = meta[shop] || {}, sc = saleCua(m), o = { oppoU: 0, oppoDt: 0, ssU: 0, xmU: 0, apU: 0, totU: 0, totDt: 0, sale: sc.sale, chuaGan: sc.chuaGan, size: m.shop_size || '?' };
           Object.keys(SD[shop]).forEach(function (k) { var p = k.split('-'); var ng = '2026-' + pad2(p[0]) + '-' + pad2(p[1]); if (ng < tu || ng > den) return; var v = SD[shop][k]; o.oppoU += v.oppo_units || 0; o.oppoDt += v.oppo_rev || 0; o.ssU += v.samsung_units || 0; o.xmU += v.xiaomi_units || 0; o.apU += v.apple_units || 0; o.totU += v.total_units || 0; o.totDt += v.total_rev || 0; });
           out[shop] = o; });
         return out;
@@ -71,8 +76,13 @@
       var nay = gomMWG(k.tu, k.denCo), truoc = kt ? gomMWG(kt.tu, kt.denCo) : null;
       var shopNay = shopMWG(k.tu, k.denCo), shopTruoc = kt ? shopMWG(kt.tu, kt.denCo) : null;
       var ky12 = dsKy12(ctx), chuoi = ky12.map(function (q) { return gomMWG(q.tu, q.den); });
+      /* Gộp theo Sale từ shop (sale lấy từ SHOP THEO SALE) */
+      var theoSale = function (shops) { var r = {}; Object.keys(shops).forEach(function (s) { var x = shops[s]; var a = r[x.sale] || (r[x.sale] = { oppoU: 0, oppoDt: 0, u: 0, dt: 0, shops: 0, shop0: 0, chuaGan: 0 }); a.oppoU += x.oppoU; a.oppoDt += x.oppoDt; a.u += x.totU; a.dt += x.totDt; a.shops++; if (!x.oppoU) a.shop0++; if (x.chuaGan) a.chuaGan++; }); return r; };
+      var saleNay = theoSale(shopNay), saleTruoc = shopTruoc ? theoSale(shopTruoc) : null;
+      var SALES_MWG = Object.keys(saleNay).sort(function (a, b) { return saleNay[b].oppoU - saleNay[a].oppoU; });
+      var soChuaGan = Object.keys(shopNay).filter(function (s) { return shopNay[s].chuaGan; }).length;
       var grid = el('div', 'bc-luoi'); root.appendChild(grid);
-      grid.appendChild(bangKyChung(ctx, 'Thị trường MWG Tiền Giang + Bến Tre (12 hãng)'));
+      grid.appendChild(bangKyChung(ctx, 'Thị trường MWG Tiền Giang + Bến Tre (12 hãng) · Sale theo sheet SHOP THEO SALE' + (soChuaGan ? ' · <b class="bc-giam-chu">' + soChuaGan + ' shop chưa gán sale trong sheet</b>' : '')));
       var share = function (g) { return g.tong.u ? g.oppo.u / g.tong.u * 100 : 0; };
       var shareDt = function (g) { var ap = g.hang[HANG.findIndex(function (h) { return /apple/i.test(h); })]; var tt = g.tong.dt - (ap ? ap.dt : 0); return tt ? g.oppo.dt / tt * 100 : 0; };
 
@@ -85,7 +95,7 @@
         $('.bc-than', kq).innerHTML = '<div class="bc-kpi-row">' +
           theKpi('Doanh thu toàn ngành', fTyNgan(nay.tong.dt), chip(truoc ? pct(nay.tong.dt, truoc.tong.dt) : null), fInt(nay.tong.u) + ' máy · ' + Object.keys(shopNay).length + ' shop', rowsH(function (i) { return nay.hang[i].dt; }, function (i) { return truoc.hang[i].dt; }, fTyNgan)) +
           theKpi('Doanh thu OPPO', fTyNgan(nay.oppo.dt), chip(truoc ? pct(nay.oppo.dt, truoc.oppo.dt) : null), shareDt(nay).toFixed(1) + '% thị phần DT (trừ Apple)' + (truoc ? ' · kỳ trước ' + shareDt(truoc).toFixed(1) + '%' : ''), rowsH(function (i) { return nay.hang[i].u; }, function (i) { return truoc.hang[i].u; }, fInt)) +
-          theKpi('Máy OPPO', fInt(nay.oppo.u) + ' <small>máy</small>', chip(truoc ? pct(nay.oppo.u, truoc.oppo.u) : null), '<b>' + share(nay).toFixed(1) + '%</b> thị phần máy' + (truoc ? ' · kỳ trước ' + share(truoc).toFixed(1) + '%' : ''), SALE.map(function (s, i) { return dongKenh(s.split(' ').slice(-2).join(' '), mau('MWG'), nay.sale[i].oppoU, truoc ? truoc.sale[i].oppoU : null, fInt); }).join('')) +
+          theKpi('Máy OPPO', fInt(nay.oppo.u) + ' <small>máy</small>', chip(truoc ? pct(nay.oppo.u, truoc.oppo.u) : null), '<b>' + share(nay).toFixed(1) + '%</b> thị phần máy' + (truoc ? ' · kỳ trước ' + share(truoc).toFixed(1) + '%' : ''), SALES_MWG.map(function (s) { return dongKenh(s.split(' ').slice(-2).join(' '), mau('MWG'), saleNay[s].oppoU, saleTruoc && saleTruoc[s] ? saleTruoc[s].oppoU : null, fInt); }).join('')) +
           theKpi('Shop có bán OPPO', fInt(soShop) + ' <small>/ ' + Object.keys(shopNay).length + '</small>', chip(soShopT != null ? pct(soShop, soShopT) : null), truoc ? ctx.tenKyTruoc + ': ' + soShopT : '', SIZE.map(function (sz, i) { var n = Object.keys(shopNay).filter(function (s) { return shopNay[s].size === sz && shopNay[s].oppoU > 0; }).length, nt = shopTruoc ? Object.keys(shopTruoc).filter(function (s) { return shopTruoc[s].size === sz && shopTruoc[s].oppoU > 0; }).length : null; return dongKenh('Size ' + sz, mau('MWG'), n, nt, fInt); }).join('')) + '</div>';
         if (truoc) { var dS = share(nay) - share(truoc); chot(kq, 'Thị phần máy OPPO ' + (dS >= 0 ? 'tăng' : 'giảm') + ' <b>' + Math.abs(dS).toFixed(1) + ' điểm</b> (' + share(truoc).toFixed(1) + '% → ' + share(nay).toFixed(1) + '%); máy OPPO ' + (nay.oppo.u >= truoc.oppo.u ? '+' : '') + fInt(nay.oppo.u - truoc.oppo.u) + ', toàn ngành ' + (nay.tong.u >= truoc.tong.u ? '+' : '') + fInt(nay.tong.u - truoc.tong.u) + ' máy.'); }
         grid.appendChild(kq);
@@ -94,9 +104,9 @@
       /* 7. Hiệu suất Sale/ASM (tuần: lên ngay sau KPI) */
       var khoiSale = (function () {
         var kq = khoi({ stt: 7, ten: 'Hiệu suất Sale / ASM — OPPO so với thị trường', rong: true, dangXem: k.nhan + ' · xếp Sale có vấn đề lên đầu · cờ đỏ: giảm >20% so kỳ trước hoặc mất ≥3 điểm thị phần' });
-        var rows = SALE.map(function (s, i) { var a = nay.sale[i], b = truoc ? truoc.sale[i] : null; var sh = a.u ? a.oppoU / a.u * 100 : 0, shT = b && b.u ? b.oppoU / b.u * 100 : null; var shops = Object.keys(shopNay).filter(function (x) { return shopNay[x].sale === s; }); var shop0 = shops.filter(function (x) { return shopNay[x].oppoU === 0; }).length;
+        var rows = SALES_MWG.map(function (s) { var a = saleNay[s], b = saleTruoc ? saleTruoc[s] : null; var sh = a.u ? a.oppoU / a.u * 100 : 0, shT = b && b.u ? b.oppoU / b.u * 100 : null; var shop0 = a.shop0;
           var co = []; var p = b ? pct(a.oppoU, b.oppoU) : null; if (p != null && p < -20) co.push('giảm ' + Math.abs(p).toFixed(0) + '%'); if (shT != null && sh - shT <= -3) co.push('mất ' + (shT - sh).toFixed(1) + ' điểm'); if (shop0 >= 3) co.push(shop0 + ' shop 0 máy');
-          return { s: s, oppoU: a.oppoU, oppoDt: a.oppoDt, u: a.u, sh: sh, shT: shT, p: p, shops: shops.length, shop0: shop0, co: co }; }).sort(function (a, b) { return (b.co.length - a.co.length) || ((a.p == null ? 0 : a.p) - (b.p == null ? 0 : b.p)); });
+          return { s: s + (a.chuaGan ? ' (' + a.chuaGan + ' shop chưa gán)' : ''), oppoU: a.oppoU, oppoDt: a.oppoDt, u: a.u, sh: sh, shT: shT, p: p, shops: a.shops, shop0: shop0, co: co }; }).sort(function (a, b) { return (b.co.length - a.co.length) || ((a.p == null ? 0 : a.p) - (b.p == null ? 0 : b.p)); });
         var h = '<div class="bc-cuon"><table class="bc-bang"><thead><tr><th>Sale / ASM</th><th>Máy OPPO</th><th>so kỳ trước</th><th>Máy thị trường</th><th>Thị phần</th><th>± điểm</th><th>Shop</th><th>Shop 0 máy</th><th>DT OPPO</th><th>Cảnh báo</th></tr></thead><tbody>';
         rows.forEach(function (r) { h += '<tr' + (r.co.length ? ' class="bc-canh"' : '') + '><td>' + esc(r.s) + '</td><td><b>' + fInt(r.oppoU) + '</b></td><td>' + chip(r.p) + '</td><td>' + fInt(r.u) + '</td><td><b>' + r.sh.toFixed(1) + '%</b></td><td>' + (r.shT != null ? chipDiem(r.sh - r.shT) : '—') + '</td><td>' + r.shops + '</td><td>' + (r.shop0 ? '<span class="bc-giam-chu"><b>' + r.shop0 + '</b></span>' : '0') + '</td><td>' + fTyNgan(r.oppoDt) + '</td><td>' + (r.co.length ? '<span class="bc-co">' + r.co.map(esc).join(' · ') + '</span>' : '<span class="bc-len-chu">ổn</span>') + '</td></tr>'; });
         h += '</tbody></table></div>';
@@ -173,14 +183,14 @@
       (function () {
         var kq = khoi({ stt: 8, ten: 'Chi tiết shop — OPPO · Samsung · Xiaomi · Apple', rong: true, dangXem: k.nhan + ' · xếp theo máy OPPO · lọc Sale / Size' });
         var than = $('.bc-than', kq);
-        var rows = Object.keys(shopNay).map(function (s) { var a = shopNay[s], b = shopTruoc ? shopTruoc[s] : null; return { s: s, sale: a.sale, size: a.size, o: a.oppoU, oDt: a.oppoDt, ss: a.ssU, xm: a.xmU, ap: a.apU, tot: a.totU, totDt: a.totDt, oT: b ? b.oppoU : null }; }).sort(function (a, b) { return b.o - a.o; });
-        var loc = el('div', 'bc-loc'); var sales = SALE.slice();
+        var rows = Object.keys(shopNay).map(function (s) { var a = shopNay[s], b = shopTruoc ? shopTruoc[s] : null; return { s: s, sale: a.sale, chuaGan: a.chuaGan, size: a.size, o: a.oppoU, oDt: a.oppoDt, ss: a.ssU, xm: a.xmU, ap: a.apU, tot: a.totU, totDt: a.totDt, oT: b ? b.oppoU : null }; }).sort(function (a, b) { return b.o - a.o; });
+        var loc = el('div', 'bc-loc'); var sales = SALES_MWG.slice();
         loc.innerHTML = '<label>Sale <select data-k="sale"><option value="">Tất cả</option>' + sales.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('') + '</select></label><label>Size <select data-k="size"><option value="">Tất cả</option>' + SIZE.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('') + '</select></label><label>Tìm <input type="search" data-k="tim" placeholder="tên shop"></label><span class="bc-loc-dem"></span>';
         var box = el('div', 'bc-cuon'), moRong = false, nut = el('button', 'bc-nut-them'); nut.type = 'button';
         function ve() { var f = { sale: $('[data-k=sale]', loc).value, size: $('[data-k=size]', loc).value, tim: $('[data-k=tim]', loc).value.toLowerCase() };
           var rs = rows.filter(function (r) { return (!f.sale || r.sale === f.sale) && (!f.size || r.size === f.size) && (!f.tim || r.s.toLowerCase().indexOf(f.tim) >= 0); }); $('.bc-loc-dem', loc).textContent = rs.length + ' shop';
           var show = moRong ? rs : rs.slice(0, 10);
-          box.innerHTML = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Size</th><th>Sale</th><th>OPPO</th><th>so kỳ trước</th><th>Thị phần</th><th>Samsung</th><th>Xiaomi</th><th>Apple</th><th>Tổng chợ</th><th>DT OPPO</th></tr></thead><tbody>' + show.map(function (r, i) { return '<tr' + (!r.o ? ' class="bc-mo"' : '') + '><td>' + (i + 1) + '</td><td title="' + esc(r.s) + '">' + esc(r.s) + '</td><td>' + esc(r.size) + '</td><td>' + esc(r.sale.split(' ').slice(-2).join(' ')) + '</td><td><b>' + fInt(r.o) + '</b></td><td>' + chip(r.oT != null ? pct(r.o, r.oT) : null) + '</td><td>' + (r.tot ? (r.o / r.tot * 100).toFixed(0) + '%' : '-') + '</td><td>' + fInt(r.ss) + '</td><td>' + fInt(r.xm) + '</td><td>' + fInt(r.ap) + '</td><td>' + fInt(r.tot) + '</td><td>' + fTyNgan(r.oDt) + '</td></tr>'; }).join('') + '</tbody></table>';
+          box.innerHTML = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Size</th><th>Sale</th><th>OPPO</th><th>so kỳ trước</th><th>Thị phần</th><th>Samsung</th><th>Xiaomi</th><th>Apple</th><th>Tổng chợ</th><th>DT OPPO</th></tr></thead><tbody>' + show.map(function (r, i) { return '<tr' + (!r.o ? ' class="bc-mo"' : '') + '><td>' + (i + 1) + '</td><td title="' + esc(r.s) + '">' + esc(r.s) + '</td><td>' + esc(r.size) + '</td><td>' + esc(r.sale.split(' ').slice(-2).join(' ')) + (r.chuaGan ? ' <span class="bc-co">chưa gán</span>' : '') + '</td><td><b>' + fInt(r.o) + '</b></td><td>' + chip(r.oT != null ? pct(r.o, r.oT) : null) + '</td><td>' + (r.tot ? (r.o / r.tot * 100).toFixed(0) + '%' : '-') + '</td><td>' + fInt(r.ss) + '</td><td>' + fInt(r.xm) + '</td><td>' + fInt(r.ap) + '</td><td>' + fInt(r.tot) + '</td><td>' + fTyNgan(r.oDt) + '</td></tr>'; }).join('') + '</tbody></table>';
           nut.textContent = moRong ? 'Thu gọn' : 'Xem tất cả ' + rs.length + ' shop'; nut.hidden = rs.length <= 10; }
         loc.addEventListener('change', ve); loc.addEventListener('input', ve); nut.addEventListener('click', function () { moRong = !moRong; ve(); });
         than.appendChild(loc); than.appendChild(box); than.appendChild(nut); ve();
