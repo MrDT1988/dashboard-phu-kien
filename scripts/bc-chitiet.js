@@ -31,7 +31,7 @@
     }
     function bangKyChung(ctx, extra) {
       var bar = el('div', 'bc-ky-bar');
-      bar.innerHTML = '<div><div class="bc-ky-ten">' + esc(ctx.k.nhan) + ' <small>' + esc(ctx.k.chiTiet) + '</small></div><div class="bc-ky-ss">' + (ctx.kt ? 'So với <b>' + esc(ctx.kt.nhan) + '</b>' + (ctx.kt.cungKy ? ' — cùng số ngày' : '') : 'Chưa có kỳ trước') + (ctx.k.do ? ' · <b>kỳ đang dở</b>, số đến ' + ngayVN(ctx.k.denCo) : '') + (extra ? ' · ' + extra : '') + '</div></div>';
+      bar.innerHTML = '<div><div class="bc-ky-ten">' + esc(ctx.k.nhan) + ' <small>' + esc(ctx.k.chiTiet) + '</small></div><div class="bc-ky-ss">' + (ctx.k.chuaCo ? '<b class="bc-giam-chu">Nguồn chưa có số kỳ này</b> (mới tới ' + ngayVN(ctx.k.cuoiNguon) + ') · ' : '') + (ctx.kt ? 'So với <b>' + esc(ctx.kt.nhan) + '</b>' + (ctx.kt.cungKy ? ' — cùng số ngày' : '') : 'Chưa có kỳ trước') + (ctx.k.do ? ' · <b>kỳ đang dở</b>, số đến ' + ngayVN(ctx.k.denCo) : '') + (extra ? ' · ' + extra : '') + '</div></div>';
       return bar;
     }
     function theKpi(nhan, gt, ck, sub, rows) { return '<div class="bc-kpi"><div class="bc-kpi-nhan">' + nhan + '</div><div class="bc-kpi-gt">' + gt + '</div><div class="bc-kpi-sub">' + ck + ' <span>' + sub + '</span></div><div class="bc-kpi-kenh">' + rows + '</div></div>'; }
