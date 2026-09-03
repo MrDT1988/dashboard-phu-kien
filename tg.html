@@ -1520,16 +1520,9 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
    Biểu đồ nào vẽ ra ngắn hơn khổ (vòng tròn, thanh ngang) thì coKhung() tự co
    khung lại, không để lại khoảng trắng. */
 #panel-overview .chart-container canvas,
-#panel-ind .chart-container canvas,
-#panel-mwg .chart-container canvas,
-#panel-ka .chart-container canvas { height: 400px !important; max-height: 400px; }
+#panel-ind .chart-container canvas { height: 400px !important; max-height: 400px; }
 #panel-overview .chart-container.chart-tall canvas,
-#panel-ind .chart-container.chart-tall canvas,
-#panel-mwg .chart-container.chart-tall canvas,
-#panel-ka .chart-container.chart-tall canvas { height: 460px !important; max-height: 460px; }
-/* 02/09: hai tab MWG / KA theo cung khuon voi Tong quan & IND (anh Thai duyet 02/09 toi).
-   Bieu do theo NGAY cua MWG (chart-daily*) van an/hien theo bo loc — khong ep cao. */
-#panel-mwg #chart-daily, #panel-mwg #chart-daily-revenue { height: auto !important; max-height: none; }
+#panel-ind .chart-container.chart-tall canvas { height: 460px !important; max-height: 460px; }
 
 /* ---- GẤP PHẦN DIỄN GIẢI DÀI SAU NÚT "CÁCH ĐỌC" ----
    Anh Thái 29/08: "giải thích bên dưới chỉ giải thích những cái chưa có".
@@ -1979,7 +1972,6 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 </div>
 <div class="db-tg-panel" id="panel-mwg" hidden>
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Chi tiết Kênh MWG</h2>
-<div class="dm-hang-doc"><button type="button" class="dm-nut-doc" data-vung="panel-mwg" aria-expanded="false">Cách đọc</button></div>
 
 <div class="chart-sub" style="margin-bottom:12px;">Dashboard MWG đầy đủ (nguồn dữ liệu riêng, sheet DATA MWG), mặc định lọc tỉnh Tiền Giang + Bến Tre.</div>
 
@@ -2525,7 +2517,6 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 </div>
 <div class="db-tg-panel" id="panel-ka" hidden>
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Chi tiết Kênh KA</h2>
-<div class="dm-hang-doc"><button type="button" class="dm-nut-doc" data-vung="panel-ka" aria-expanded="false">Cách đọc</button></div>
 
     <div class="chart-sub" style="margin-bottom:10px;">4 thẻ dưới đây mặc định là số liệu <b>tháng gần nhất có dữ liệu</b> (riêng kênh KA), kèm so sánh với tháng liền trước (MoM) - riêng tháng đang xem nếu <b>chưa đủ dữ liệu cả tháng</b> thì tự so <b>cùng kỳ ngày</b> với tháng trước. Breakdown theo <b>Kênh phụ</b> (FPT/Viettel/Điện Máy Chợ Lớn/CellphoneS) thay vì Sale. Có thể đổi Tháng/Kênh phụ/Shop bằng bộ lọc bên dưới.</div>
     <div class="filter-bar" style="margin-bottom:14px;">
@@ -3129,7 +3120,19 @@ function computeData(rows) {
         const storeId = row[COL.STORE_ID] !== undefined && row[COL.STORE_ID] !== '' ? String(row[COL.STORE_ID]).trim() : '';
         const sellout = num(row[COL.SELLOUT]);
         const activated = num(row[COL.SELLOUT_ACTIVATED]);
-        const revenue = num(row[COL.DOANH_THU]);
+        /* ==== them 03/09/2026 — doanh thu = Gia (R) x Sellout (T), khong tin cot V ====
+           CENTER T8 tung bi hong cot V (13,8 ty thay vi ~48 ty), sua tay xong bi dot do so moi de lai.
+           Quy tac bao cao tuan da chot: dung Gia x Sellout. Cot V chi con la duong lui khi thieu Gia.
+           Dem so dong/may/tien lech vao window.__DT_LECH de robot va nguoi xem biet nguon dang hong. */
+        const revV = num(row[COL.DOANH_THU]);
+        const priceR = num(row[COL.PRICE]);
+        const revenue = (priceR > 0 && sellout !== 0) ? priceR * sellout : revV;
+        if (Math.abs(revenue - revV) > 1000) {
+            const dl = (window.__DT_LECH = window.__DT_LECH || { rows: 0, may: 0, tien: 0, thang: {} });
+            dl.rows++; dl.may += sellout; dl.tien += (revenue - revV);
+            if (month) dl.thang[month] = (dl.thang[month] || 0) + (revenue - revV);
+        }
+        /* ==== het khoi them 03/09/2026 ==== */
         const targetVal = num(row[COL.TARGET]);
 
         if (month) monthsSet.add(month);
@@ -3241,6 +3244,11 @@ function computeData(rows) {
     const modelsList = Array.from(modelsSet).sort();
     const salesList = Array.from(salesSet).sort();
 
+    /* 03/09/2026: bao neu cot V (Doanh thu) cua CENTER lech Gia x Sellout */
+    if (window.__DT_LECH && window.__DT_LECH.rows) {
+        const dl = window.__DT_LECH;
+        console.warn('[CENTER] cot Doanh thu (V) lech Gia x Sellout: ' + dl.rows + ' dong, ' + dl.may + ' may, ' + (dl.tien / 1e6).toFixed(0) + ' tr - da dung Gia x Sellout. Theo thang (tr): ' + JSON.stringify(Object.fromEntries(Object.entries(dl.thang).map(([k, v]) => [k, Math.round(v / 1e6)]))));
+    }
     const crosstab = [];
     crosstabMap.forEach((v, key) => {
         const [m, channel, store, model, series, segment, sales] = key.split('|');
@@ -4097,9 +4105,6 @@ const PRODUCT_TARGETS = {
     });
     window.__daThuHepKenh = { kenh: giu, target: JSON.parse(JSON.stringify(CHANNEL_TARGETS)) };
 })();
-/* them 03/09/2026 — Bao cao tuan/thang (scripts/bc.js) can target kenh + phan bo target theo Sale.
-   Chi DUA RA ngoai de doc, khong sua gi. computeSaleTargetAllocation la function declaration nen goi duoc. */
-window.__bcTarget = function () { return { kenh: CHANNEL_TARGETS, sp: PRODUCT_TARGETS, sale: computeSaleTargetAllocation }; };
 const channelColor = CHANNEL_GROUP_COLORS_JS;
 
 function fmtVND(v) {
@@ -14272,7 +14277,4 @@ body.zoom-on { overflow: hidden; }
 <script src="scripts/demo-bang.js?v=202609010322"></script>
 <script src="scripts/demo-bo-cuc.js?v=202609010322"></script>
 <script src="scripts/demo-sang.js?v=202609010322"></script>
-<!-- 03/09/2026: Bao cao tuan / thang — lop trinh bay moi (anh Thai chot khung 03/09). Go 2 dong nay la ve y nhu cu. -->
-<link rel="stylesheet" href="scripts/bc.css?v=202609031000">
-<script src="scripts/bc.js?v=202609031000"></script>
 </html>
