@@ -114,7 +114,9 @@
         var labels = ky12.map(function (q) { return q.nhan; });
         var lam = function (lay, tien) { var ds = top6.map(function (x) { return { label: x.h, data: chuoi.map(function (g) { return lay(g.hang[x.i]); }), borderColor: mauHang(x.h), backgroundColor: mauHang(x.h), tension: .3, pointRadius: 3, fill: false }; });
           return { type: 'line', data: { labels: labels, datasets: ds }, options: { layout: { padding: { top: 14 } }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, color: mau('chuPhu') } } }, scales: { x: { grid: { display: false }, ticks: { color: mau('chuPhu') } }, y: { grid: { color: mau('luoi') }, ticks: { color: mau('chuPhu'), callback: function (v) { return tien ? fTyNgan(v) : fInt(v); } }, border: { display: false } } } } }; };
-        $('.bc-than', kq).appendChild(khungBieuDo({ cao: 420, tabs: [{ ten: 'Máy', cau: function () { return lam(function (x) { return x.u; }); } }, { ten: 'Doanh thu', cau: function () { return lam(function (x) { return x.dt; }, true); } }, { ten: 'Thị phần %', cau: function () { var c = lam(function (x) { return x.u; }); c.data.datasets.forEach(function (ds, j) { ds.data = chuoi.map(function (g) { return g.tong.u ? +(g.hang[top6[j].i].u / g.tong.u * 100).toFixed(1) : 0; }); }); c.options.scales.y.ticks.callback = function (v) { return v + '%'; }; return c; } }] }));
+        /* Thị phần = đường (quy ước cũ của DB TG: đường luôn là %); Máy / Doanh thu = cột chồng theo hãng (đọc được cả tổng chợ) */
+        var cotHang = function (lay, tien) { var khac = chuoi.map(function (g, j) { var t = lay(g.tong); top6.forEach(function (x) { t -= lay(g.hang[x.i]); }); return Math.max(0, t); }); return cauCotChong(labels, top6.map(function (x) { return { label: x.h, data: chuoi.map(function (g) { return lay(g.hang[x.i]); }), backgroundColor: mauHang(x.h) }; }).concat([{ label: 'Khác', data: khac, backgroundColor: mauHang('Khác') }]), { fmt: tien ? fTyNgan : fInt, tien: tien }); };
+        $('.bc-than', kq).appendChild(khungBieuDo({ cao: 420, tabs: [{ ten: 'Thị phần %', cau: function () { var c = lam(function (x) { return x.u; }); c.data.datasets.forEach(function (ds, j) { ds.data = chuoi.map(function (g) { return g.tong.u ? +(g.hang[top6[j].i].u / g.tong.u * 100).toFixed(1) : 0; }); }); c.options.scales.y.ticks.callback = function (v) { return v + '%'; }; return c; } }, { ten: 'Máy', cau: function () { return cotHang(function (x) { return x.u; }); } }, { ten: 'Doanh thu', cau: function () { return cotHang(function (x) { return x.dt; }, true); } }] }));
         grid.appendChild(kq);
       })();
 
@@ -156,7 +158,7 @@
 
       /* 6. TOP 10 sản phẩm — 6 hãng */
       (function () {
-        var kq = khoi({ stt: 6, ten: 'TOP 10 sản phẩm bán chạy', cls: 'bc-c6', dangXem: k.nhan + ' · chọn hãng · số máy và doanh thu' });
+        var kq = khoi({ stt: 6, ten: 'TOP 10 sản phẩm bán chạy', cls: cd === 'thang' ? 'bc-c6' : 'bc-c12',  dangXem: k.nhan + ' · chọn hãng · số máy và doanh thu' });
         var top6 = HANG.map(function (h, i) { return { h: h, i: i, u: nay.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 6);
         var box = el('div', 'bc-cuon');
         function ve(j) { var hh = top6[j]; var ms = Object.keys(nay.model).filter(function (m) { return nay.model[m].h === hh.i; }).map(function (m) { return { m: MODEL[m], u: nay.model[m].u, dt: nay.model[m].dt, uT: truoc && truoc.model[m] ? truoc.model[m].u : null }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 10);
@@ -188,19 +190,19 @@
 
       /* 10. DS | DT theo ngày */
       (function () {
-        var kq = khoi({ stt: 10, ten: 'OPPO theo ngày', cls: 'bc-c8', dangXem: cd === 'tuan' ? '7 ngày của tuần chọn · cột mờ = tuần trước' : 'Các ngày trong tháng chọn' });
+        var kq = khoi({ stt: 10, ten: 'OPPO theo ngày', cls: 'bc-c12', dangXem: cd === 'tuan' ? '7 ngày của tuần chọn · trong ngoặc: tuần trước cùng thứ' : 'Các ngày trong tháng chọn' });
         var ngay = []; for (var dd = k.tu; dd <= k.den; dd = congNgay(dd, 1)) ngay.push(dd);
         var lay = function (g, dd, f) { var N = g.ngay[dd.slice(5)]; return N ? N[f] : 0; };
         var lam = function (f, tien) { var ds = [{ label: 'OPPO ' + k.nhan, data: ngay.map(function (dd) { return dd > k.denCo ? 0 : lay(nay, dd, f); }), backgroundColor: mau('OPPO') }];
-          if (cd === 'tuan' && truoc) ds.push({ label: kt.nhan, data: ngay.map(function (dd, i) { return lay(truoc, congNgay(kt.tu, i), f); }), backgroundColor: hexMo(mau('OPPO'), 0.35) });
-          var c = cauCotChong(ngay.map(function (dd) { return cd === 'tuan' ? ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][new Date(dd).getUTCDay() === 0 ? 6 : new Date(dd).getUTCDay() - 1] + ' ' + ngayVN(dd).slice(0, 2) : ngayVN(dd).slice(0, 2); }), ds, { fmt: tien ? fTyNgan : fInt, tien: tien }); c.options.scales.x.stacked = false; c.options.scales.y.stacked = false; c.plugins = []; return c; };
+          /* Không chồng cột tuần trước lên (shim luôn vẽ chồng -> tổng sai); ghi số tuần trước vào nhãn trục */
+          var c = cauCotChong(ngay.map(function (dd, i) { var thu = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][new Date(dd).getUTCDay() === 0 ? 6 : new Date(dd).getUTCDay() - 1]; var tr = (cd === 'tuan' && truoc) ? ' (' + (tien ? fTyNgan(lay(truoc, congNgay(kt.tu, i), f)) : fInt(lay(truoc, congNgay(kt.tu, i), f))) + ')' : ''; return (cd === 'tuan' ? thu + ' ' : '') + ngayVN(dd).slice(0, 2) + tr; }), ds, { fmt: tien ? fTyNgan : fInt, tien: tien }); c.plugins = []; return c; };
         $('.bc-than', kq).appendChild(khungBieuDo({ cao: 340, tabs: [{ ten: 'Máy', cau: function () { return lam('oppoU'); } }, { ten: 'Doanh thu', cau: function () { return lam('oppoDt', true); } }] }));
         grid.appendChild(kq);
       })();
 
       /* 9. Cùng kỳ tháng trước (chỉ tháng) */
       if (cd === 'thang' && truoc) (function () {
-        var kq = khoi({ stt: 9, ten: 'Luỹ kế theo ngày — so tháng trước', cls: 'bc-c4', dangXem: 'Máy OPPO cộng dồn từ ngày 1' });
+        var kq = khoi({ stt: 9, ten: 'Luỹ kế theo ngày — so tháng trước', cls: 'bc-c6', dangXem: 'Máy OPPO cộng dồn từ ngày 1' });
         var n = U.soNgayThang(k.so), lk = [], lkT = [], a = 0, b = 0; for (var i = 1; i <= n; i++) { var N = nay.ngay[pad2(k.so) + '-' + pad2(i)], NT = truoc.ngay[pad2(k.so - 1) + '-' + pad2(i)]; a += N ? N.oppoU : 0; b += NT ? NT.oppoU : 0; lk.push(('2026-' + pad2(k.so) + '-' + pad2(i)) > k.denCo ? null : a); lkT.push(b); }
         $('.bc-than', kq).appendChild(khungBieuDo({ cao: 340, tabs: [{ ten: 'Luỹ kế', cau: function () { return { type: 'line', data: { labels: lk.map(function (_, i) { return i + 1; }), datasets: [{ label: k.nhan, data: lk, borderColor: mau('OPPO'), backgroundColor: mau('OPPO'), tension: .2, pointRadius: 0, borderWidth: 2.5 }, { label: kt.nhan, data: lkT, borderColor: mau('xam'), backgroundColor: mau('xam'), tension: .2, pointRadius: 0, borderWidth: 1.5, borderDash: [4, 4] }] }, options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, color: mau('chuPhu') } } }, scales: { x: { grid: { display: false }, ticks: { color: mau('chuPhu') } }, y: { grid: { color: mau('luoi') }, ticks: { color: mau('chuPhu') }, border: { display: false } } } } }; } }] }));
         grid.appendChild(kq);
