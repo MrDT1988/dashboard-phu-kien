@@ -17,14 +17,13 @@
 .bc-tb button.on { background: #fff; opacity: 1; }
 
 /* ---- giấu nội dung Tổng quan cũ ---- */
-#panel-overview > .bc-cu { display: none !important; }
-#panel-overview > h2 { display: none; }
+#panel-overview > .bc-cu, .db-tg-panel > .bc-cu { display: none !important; }
 
 /* ---- lưới ---- */
 .bc-root { display: block; }
 .bc-luoi { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
 .bc-luoi > * { grid-column: span 12; min-width: 0; }
-.bc-c8 { grid-column: span 8; } .bc-c7 { grid-column: span 7; } .bc-c6 { grid-column: span 6; } .bc-c5 { grid-column: span 5; } .bc-c4 { grid-column: span 4; }
+.bc-c12 { grid-column: span 12; } .bc-c8 { grid-column: span 8; } .bc-c7 { grid-column: span 7; } .bc-c6 { grid-column: span 6; } .bc-c5 { grid-column: span 5; } .bc-c4 { grid-column: span 4; }
 @media (max-width: 1100px) { .bc-c8, .bc-c7, .bc-c6, .bc-c5 { grid-column: span 12; } .bc-c4 { grid-column: span 6; } }
 @media (max-width: 720px) { .bc-luoi { gap: 12px; } .bc-luoi > * { grid-column: span 12 !important; } }
 html.bc-dt .bc-luoi { gap: 12px; } html.bc-dt .bc-luoi > * { grid-column: span 12 !important; }
