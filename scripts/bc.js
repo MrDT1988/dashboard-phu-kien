@@ -155,8 +155,11 @@
     return r;
   }
   /* Target tháng theo kênh (đã thu hẹp theo phạm vi trong tg.html) */
-  function targetKenh() { var t = {}; try { Object.keys(CHANNEL_TARGETS).forEach(function (c) { t[c] = { ds: CHANNEL_TARGETS[c].sellout, dt: CHANNEL_TARGETS[c].revenue, reno16: (PRODUCT_TARGETS.reno16 || {})[c] || 0 }; }); } catch (e) {} return t; }
-  function targetSale() { try { return computeSaleTargetAllocation() || {}; } catch (e) { return {}; } }
+  /* CHANNEL_TARGETS / computeSaleTargetAllocation nằm trong initDashboard() của tg.html — tg.html
+     đưa ra ngoài qua window.__bcTarget() (1 dòng thêm sau khối thuHepTheoPhamVi). */
+  function layTarget() { try { return window.__bcTarget ? window.__bcTarget() : null; } catch (e) { return null; } }
+  function targetKenh() { var t = {}, g = layTarget(); if (!g || !g.kenh) return t; Object.keys(g.kenh).forEach(function (c) { t[c] = { ds: g.kenh[c].sellout, dt: g.kenh[c].revenue, reno16: ((g.sp || {}).reno16 || {})[c] || 0 }; }); return t; }
+  function targetSale() { var g = layTarget(); try { return g && g.sale ? (g.sale() || {}) : {}; } catch (e) { return {}; } }
   function reno16Thang(m) {   // số máy Reno16 theo kênh trong tháng m
     var r = {}; (D.series_detail_crosstab || []).forEach(function (x) { if (x.m !== m) return; var sd = x.series_detail || x.seriesDetail || ''; if (!/reno\s*16/i.test(sd)) return; r[x.channel] = (r[x.channel] || 0) + (x.sellout || 0); }); return r;
   }
@@ -524,7 +527,12 @@
   function napKy() {
     var sel = $('#bc-ky'); if (!sel) return; var ds = dsKy(st.cd); sel.innerHTML = '';
     ds.forEach(function (x) { var o = document.createElement('option'); o.value = x.id; o.textContent = x.ten + (x.phu ? ' · ' + x.phu : ''); sel.appendChild(o); });
-    if (st.ky == null || !ds.some(function (x) { return String(x.id) === String(st.ky); })) { var cuoi = ds[ds.length - 1]; st.ky = cuoi ? cuoi.id : null; }
+    if (st.ky == null || !ds.some(function (x) { return String(x.id) === String(st.ky); })) {
+      var cuoi = ds[ds.length - 1];
+      // Tuần đang dở mới có 1–2 ngày số thì mặc định mở tuần đủ 7 ngày gần nhất (anh vẫn chọn tuần dở được)
+      if (st.cd === 'tuan' && cuoi && cuoi.t.do && soNgay(cuoi.t.tu, cuoi.t.denCo) <= 2 && ds.length > 1) cuoi = ds[ds.length - 2];
+      st.ky = cuoi ? cuoi.id : null;
+    }
     sel.value = st.ky;
     document.querySelectorAll('.bc-chedo button').forEach(function (b) { b.classList.toggle('on', b.dataset.cd === st.cd); });
     document.documentElement.setAttribute('data-bc-cd', st.cd);
