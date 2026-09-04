@@ -413,7 +413,7 @@
    C. tính số cho ngày đang xem từ gói (dnB / dk / dkp / pkD / dmN / gt)
    D. vẽ trang
    ================================================================ */
-var REVIEW_VER='2026-09-04.2';
+var REVIEW_VER='2026-09-04.3';
 var $=function(s){return document.querySelector(s)};
 var D=null;              // gói đã mở khoá (đúng cấu trúc app.html)
 var DAY=0;               // ngày đang xem (trong tháng hiện tại)
@@ -513,6 +513,9 @@ $('#pin-in').addEventListener('input',function(){
       chỉ đổi tên hàm phụ. Sửa rule thì sửa ở app.html rồi chép lại đây.
    ================================================================ */
 var N=3, NGAY_SAB=2, NGAY_KHAC=3, CHO_MIN=2, GIAM_SAU=30, NEN_MIN=10, SO_RULE=3, MAT_SHARE=3, CHO_SHARE=20;
+/* Rule ⑥ RIÊNG CỦA REVIEW (anh Thái 04/09): đối thủ bán tốt mà mình không bán -> chỉ đưa vào THEO DÕI, không bắt giải trình.
+   Cửa sổ 3 ngày gần nhất: chợ tại shop >= CHO_TOT máy và (OPPO = 0 hoặc share tại shop < TI_LE_YEU x chuẩn vùng luỹ kế). */
+var CHO_TOT=15, NGAY_TOT=3, TI_LE_YEU=0.5;
 function share(sh,d){
   var dk=sh&&sh.dk?sh.dk:null; if(!dk||!dk.length) return null;
   var dkp=sh.dkp||[], oN=0,cN=0,oT=0,cT=0;
@@ -700,7 +703,22 @@ function prepDay(d){
   V.gt=tinhGT(d);
   return V;
 }
+function doiThuBanTot(sh,d,chuan){
+  var dk=sh.dk||[], dkp=sh.dkp||[]; if(!dk.length) return null;
+  var o=0,t=0,ss=0,xm=0,ip=0,days=[];
+  for(var i=d;i>d-NGAY_TOT;i--){
+    var c=null; if(i>=1) c=dk[i-1]; else if(dkp.length) c=dkp[dkp.length+i-1];
+    if(!c) continue; days.push(i);
+    o+=c[0]||0; t+=c[8]||0; ss+=c[2]||0; xm+=c[4]||0; ip+=c[6]||0;
+  }
+  if(t<CHO_TOT) return null;
+  var sh2=o/t*100;
+  if(!(o===0||sh2<chuan*TI_LE_YEU)) return null;
+  return ['--warn','Đối thủ bán tốt, mình không bán',
+    'Chợ '+n0(t)+' máy trong '+NGAY_TOT+' ngày gần nhất (Samsung '+n0(ss)+' · Xiaomi '+n0(xm)+' · Apple '+n0(ip)+') · OPPO '+n0(o)+' máy = '+n1(sh2)+'% (chuẩn vùng LK '+n1(chuan)+'%)'];
+}
 function tinhGT(d){
+  var chuanLK=kpi3(moc(D.all.dnB,d).lk)[0];
   var rows=[], noDk=[], sum=[];
   (D.sales||[]).forEach(function(s){
     var shops=(s.s||[]).map(function(x){x.__sale=s.n;return x});
@@ -714,6 +732,13 @@ function tinhGT(d){
       var bat=!!batSet[x.n];
       rows.push({id:id,nm:tenNgan(x.n),full:x.n,sz:sh.size||'',sale:tenNgan2(s.n),saleFull:s.n,bat:bat,dut:!!(dn&&dn.dut),lien:dn?dn.lien:0,ly:x.ly,gt:gt,sh:sh});
       if(bat){req++; if(gt)done++; else miss.push(id||tenNgan(x.n))}
+    });
+    // rule ⑥ — chỉ theo dõi
+    var daCo={}; r.rules.forEach(function(x){daCo[x.n]=1});
+    mwg.forEach(function(sh){
+      var l6=doiThuBanTot(sh,d,chuanLK); if(!l6) return;
+      if(daCo[sh.n]){ for(var q=rows.length-1;q>=0;q--){ if(rows[q].full===sh.n){ rows[q].ly=rows[q].ly.concat([l6]); rows[q].r6=1; break } } return }
+      rows.push({id:maSo(sh.n),nm:tenNgan(sh.n),full:sh.n,sz:sh.size||'',sale:tenNgan2(s.n),saleFull:s.n,bat:false,dut:false,lien:0,ly:[l6],gt:timGT(sh.n),sh:sh,r6:1});
     });
     var thieu=mwg.filter(function(x){return !x.dk||!x.dk.length}).map(function(x){return maSo(x.n)||tenNgan(x.n)});
     if(thieu.length) noDk.push([tenNgan2(s.n),thieu]);
@@ -947,13 +972,14 @@ function gtSec(){
     '<div class="duo"><div class="panel"><h3>Phải giải trình — <em>'+bat.length+' shop</em></h3><div class="body"><div>'+gtGroup(bat)+'</div>'+
     '<div class="foot">Đúng danh sách tab <b>Cảnh báo → Phải giải trình</b> trên app của từng sale. Shop đứt sell out đi thẳng, không bị trần '+N+' shop.</div></div></div>'+
     '<div class="panel" style="background:var(--surface)"><h3 style="color:var(--warn)">Theo dõi — <em style="color:var(--warn)">dính rule, chưa tới mức nặng</em></h3><div class="body"><div>'+gtGroup(theo)+'</div>'+
-    '<div class="foot">Shop dính rule ngày nhưng chưa vượt ngưỡng nặng — app xếp vào thẻ "cần theo dõi", không bắt giải trình.</div></div></div></div>'+
+    '<div class="foot">Shop dính rule ngày nhưng chưa vượt ngưỡng nặng (app xếp "cần theo dõi") <b>+ shop đối thủ bán tốt mà mình không bán</b> (rule ⑥ riêng của review). Không bắt giải trình.</div></div></div></div>'+
     '<div class="panel solo" style="margin-top:14px"><h3>Rule đang chạy — <em>hằng số chép từ app</em></h3><div class="rules">'+
     '<div><b>① Đứt sell out</b> — S/A/B (có PG) trắng OPPO từ <b>'+NGAY_SAB+' ngày</b>, không sàn · C/D trắng từ <b>'+NGAY_KHAC+' ngày</b> <i>và</i> chợ tại shop ≥ '+(CHO_MIN*30)+' máy/tháng. Chuỗi nối sang tháng trước. <b>Luôn bắt buộc.</b></div>'+
     '<div><b>② Giảm liên tục 3 ngày</b> — máy OPPO d &lt; d−1 &lt; d−2 &lt; d−3, nền ≥ 2 máy.</div>'+
     '<div><b>③ Rớt sâu</b> — hôm nay dưới 85% bình quân/ngày của chính shop (bình quân ≥ 2).</div>'+
     '<div><b>④ Giảm &gt; 20% so cùng kỳ</b> — luỹ kế ngày 1–d so cùng ngày tháng trước (cùng kỳ ≥ 5 máy).</div>'+
     '<div><b>⑤ Mất thị phần tại shop</b> — share OPPO luỹ kế tụt từ <b>'+MAT_SHARE+' điểm</b> so cùng kỳ (chợ ≥ '+CHO_SHARE+' máy cả hai kỳ). Giảm theo chợ mà share giữ → hạ rule ④ xuống vàng.</div>'+
+    '<div><b>⑥ Đối thủ bán tốt, mình không bán</b> <i>(rule riêng của review, chỉ THEO DÕI)</i> — '+NGAY_TOT+' ngày gần nhất chợ tại shop ≥ <b>'+CHO_TOT+' máy</b> mà OPPO 0 máy hoặc share tại shop &lt; '+Math.round(TI_LE_YEU*100)+'% chuẩn vùng luỹ kế.</div>'+
     '<div><b>Mức nặng (bắt buộc)</b> — đứt sell out · giảm ≥ '+GIAM_SAU+'% so cùng kỳ (nền ≥ '+NEN_MIN+' máy) · mất ≥ '+MAT_SHARE+' điểm share · dính ≥ '+SO_RULE+' rule. Rule cũ lấy tối đa '+N+' shop nặng nhất/sale; shop đứt cộng thêm.</div></div>'+
     (nNo?'<div class="note alert" style="margin-top:12px"><p><strong>'+nNo+' shop MWG chưa có số theo ngày</strong> — robot chưa nối được tên shop bên DATA MWG sang shop OPPO nên rule không nhìn thấy các shop này, dù có trắng máy. Sửa ở robot (<i>mapMain</i> trong build-app-data.js), không sửa tay:</p>'+
       G.noDk.map(function(x){return '<p><b>'+esc(x[0])+':</b> '+x[1].map(esc).join(' , ')+'</p>'}).join('')+'</div>':'')+
