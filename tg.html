@@ -277,7 +277,12 @@
           return (Array.isArray(rows) && rows.length > 5) ? rows : null;
         } catch (e) { console.warn('Khong lay duoc Share KA tu Apps Script:', e && e.message); return null; }
       }
-      if (ai.r === 'admin' && !window.__BO_QUA_TINH) {
+      /* ==== them 05/09/2026 — PHUONG AN B (anh Thai chot): admin doc GOI ROBOT nhu moi nguoi.
+         Duong "Apps Script da tinh san" phu thuoc lich TG_chotKy 2 gio/lan, lich nay dang chet vi
+         vuot 6 phut (log 00:49 05/09) -> man hinh admin dung so ma khong ai biet. Tat duong nay:
+         ca vung mot nguon (robot 30 phut/lan, da co bang vang bao cu). Muon bat lai: DUNG_DUONG_TINH_SAN = true. */
+      var DUNG_DUONG_TINH_SAN = false;
+      if (DUNG_DUONG_TINH_SAN && ai.r === 'admin' && !window.__BO_QUA_TINH) {
         try {
           var tMoi = Date.now();
           var hai = await Promise.all([
