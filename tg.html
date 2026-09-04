@@ -267,6 +267,16 @@
          vi goi do da duoc cat pham vi san; cat pham vi ngay tren Apps Script la
          viec cua chang 2. Lam vay de khong ai nhin thay du lieu ngoai pham vi
          chi vi mot buoc chuyen kien truc. */
+      /* 05/09/2026: duong Apps Script khong co Share KA -> lay them sheet "Share KA" y nhu robot lam
+         (?sheet=Share KA&mode=data). window.fetch da tu gan chia khoa. Loi thi tra null, bang thi phan trong. */
+      async function layShareKaTuAppsScript() {
+        try {
+          var r = await fetch(AS_EXEC + '?sheet=' + encodeURIComponent('Share KA') + '&mode=data&start=1&count=20000', { cache: 'no-store' });
+          if (!r.ok) return null;
+          var rows = await r.json();
+          return (Array.isArray(rows) && rows.length > 5) ? rows : null;
+        } catch (e) { console.warn('Khong lay duoc Share KA tu Apps Script:', e && e.message); return null; }
+      }
       if (ai.r === 'admin' && !window.__BO_QUA_TINH) {
         try {
           var tMoi = Date.now();
@@ -284,7 +294,7 @@
               return {
                 center: goiC.data,
                 dataMwg: goiM.data,
-                shareKa: goiM.data && goiM.data.shareKa ? goiM.data.shareKa : null,
+                shareKa: (goiM.data && goiM.data.shareKa) ? goiM.data.shareKa : await layShareKaTuAppsScript(),
                 moc: { updated: goiC.chotLuc, maxDay: goiM.data.maxDay, months: goiM.data.months },
                 ai: ai,
                 nguon: 'apps-script',
@@ -676,6 +686,15 @@
   window.__khoiDongDBTG = function (initFn, khoa, idOverlay, duongLui) {
     window.__goiDBTG.then(function (goi) {
       if (goi && goi[khoa]) {
+        /* 05/09/2026: duong Apps Script (admin) thieu Target/Sell In/SHOP THEO SALE -> lam giau truoc khi ve.
+           Goi tu robot da du (robot chay loadAndRender) nen khong dong vao. */
+        var canLamGiau = (goi.nguon === 'apps-script' && khoa === 'center' && typeof window.__lamGiauDATA === 'function');
+        Promise.resolve(canLamGiau ? window.__lamGiauDATA(goi[khoa]) : null)
+          .catch(function (e) { console.warn('Lam giau DATA loi, ve bang so hien co:', e && e.message); })
+          .then(function () { veGoi(); });
+        return;
+      }
+      function veGoi() {
         var ov = document.getElementById(idOverlay);
         if (ov) ov.style.display = 'none';
         // Ve the TRUOC khi ve bieu do: neu ve bieu do loi thi van con duong ra.
@@ -701,8 +720,14 @@
           }
           return;
         }
-        catch (e) { console.warn('Goi mo duoc nhung ve loi:', e && e.message); }
+        catch (e) {
+          console.warn('Goi mo duoc nhung ve loi:', e && e.message);
+          // giu hanh vi cu: ve loi thi di duong lui (neu duoc phep)
+          if (!duocPhepLui()) { try { window.__chanDuongLui(); } catch (e2) {} return; }
+          duongLui();
+        }
       }
+      // (veGoi ket thuc o tren — khoi if(goi && goi[khoa]) da return truoc khi toi day)
       // Pham vi cua nguoi nay khong co khoi do (vd Leader IND khong co bang MWG)
       // -> an man hinh cho, khong goi Apps Script, khong bao loi.
       if (goi && !goi[khoa]) {
@@ -3806,73 +3831,7 @@ async function loadAndRender() {
         }
         window.__lastFetchInfo = { checkpoint, latestLastRow: fetchResult.lastRow };
 
-        // Nối Target theo Store ID từ sheet Target 2026 — luôn lấy mới, áp lên DATA đã gộp cuối cùng
-        if (msgEl) msgEl.textContent = 'Đang tải Target theo shop...';
-        const targetByStoreId = await fetchTargetMap(APPS_SCRIPT_URL);
-        let matchedCount = 0;
-        DATA.store_rows.forEach(r => {
-            if (r.store_id && targetByStoreId[r.store_id] !== undefined) {
-                r.target = targetByStoreId[r.store_id];
-                if (r.target > 0) matchedCount++;
-            } else {
-                r.target = 0;
-            }
-        });
-        DATA.debug_target = {
-            targetSheetRowCount: Object.keys(targetByStoreId).length,
-            matchedCount,
-            sampleTargetIds: Object.keys(targetByStoreId).slice(0, 5),
-            sampleStoreIds: DATA.store_rows.slice(0, 5).map(r => r.store_id),
-        };
-        console.log('Target debug:', DATA.debug_target);
-
-        // Sell In (sheet riêng "SELL IN", chỉ dùng cho Chi tiết IND) - tải sau CENTER + Target, không
-        // ảnh hưởng tới phần còn lại của dashboard nếu lỗi.
-        if (msgEl) msgEl.textContent = 'Đang tải dữ liệu Sell In (IND)...';
-        DATA.sell_in_rows = await fetchSellInRows(APPS_SCRIPT_URL);
-
-        // Shop theo Sale (sheet riêng "SHOP THEO SALE", nguồn CHUẨN cho Sale phụ trách VÀ Gói O.C của
-        // IND - xem hàm fetchShopSaleMap()) - tải song song vị trí này, không ảnh hưởng phần còn lại nếu lỗi.
-        if (msgEl) msgEl.textContent = 'Đang tải Shop theo Sale (IND)...';
-        const shopTheoSale = await fetchShopSaleMap(APPS_SCRIPT_URL);
-        DATA.shop_sale_map = shopTheoSale.byStoreName;
-        DATA.shop_level_map = shopTheoSale.levelByStoreName;
-        DATA.shop_sale_by_id = shopTheoSale.byStoreId;          // 03/09: cho tab MWG (bc-chitiet.js) khop qua Store ID
-
-        // Ghi đè NGAY TẠI ĐÂY (1 chỗ duy nhất) Sale phụ trách + Gói O.C cho MỌI bản ghi IND trong crosstab
-        // + store_rows, dùng sheet "SHOP THEO SALE" làm nguồn CHUẨN thay cho CENTER (anh Thái yêu cầu
-        // 25/8: Sale hay đổi người phụ trách; Gói O.C thì có tháng shop rớt/đạt lại theo doanh số CENTER
-        // tự tính trong khi anh muốn 1 danh sách CỐ ĐỊNH, tự điều chỉnh ngay trên sheet khi cần - "SHOP
-        // THEO SALE" áp dụng cho TOÀN BỘ biểu đồ/bảng liên quan IND, Center chỉ để xác định số liệu bán
-        // từng shop). Nhờ vá 1 lần ở DATA thay vì sửa từng hàm, MỌI bảng/biểu đồ IND phía sau tự động
-        // dùng đúng Sale/Gói mà không cần đổi gì thêm. Số lượng/doanh thu vẫn nguyên như CENTER - chỉ đổi
-        // Sale/Gói gắn với mỗi bản ghi/shop. Shop nào chưa có trong sheet "SHOP THEO SALE" thì GIỮ NGUYÊN
-        // Sale/Gói cũ của CENTER (fallback an toàn).
-        if (DATA.shop_sale_map && Object.keys(DATA.shop_sale_map).length) {
-            let patchedCrosstab = 0, patchedStoreRows = 0, patchedLevel = 0;
-            /* 03/09/2026 — LUAT NGUON: Sale theo SHOP THEO SALE cho MOI KENH (khong con loc IND). Goi O.C van chi IND. */
-            DATA.crosstab.forEach(rec => {
-                if (!rec.store) return;
-                const trueSale = DATA.shop_sale_map[rec.store];
-                if (trueSale && trueSale !== rec.sales) { rec.sales = trueSale; patchedCrosstab++; }
-            });
-            DATA.store_rows.forEach(r => {
-                if (!r.store) return;
-                const trueSale = DATA.shop_sale_map[r.store];
-                if (trueSale && trueSale !== r.sale) { r.sale = trueSale; patchedStoreRows++; }
-                if (r.channel !== 'IND') return;
-                const trueLevel = DATA.shop_level_map[r.store];
-                if (trueLevel && trueLevel !== r.level) { r.level = trueLevel; patchedLevel++; }
-            });
-            // overview_daily_by_date (ngay -> kenh -> shop -> {sale,...}) cung mang sale cua CENTER -> va luon
-            let patchedDaily = 0;
-            Object.keys(DATA.overview_daily_by_date || {}).forEach(iso => {
-                const byCh = DATA.overview_daily_by_date[iso];
-                Object.keys(byCh).forEach(ch => { Object.keys(byCh[ch]).forEach(st => { const t = DATA.shop_sale_map[st]; if (t && byCh[ch][st].sale !== t) { byCh[ch][st].sale = t; patchedDaily++; } }); });
-            });
-            console.log('SHOP THEO SALE -> overview_daily_by_date: da va ' + patchedDaily + ' o');
-            console.log('Đã vá Sale/Gói IND theo "SHOP THEO SALE": ' + patchedCrosstab + ' dòng crosstab, ' + patchedStoreRows + ' Sale + ' + patchedLevel + ' Gói ở store_rows đổi khác CENTER.');
-        }
+        await lamGiauDATA(DATA, msgEl);   // 05/09/2026: Target + Sell In + SHOP THEO SALE — tach ra ham dung chung
 
         if (loadingEl) loadingEl.style.display = 'none';
         const updEl = document.getElementById('last-updated');
@@ -3889,6 +3848,91 @@ async function loadAndRender() {
         }
     }
 }
+
+/* ==== them 05/09/2026 — LAM GIAU DATA: Target + Sell In + SHOP THEO SALE, dung chung cho MOI duong ====
+   Truoc day khoi nay nam trong loadAndRender (duong cu / robot). Duong "Apps Script da tinh san" cua admin
+   (02/09) di thang vao initDashboard nen BO QUA khoi nay -> DB TG cua anh Thai: Ton kho IND trong (0 sell-in),
+   22 shop IND "(Khong ro)" sale, 254 shop mat Goi O.C, tab MWG khong khop sale theo Store ID.
+   Goi tu __khoiDongDBTG (duong Apps Script) va tu loadAndRender. Loi o buoc nao thi bo qua buoc do, khong lam vo trang. */
+async function lamGiauDATA(DATA, msgEl) {
+    if (!DATA || !Array.isArray(DATA.store_rows)) return DATA;
+    try {
+            // Nối Target theo Store ID từ sheet Target 2026 — luôn lấy mới, áp lên DATA đã gộp cuối cùng
+            if (msgEl) msgEl.textContent = 'Đang tải Target theo shop...';
+            const targetByStoreId = await fetchTargetMap(APPS_SCRIPT_URL);
+            let matchedCount = 0;
+            DATA.store_rows.forEach(r => {
+                if (r.store_id && targetByStoreId[r.store_id] !== undefined) {
+                    r.target = targetByStoreId[r.store_id];
+                    if (r.target > 0) matchedCount++;
+                } else {
+                    r.target = 0;
+                }
+            });
+            DATA.debug_target = {
+                targetSheetRowCount: Object.keys(targetByStoreId).length,
+                matchedCount,
+                sampleTargetIds: Object.keys(targetByStoreId).slice(0, 5),
+                sampleStoreIds: DATA.store_rows.slice(0, 5).map(r => r.store_id),
+            };
+            console.log('Target debug:', DATA.debug_target);
+
+            // Sell In (sheet riêng "SELL IN", chỉ dùng cho Chi tiết IND) - tải sau CENTER + Target, không
+            // ảnh hưởng tới phần còn lại của dashboard nếu lỗi.
+            if (msgEl) msgEl.textContent = 'Đang tải dữ liệu Sell In (IND)...';
+            DATA.sell_in_rows = await fetchSellInRows(APPS_SCRIPT_URL);
+
+            // Shop theo Sale (sheet riêng "SHOP THEO SALE", nguồn CHUẨN cho Sale phụ trách VÀ Gói O.C của
+            // IND - xem hàm fetchShopSaleMap()) - tải song song vị trí này, không ảnh hưởng phần còn lại nếu lỗi.
+            if (msgEl) msgEl.textContent = 'Đang tải Shop theo Sale (IND)...';
+            const shopTheoSale = await fetchShopSaleMap(APPS_SCRIPT_URL);
+            DATA.shop_sale_map = shopTheoSale.byStoreName;
+            DATA.shop_level_map = shopTheoSale.levelByStoreName;
+            DATA.shop_sale_by_id = shopTheoSale.byStoreId;          // 03/09: cho tab MWG (bc-chitiet.js) khop qua Store ID
+
+            // Ghi đè NGAY TẠI ĐÂY (1 chỗ duy nhất) Sale phụ trách + Gói O.C cho MỌI bản ghi IND trong crosstab
+            // + store_rows, dùng sheet "SHOP THEO SALE" làm nguồn CHUẨN thay cho CENTER (anh Thái yêu cầu
+            // 25/8: Sale hay đổi người phụ trách; Gói O.C thì có tháng shop rớt/đạt lại theo doanh số CENTER
+            // tự tính trong khi anh muốn 1 danh sách CỐ ĐỊNH, tự điều chỉnh ngay trên sheet khi cần - "SHOP
+            // THEO SALE" áp dụng cho TOÀN BỘ biểu đồ/bảng liên quan IND, Center chỉ để xác định số liệu bán
+            // từng shop). Nhờ vá 1 lần ở DATA thay vì sửa từng hàm, MỌI bảng/biểu đồ IND phía sau tự động
+            // dùng đúng Sale/Gói mà không cần đổi gì thêm. Số lượng/doanh thu vẫn nguyên như CENTER - chỉ đổi
+            // Sale/Gói gắn với mỗi bản ghi/shop. Shop nào chưa có trong sheet "SHOP THEO SALE" thì GIỮ NGUYÊN
+            // Sale/Gói cũ của CENTER (fallback an toàn).
+            if (DATA.shop_sale_map && Object.keys(DATA.shop_sale_map).length) {
+                let patchedCrosstab = 0, patchedStoreRows = 0, patchedLevel = 0;
+                /* 03/09/2026 — LUAT NGUON: Sale theo SHOP THEO SALE cho MOI KENH (khong con loc IND). Goi O.C van chi IND. */
+                DATA.crosstab.forEach(rec => {
+                    if (!rec.store) return;
+                    const trueSale = DATA.shop_sale_map[rec.store];
+                    if (trueSale && trueSale !== rec.sales) { rec.sales = trueSale; patchedCrosstab++; }
+                });
+                DATA.store_rows.forEach(r => {
+                    if (!r.store) return;
+                    const trueSale = DATA.shop_sale_map[r.store];
+                    if (trueSale && trueSale !== r.sale) { r.sale = trueSale; patchedStoreRows++; }
+                    if (r.channel !== 'IND') return;
+                    const trueLevel = DATA.shop_level_map[r.store];
+                    if (trueLevel && trueLevel !== r.level) { r.level = trueLevel; patchedLevel++; }
+                });
+                // overview_daily_by_date (ngay -> kenh -> shop -> {sale,...}) cung mang sale cua CENTER -> va luon
+                let patchedDaily = 0;
+                Object.keys(DATA.overview_daily_by_date || {}).forEach(iso => {
+                    const byCh = DATA.overview_daily_by_date[iso];
+                    Object.keys(byCh).forEach(ch => { Object.keys(byCh[ch]).forEach(st => { const t = DATA.shop_sale_map[st]; if (t && byCh[ch][st].sale !== t) { byCh[ch][st].sale = t; patchedDaily++; } }); });
+                });
+                console.log('SHOP THEO SALE -> overview_daily_by_date: da va ' + patchedDaily + ' o');
+                console.log('Đã vá Sale/Gói IND theo "SHOP THEO SALE": ' + patchedCrosstab + ' dòng crosstab, ' + patchedStoreRows + ' Sale + ' + patchedLevel + ' Gói ở store_rows đổi khác CENTER.');
+            }
+    } catch (e) {
+        console.warn('lamGiauDATA: bo qua mot phan vi loi -', e && e.message);
+    }
+    return DATA;
+}
+window.__lamGiauDATA = function (DATA) {
+    return lamGiauDATA(DATA, document.getElementById('loading-message'));
+};
+/* ==== het khoi them 05/09/2026 ==== */
 
 // ================= Khởi tạo giao diện sau khi có DATA =================
 function initDashboard(DATA) {
