@@ -413,7 +413,7 @@
    C. tính số cho ngày đang xem từ gói (dnB / dk / dkp / pkD / dmN / gt)
    D. vẽ trang
    ================================================================ */
-var REVIEW_VER='2026-09-04.1';
+var REVIEW_VER='2026-09-04.2';
 var $=function(s){return document.querySelector(s)};
 var D=null;              // gói đã mở khoá (đúng cấu trúc app.html)
 var DAY=0;               // ngày đang xem (trong tháng hiện tại)
@@ -645,8 +645,8 @@ function topNangCua(o,d){
 function laSo(p){if(!p.length)return false;for(var i=0;i<p.length;i++){var c=p.charCodeAt(i);if(c<48||c>57)return false}return true}
 function laMa(p){if(p.indexOf('_')<0)return false;for(var i=0;i<p.length;i++){var c=p.charCodeAt(i);if(c>=97&&c<=122)return false}return true}
 function laHoa(p){if(!p.length||p.indexOf(' ')>=0)return false;return p===p.toUpperCase()&&p!==p.toLowerCase()}
-function maSo(s){var p=String(s==null?'':s).split(' - ');for(var i=0;i<p.length;i++){var x=p[i].trim();if(laSo(x))return x}return ''}
-function tenNgan(s){var goc=String(s==null?'':s).trim(),p=goc.split(' - '),k=0;
+function maSo(s){var p=String(s==null?'':s).replace(/\s[\u2013\u2014]\s/g,' - ').split(' - ');for(var i=0;i<p.length;i++){var x=p[i].trim();if(laSo(x))return x}return ''}
+function tenNgan(s){var goc=String(s==null?'':s).replace(/\s[\u2013\u2014]\s/g,' - ').trim(),p=goc.split(' - '),k=0;
   while(k<p.length-1){var x=p[k].trim();if(laSo(x)||laMa(x)||laHoa(x))k++;else break}
   var t=p.slice(k).join(' - ').trim();return t||goc}
 
@@ -827,7 +827,7 @@ function compTbl(k){ // k: 0 máy, 1 doanh thu
   var rows=list.map(function(x){
     var inv=x[0]!=='OPPO';
     var sd=shr(val(ng,x[1]),ng[8+k]), sp=tr?shr(val(tr,x[1]),tr[8+k]):null, sm=shr(val(lk,x[1]),lk[8+k]), sc=ck&&ck[8+k]?shr(val(ck,x[1]),ck[8+k]):null;
-    return '<tr'+(inv?'':' class="oppo"')+'><td><b>'+esc(x[0])+'</b><span class="shopname">'+(k?n1(val(ng,x[1]))+' tr':n0(val(ng,x[1]))+' máy')+' ngày '+DAY+'</span></td><td>'+pc(sd)+'</td><td>'+(sp===null?'<span class="dash">—</span>':dltC(sd-sp,inv))+
+    return '<tr'+(inv?'':' class="oppo"')+'><td><b>'+esc(x[0])+'</b><span class="shopname">'+(k?n0(val(ng,x[1]))+' tr':n0(val(ng,x[1]))+' máy')+' ngày '+DAY+'</span></td><td>'+pc(sd)+'</td><td>'+(sp===null?'<span class="dash">—</span>':dltC(sd-sp,inv))+
       '</td><td>'+pc(sm)+'</td><td>'+(sc===null?'<span class="dash">—</span>':dltC(sm-sc,inv))+'</td></tr>';
   }).join('');
   return '<div class="scroll"><table><thead><tr><th>Hãng</th><th>Ngày '+DAY+'</th><th>so '+esc(V.prevLbl)+'</th><th>LK T'+M+'</th><th>so T'+(PM||'—')+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
