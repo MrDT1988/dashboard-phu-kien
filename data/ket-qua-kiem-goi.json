@@ -1,6 +1,6 @@
 {
- "tong": 7,
- "khongDat": 2,
+ "tong": 6,
+ "khongDat": 0,
  "ghiChu": "Mo goi THAT cua tung nguoi bang ma cua chinh ho. So 3 chu so tro len da bit.",
  "pheps": [
   {
@@ -25,13 +25,8 @@
   },
   {
    "ten": "KHONG goi nao thieu truong (DB TG se khong vo khi ve)",
-   "dat": false,
-   "ct": "19 goi thieu truong"
-  },
-  {
-   "ten": "Chi tiet cho hong",
-   "dat": false,
-   "ct": "leader thieu truong: shop_sale_by_id | leader thieu truong: shop_sale_by_id | leader thieu truong: shop_sale_by_id | sale thieu truong: shop_sale_by_id | sale thieu truong: shop_sale_by_id | sale thieu truong: shop_sale_by_id"
+   "dat": true,
+   "ct": "du 22 truong"
   },
   {
    "ten": "So tong cua tung nguoi da duoc TINH LAI, khong bung so toan vung",
