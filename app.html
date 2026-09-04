@@ -1054,6 +1054,22 @@ function renderOver(){
     new Date(D.updated).toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})+
     ' · bản '+APP_VER;
 
+  /* ==== them 04/09/2026 — bang vang "so cu": app TU DO, khong cho robot bao.
+     03-04/09 robot do 1,5 ngay ma khong ai biet; nguoi dung cam so ngay 2/9 di trien khai.
+     Luat: goi cu hon 26 gio -> bao. Robot ghi data/trang-thai-robot.json khi loi -> bao them buoc hong. */
+  (function(){
+    var el=$('#h-robot-cu');
+    if(!el){ el=document.createElement('div'); el.id='h-robot-cu';
+      el.style.cssText='margin:6px 0 0;padding:6px 10px;border-radius:8px;background:rgba(255,197,66,.16);color:var(--amber);font-size:12px;line-height:1.45;display:none';
+      var st=$('#h-stamp'); st.parentNode.insertBefore(el, st.nextSibling); }
+    var gio=(Date.now()-new Date(D.updated).getTime())/36e5, msg='';
+    if(gio>26) msg='⚠ Robot chưa cập nhật số '+Math.round(gio)+' giờ nay — số đang xem có thể CŨ. Kiểm GitHub → Actions → "Cap nhat so lieu App".';
+    var rl=window.__ROBOT_TRANG_THAI;
+    if(rl&&rl.loi) msg+=(msg?' ':'')+'⚠ Lần chạy robot gần nhất LỖI'+(rl.buoc?' ở bước "'+rl.buoc+'"':'')+(rl.luc?' ('+rl.luc+')':'')+'.';
+    el.textContent=msg; el.style.display=msg?'block':'none';
+  })();
+  /* ==== het khoi them 04/09/2026 ==== */
+
   renderHero(o); renderTarget(o);
   renderDaily(o); renderMonthly(o); renderMonth(o); renderChan(o); renderSeg(o);
   renderShopTable(); renderKA();
@@ -3227,6 +3243,12 @@ function moKhoa(blob,pin){
     })
     .then(function(pt){return JSON.parse(new TextDecoder().decode(pt))});
 }
+
+/* 04/09/2026: doc trang thai robot (file nho, robot ghi o cuoi moi lan chay). Hong thi bo qua. */
+fetch('data/trang-thai-robot.json?t='+Date.now(),{cache:'no-store'})
+  .then(function(r){return r.ok?r.json():null})
+  .then(function(j){ window.__ROBOT_TRANG_THAI=j||null; if(j&&j.loi&&typeof renderOver==='function'&&window.D){ try{renderOver()}catch(e){} } })
+  .catch(function(){});
 
 function layIndex(){
   return fetch('data/index.json?t='+Date.now(),{cache:'no-store'})
