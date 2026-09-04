@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("dbtg-theme")||"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Report Tiền Giang</title>
@@ -43,6 +42,105 @@
   /* ----- MAN HINH NHAP CHIA KHOA -------------------------------------------
      Ve bang HTML chu khong dung prompt() cua trinh duyet: prompt bi chan tren
      mot so cua so, ma khi do anh Thai se ket cung khong biet nhap o dau. */
+  /* Man hinh CHON NGUOI. Tra ve promise -> {id,n,r} hoac null. */
+  window.__chonNguoiDBTG = function (ds) {
+    return new Promise(function (xong) {
+      var cu = document.getElementById('dbtg-ai-lop');
+      if (cu) cu.remove();
+      var nhom = { admin: 'Quản lý vùng', leader: 'Leader kênh', sale: 'Sale' };
+      var thuTu = ['admin', 'leader', 'sale'];
+      var html = '';
+      thuTu.forEach(function (vt) {
+        var co = ds.filter(function (u) { return u.r === vt });
+        if (!co.length) return;
+        html += '<div style="padding:9px 15px;font-size:10.5px;letter-spacing:.08em;' +
+          'text-transform:uppercase;color:#7d8896;background:#0e141c">' + nhom[vt] + '</div>';
+        co.forEach(function (u) {
+          html += '<button data-ai="' + u.id + '" style="display:block;width:100%;text-align:left;' +
+            'padding:13px 15px;font-size:14px;color:#e8edf2;background:transparent;border:0;' +
+            'border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer">' +
+            String(u.n).replace(/[&<>"]/g, '') + '</button>';
+        });
+      });
+      var lop = document.createElement('div');
+      lop.id = 'dbtg-ai-lop';
+      lop.style.cssText = 'position:fixed;inset:0;z-index:99998;background:#0b1017;overflow-y:auto;' +
+        'display:flex;align-items:center;justify-content:center;padding:24px;' +
+        'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+      lop.innerHTML =
+        '<div style="width:100%;max-width:420px">' +
+          '<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d8896">DB Tiền Giang</div>' +
+          '<h2 style="margin:8px 0 6px;font-size:19px;color:#e8edf2;font-weight:800">Anh/chị là ai?</h2>' +
+          '<p style="margin:0 0 18px;font-size:13px;line-height:1.55;color:#96a1ae">' +
+            'Mỗi người xem đúng phần mình phụ trách. Chọn tên rồi nhập mã.</p>' +
+          '<div style="border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;' +
+            'background:#141b24">' + html + '</div>' +
+        '</div>';
+      document.body.appendChild(lop);
+      lop.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-ai]');
+        if (!b) return;
+        var u = ds.filter(function (x) { return x.id === b.dataset.ai })[0];
+        lop.remove(); xong(u || null);
+      });
+    });
+  };
+
+  /* O nhap MA DANG NHAP (mo goi du lieu). Tra ve promise -> chuoi ma, hoac null. */
+  window.__hoiMaDBTG = function (ai, loi) {
+    return new Promise(function (xong) {
+      var cu = document.getElementById('dbtg-ma-lop');
+      if (cu) cu.remove();
+      var lop = document.createElement('div');
+      lop.id = 'dbtg-ma-lop';
+      lop.style.cssText = 'position:fixed;inset:0;z-index:99998;background:#0b1017;' +
+        'display:flex;align-items:center;justify-content:center;padding:24px;' +
+        'font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+      lop.innerHTML =
+        '<div style="width:100%;max-width:420px;background:#141b24;border:1px solid rgba(255,255,255,.12);' +
+          'border-radius:14px;padding:26px">' +
+          '<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7d8896">DB Tiền Giang</div>' +
+          '<h2 style="margin:8px 0 6px;font-size:19px;color:#e8edf2;font-weight:800">' +
+            String((ai && ai.n) || 'Đăng nhập').replace(/[&<>"]/g, '') + '</h2>' +
+          '<p style="margin:0 0 18px;font-size:13px;line-height:1.55;color:#96a1ae">' +
+            'Nhập mã của anh/chị — <b>cùng mã dùng bên app</b>. Chỉ nhập một lần, máy này sẽ nhớ.</p>' +
+          '<input id="dbtg-ma-o" type="password" autocomplete="off" spellcheck="false" ' +
+            'placeholder="Mã đăng nhập" ' +
+            'style="width:100%;box-sizing:border-box;padding:13px 14px;border-radius:9px;' +
+            'border:1px solid rgba(255,255,255,.18);background:#0e141c;color:#e8edf2;font-size:16px;' +
+            'letter-spacing:.14em;text-align:center;outline:none">' +
+          '<div id="dbtg-ma-loi" style="min-height:18px;margin-top:8px;font-size:12.5px;color:#ff8fa3">' +
+            (loi ? loi : '') + '</div>' +
+          '<button id="dbtg-ma-ok" style="width:100%;margin-top:8px;padding:12px;border-radius:9px;border:0;' +
+            'background:#1BB350;color:#08120b;font-size:14.5px;font-weight:800;cursor:pointer">Mở dashboard</button>' +
+          ((ai && ai.r === 'admin')
+            ? ('<button id="dbtg-ma-bo" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;' +
+               'border:1px solid rgba(255,255,255,.14);background:transparent;color:#7d8896;font-size:12.5px;' +
+               'cursor:pointer">Bỏ qua — tải trực tiếp như cũ (chậm hơn)</button>')
+            : '') +
+          '<button id="dbtg-ma-doi" style="width:100%;margin-top:8px;padding:9px;border-radius:9px;' +
+            'border:1px solid rgba(255,255,255,.14);background:transparent;color:#7d8896;font-size:12.5px;' +
+            'cursor:pointer">← Chọn tên khác</button>' +
+        '</div>';
+      document.body.appendChild(lop);
+      var o = document.getElementById('dbtg-ma-o');
+      var xongVoi = function (v) { lop.remove(); xong(v); };
+      document.getElementById('dbtg-ma-ok').onclick = function () {
+        var v = (o.value || '').trim();
+        if (!v) { document.getElementById('dbtg-ma-loi').textContent = 'Chưa nhập gì cả.'; o.focus(); return; }
+        xongVoi(v);
+      };
+      var nutBo = document.getElementById('dbtg-ma-bo');
+      if (nutBo) nutBo.onclick = function () { xongVoi(null); };
+      document.getElementById('dbtg-ma-doi').onclick = function () {
+        try { localStorage.removeItem(KHO_AI); localStorage.removeItem(KHO_MA); } catch (e) {}
+        location.reload();
+      };
+      o.onkeydown = function (e) { if (e.key === 'Enter') document.getElementById('dbtg-ma-ok').click(); };
+      setTimeout(function () { o.focus(); }, 60);
+    });
+  };
+
   window.__hoiChiaKhoa = function (viSao) {
     if (document.getElementById('as-key-lop')) return;
     var lop = document.createElement('div');
@@ -86,11 +184,578 @@
     setTimeout(function () { o.focus(); }, 60);
   };
 
+  /* ===== NAP GOI DU LIEU DA MA HOA ========================================
+     Thay vi goi Apps Script keo 152k dong moi lan mo (vai phut, tung treo),
+     robot tinh san 1 lan/ngay roi nen + ma hoa. DB TG chi tai ve va mo khoa.
+     Do that: 27,8 MB tho -> 2,7 MB nen -> tai 2-3 giay.
+
+     Khong co goi, hoac ma sai, hoac trinh duyet cu -> tra ve null va DB TG
+     tu quay ve cach cu. Khong bao gio de anh Thai nhin man hinh trang.
+     ===================================================================== */
+  var KHO_MA = 'dbtg_ma';
+  var KHO_AI = 'dbtg_ai';     // nho lai dang dang nhap la ai
+  function b64ToBytes(b64) {
+    var s2 = atob(b64), u = new Uint8Array(s2.length);
+    for (var i = 0; i < s2.length; i++) u[i] = s2.charCodeAt(i);
+    return u;
+  }
+  async function moKhoiMaHoa(blob, ma) {
+    var C = window.crypto && window.crypto.subtle;
+    if (!C || typeof DecompressionStream !== 'function') throw new Error('trinh duyet cu');
+    var km = await C.importKey('raw', new TextEncoder().encode(String(ma)), 'PBKDF2', false, ['deriveBits']);
+    var bits = await C.deriveBits(
+      { name: 'PBKDF2', salt: b64ToBytes(blob.salt), iterations: blob.it, hash: 'SHA-256' }, km, 256);
+    var key = await C.importKey('raw', bits, { name: 'AES-GCM' }, false, ['decrypt']);
+    var nen = await C.decrypt({ name: 'AES-GCM', iv: b64ToBytes(blob.iv), tagLength: 128 },
+      key, b64ToBytes(blob.ct));
+    // Da giai ma -> con lai la khoi gzip -> bung ra roi doc JSON
+    var st = new Blob([nen]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return JSON.parse(await new Response(st).text());
+  }
+  /* Dia chi Apps Script. Khai bao o day vi __goiDBTG dung toi no.
+     Phai goi qua window.fetch (da duoc va o dau file de tu gan chia khoa),
+     KHONG dung _fetch goc — _fetch khong kem chia khoa nen Apps Script tu choi. */
+  var AS_EXEC =
+    'https://script.google.com/macros/s/AKfycbwmfOzNub6Ao6jmdc6RsIu1P1162aYXfB_ib25RuVByIIWI-aqFoVvINWZMM5FAI15n/exec';
+
+  window.__goiDBTG = (async function () {
+    /* ROBOT PHAI DI DUONG CU.
+       Robot mo dung trang nay de LAY SO LIEU MOI ve roi dong goi lai. Neu no
+       cung doc goi cu thi thanh vong tron, va te hon: no se dung o man hinh
+       chon nguoi / nhap ma roi treo mai, vi khong co ai go gi ca.
+       Loi nay chi lo ra tu LAN CHAY THU HAI — lan dau chua co goi nen khong thay. */
+    if (window.__BO_QUA_GOI) return null;
+    var idx;
+    try {
+      var r = await _fetch('data/dbtg-index.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return null;
+      idx = await r.json();
+    } catch (e) { return null; }
+    var ds = (idx && idx.users) || (idx && idx.id ? [{ id: idx.id, n: 'Toàn Tiền Giang', r: 'admin' }] : null);
+    if (!ds || !ds.length) return null;
+
+    for (var lan = 0; lan < 2; lan++) {
+      // Ai dang xem? Nho lai lan truoc, chua co thi hoi.
+      var ai = null;
+      try { ai = JSON.parse(localStorage.getItem(KHO_AI) || 'null'); } catch (e) {}
+      /* Nho theo TEN + VAI TRO, KHONG theo id.
+         Robot doi id cua tung goi sau MOI lan chay (ten file ngau nhien cho kho
+         doan). Nho theo id thi ngay nao cung bi day ve man hinh chon ten. */
+      if (ai) {
+        var lai = null;
+        for (var q = 0; q < ds.length; q++) {
+          if (ds[q].n === ai.n && ds[q].r === ai.r) { lai = ds[q]; break; }
+        }
+        ai = lai;                       // lay id MOI cua chinh nguoi do
+      }
+      if (!ai) {
+        ai = await window.__chonNguoiDBTG(ds);
+        if (!ai) { window.__goiHong = true; window.__aiDangXem = null; return null; }
+      }
+      window.__aiDangXem = ai;
+
+      /* ===== DUONG MOI: APPS SCRIPT DA TINH SAN (02/09) =======================
+         Truoc day trang nay tai 152.000 dong tho ve TRINH DUYET roi moi tinh.
+         Vi qua nang nen phai de them ba tang chong do: checkpoint trong trinh
+         duyet, robot GitHub mo trang de dong goi, va goi ma hoa tung nguoi.
+         Moi tang la mot cho de so lieu cu di. Ngay 02/09 ca ba cung lo ra.
+
+         Gio phep tinh chay ngay tren Apps Script (giong Dashboard Mien Trung):
+         F5 la doc thang ket qua da tinh, khong qua ban sao nao.
+
+         CHI ADMIN di duong nay o chang 1. Leader/sale van doc goi ma hoa nhu cu
+         vi goi do da duoc cat pham vi san; cat pham vi ngay tren Apps Script la
+         viec cua chang 2. Lam vay de khong ai nhin thay du lieu ngoai pham vi
+         chi vi mot buoc chuyen kien truc. */
+      /* 05/09/2026: duong Apps Script khong co Share KA -> lay them sheet "Share KA" y nhu robot lam
+         (?sheet=Share KA&mode=data). window.fetch da tu gan chia khoa. Loi thi tra null, bang thi phan trong. */
+      async function layShareKaTuAppsScript() {
+        try {
+          var r = await fetch(AS_EXEC + '?sheet=' + encodeURIComponent('Share KA') + '&mode=data&start=1&count=20000', { cache: 'no-store' });
+          if (!r.ok) return null;
+          var rows = await r.json();
+          return (Array.isArray(rows) && rows.length > 5) ? rows : null;
+        } catch (e) { console.warn('Khong lay duoc Share KA tu Apps Script:', e && e.message); return null; }
+      }
+      if (ai.r === 'admin' && !window.__BO_QUA_TINH) {
+        try {
+          var tMoi = Date.now();
+          var hai = await Promise.all([
+            fetch(AS_EXEC + '?mode=tinh&phan=center', { cache: 'no-store' }),
+            fetch(AS_EXEC + '?mode=tinh&phan=mwg', { cache: 'no-store' }),
+          ]);
+          if (hai[0].ok && hai[1].ok) {
+            var goiC = await hai[0].json();
+            var goiM = await hai[1].json();
+            if (goiC && goiC.data && goiM && goiM.data) {
+              console.log('DB TG: doc so da tinh tu Apps Script trong ' +
+                Math.round((Date.now() - tMoi) / 100) / 10 + 's');
+              try { localStorage.setItem(KHO_AI, JSON.stringify(ai)); } catch (e) {}
+              return {
+                center: goiC.data,
+                dataMwg: goiM.data,
+                shareKa: (goiM.data && goiM.data.shareKa) ? goiM.data.shareKa : await layShareKaTuAppsScript(),
+                moc: { updated: goiC.chotLuc, maxDay: goiM.data.maxDay, months: goiM.data.months },
+                ai: ai,
+                nguon: 'apps-script',
+              };
+            }
+          }
+          console.warn('DB TG: duong Apps Script chua san sang, quay ve goi cu.');
+        } catch (e) {
+          console.warn('DB TG: loi doc Apps Script (' + (e && e.message) + '), quay ve goi cu.');
+        }
+      }
+
+      var ma = null;
+      try { ma = localStorage.getItem(KHO_MA); } catch (e) {}
+      if (!ma) ma = await window.__hoiMaDBTG(ai, lan > 0
+        ? 'Không mở được gói — mã sai, hoặc gói dữ liệu hỏng. Thử lại một lần nữa.' : null);
+      if (!ma) { window.__goiHong = true; return null; }
+
+      var r2 = await _fetch('data/dbtg-' + ai.id + '.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r2.ok) { window.__goiHong = true; return null; }
+      var goi = await r2.json();
+      try {
+        var kq = {
+          center: goi.center ? await moKhoiMaHoa(goi.center, ma) : null,
+          dataMwg: goi.dataMwg ? await moKhoiMaHoa(goi.dataMwg, ma) : null,
+          // So thi phan FPT + Viettel (sheet "Share KA"). Chi co trong goi cua
+          // nguoi duoc xem kenh KA; nguoi khac la null va bang do cung dang an.
+          shareKa: goi.shareKa ? await moKhoiMaHoa(goi.shareKa, ma) : null,
+        };
+        try { localStorage.setItem(KHO_MA, ma); localStorage.setItem(KHO_AI, JSON.stringify(ai)); } catch (e) {}
+        kq.moc = idx; kq.ai = ai;
+        return kq;
+      } catch (e) {
+        try { localStorage.removeItem(KHO_MA); } catch (e2) {}
+      }
+    }
+    console.warn('Khong mo duoc goi DB TG sau 2 lan.');
+    window.__goiHong = true;
+    return null;
+  })().catch(function (e) { console.warn('Khong mo duoc goi DB TG:', e && e.message); return null; });
+
+  /* ===== NHAN MOC SO LIEU (02/09) ========================================
+     BAY DA VAP: trang khong he noi so lieu cu tuoi hay khong.
+       - Chay bang GOI: initFn() duoc goi thang, loadAndRender KHONG chay, nen
+         o #last-updated / #mwg-last-updated de TRONG. Goi dung tu 10h sang hom
+         truoc, chot o ngay 23, ma tren man hinh khong co mot dau hieu nao.
+       - Chay bang duong lui (Apps Script that): in "Du lieu tai luc <bay gio>"
+         — dung, nhung giong het truong hop tren neu nhin luot.
+     Ket qua: mo trang sang 02/09 van tuong dang xem so moi.
+     Tu gio ghi DUNG HAI MOC: so toi ngay nao, va goi dung luc nao.
+     ===================================================================== */
+  window.__nhanMoc = function (el, ghiChuNguon) {
+    if (typeof el === 'string') el = document.getElementById(el);
+    if (!el) return;
+    var nguon = ghiChuNguon ? ' · ' + ghiChuNguon : '';
+    Promise.resolve(window.__goiDBTG || null).then(function (goi) {
+      var moc = goi && goi.moc;
+      if (!moc || !moc.updated) {
+        // Duong lui: doc thang Apps Script -> so dung la so cua luc nay.
+        el.textContent = 'Đọc trực tiếp từ Google Sheets lúc ' +
+          new Date().toLocaleString('vi-VN') + nguon;
+        el.style.color = '';
+        el.style.fontWeight = '';
+        el.title = 'Số đọc thẳng từ nguồn, không qua gói.';
+        return;
+      }
+      var t = new Date(moc.updated);
+      var gio = Math.floor((Date.now() - t.getTime()) / 3600000);
+      var thg = (moc.months && moc.months.length) ? moc.months[moc.months.length - 1] : 0;
+      var hai = function (n) { return (n < 10 ? '0' : '') + n; };
+      var tuoi = gio < 1 ? 'vừa dựng xong' : ('đã ' + gio + ' giờ trước');
+      el.textContent =
+        (moc.maxDay && thg ? 'Số liệu tới ngày ' + hai(moc.maxDay) + '/' + hai(thg) + ' · ' : '') +
+        'gói dựng lúc ' + t.toLocaleString('vi-VN') + ' (' + tuoi + ')' + nguon;
+      el.style.fontWeight = gio >= 6 ? '700' : '';
+      el.style.color = gio >= 20 ? '#ff8080' : (gio >= 6 ? '#ffc266' : '');
+      el.title = 'Gói dữ liệu do robot dựng lại theo lịch. Số nhập vào Sheet SAU mốc dựng ' +
+                 'thì chưa có ở đây — chờ lượt dựng kế tiếp hoặc bấm "Làm mới ngay".';
+      try { window.__nutLamMoi(el, goi && goi.ai); } catch (e1) {}
+    }).catch(function () {});
+  };
+
+  /* Nut "Lam moi ngay" — CHI admin. Bam la robot dung lai goi ngay, khong phai
+     cho luot 20 phut ke tiep. Duong di:
+        trang -> Apps Script (?mode=lammoi) -> GitHub API workflow_dispatch
+     Ma GitHub nam trong Script Properties cua Apps Script, KHONG nam trong file
+     nay (file nay cong khai tren GitHub Pages). Apps Script chua cai dat thi nut
+     bao ro "chua bat", khong lam hong gi. */
+  var AS_URL_LAMMOI =
+    'https://script.google.com/macros/s/AKfycbwmfOzNub6Ao6jmdc6RsIu1P1162aYXfB_ib25RuVByIIWI-aqFoVvINWZMM5FAI15n/exec';
+  window.__nutLamMoi = function (el, ai) {
+    if (!el || el.id !== 'last-updated') return;          // chi dat MOT nut
+    if (!ai || ai.r !== 'admin') return;                  // leader/sale khong duoc dung
+    if (document.getElementById('dbtg-lam-moi')) return;
+    var b = document.createElement('button');
+    b.id = 'dbtg-lam-moi';
+    b.textContent = '⟳ Làm mới ngay';
+    b.style.cssText = 'margin-left:9px;padding:2px 9px;font:inherit;font-size:11px;font-weight:700;' +
+      'border-radius:6px;border:1px solid rgba(255,255,255,.25);background:transparent;' +
+      'color:inherit;cursor:pointer;vertical-align:baseline';
+    b.onclick = function () {
+      b.disabled = true;
+      var cu = b.textContent;
+      b.textContent = 'Đang gọi robot...';
+      fetch(AS_URL_LAMMOI + '?mode=lammoi', { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (kq) {
+          if (kq && kq.ok) {
+            b.textContent = '✓ Đã gọi — xong sau ~15 phút thì F5';
+          } else {
+            b.textContent = '✗ ' + ((kq && kq.error) || 'không gọi được');
+            b.disabled = false;
+          }
+        })
+        .catch(function (e) {
+          b.textContent = '✗ ' + (e && e.message ? e.message : 'lỗi mạng');
+          b.disabled = false;
+        })
+        .then(function () {
+          setTimeout(function () { if (!b.disabled) b.textContent = cu; }, 12000);
+        });
+    };
+    el.appendChild(b);
+  };
+
+  /* Chup lai ham initDashboard / loadAndRender NGAY TAI CHO GOI.
+     Bat buoc phai chup, vi hai khoi <script> deu khai bao trung ten o tang
+     toan cuc — khoi sau de len khoi truoc. Chup dong bo thi moi dung ham
+     cua chinh khoi dang chay. */
+  window.__bangChayCham = function () {
+    if (document.getElementById('dbtg-cham')) return;
+    var d = document.createElement('div');
+    d.id = 'dbtg-cham';
+    d.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9990;background:#3a2c10;' +
+      'border:1px solid #7a5c1c;color:#f2d9a0;border-radius:10px;padding:11px 14px;font-size:12.5px;' +
+      'font-family:system-ui,sans-serif;display:flex;gap:10px;align-items:center;justify-content:space-between';
+    d.innerHTML = '<span>Không mở được gói dữ liệu nhanh — đang tải trực tiếp (chậm hơn).</span>' +
+      '<span><button id="dbtg-cham-lai" style="padding:5px 11px;border-radius:7px;border:0;' +
+      'background:#f2d9a0;color:#3a2c10;font-weight:700;cursor:pointer">Nhập lại mã</button>' +
+      '<button id="dbtg-cham-dong" style="margin-left:6px;padding:5px 9px;border-radius:7px;' +
+      'border:1px solid #7a5c1c;background:transparent;color:#f2d9a0;cursor:pointer">Đóng</button></span>';
+    document.body.appendChild(d);
+    document.getElementById('dbtg-cham-lai').onclick = function () {
+      try { localStorage.removeItem(KHO_MA); } catch (e) {}
+      location.reload();
+    };
+    document.getElementById('dbtg-cham-dong').onclick = function () { d.remove(); };
+  };
+  /* DUONG LUI = goi thang Apps Script = LAY TOAN BO du lieu ca vung.
+     Chi ADMIN moi duoc phep. Leader/sale ma roi xuong duong nay la ho thay ca
+     tinh — dung cai ma chang B sinh ra de ngan. Nen phai chan cung o day. */
+  function duocPhepLui() {
+    var ai = window.__aiDangXem;
+    if (!ai) { try { ai = JSON.parse(localStorage.getItem(KHO_AI) || 'null'); } catch (e) {} }
+    return !ai || ai.r === 'admin';
+  }
+  window.__chanDuongLui = function () {
+    if (document.getElementById('dbtg-chan')) return;
+    var d = document.createElement('div');
+    d.id = 'dbtg-chan';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99997;background:#0b1017;display:flex;' +
+      'align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif';
+    d.innerHTML = '<div style="max-width:400px;text-align:center;color:#e8edf2">' +
+      '<div style="font-size:34px">🔒</div>' +
+      '<h2 style="margin:10px 0 8px;font-size:18px;font-weight:800">Chưa mở được dữ liệu</h2>' +
+      '<p style="margin:0 0 18px;font-size:13.5px;line-height:1.6;color:#96a1ae">' +
+        'Gói dữ liệu của anh/chị chưa mở được. Thử nhập lại mã; nếu vẫn không được thì nhắn anh Thái cấp lại mã.</p>' +
+      '<button id="dbtg-chan-lai" style="padding:11px 20px;border-radius:9px;border:0;background:#1BB350;' +
+        'color:#08120b;font-weight:800;font-size:14px;cursor:pointer">Nhập lại mã</button></div>';
+    document.body.appendChild(d);
+    document.getElementById('dbtg-chan-lai').onclick = function () {
+      try { localStorage.removeItem(KHO_MA); localStorage.removeItem(KHO_AI); } catch (e) {}
+      location.reload();
+    };
+  };
+  /* ===== DON MAN HINH THEO PHAM VI ========================================
+     Anh Thai 27/08: sale khong duoc thay bat ky thu gi cua kenh khac, va cung
+     khong duoc de bieu do trong. Cat du lieu thoi chua du — phai an ca the.
+     ===================================================================== */
+  var KENH_PANEL = { MWG: 'panel-mwg', KA: 'panel-ka', IND: 'panel-ind' };
+
+  // Mot the co gi de ve khong? Chi tinh la CO khi bang co dong that hoac
+  // bieu do co diem that. The chi co chu (chien luoc, chinh sach) thi bo qua.
+  function theCoSo(el) {
+    var bang = el.querySelectorAll('table');
+    for (var i = 0; i < bang.length; i++) if (bang[i].rows.length > 1) return true;
+    var cv = el.querySelectorAll('canvas');
+    for (var j = 0; j < cv.length; j++) {
+      try {
+        var c = (window.Chart && window.Chart.getChart) ? window.Chart.getChart(cv[j]) : null;
+        /* CHUA VE khac RONG — day la loi da mac 28/08.
+           "Doanh so theo ngay" chi ve sau khi nguoi dung chon Thang. Truoc do
+           canvas chua co bieu do nao gan vao. An no di la cuop mat mot chuc nang
+           dang chay tot, va sale khong con duong nao tim lai. */
+        if (!c) return true;
+        if (c.data && (c.data.datasets || []).some(function (d) {
+          return (d.data || []).some(function (v) {
+            var n = (v && typeof v === 'object') ? (v.y != null ? v.y : v.v) : v;
+            return typeof n === 'number' && n !== 0;
+          });
+        })) return true;
+      } catch (e) { return true; }   // khong doc duoc thi CU GIU, tha thua con hon an nham
+    }
+    return !(bang.length || cv.length) ? true : false;   // the chi co chu -> giu
+  }
+
+  /* Khoi HTML TINH cua tung kenh — khong phai .chart-container nen bo quet
+     ben duoi khong dung toi. Phai chi mat tung cai. */
+  var KHOI_TINH = {
+    KA:  ['#channel-program-ka-result'],
+    IND: ['#channel-program-ind-result'],
+  };
+
+  function anKhoiTinh(co) {
+    var n = 0;
+    Object.keys(KHOI_TINH).forEach(function (k) {
+      if (co[k]) return;
+      KHOI_TINH[k].forEach(function (sel) {
+        var e = document.querySelector(sel);
+        var the = e && e.closest('div[style*="border"]');
+        if (the) { the.style.display = 'none'; n++; }
+        else if (e && e.parentElement) { e.parentElement.style.display = 'none'; n++; }
+      });
+    });
+    // "Chien luoc theo Kenh": ba the, moi the mot <h4> ghi dung ten kenh.
+    // HTML tinh, khong phai .chart-container nen bo quet khong dung toi.
+    var cl = document.getElementById('channel-strategy-section');
+    if (cl) {
+      cl.querySelectorAll('h4').forEach(function (h) {
+        var ten = (h.textContent || '').trim();
+        if (!/^(MWG|KA|IND)$/.test(ten) || co[ten]) return;
+        var the = h.closest('div[style*="border"]');
+        if (the) { the.style.display = 'none'; n++; }
+      });
+    }
+    // Tong chi phi CA VUNG — sale khong duoc thay
+    var tong = document.getElementById('channel-program-total');
+    if (tong) { tong.style.display = 'none'; n++; }
+    // The "PG MWG & KA" — chinh sach cua kenh khac
+    if (!co.KA) {
+      document.querySelectorAll('#panel-overview div').forEach(function (d) {
+        if (d.children.length) return;
+        if (/^PG MWG\s*&\s*KA\b/.test((d.textContent || '').trim())) {
+          var box = d.parentElement;
+          if (box) { box.style.display = 'none'; n++; }
+        }
+      });
+    }
+    // Cau mo ta dau trang con liet ke ca 3 kenh
+    var mo = document.querySelector('.dashboard-container p');
+    if (mo && /Chi ti\u1ebft MWG \/ KA \/ IND/.test(mo.textContent || '')) {
+      mo.textContent = 'D\u1eef li\u1ec7u s\u1ea3n ph\u1ea9m OPPO trong ph\u1ea1m vi ph\u1ee5 tr\u00e1ch c\u1ee7a anh/ch\u1ecb \u2014 k\u00eanh '
+        + Object.keys(co).join(' / ') + '.';
+      n++;
+    }
+    return n;
+  }
+
+  window.__donManHinh = function (kenhCuaToi, vaiTro) {
+    if (!kenhCuaToi || vaiTro === 'admin') return { anTab: 0, anThe: 0, anTinh: 0 };
+    var co = {}; kenhCuaToi.forEach(function (k) { co[k] = 1; });
+    var anTab = 0;
+    var anTinh = anKhoiTinh(co);
+
+    // 1. An tab + panel cua kenh khong phu trach
+    Object.keys(KENH_PANEL).forEach(function (k) {
+      if (co[k]) return;
+      var id = KENH_PANEL[k];
+      var p = document.getElementById(id);
+      if (p) p.style.display = 'none';
+      var t = document.querySelector('[data-panel="' + id + '"]');
+      if (t) { t.style.display = 'none'; anTab++; }
+    });
+
+    /* 1b. SALE: bo han Tong quan (anh Thai 28/08).
+       Tong quan gom so ca 3 kenh — voi sale thi vua thua vua de lo.
+       Chi tiet theo kenh von da dung pham vi cua ho roi.
+       Leader VAN GIU Tong quan: 27/08 anh Thai chot "Leader thi full thi truong". */
+    if (vaiTro === 'sale') {
+      var pTQ = document.getElementById('panel-overview');
+      if (pTQ) pTQ.style.display = 'none';
+      var tTQ = document.querySelector('[data-panel="panel-overview"]');
+      if (tTQ) { tTQ.style.display = 'none'; anTab++; }
+    }
+
+    /* Tab dang mo co the vua bi an -> chuyen sang tab CON HIEN dau tien.
+       KHONG duoc tro thang ve Tong quan nua: voi sale thi chinh no vua bi an,
+       bam vao la ra man hinh trong. */
+    var dangMo = document.querySelector('.db-tg-tab.active');
+    if (!dangMo || dangMo.style.display === 'none') {
+      var conHien = null;
+      var moiTab = document.querySelectorAll('.db-tg-tab[data-panel]');
+      for (var z = 0; z < moiTab.length; z++) {
+        if (moiTab[z].style.display !== 'none') { conHien = moiTab[z]; break; }
+      }
+      if (conHien) conHien.click();
+    }
+
+    // 2. An the khong co so gi de ve
+    var anThe = 0;
+    document.querySelectorAll('.chart-container').forEach(function (el) {
+      if (el.closest('[style*="display: none"]')) return;
+      if (!theCoSo(el)) { el.style.display = 'none'; anThe++; }
+    });
+    // Hang nao het the thi an luon hang do
+    document.querySelectorAll('section.chart-row').forEach(function (sec) {
+      var con = Array.prototype.filter.call(sec.children, function (e) {
+        return e.style.display !== 'none';
+      });
+      if (!con.length) sec.style.display = 'none';
+    });
+    return { anTab: anTab, anThe: anThe, anTinh: anTinh };
+  };
+
+  /* ===== THE NGUOI DANG XEM + NUT DANG XUAT ===============================
+     Anh Thai 28/08: dang nhap xong la ket, khong doi duoc tai khoan.
+     The nay co dinh goc duoi trai, hien tren MOI tab.
+     ===================================================================== */
+  var TEN_VAI = { admin: 'Quản lý vùng', leader: 'Leader kênh', sale: 'Sale' };
+
+  window.__thoatDBTG = function () {
+    try { localStorage.removeItem(KHO_AI); localStorage.removeItem(KHO_MA); } catch (e) {}
+    // KHONG dung toi dbtg_as_key — chia khoa Apps Script khong phai tai khoan.
+    location.reload();
+  };
+
+  window.__theNguoiDung = function (ai) {
+    if (!ai) return;
+    var cu = document.getElementById('dbtg-the-ai');
+    if (cu) cu.remove();
+    var d = document.createElement('div');
+    d.id = 'dbtg-the-ai';
+    // The nay dinh co dinh o goc duoi trai, nen no CHE MAT chu o phan noi dung nam duoi no
+    // (anh Thai bao "tieu de Phan 2 bi chong chu" - that ra la the nay de len). Nay de mo san
+    // (opacity .22) cho doc xuyen qua duoc, ro han len khi dua chuot vao / cham vao / bam vao
+    // nut ben trong. Van bam duoc binh thuong, chi la khong con che chu nua.
+    d.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9985;' +
+      'background:#141b24;border:1px solid rgba(255,255,255,.14);border-radius:11px;' +
+      'padding:8px 10px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;' +
+      'font-size:12.5px;color:#e8edf2;box-shadow:0 6px 22px rgba(0,0,0,.42);' +
+      'max-width:calc(100vw - 24px);opacity:.22;transition:opacity .18s ease';
+    function ro() { d.style.opacity = '1'; }
+    function mo() { d.style.opacity = '.22'; }
+    d.addEventListener('mouseenter', ro);
+    d.addEventListener('mouseleave', mo);
+    d.addEventListener('focusin', ro);
+    d.addEventListener('focusout', mo);
+    // Man hinh cam ung khong co hover: cham lan dau la ro han, cham ra ngoai thi mo lai.
+    d.addEventListener('touchstart', ro, { passive: true });
+    document.addEventListener('touchstart', function (e) { if (!d.contains(e.target)) mo(); }, { passive: true });
+    function veThuong() {
+      d.innerHTML =
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div style="min-width:0">' +
+            '<div style="font-weight:700;white-space:nowrap;overflow:hidden;' +
+              'text-overflow:ellipsis;max-width:190px">' + (ai.n || '') + '</div>' +
+            '<div style="font-size:10.5px;color:#7d8896;letter-spacing:.04em">' +
+              (TEN_VAI[ai.r] || ai.r || '') + '</div>' +
+          '</div>' +
+          '<button id="dbtg-thoat" style="flex:0 0 auto;padding:6px 11px;border-radius:8px;' +
+            'border:1px solid rgba(255,255,255,.16);background:transparent;color:#96a1ae;' +
+            'font:inherit;font-size:12px;font-weight:600;cursor:pointer">Đăng xuất</button>' +
+        '</div>';
+      d.querySelector('#dbtg-thoat').onclick = veHoi;
+    }
+    // Hoi lai NGAY TAI CHO. Khong dung confirm() cua trinh duyet.
+    function veHoi() {
+      d.innerHTML =
+        '<div style="max-width:250px">' +
+          '<div style="font-size:12.5px;line-height:1.5;margin-bottom:9px">' +
+            'Đăng xuất khỏi <b>' + (ai.n || '') + '</b>? Lần sau vào sẽ phải chọn tên và nhập lại mã.' +
+          '</div>' +
+          '<div style="display:flex;gap:7px">' +
+            '<button id="dbtg-thoat-ok" style="flex:1;padding:7px 10px;border-radius:8px;border:0;' +
+              'background:#1BB350;color:#08120b;font:inherit;font-size:12px;font-weight:800;' +
+              'cursor:pointer">Đăng xuất</button>' +
+            '<button id="dbtg-thoat-huy" style="flex:1;padding:7px 10px;border-radius:8px;' +
+              'border:1px solid rgba(255,255,255,.16);background:transparent;color:#96a1ae;' +
+              'font:inherit;font-size:12px;font-weight:600;cursor:pointer">Huỷ</button>' +
+          '</div>' +
+        '</div>';
+      d.querySelector('#dbtg-thoat-ok').onclick = window.__thoatDBTG;
+      d.querySelector('#dbtg-thoat-huy').onclick = veThuong;
+    }
+    veThuong();
+    document.body.appendChild(d);
+  };
+
+  window.__khoiDongDBTG = function (initFn, khoa, idOverlay, duongLui) {
+    window.__goiDBTG.then(function (goi) {
+      if (goi && goi[khoa]) {
+        /* 05/09/2026: duong Apps Script (admin) thieu Target/Sell In/SHOP THEO SALE -> lam giau truoc khi ve.
+           Goi tu robot da du (robot chay loadAndRender) nen khong dong vao. */
+        var canLamGiau = (goi.nguon === 'apps-script' && khoa === 'center' && typeof window.__lamGiauDATA === 'function');
+        Promise.resolve(canLamGiau ? window.__lamGiauDATA(goi[khoa]) : null)
+          .catch(function (e) { console.warn('Lam giau DATA loi, ve bang so hien co:', e && e.message); })
+          .then(function () { veGoi(); });
+        return;
+      }
+      function veGoi() {
+        var ov = document.getElementById(idOverlay);
+        if (ov) ov.style.display = 'none';
+        // Ve the TRUOC khi ve bieu do: neu ve bieu do loi thi van con duong ra.
+        try { window.__theNguoiDung(goi.ai || window.__aiDangXem); } catch (e) {}
+        try {
+          initFn(goi[khoa]);
+          // Chay bang goi thi loadAndRender khong chay -> phai tu ghi moc so lieu,
+          // neu khong o nhan de trong va khong ai biet so cu toi dau.
+          try {
+            window.__nhanMoc(khoa === 'dataMwg' ? 'mwg-last-updated' : 'last-updated');
+          } catch (e0) {}
+          // Don man hinh SAU khi ve xong. Doi mot nhip cho bieu do kip dung.
+          var ai2 = goi.ai || window.__aiDangXem;
+          var kenh2 = (goi.center && goi.center.channels_list) ||
+                      (goi[khoa] && goi[khoa].channels_list) || null;
+          if (ai2 && ai2.r !== 'admin' && kenh2) {
+            setTimeout(function () {
+              try {
+                var kq = window.__donManHinh(kenh2, ai2.r);
+                console.log('Don man hinh theo pham vi:', kq);
+              } catch (e) { console.warn('Khong don duoc man hinh:', e && e.message); }
+            }, 1200);
+          }
+          return;
+        }
+        catch (e) {
+          console.warn('Goi mo duoc nhung ve loi:', e && e.message);
+          // giu hanh vi cu: ve loi thi di duong lui (neu duoc phep)
+          if (!duocPhepLui()) { try { window.__chanDuongLui(); } catch (e2) {} return; }
+          duongLui();
+        }
+      }
+      // (veGoi ket thuc o tren — khoi if(goi && goi[khoa]) da return truoc khi toi day)
+      // Pham vi cua nguoi nay khong co khoi do (vd Leader IND khong co bang MWG)
+      // -> an man hinh cho, khong goi Apps Script, khong bao loi.
+      if (goi && !goi[khoa]) {
+        var ov2 = document.getElementById(idOverlay);
+        if (ov2) ov2.style.display = 'none';
+        return;
+      }
+      if (!duocPhepLui()) { try { window.__chanDuongLui(); } catch (e) {} return; }
+      if (window.__goiHong) { try { window.__bangChayCham(); } catch (e) {} }
+      duongLui();
+    }).catch(function () {
+      if (!duocPhepLui()) { try { window.__chanDuongLui(); } catch (e) {} return; }
+      duongLui();
+    });
+  };
+
   /* Lop 1 — HOI TRUOC KHI CHAY.
      Chua co chia khoa thi hien man hinh nhap ngay, khong de trang chay roi
      bao loi do ma khong co cho nhap. */
+  /* Chi hoi chia khoa Apps Script khi THUC SU phai dung duong cu.
+     Co goi ma hoa roi thi khong hoi nua — khong bat anh Thai nho hai thu. */
   document.addEventListener('DOMContentLoaded', function () {
-    if (!window.__layKhoaAS()) window.__hoiChiaKhoa();
+    window.__goiDBTG.then(function (goi) {
+      if (goi) return;
+      var ai = window.__aiDangXem;
+      if (ai && ai.r !== 'admin') return;      // khong phai admin thi khong co duong cu
+      if (!window.__layKhoaAS()) window.__hoiChiaKhoa();
+    });
   });
 
   /* Lop 2 — HOI KHI BI TU CHOI.
@@ -129,6 +794,11 @@
     --neutral: #8b98a9;
     --glow-soft: 0 0 12px rgba(34,229,160,0.14);
     --glow-strong: 0 0 16px rgba(34,229,160,0.22);
+    /* Màu con số TỒN KHO. Trước để vàng mù tạt #e0b24d gắn cứng trong JS — trên
+       nền Sáng nó chỉ đạt tỉ tương phản 1,9 (chuẩn cần 4,5), nhìn như chữ mờ.
+       Tách ra thành biến để nền Sáng đổi được sang màu đậm hơn (xem demo-sang.js). */
+    --ton-du: #ff9f5a;      /* còn hàng nằm kho */
+    --ton-am: #7fb2ff;      /* bán nhiều hơn số nhập ghi nhận */
     --gap: 16px;
     --radius: 10px;
 }
@@ -418,6 +1088,27 @@ body {
    khung luôn cân bằng nhau, không phụ thuộc số hàng khác nhau ở 2 bảng mini bên dưới. */
 #chart-ind-sellout-group, #chart-ind-sellin-group { height: 240px !important; max-height: 240px; }
 .mini-week-table-wrap { margin-top:10px; }
+/* ---- Tab của cụm "O.C / Normal theo tháng" ---- */
+.ind-oc-tabnav { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:2px 0 14px; }
+/* Tab Sale chia ĐỀU ngang khung: lưới cột bằng nhau, tự xuống dòng khi hẹp.
+   Dùng grid chứ không dùng flex — flex thì tab tên dài chiếm nhiều chỗ hơn tab
+   tên ngắn, hàng nút trông so le. */
+.ind-ton-tabnav { display:grid; grid-template-columns:repeat(auto-fit, minmax(104px, 1fr)); gap:8px; margin:2px 0 14px; }
+.ind-oc-tab, .ind-ton-tab { padding:7px 16px; border:1px solid var(--border-color); border-radius:16px; background:var(--bg-input); font-family:inherit; font-size:12px; font-weight:700; cursor:pointer; color:var(--text-secondary); transition:background .15s ease, color .15s ease, border-color .15s ease; }
+/* Trong lưới thì nút tự rộng bằng ô; tên trên, số tồn dưới cho gọn bề ngang. */
+.ind-ton-tab { padding:6px 8px; text-align:center; line-height:1.35; overflow:hidden; }
+.ind-oc-tab:hover, .ind-ton-tab:hover { background:var(--bg-card-hover); border-color:rgba(34,229,160,0.3); }
+.ind-oc-tab.active, .ind-ton-tab.active { background:var(--oppo-green-dark); border-color:var(--oppo-green); color:#04140e; box-shadow:0 0 10px rgba(34,229,160,0.35); }
+/* Số đại lý đi kèm tên Sale — nhạt hơn tên để tên vẫn là thứ đọc trước. */
+.ind-ton-tab .dem { display:block; font-weight:800; opacity:.9; font-size:12.5px; }
+.ind-ton-tab .ten { display:block; font-size:11px; font-weight:700; opacity:.86; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ind-oc-doc { margin-left:auto; padding:6px 12px; border:1px dashed var(--border-color); border-radius:14px; background:transparent; font-family:inherit; font-size:11.5px; font-weight:600; cursor:pointer; color:var(--text-secondary); }
+.ind-oc-doc:hover { color:var(--text-primary); border-color:var(--oppo-green); }
+.ind-oc-doc::before { content:"ⓘ "; }
+/* Thẻ con nằm trong thẻ mẹ rồi thì không cần viền/nền/đổ bóng chồng lên nhau nữa. */
+#ind-oc-cum .ind-oc-panel .chart-container { background:transparent; border:0; box-shadow:none; padding:0; }
+#ind-oc-cum .ind-oc-panel .chart-container:hover { box-shadow:none; border:0; }
+@media (max-width: 640px) { .ind-oc-tab { flex:1 1 auto; padding:7px 10px; } .ind-oc-doc { margin-left:0; } .ind-ton-tab { padding:6px 11px; font-size:11.5px; } }
 .mini-week-table { border-collapse:collapse; width:100%; font-size:7.5px; table-layout:fixed; }
 .mini-week-table td { padding:2px 1px; text-align:center; border:1px solid var(--border-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text-primary); }
 .mini-week-table tr.mwt-week td { background:rgba(34,229,160,0.10); font-weight:700; color:var(--text-primary); }
@@ -808,6 +1499,81 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
     body { background:white; color:#1a1a1a; }
     .table-scroll { max-height:none; overflow:visible; }
 }
+
+/* ================= CÂN LẠI KÍCH THƯỚC CÁC BẢNG MINI =========================
+   Anh Thái 29/08: "bảng thì nhỏ quá bảng thì lớn quá".
+   Đúng vậy — cỡ chữ đang đặt theo TÊN CLASS chứ không theo SỐ CỘT:
+     .mini-month-table   9px    13 cột   (Doanh số/Doanh thu theo tháng)
+     .mini-week-table    7,5px  54 cột   (theo tuần cả năm — cần nhỏ thật)
+     .mini-week-table    7,5px  14 cột   (Sell Out/Sell In O.C-Normal, KA theo
+                                          tháng) -> CÙNG số cột với bảng 9px ở
+                                          trên mà chữ nhỏ hơn 1,5px
+   Nên hai bảng cạnh nhau, cùng 12 tháng, mà một cái to một cái bé.
+
+   Sửa: cỡ chữ đi theo SỐ CỘT, không theo tên class.
+     ít cột (< 20)  -> 9,5px, thoáng, đọc được trên điện thoại
+     nhiều cột (>= 20, tức bảng 53 tuần / theo ngày) -> 7,5px, mới đủ chỗ
+   Dùng :has(td:nth-child(20)) để tự nhận ra, không phải liệt kê từng bảng —
+   sau này thêm bảng mới cũng tự đúng. Trình duyệt cũ không hiểu :has() thì
+   rơi về cỡ 9,5px và bảng tự cuộn ngang, vẫn đọc được. */
+.mini-week-table, .mini-month-table { font-size:9.5px; }
+.mini-week-table td, .mini-month-table td { padding:3px 5px; }
+.mini-week-table td.mwt-label, .mini-month-table td.mmt-label { font-size:9px; }
+.mini-week-table:has(tr > td:nth-child(20)),
+.mini-month-table:has(tr > td:nth-child(20)) { font-size:7.5px; }
+.mini-week-table:has(tr > td:nth-child(20)) td,
+.mini-month-table:has(tr > td:nth-child(20)) td { padding:2px 1px; }
+.mini-week-table:has(tr > td:nth-child(20)) td.mwt-label,
+.mini-month-table:has(tr > td:nth-child(20)) td.mmt-label { font-size:7.5px; }
+/* Chật quá thì cho cuộn ngang, đừng bóp chữ nhỏ đến mức không đọc nổi. */
+.mini-week-table-wrap { overflow-x:auto; }
+
+/* ================= BIỂU ĐỒ TO HƠN — TAB TỔNG QUAN & CHI TIẾT IND ===========
+   Anh Thái 29/08: "làm các chart lớn hơn để note số trong cột".
+   Số trong cột KHÔNG phải bật/tắt được — bản vẽ chỉ ghi số vào mảnh nào CAO
+   HƠN 17px, thấp hơn thì chữ đè lên nhau không đọc nổi. Nên muốn thấy nhiều số
+   hơn thì cách duy nhất là cho biểu đồ cao lên: mảnh cao lên theo, số tự hiện.
+   Đo trên số thật: 320 -> 400px làm mảnh nhỏ nhất của cột T8 từ 14px lên 18px,
+   tức là vừa đủ ngưỡng ghi số.
+   Chỉ áp cho HAI tab anh Thái duyệt trước; MWG/KA giữ nguyên chờ duyệt xong. */
+/* Phải đặt HEIGHT thật, không phải max-height: Chart.js tự tính chiều cao thẻ
+   vẽ theo thẻ cha, max-height chỉ CHẶN TRẦN chứ không đẩy nó cao lên. Đo 29/08:
+   để max-height 400 mà "Reno & Find theo tháng" vẫn chỉ cao 172px, "Sell Out
+   O.C/Normal" 240px — tức là chưa cao thêm được chút nào.
+   Dùng !important vì Chart.js ghi thẳng style.height vào thẻ. Không sao: thẻ vẽ
+   của Chart.js đã trong suốt, cái nhìn thấy là lớp phủ SVG vẽ theo đúng khổ này.
+   Biểu đồ nào vẽ ra ngắn hơn khổ (vòng tròn, thanh ngang) thì coKhung() tự co
+   khung lại, không để lại khoảng trắng. */
+#panel-overview .chart-container canvas,
+#panel-ind .chart-container canvas,
+#panel-mwg .chart-container canvas,
+#panel-ka .chart-container canvas { height: 400px !important; max-height: 400px; }
+#panel-overview .chart-container.chart-tall canvas,
+#panel-ind .chart-container.chart-tall canvas,
+#panel-mwg .chart-container.chart-tall canvas,
+#panel-ka .chart-container.chart-tall canvas { height: 460px !important; max-height: 460px; }
+/* 02/09: hai tab MWG / KA theo cung khuon voi Tong quan & IND (anh Thai duyet 02/09 toi).
+   Bieu do theo NGAY cua MWG (chart-daily*) van an/hien theo bo loc — khong ep cao. */
+#panel-mwg #chart-daily, #panel-mwg #chart-daily-revenue { height: auto !important; max-height: none; }
+
+/* ---- GẤP PHẦN DIỄN GIẢI DÀI SAU NÚT "CÁCH ĐỌC" ----
+   Anh Thái 29/08: "giải thích bên dưới chỉ giải thích những cái chưa có".
+   Mỗi biểu đồ đang kèm 2-5 dòng chữ đặc; trên điện thoại chữ choán chỗ hơn cả
+   biểu đồ. Mặc định gấp hết lại, cần thì bấm mở ra. */
+.dm-hang-doc { display:flex; justify-content:flex-end; margin:-4px 0 8px; }
+.dm-nut-doc { padding:5px 12px; border:1px dashed var(--border-color); border-radius:14px; background:transparent; font-family:inherit; font-size:11.5px; font-weight:600; cursor:pointer; color:var(--text-secondary); }
+.dm-nut-doc:hover { color:var(--text-primary); border-color:var(--oppo-green); }
+.dm-nut-doc::before { content:"\2139 "; }
+.dm-gap-doc .chart-sub { display:none !important; }
+
+/* ---- BỎ HẲN DẤU SAO / TÔ VÀNG CỘT THÁNG HIỆN TẠI ----
+   Anh Thái 29/08: "bỏ toàn bộ các ngôi sao highlight tháng hiện tại đi, nhìn
+   rối quá, trả về bình thường cho tối giản". Có tới HAI cơ chế cùng đánh dấu
+   nên bảng theo hãng ra "T8 ★ ★" — hai sao chồng nhau. Gỡ cả hai. */
+.cm-col-header { background:transparent !important; color:inherit !important; }
+.cm-star { display:none !important; }
+.latest-month-col, thead th.latest-month-col,
+.brand-heat-table th.latest-month-col { background:transparent !important; }
 </style>
 
 </head>
@@ -852,6 +1618,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 
 <div class="db-tg-panel" id="panel-overview">
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Overview TG</h2>
+<div class="dm-hang-doc"><button type="button" class="dm-nut-doc" data-vung="panel-overview" aria-expanded="false">Cách đọc</button></div>
+
 
     <div class="chart-sub" style="margin-bottom:10px;">4 thẻ dưới đây mặc định là số liệu <b>tháng gần nhất có dữ liệu</b>, kèm so sánh với tháng liền trước (MoM) - riêng tháng đang xem nếu <b>chưa đủ dữ liệu cả tháng</b> (đang chốt giữa tháng) thì tự so <b>cùng kỳ ngày</b> với tháng trước thay vì so cả tháng. Có thể đổi Tháng/Kênh/Shop/Sale bằng bộ lọc bên dưới. Sheet nguồn hiện chỉ có dữ liệu từ T1/2026 nên chưa so được cùng kỳ năm trước (YoY) / lũy kế năm — sẽ bổ sung khi có đủ dữ liệu 2025.</div>
     <div class="filter-bar" style="margin-bottom:14px;">
@@ -933,17 +1701,11 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
             <h3>Doanh số theo kênh theo tháng</h3>
             <div class="chart-sub">Số máy Sellout — số thực, không quy đổi %.</div>
             <canvas id="chart-channel-month-units"></canvas>
-            <div class="mini-month-table-wrap">
-                <table class="mini-month-table" id="mini-table-units"></table>
-            </div>
         </div>
         <div class="chart-container chart-tall">
             <h3>Doanh thu theo kênh theo tháng</h3>
             <div class="chart-sub">Đơn vị: đồng — số thực, không quy đổi %.</div>
             <canvas id="chart-channel-month-revenue"></canvas>
-            <div class="mini-month-table-wrap">
-                <table class="mini-month-table" id="mini-table-revenue"></table>
-            </div>
         </div>
     </section>
 
@@ -1242,6 +2004,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 </div>
 <div class="db-tg-panel" id="panel-mwg" hidden>
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Chi tiết Kênh MWG</h2>
+<div class="dm-hang-doc"><button type="button" class="dm-nut-doc" data-vung="panel-mwg" aria-expanded="false">Cách đọc</button></div>
 
 <div class="chart-sub" style="margin-bottom:12px;">Dashboard MWG đầy đủ (nguồn dữ liệu riêng, sheet DATA MWG), mặc định lọc tỉnh Tiền Giang + Bến Tre.</div>
 
@@ -1787,6 +2550,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 </div>
 <div class="db-tg-panel" id="panel-ka" hidden>
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Chi tiết Kênh KA</h2>
+<div class="dm-hang-doc"><button type="button" class="dm-nut-doc" data-vung="panel-ka" aria-expanded="false">Cách đọc</button></div>
 
     <div class="chart-sub" style="margin-bottom:10px;">4 thẻ dưới đây mặc định là số liệu <b>tháng gần nhất có dữ liệu</b> (riêng kênh KA), kèm so sánh với tháng liền trước (MoM) - riêng tháng đang xem nếu <b>chưa đủ dữ liệu cả tháng</b> thì tự so <b>cùng kỳ ngày</b> với tháng trước. Breakdown theo <b>Kênh phụ</b> (FPT/Viettel/Điện Máy Chợ Lớn/CellphoneS) thay vì Sale. Có thể đổi Tháng/Kênh phụ/Shop bằng bộ lọc bên dưới.</div>
     <div class="filter-bar" style="margin-bottom:14px;">
@@ -1950,6 +2714,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
 </div>
 <div class="db-tg-panel" id="panel-ind" hidden>
 <h2 style="margin-bottom:10px; color:var(--oppo-green-dark);">Chi tiết Kênh IND (OPPO Club)</h2>
+<div class="dm-hang-doc"><button type="button" class="dm-nut-doc" data-vung="panel-ind" aria-expanded="false">Cách đọc</button></div>
+
 
     <h2 class="part-title" style="margin:4px 0 14px; padding-left:15px; position:relative;"><span style="position:absolute; left:0; top:0; bottom:0; width:5px; border-radius:3px; background:#64748b;"></span>Phần 1 — Overview IND<span class="part-sub">Bức tranh chung: KPI tháng, theo tuần, theo nhóm O.C/Normal, theo Sale, theo Shop</span></h2>
 
@@ -2023,37 +2789,59 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         </div>
     </section>
 
-    <section class="chart-row">
-        <div class="chart-container">
-            <h3>Sell Out theo tháng — O.C / Normal</h3>
-            <div class="chart-sub">Doanh số (số máy) theo tháng, tách nhóm O.C / Normal. Rê chuột vào cột để xem chi tiết theo từng model. Bảng mini bên dưới: cột "2026" của dòng Shop S.O là TB (trung bình) số shop/tháng; các dòng khác là tổng cả năm. D.Thu đơn vị B (tỷ đồng).</div>
-            <canvas id="chart-ind-sellout-group"></canvas>
-            <div class="mini-week-table-wrap">
-                <table class="mini-week-table" id="mini-table-ind-sellout-group"></table>
-            </div>
-        </div>
-        <div class="chart-container">
-            <h3>Sell In theo tháng — O.C / Normal</h3>
-            <div class="chart-sub">Số lượng nhập hàng OPPO (đã loại PK) theo tháng, tách nhóm O.C / Normal. Rê chuột vào cột để xem chi tiết theo từng model. Bảng mini bên dưới: cột "2026" của dòng Shop S.I là TB số shop/tháng; dòng O.C/Normal chỉ tính OPPO; riêng Tổng OPPO/Tổng PK tính trên toàn bộ shop (không tách nhóm). D.Thu chỉ tính cho OPPO (lấy từ Sell Out thực tế, đơn vị B (tỷ đồng)) vì sheet SELL IN không có đơn giá PK.</div>
-            <canvas id="chart-ind-sellin-group"></canvas>
-            <div class="mini-week-table-wrap">
-                <table class="mini-week-table" id="mini-table-ind-sellin-group"></table>
-            </div>
-        </div>
-    </section>
-
-    <section class="table-section">
+    <!-- ================= O.C / Normal theo tháng — GỘP 3 KHỐI VÀO 3 TAB =========
+         Trước đây ba khối này xếp dọc liền nhau: biểu đồ Sell Out, biểu đồ Sell In,
+         rồi bảng chi tiết 18 dòng. Trên điện thoại phải cuộn qua gần bốn màn hình
+         mới hết, mà cả ba đều là MỘT bộ số nhìn theo ba cách — anh Thái phản ánh
+         29/08 là "khá rối".
+         Gộp lại một thẻ, ba tab. Cùng lúc chỉ thấy một cách nhìn, đổi bằng một
+         lần bấm, không phải cuộn tìm.
+         Phần diễn giải dài cũng gấp lại sau nút "Cách đọc" — mở ra khi cần. -->
+    <section class="table-section" id="ind-oc-cum">
         <div class="table-section-header">
             <div>
-                <h3>Chi tiết theo nhóm O.C / Normal theo tháng</h3>
-                <div class="chart-sub"><b>O.C</b> = shop thuộc OPPO Club (Platinum/Titan/Gold). <b>Normal</b> = tất cả shop còn lại (kể cả VIP). Bảng đủ 12 tháng, có tăng trưởng % theo tháng. Mỗi nhóm 6 dòng liền nhau: <b>DS/DT/ĐG</b> (doanh số bán ra, bấm vào tên nhóm để xem bảng mini chi tiết theo từng shop) và <b>SHOP/S.I/PK</b> (SHOP = số shop CÓ phát sinh sellout trong tháng, cột "Tổng" là <b>trung bình</b> số shop/tháng; S.I/PK = số lượng nhập hàng (sell in) OPPO/Phụ kiện từ sheet "SELL IN", cột "Tổng" là tổng cả kỳ — chỉ áp dụng được bộ lọc Shop, sheet SELL IN không có cột Sale).</div>
+                <h3>O.C / Normal theo tháng</h3>
+                <div class="chart-sub">Cùng một bộ số, ba cách nhìn — bấm tab để đổi.
+                    <b>O.C</b> = shop thuộc OPPO Club (Platinum/Titan/Gold), <b>Normal</b> = tất cả shop còn lại (kể cả VIP).</div>
             </div>
         </div>
-        <div class="table-scroll" style="max-height:none;">
-            <table class="data-table" id="ind-group-month-table">
-                <thead><tr id="ind-group-month-table-head"></tr></thead>
-                <tbody id="ind-group-month-table-body"></tbody>
-            </table>
+        <nav class="ind-oc-tabnav">
+            <button class="ind-oc-tab active" type="button" data-tab="ind-oc-so">Sell Out</button>
+            <button class="ind-oc-tab" type="button" data-tab="ind-oc-si">Sell In</button>
+            <button class="ind-oc-tab" type="button" data-tab="ind-oc-ct">Chi tiết theo tháng</button>
+            <button class="ind-oc-doc" type="button" id="ind-oc-nut-doc" aria-expanded="false">Cách đọc</button>
+        </nav>
+
+        <div class="ind-oc-panel" id="ind-oc-so">
+            <div class="chart-container">
+                <h3>Sell Out theo tháng — O.C / Normal</h3>
+                <div class="chart-sub ind-oc-giai" hidden>Doanh số (số máy) theo tháng, tách nhóm O.C / Normal. Rê chuột vào cột để xem chi tiết theo từng model. Bảng mini bên dưới: cột "2026" của dòng Shop S.O là TB (trung bình) số shop/tháng; các dòng khác là tổng cả năm. D.Thu đơn vị B (tỷ đồng).</div>
+                <canvas id="chart-ind-sellout-group"></canvas>
+                <div class="mini-week-table-wrap">
+                    <table class="mini-week-table" id="mini-table-ind-sellout-group"></table>
+                </div>
+            </div>
+        </div>
+
+        <div class="ind-oc-panel" id="ind-oc-si" hidden>
+            <div class="chart-container">
+                <h3>Sell In theo tháng — O.C / Normal</h3>
+                <div class="chart-sub ind-oc-giai" hidden>Số lượng nhập hàng OPPO (đã loại PK) theo tháng, tách nhóm O.C / Normal. Rê chuột vào cột để xem chi tiết theo từng model. Bảng mini bên dưới: cột "2026" của dòng Shop S.I là TB số shop/tháng; dòng O.C/Normal chỉ tính OPPO; riêng Tổng OPPO/Tổng PK tính trên toàn bộ shop (không tách nhóm). D.Thu chỉ tính cho OPPO (lấy từ Sell Out thực tế, đơn vị B (tỷ đồng)) vì sheet SELL IN không có đơn giá PK.</div>
+                <canvas id="chart-ind-sellin-group"></canvas>
+                <div class="mini-week-table-wrap">
+                    <table class="mini-week-table" id="mini-table-ind-sellin-group"></table>
+                </div>
+            </div>
+        </div>
+
+        <div class="ind-oc-panel" id="ind-oc-ct" hidden>
+            <div class="chart-sub ind-oc-giai" hidden>Bảng đủ 12 tháng, có tăng trưởng % theo tháng. Mỗi nhóm 6 dòng liền nhau: <b>DS/DT/ĐG</b> (doanh số bán ra, bấm vào tên nhóm để xem bảng mini chi tiết theo từng shop) và <b>SHOP/S.I/PK</b> (SHOP = số shop CÓ phát sinh sellout trong tháng, cột "Tổng" là <b>trung bình</b> số shop/tháng; S.I/PK = số lượng nhập hàng (sell in) OPPO/Phụ kiện từ sheet "SELL IN", cột "Tổng" là tổng cả kỳ — chỉ áp dụng được bộ lọc Shop, sheet SELL IN không có cột Sale).</div>
+            <div class="table-scroll" style="max-height:none;">
+                <table class="data-table" id="ind-group-month-table">
+                    <thead><tr id="ind-group-month-table-head"></tr></thead>
+                    <tbody id="ind-group-month-table-body"></tbody>
+                </table>
+            </div>
         </div>
     </section>
 
@@ -2217,10 +3005,16 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header" style="margin-top:20px;">
             <div>
                 <h3>Tồn theo đại lý</h3>
-                <div class="chart-sub">Đại lý có nhiều chi nhánh được <b>gộp chung</b> vì sheet SELL IN ghi nhập theo công ty còn Sell Out ghi theo từng điểm bán. Bấm tên đại lý để mở chi tiết từng model.</div>
+                <div class="chart-sub">Số bên cạnh tên Sale là <b>tổng tồn</b> của Sale đó. Bấm vào một Sale thì bảng đại lý mới hiện ra — không bấm thì không đổ cả bảng cho rối. Đại lý có nhiều chi nhánh được <b>gộp chung</b> vì sheet SELL IN ghi nhập theo công ty còn Sell Out ghi theo từng điểm bán. Bấm tên đại lý để mở chi tiết từng model.</div>
             </div>
         </div>
-        <div class="table-scroll" style="max-height:none;">
+        <!-- Tab theo Sale: 169 đại lý trong một bảng là quá dài để dò bằng mắt.
+             Anh Thái 29/08: "để cho các tab theo sale, bấm vào sale nào thì ra
+             tồn đại lý theo sale đó cho gọn bảng lại". Danh sách Sale dựng từ
+             chính dữ liệu nên Sale nghỉ/mới vào đều tự đúng. -->
+        <nav class="ind-ton-tabnav" id="ind-ton-dl-tabs"></nav>
+        <div class="chart-sub" id="ind-ton-dl-tomtat" style="margin:-6px 0 10px;"></div>
+        <div class="table-scroll" id="ind-ton-dl-wrap" style="max-height:none;" hidden>
             <table class="data-table" id="ind-ton-dl-table">
                 <thead><tr>
                     <th>#</th><th>Đại lý</th><th class="num">Điểm bán</th><th>Sale</th>
@@ -2360,7 +3154,19 @@ function computeData(rows) {
         const storeId = row[COL.STORE_ID] !== undefined && row[COL.STORE_ID] !== '' ? String(row[COL.STORE_ID]).trim() : '';
         const sellout = num(row[COL.SELLOUT]);
         const activated = num(row[COL.SELLOUT_ACTIVATED]);
-        const revenue = num(row[COL.DOANH_THU]);
+        /* ==== them 03/09/2026 — doanh thu = Gia (R) x Sellout (T), khong tin cot V ====
+           CENTER T8 tung bi hong cot V (13,8 ty thay vi ~48 ty), sua tay xong bi dot do so moi de lai.
+           Quy tac bao cao tuan da chot: dung Gia x Sellout. Cot V chi con la duong lui khi thieu Gia.
+           Dem so dong/may/tien lech vao window.__DT_LECH de robot va nguoi xem biet nguon dang hong. */
+        const revV = num(row[COL.DOANH_THU]);
+        const priceR = num(row[COL.PRICE]);
+        const revenue = (priceR > 0 && sellout !== 0) ? priceR * sellout : revV;
+        if (Math.abs(revenue - revV) > 1000) {
+            const dl = (window.__DT_LECH = window.__DT_LECH || { rows: 0, may: 0, tien: 0, thang: {} });
+            dl.rows++; dl.may += sellout; dl.tien += (revenue - revV);
+            if (month) dl.thang[month] = (dl.thang[month] || 0) + (revenue - revV);
+        }
+        /* ==== het khoi them 03/09/2026 ==== */
         const targetVal = num(row[COL.TARGET]);
 
         if (month) monthsSet.add(month);
@@ -2472,6 +3278,11 @@ function computeData(rows) {
     const modelsList = Array.from(modelsSet).sort();
     const salesList = Array.from(salesSet).sort();
 
+    /* 03/09/2026: bao neu cot V (Doanh thu) cua CENTER lech Gia x Sellout */
+    if (window.__DT_LECH && window.__DT_LECH.rows) {
+        const dl = window.__DT_LECH;
+        console.warn('[CENTER] cot Doanh thu (V) lech Gia x Sellout: ' + dl.rows + ' dong, ' + dl.may + ' may, ' + (dl.tien / 1e6).toFixed(0) + ' tr - da dung Gia x Sellout. Theo thang (tr): ' + JSON.stringify(Object.fromEntries(Object.entries(dl.thang).map(([k, v]) => [k, Math.round(v / 1e6)]))));
+    }
     const crosstab = [];
     crosstabMap.forEach((v, key) => {
         const [m, channel, store, model, series, segment, sales] = key.split('|');
@@ -2636,11 +3447,14 @@ async function fetchRowsFromAppsScript(baseUrl, sheetName, startRow) {
 
     if (msgEl) msgEl.textContent = 'Đang kiểm tra kích thước dữ liệu...';
     let info;
-    try {
-        info = await fetchJSON(baseUrl + '?' + sheetParam + '&mode=info', 120000);
-    } catch (err) {
-        throw new Error('Không gọi được Apps Script (bước info): ' + err.message);
+    /* 03/09/2026: Apps Script thinh thoang tra 404 (trang loi chung cua Google, ~1 lan/3 goi) roi lai OK ngay.
+       Truoc day buoc info khong thu lai -> "Chot ky ngay" cua anh Thai chet ngay tu dau. Gio thu 3 lan, cach 4s. */
+    let infoErr = null;
+    for (let lanInfo = 1; lanInfo <= 3 && !info; lanInfo++) {
+        try { info = await fetchJSON(baseUrl + '?' + sheetParam + '&mode=info', 120000); }
+        catch (err) { infoErr = err; if (msgEl) msgEl.textContent = 'Apps Script chưa trả lời (lần ' + lanInfo + '/3): ' + err.message + ' — thử lại...'; await sleep(4000); }
     }
+    if (!info) throw new Error('Không gọi được Apps Script (bước info, đã thử 3 lần): ' + (infoErr && infoErr.message));
     if (info && info.error) throw new Error('Apps Script báo lỗi: ' + info.error);
     const lastRow = info.lastRow;
     if (!lastRow || lastRow < 2) throw new Error('Sheet "' + sheetName + '" không có dữ liệu (lastRow=' + lastRow + ')');
@@ -2760,20 +3574,25 @@ async function fetchShopSaleMap(baseUrl) {
         rows.shift(); // bỏ header
         const byStoreName = {};
         const levelByStoreName = {};
+        const byStoreId = {};        // 03/09/2026: Store ID -> Sale, MOI KENH (MWG khop qua PARTNER_TO_STORE_ID)
+        const channelByStoreName = {};
         rows.forEach(r => {
             if (!r || r.length < 3) return;
+            const storeId = (r[0] === null || r[0] === undefined) ? '' : String(r[0]).trim();
             const storeName = (r[1] || '').toString().trim();
             const sale = (r[2] || '').toString().trim();
             const channel = (r[3] || '').toString().trim().toUpperCase();
             const level = (r[4] || '').toString().trim();
-            if (channel !== 'IND') return; // sheet chỉ cần dùng cho IND
-            if (storeName && sale) byStoreName[storeName] = sale;
-            if (storeName && level) levelByStoreName[storeName] = level;
+            /* 03/09/2026 — LUAT NGUON (anh Thai): sheet SHOP THEO SALE la nguon DUY NHAT cho Sale phu trach,
+               AP DUNG MOI KENH (truoc chi IND). Goi O.C (cot E) van chi dung cho IND. */
+            if (storeName && sale) { byStoreName[storeName] = sale; channelByStoreName[storeName] = channel; }
+            if (storeId && sale) byStoreId[storeId] = sale;
+            if (channel === 'IND' && storeName && level) levelByStoreName[storeName] = level;
         });
-        return { byStoreName, levelByStoreName };
+        return { byStoreName, levelByStoreName, byStoreId, channelByStoreName };
     } catch (err) {
         console.warn('Không tải được sheet "SHOP THEO SALE" (IND sẽ tạm dùng lại Sale/Gói trong CENTER):', err.message);
-        return { byStoreName: {}, levelByStoreName: {} };
+        return { byStoreName: {}, levelByStoreName: {}, byStoreId: {}, channelByStoreName: {} };
     }
 }
 
@@ -3012,67 +3831,11 @@ async function loadAndRender() {
         }
         window.__lastFetchInfo = { checkpoint, latestLastRow: fetchResult.lastRow };
 
-        // Nối Target theo Store ID từ sheet Target 2026 — luôn lấy mới, áp lên DATA đã gộp cuối cùng
-        if (msgEl) msgEl.textContent = 'Đang tải Target theo shop...';
-        const targetByStoreId = await fetchTargetMap(APPS_SCRIPT_URL);
-        let matchedCount = 0;
-        DATA.store_rows.forEach(r => {
-            if (r.store_id && targetByStoreId[r.store_id] !== undefined) {
-                r.target = targetByStoreId[r.store_id];
-                if (r.target > 0) matchedCount++;
-            } else {
-                r.target = 0;
-            }
-        });
-        DATA.debug_target = {
-            targetSheetRowCount: Object.keys(targetByStoreId).length,
-            matchedCount,
-            sampleTargetIds: Object.keys(targetByStoreId).slice(0, 5),
-            sampleStoreIds: DATA.store_rows.slice(0, 5).map(r => r.store_id),
-        };
-        console.log('Target debug:', DATA.debug_target);
-
-        // Sell In (sheet riêng "SELL IN", chỉ dùng cho Chi tiết IND) - tải sau CENTER + Target, không
-        // ảnh hưởng tới phần còn lại của dashboard nếu lỗi.
-        if (msgEl) msgEl.textContent = 'Đang tải dữ liệu Sell In (IND)...';
-        DATA.sell_in_rows = await fetchSellInRows(APPS_SCRIPT_URL);
-
-        // Shop theo Sale (sheet riêng "SHOP THEO SALE", nguồn CHUẨN cho Sale phụ trách VÀ Gói O.C của
-        // IND - xem hàm fetchShopSaleMap()) - tải song song vị trí này, không ảnh hưởng phần còn lại nếu lỗi.
-        if (msgEl) msgEl.textContent = 'Đang tải Shop theo Sale (IND)...';
-        const shopTheoSale = await fetchShopSaleMap(APPS_SCRIPT_URL);
-        DATA.shop_sale_map = shopTheoSale.byStoreName;
-        DATA.shop_level_map = shopTheoSale.levelByStoreName;
-
-        // Ghi đè NGAY TẠI ĐÂY (1 chỗ duy nhất) Sale phụ trách + Gói O.C cho MỌI bản ghi IND trong crosstab
-        // + store_rows, dùng sheet "SHOP THEO SALE" làm nguồn CHUẨN thay cho CENTER (anh Thái yêu cầu
-        // 25/8: Sale hay đổi người phụ trách; Gói O.C thì có tháng shop rớt/đạt lại theo doanh số CENTER
-        // tự tính trong khi anh muốn 1 danh sách CỐ ĐỊNH, tự điều chỉnh ngay trên sheet khi cần - "SHOP
-        // THEO SALE" áp dụng cho TOÀN BỘ biểu đồ/bảng liên quan IND, Center chỉ để xác định số liệu bán
-        // từng shop). Nhờ vá 1 lần ở DATA thay vì sửa từng hàm, MỌI bảng/biểu đồ IND phía sau tự động
-        // dùng đúng Sale/Gói mà không cần đổi gì thêm. Số lượng/doanh thu vẫn nguyên như CENTER - chỉ đổi
-        // Sale/Gói gắn với mỗi bản ghi/shop. Shop nào chưa có trong sheet "SHOP THEO SALE" thì GIỮ NGUYÊN
-        // Sale/Gói cũ của CENTER (fallback an toàn).
-        if (DATA.shop_sale_map && Object.keys(DATA.shop_sale_map).length) {
-            let patchedCrosstab = 0, patchedStoreRows = 0, patchedLevel = 0;
-            DATA.crosstab.forEach(rec => {
-                if (rec.channel !== 'IND' || !rec.store) return;
-                const trueSale = DATA.shop_sale_map[rec.store];
-                if (trueSale && trueSale !== rec.sales) { rec.sales = trueSale; patchedCrosstab++; }
-            });
-            DATA.store_rows.forEach(r => {
-                if (r.channel !== 'IND' || !r.store) return;
-                const trueSale = DATA.shop_sale_map[r.store];
-                if (trueSale && trueSale !== r.sale) { r.sale = trueSale; patchedStoreRows++; }
-                const trueLevel = DATA.shop_level_map[r.store];
-                if (trueLevel && trueLevel !== r.level) { r.level = trueLevel; patchedLevel++; }
-            });
-            console.log('Đã vá Sale/Gói IND theo "SHOP THEO SALE": ' + patchedCrosstab + ' dòng crosstab, ' + patchedStoreRows + ' Sale + ' + patchedLevel + ' Gói ở store_rows đổi khác CENTER.');
-        }
+        await lamGiauDATA(DATA, msgEl);   // 05/09/2026: Target + Sell In + SHOP THEO SALE — tach ra ham dung chung
 
         if (loadingEl) loadingEl.style.display = 'none';
         const updEl = document.getElementById('last-updated');
-        if (updEl) updEl.textContent = 'Dữ liệu tải lúc: ' + new Date().toLocaleString('vi-VN') + ' · ' + sourceNote;
+        if (updEl) window.__nhanMoc(updEl, sourceNote);
         initDashboard(DATA);
     } catch (err) {
         console.error('Lỗi tải/tính dashboard:', err);
@@ -3086,12 +3849,109 @@ async function loadAndRender() {
     }
 }
 
+/* ==== them 05/09/2026 — LAM GIAU DATA: Target + Sell In + SHOP THEO SALE, dung chung cho MOI duong ====
+   Truoc day khoi nay nam trong loadAndRender (duong cu / robot). Duong "Apps Script da tinh san" cua admin
+   (02/09) di thang vao initDashboard nen BO QUA khoi nay -> DB TG cua anh Thai: Ton kho IND trong (0 sell-in),
+   22 shop IND "(Khong ro)" sale, 254 shop mat Goi O.C, tab MWG khong khop sale theo Store ID.
+   Goi tu __khoiDongDBTG (duong Apps Script) va tu loadAndRender. Loi o buoc nao thi bo qua buoc do, khong lam vo trang. */
+async function lamGiauDATA(DATA, msgEl) {
+    if (!DATA || !Array.isArray(DATA.store_rows)) return DATA;
+    try {
+            // Nối Target theo Store ID từ sheet Target 2026 — luôn lấy mới, áp lên DATA đã gộp cuối cùng
+            if (msgEl) msgEl.textContent = 'Đang tải Target theo shop...';
+            const targetByStoreId = await fetchTargetMap(APPS_SCRIPT_URL);
+            let matchedCount = 0;
+            DATA.store_rows.forEach(r => {
+                if (r.store_id && targetByStoreId[r.store_id] !== undefined) {
+                    r.target = targetByStoreId[r.store_id];
+                    if (r.target > 0) matchedCount++;
+                } else {
+                    r.target = 0;
+                }
+            });
+            DATA.debug_target = {
+                targetSheetRowCount: Object.keys(targetByStoreId).length,
+                matchedCount,
+                sampleTargetIds: Object.keys(targetByStoreId).slice(0, 5),
+                sampleStoreIds: DATA.store_rows.slice(0, 5).map(r => r.store_id),
+            };
+            console.log('Target debug:', DATA.debug_target);
+
+            // Sell In (sheet riêng "SELL IN", chỉ dùng cho Chi tiết IND) - tải sau CENTER + Target, không
+            // ảnh hưởng tới phần còn lại của dashboard nếu lỗi.
+            if (msgEl) msgEl.textContent = 'Đang tải dữ liệu Sell In (IND)...';
+            DATA.sell_in_rows = await fetchSellInRows(APPS_SCRIPT_URL);
+
+            // Shop theo Sale (sheet riêng "SHOP THEO SALE", nguồn CHUẨN cho Sale phụ trách VÀ Gói O.C của
+            // IND - xem hàm fetchShopSaleMap()) - tải song song vị trí này, không ảnh hưởng phần còn lại nếu lỗi.
+            if (msgEl) msgEl.textContent = 'Đang tải Shop theo Sale (IND)...';
+            const shopTheoSale = await fetchShopSaleMap(APPS_SCRIPT_URL);
+            DATA.shop_sale_map = shopTheoSale.byStoreName;
+            DATA.shop_level_map = shopTheoSale.levelByStoreName;
+            DATA.shop_sale_by_id = shopTheoSale.byStoreId;          // 03/09: cho tab MWG (bc-chitiet.js) khop qua Store ID
+
+            // Ghi đè NGAY TẠI ĐÂY (1 chỗ duy nhất) Sale phụ trách + Gói O.C cho MỌI bản ghi IND trong crosstab
+            // + store_rows, dùng sheet "SHOP THEO SALE" làm nguồn CHUẨN thay cho CENTER (anh Thái yêu cầu
+            // 25/8: Sale hay đổi người phụ trách; Gói O.C thì có tháng shop rớt/đạt lại theo doanh số CENTER
+            // tự tính trong khi anh muốn 1 danh sách CỐ ĐỊNH, tự điều chỉnh ngay trên sheet khi cần - "SHOP
+            // THEO SALE" áp dụng cho TOÀN BỘ biểu đồ/bảng liên quan IND, Center chỉ để xác định số liệu bán
+            // từng shop). Nhờ vá 1 lần ở DATA thay vì sửa từng hàm, MỌI bảng/biểu đồ IND phía sau tự động
+            // dùng đúng Sale/Gói mà không cần đổi gì thêm. Số lượng/doanh thu vẫn nguyên như CENTER - chỉ đổi
+            // Sale/Gói gắn với mỗi bản ghi/shop. Shop nào chưa có trong sheet "SHOP THEO SALE" thì GIỮ NGUYÊN
+            // Sale/Gói cũ của CENTER (fallback an toàn).
+            if (DATA.shop_sale_map && Object.keys(DATA.shop_sale_map).length) {
+                let patchedCrosstab = 0, patchedStoreRows = 0, patchedLevel = 0;
+                /* 03/09/2026 — LUAT NGUON: Sale theo SHOP THEO SALE cho MOI KENH (khong con loc IND). Goi O.C van chi IND. */
+                DATA.crosstab.forEach(rec => {
+                    if (!rec.store) return;
+                    const trueSale = DATA.shop_sale_map[rec.store];
+                    if (trueSale && trueSale !== rec.sales) { rec.sales = trueSale; patchedCrosstab++; }
+                });
+                DATA.store_rows.forEach(r => {
+                    if (!r.store) return;
+                    const trueSale = DATA.shop_sale_map[r.store];
+                    if (trueSale && trueSale !== r.sale) { r.sale = trueSale; patchedStoreRows++; }
+                    if (r.channel !== 'IND') return;
+                    const trueLevel = DATA.shop_level_map[r.store];
+                    if (trueLevel && trueLevel !== r.level) { r.level = trueLevel; patchedLevel++; }
+                });
+                // overview_daily_by_date (ngay -> kenh -> shop -> {sale,...}) cung mang sale cua CENTER -> va luon
+                let patchedDaily = 0;
+                Object.keys(DATA.overview_daily_by_date || {}).forEach(iso => {
+                    const byCh = DATA.overview_daily_by_date[iso];
+                    Object.keys(byCh).forEach(ch => { Object.keys(byCh[ch]).forEach(st => { const t = DATA.shop_sale_map[st]; if (t && byCh[ch][st].sale !== t) { byCh[ch][st].sale = t; patchedDaily++; } }); });
+                });
+                console.log('SHOP THEO SALE -> overview_daily_by_date: da va ' + patchedDaily + ' o');
+                console.log('Đã vá Sale/Gói IND theo "SHOP THEO SALE": ' + patchedCrosstab + ' dòng crosstab, ' + patchedStoreRows + ' Sale + ' + patchedLevel + ' Gói ở store_rows đổi khác CENTER.');
+            }
+    } catch (e) {
+        console.warn('lamGiauDATA: bo qua mot phan vi loi -', e && e.message);
+    }
+    return DATA;
+}
+window.__lamGiauDATA = function (DATA) {
+    return lamGiauDATA(DATA, document.getElementById('loading-message'));
+};
+/* ==== het khoi them 05/09/2026 ==== */
+
 // ================= Khởi tạo giao diện sau khi có DATA =================
 function initDashboard(DATA) {
 window.__exportDataMwg = DATA; // lưu lại để nút "Xuất HTML" dùng, không ảnh hưởng logic gốc
 
 // Cố định sẵn khung 12 tháng cho mọi bảng/biểu đồ theo tháng — tháng nào chưa có dữ liệu sẽ tự hiện 0, khi có dữ liệu mới sẽ tự điền vào đúng cột, không cần đổi bố cục
 const ALL_12_MONTHS = Array.from({length: 12}, (_, i) => i + 1);
+// Thang CHUA CO SO LIEU (vi du dau thang 9 thi T9-T12 con trong) truoc day hien "0 (-100,0%)"
+// mau do o cac bang theo thang - nhin nhu doanh so sup do trong khi that ra thang do chua bat dau.
+// THANG_CO_SO danh dau thang nao co it nhat 1 may hoac 1 dong doanh thu trong TOAN BO du lieu.
+// Chi dua vao tong toan bo, khong dua vao tung dong: mot kenh ban 0 may trong thang ma thang do
+// van co so o kenh khac thi do la thong tin THAT, van phai hien 0 va % giam nhu cu.
+const THANG_CO_SO = (function () {
+    const co = {};
+    (DATA.crosstab || []).forEach(r => { if (r.sellout || r.rev) co[r.m] = true; });
+    return co;
+})();
+function thangChuaCoSo(m) { return !THANG_CO_SO[m]; }
+const O_THANG_TRONG = '<span style="color:var(--text-secondary);">\u2013</span>';
 // Biên chế PG kênh MWG theo file HR mới nhất anh cung cấp (69 PG có tên thật + 3 vị trí "Cần Load PG" đang tuyển) — thay cho số đếm từ dữ liệu bán hàng, chỉ áp dụng cho THÁNG MỚI NHẤT (Roster không có lịch sử theo tháng)
 const MWG_HR_PG_ROSTER_TOTAL = 72;
 // Size Shop MWG (S/A/B/C/D) khớp theo Store ID thật (khớp với Target 2026 / store_id trong CENTER) — ghép từ Partner ID -> Store ID -> Size đã có ở dashboard MWG
@@ -3114,6 +3974,16 @@ function buildAllWeeksOfYear(year) {
     return weeks;
 }
 const ALL_2026_WEEKS = buildAllWeeksOfYear(2026);
+// Ve du 53 tuan thi tu tuan hien tai tro di la mot vung trong dai: bieu do mat gan 1/3 chieu
+// ngang cho cot rong, cac cot co so bi bop lai kho doc. Ham nay cat den tuan cuoi CUNG CO SO,
+// chua them 1 tuan trong o duoi cho thay ro ranh gioi "het so lieu".
+// Khong co so gi thi tra ve du 53 tuan nhu cu (de bieu do khong rong hoac).
+function tuanCanVe(coSo) {
+    let cuoi = -1;
+    for (let i = 0; i < ALL_2026_WEEKS.length; i++) { if (coSo(ALL_2026_WEEKS[i])) cuoi = i; }
+    if (cuoi < 0) return ALL_2026_WEEKS;
+    return ALL_2026_WEEKS.slice(0, Math.min(ALL_2026_WEEKS.length, cuoi + 2));
+}
 // Nhãn ngắn gọn "W1".."W53" theo yêu cầu anh Thái (không cần chi tiết ngày) - đánh số theo đúng thứ tự tuần trong năm.
 function fmtWeekLabel(iso) {
     const idx = ALL_2026_WEEKS.indexOf(iso);
@@ -3257,6 +4127,59 @@ const CHANNEL_TARGETS = {
 const PRODUCT_TARGETS = {
     'reno16': { label: 'Reno16 Series', MWG: 1100, KA: 125, IND: 275 },
 };
+
+/* ===== THU HEP THEO PHAM VI NGUOI DANG XEM (28/08) ========================
+   Doc ky truoc khi sua:
+
+   1) CHANNEL_GROUP_ORDER va CHANNEL_TARGETS la HAI HANG SO. Moi bang/bieu do
+      theo kenh deu lap qua chung, KHONG lap qua du lieu. Cat du lieu thoi thi
+      man hinh van de ra dong "IND 0 / KA 0". Thu hep tai day thi 12 cho dung
+      CHANNEL_GROUP_ORDER va moi cho dung CHANNEL_TARGETS tu dung theo.
+
+   2) TARGET PHAI NHAN TI TRONG. computeSaleTargetAllocation() chia target kenh
+      theo ti trong cua sale TRONG CHINH DATA.crosstab. Goi cua sale chi con
+      minh ho -> ti trong = 100% -> ho om tron target ca kenh. Robot da tinh san
+      ti trong that (mau so toan vung) va bo vao goi. Nhan vao day mot lan la
+      moi cho tinh sau do deu dung.
+
+   3) Sua TAI CHO (mutate) chu khong gan lai: CHANNEL_GROUP_ORDER la const o
+      tang tren, cac ham khac da tham chieu toi chinh o nho do.
+
+   Admin khong co target_share -> khong dong gi.
+   ======================================================================== */
+(function thuHepTheoPhamVi() {
+    var ds = DATA.channels_list;
+    if (!ds || !ds.length) return;                 // khong biet pham vi -> de nguyen
+    if (ds.length >= CHANNEL_GROUP_ORDER.length && !DATA.target_share) return;   // admin
+
+    var co = {}; ds.forEach(function (c) { co[c] = 1; });
+
+    // (a) thu hep thu tu kenh — sua tai cho de moi noi da tham chieu deu thay
+    var giu = CHANNEL_GROUP_ORDER.filter(function (c) { return co[c]; });
+    if (giu.length) CHANNEL_GROUP_ORDER.splice(0, CHANNEL_GROUP_ORDER.length, ...giu);
+
+    // (b) bo target cua kenh khong phu trach
+    Object.keys(CHANNEL_TARGETS).forEach(function (c) {
+        if (!co[c]) { delete CHANNEL_TARGETS[c]; delete PRODUCT_TARGETS.reno16[c]; }
+    });
+
+    // (c) nhan ti trong THAT — day la cho sua so sai
+    var ts = DATA.target_share;
+    if (!ts) return;
+    Object.keys(CHANNEL_TARGETS).forEach(function (c) {
+        var p = ts[c];
+        if (!p) { CHANNEL_TARGETS[c].sellout = 0; CHANNEL_TARGETS[c].revenue = 0;
+                  PRODUCT_TARGETS.reno16[c] = 0; return; }
+        CHANNEL_TARGETS[c].sellout = Math.round(CHANNEL_TARGETS[c].sellout * (p.sellout || 0));
+        CHANNEL_TARGETS[c].revenue = Math.round(CHANNEL_TARGETS[c].revenue * (p.revenue || 0));
+        PRODUCT_TARGETS.reno16[c]  = Math.round((PRODUCT_TARGETS.reno16[c] || 0) * (p.sellout || 0));
+    });
+    window.__daThuHepKenh = { kenh: giu, target: JSON.parse(JSON.stringify(CHANNEL_TARGETS)) };
+})();
+/* them 03/09/2026 — Bao cao tuan/thang (scripts/bc.js) can target kenh + phan bo target theo Sale.
+   Chi DUA RA ngoai de doc, khong sua gi. computeSaleTargetAllocation la function declaration nen goi duoc. */
+window.__bcTarget = function () { return { kenh: CHANNEL_TARGETS, sp: PRODUCT_TARGETS, sale: computeSaleTargetAllocation,
+    kaSub: kaStoreSubchannelByName, kaThuTu: KA_SUBCHANNEL_ORDER, kaMau: KA_SUBCHANNEL_COLORS, ocLevel: classifyIndLevel, ocTarget: OC_TARGET_PER_SHOP, ocThuTu: OC_LEVEL_ORDER }; };
 const channelColor = CHANNEL_GROUP_COLORS_JS;
 
 function fmtVND(v) {
@@ -3921,6 +4844,7 @@ function renderChannelMonthTable() {
     });
 
     function growthCell(arr, i, fmt) {
+        if (thangChuaCoSo(months[i])) return O_THANG_TRONG;
         const cur = arr[i];
         if (i === 0) return `${fmt(cur)}`;
         const prev = arr[i-1];
@@ -4007,15 +4931,17 @@ function renderWeeklyRevenueChart() {
     const weekUnits = DATA.week_channel_units || {};
     const weekRev = DATA.week_revenue || {};
     const weekModels = DATA.week_channel_models || {};
-    const labels = ALL_2026_WEEKS.map(fmtWeekLabel);
-    const totalByWeek = ALL_2026_WEEKS.map(wk => CHANNEL_GROUP_ORDER.reduce((s,c) => s + ((weekUnits[wk] && weekUnits[wk][c]) || 0), 0));
+    // Chi ve toi tuan cuoi cung co so (xem tuanCanVe) thay vi keo het W53.
+    const TUAN = tuanCanVe(wk => CHANNEL_GROUP_ORDER.some(c => (weekUnits[wk] && weekUnits[wk][c]) > 0));
+    const labels = TUAN.map(fmtWeekLabel);
+    const totalByWeek = TUAN.map(wk => CHANNEL_GROUP_ORDER.reduce((s,c) => s + ((weekUnits[wk] && weekUnits[wk][c]) || 0), 0));
     // Giống biểu đồ "Doanh số theo tuần — Cả năm 2026 (IND)": tooltip hiện breakdown theo model, và số
     // tổng từng cột hiện phía trên đầu cột (chỉ gắn datalabel vào dataset TRÊN CÙNG của stack - KA - để
     // không lặp lại nhãn, font nhỏ vừa đúng chiều ngang cột).
     const datasets = CHANNEL_GROUP_ORDER.map((c, idx) => {
         const ds = {
             label: c,
-            data: ALL_2026_WEEKS.map(wk => (weekUnits[wk] && weekUnits[wk][c]) || 0),
+            data: TUAN.map(wk => (weekUnits[wk] && weekUnits[wk][c]) || 0),
             backgroundColor: channelColor[c] || '#8b98a9',
             stack: 's1',
             barPercentage: 0.95,
@@ -4032,7 +4958,7 @@ function renderWeeklyRevenueChart() {
         }
         return ds;
     });
-    const revByWeek = ALL_2026_WEEKS.map(wk => weekRev[wk] || 0);
+    const revByWeek = TUAN.map(wk => weekRev[wk] || 0);
 
     const canvasEl = document.getElementById('chart-weekly-revenue');
     if (canvasEl) {
@@ -4046,7 +4972,7 @@ function renderWeeklyRevenueChart() {
                 plugins: {
                     legend: { position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
                     tooltip: { callbacks: { label: ctx => {
-                        const wk = ALL_2026_WEEKS[ctx.dataIndex];
+                        const wk = TUAN[ctx.dataIndex];
                         const breakdown = (weekModels[wk] && weekModels[wk][ctx.dataset.label]) || {};
                         return groupMonthTooltipLines(ctx.dataset.label, ctx.parsed.y, breakdown);
                     } } }
@@ -4061,16 +4987,23 @@ function renderWeeklyRevenueChart() {
 
     const tbl = document.getElementById('mini-table-weekly-revenue');
     if (tbl) {
-        const mwgByWeek = ALL_2026_WEEKS.map(wk => (weekUnits[wk] && weekUnits[wk].MWG) || 0);
-        const indByWeek = ALL_2026_WEEKS.map(wk => (weekUnits[wk] && weekUnits[wk].IND) || 0);
-        const kaByWeek = ALL_2026_WEEKS.map(wk => (weekUnits[wk] && weekUnits[wk].KA) || 0);
-        const colgroup = '<colgroup><col style="width:55px;">' + ALL_2026_WEEKS.map(()=>'<col>').join('') + '</colgroup>';
+        // Lap qua CHANNEL_GROUP_ORDER, KHONG viet cung ba dong.
+        // Viet cung thi sale kenh MWG van thay hai dong "IND -" va "KA -" —
+        // dung cai anh Thai bao khong duoc de (soi tai khoan that 28/08).
+        const dongKenh = CHANNEL_GROUP_ORDER.map(c => ({
+            ten: c,
+            so: TUAN.map(wk => (weekUnits[wk] && weekUnits[wk][c]) || 0),
+        }));
+        const colgroup = '<colgroup><col style="width:55px;">' + TUAN.map(()=>'<col>').join('') + '</colgroup>';
         const weekRow = '<tr class="mwt-week"><td class="mwt-label">Tuần</td>' + labels.map(l => `<td>${l}</td>`).join('') + '</tr>';
         const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
-        const totalRow = '<tr class="mwt-value" style="font-weight:800;"><td class="mwt-label">TỔNG</td>' + totalByWeek.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
+        // Dòng TỔNG bỏ đi: biểu đồ đã ghi tổng ngay trên đỉnh từng cột tuần.
+        const totalRow = '';
         // DT: đơn vị tỷ đồng, không ghi đơn vị trong từng ô (đã ghi chú ở tiêu đề phía trên biểu đồ).
         const dtRow = '<tr class="mwt-value" style="border-top:2px solid rgba(255,255,255,0.15);"><td class="mwt-label">DT</td>' + revByWeek.map(v => `<td>${v ? (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}) : '-'}</td>`).join('') + '</tr>';
-        tbl.innerHTML = colgroup + weekRow + rowHtml('MWG', mwgByWeek) + rowHtml('IND', indByWeek) + rowHtml('KA', kaByWeek) + totalRow + dtRow;
+        tbl.innerHTML = colgroup + weekRow
+            + dongKenh.map(d => rowHtml(d.ten, d.so)).join('')
+            + totalRow + dtRow;
     }
 }
 
@@ -4148,6 +5081,7 @@ function renderRenoFindSection() {
     }
 
     function growthCell(arr, i, fmt) {
+        if (thangChuaCoSo(ALL_12_MONTHS[i])) return O_THANG_TRONG;
         const cur = arr[i];
         if (i === 0) return `${fmt(cur)}`;
         const prev = arr[i - 1];
@@ -5090,6 +6024,7 @@ function renderIndGroupMonthlyTable() {
     if (!head || !body) return;
     head.innerHTML = '<th>Nhóm</th><th></th>' + months.map(m => '<th class="num">T' + m + '</th>').join('') + '<th class="num">Tổng</th>';
     function growthCell(arr, i, fmt) {
+        if (thangChuaCoSo(ALL_12_MONTHS[i])) return O_THANG_TRONG;
         const cur = arr[i];
         const prev = arr[i-1];
         if (i === 0 || !prev) return fmt(cur);
@@ -5231,6 +6166,7 @@ function renderIndSaleMonthlyTable() {
     head.innerHTML = '<th>Sale</th><th></th>' + months.map(m => '<th class="num">T' + m + '</th>').join('') + '<th class="num">Tổng</th>';
 
     function growthCell(arr, i, fmt) {
+        if (thangChuaCoSo(ALL_12_MONTHS[i])) return O_THANG_TRONG;
         const cur = arr[i];
         const prev = arr[i-1];
         if (i === 0 || !prev) return fmt(cur);
@@ -5548,7 +6484,12 @@ function renderIndSaleTrendChart() {
     const latestInfo = computeIndLatestMonthInfo();
     renderOneIndSaleHeatmap('ind-sale-heat-top', topNames, months, series, meta, latestInfo);
     renderOneIndSaleHeatmap('ind-sale-heat-bottom', bottomNames, months, series, meta, latestInfo);
-    document.querySelectorAll('.ind-sale-metric-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.metric === indSaleChartMetric));
+    // Chỉ đổi trạng thái active cho ĐÚNG 5 nút chỉ số của bảng nhiệt Sale (DS/DT/SHOP/S.I/PK).
+    // Class .ind-sale-metric-btn còn được dùng lại cho 2 nhóm nút khác - nút chỉ số Thị phần KA
+    // (.ka-market-share-metric-btn) và 2 nút Gói Platinum&Titan / Gold (.oc-target-tab) - nên nếu
+    // quét cả class thì mỗi lần vẽ lại bảng nhiệt là 2 nhóm kia bị gỡ mất viền sáng "đang chọn".
+    document.querySelectorAll('.ind-sale-metric-btn:not(.ka-market-share-metric-btn):not(.oc-target-tab)')
+        .forEach(btn => btn.classList.toggle('active', btn.dataset.metric === indSaleChartMetric));
 }
 function indSaleTableRowHtml(r, isGroupStart) {
     const trStyle = isGroupStart ? ' style="border-top:2px solid rgba(255,255,255,0.15);"' : '';
@@ -6489,6 +7430,51 @@ function tonKhoIndChuanModel(x) {
     return String(x || '').toUpperCase().replace(/\s+/g, ' ').replace(/\s*\+\s*/g, '+').trim();
 }
 
+/* ---- TÊN ĐẠI LÝ / ĐIỂM BÁN: BỎ ĐỊA CHỈ -------------------------------------
+   Sheet ghi cả địa chỉ vào ô tên, ví dụ:
+     "Chí Trung - Bến Tre - Khu phố 2, thị tấn Bình Đại, Huện Bình Đại"
+   Cả dòng địa chỉ đó tràn ngang bảng, đẩy các cột số ra xa, đọc rất mệt.
+   Cắt còn TÊN (+ tỉnh/huyện nếu ngắn), tên đầy đủ vẫn giữ trong tooltip nên
+   không mất thông tin gì. */
+function tonKhoIndLaDiaChi(s) {
+    const t = tonKhoIndKhongDau(s);
+    if (/(^|\s)(so|ap|duong|khu pho|kp|phuong|xa|huyen|thi tran|thi xa|quoc lo|ql|tinh|to|hem|ngo|dc|d\/c)(\s|$)/.test(t)) return true;
+    if (/\d[\da-z\/]*\s*,/.test(t)) return true;     // "76B, Tiên Đông Vàm"
+    if (/^\d/.test(t.trim())) return true;           // bắt đầu bằng số nhà
+    return false;
+}
+function tonKhoIndTenGon(ten) {
+    const goc = String(ten || '').trim();
+    const phan = goc.split(/\s*[-–]\s*/).map(s => s.trim()).filter(Boolean);
+    if (!phan.length) return goc;
+    const giu = [phan[0]];
+    for (let i = 1; i < phan.length && giu.length < 2; i++) {
+        // "cty", "tnhh"... là chữ chung, bỏ qua chứ không dừng
+        if (/^(cty|c\.ty|công ty|tnhh|mtv|dntn)\.?$/i.test(phan[i])) continue;
+        if (tonKhoIndLaDiaChi(phan[i])) break;
+        if (phan[i].length > 16) break;              // đoạn dài = địa chỉ viết liền
+        giu.push(phan[i]);
+    }
+    // "(cty)" là chữ chung, bỏ; "(CMT8)" là tên chi nhánh, giữ.
+    let t = giu.join(' - ').replace(/\s*\((cty|c\.ty|công ty|tnhh|mtv|dntn)\)/gi, '').trim();
+    if (t.length > 38) t = t.slice(0, 37).trim() + '…';
+    return t || goc;
+}
+function tonKhoIndOTen(ten, dam) {
+    const gon = tonKhoIndTenGon(ten);
+    const day = String(ten || '').trim();
+    const chu = escapeHtml(gon);
+    return '<td title="' + escapeHtml(day) + '">' + (dam ? '<b>' + chu + '</b>' : chu) + '</td>';
+}
+
+/* Sale đang chọn ở bảng "Tồn theo đại lý".
+   null = CHƯA chọn ai -> không đổ bảng ra (mặc định, cho gọn).
+   TON_TAT_CA = xem hết. Còn lại là tên Sale.
+   Để ngoài hàm vẽ để bấm Sale xong, đổi bộ lọc Tháng/Shop vẽ lại vẫn giữ nguyên
+   Sale đang xem — không bắt anh Thái bấm lại từ đầu. */
+const TON_TAT_CA = '__tat_ca__';
+let tonKhoIndSale = null;
+
 function computeIndTonKho() {
     const rows = DATA.sell_in_rows || [];
     const idToName = indStoreIdToName();
@@ -6635,7 +7621,7 @@ function renderIndTonKho() {
     document.getElementById('ind-ton-out-sub').textContent = 'máy, cùng kỳ ' + nhan;
     const elTon = document.getElementById('ind-ton-ton');
     elTon.textContent = fmtInt(tTon);
-    elTon.style.color = tTon > 0 ? '#e0b24d' : '#2ee673';
+    elTon.style.color = tTon > 0 ? 'var(--ton-du)' : 'var(--positive)';
     document.getElementById('ind-ton-ton-sub').textContent =
         (nhip > 0 && tTon > 0) ? ('còn bán được ~' + tonKhoIndSoNgayBan(tTon, nhip)) : 'máy';
 
@@ -6644,7 +7630,7 @@ function renderIndTonKho() {
         + (K.theoTen ? (', không khớp thì ghép theo <b>tên đại lý</b> (' + fmtInt(K.theoTen) + ' máy)') : '')
         + '. <b>Chưa cộng tồn đầu năm, chưa trừ hàng trả về và điều chuyển giữa đại lý</b> — dùng để so đại lý với nhau và bắt hàng nằm lâu, không thay được biên bản kiểm kê.';
     if (K.leTong) {
-        note += '<br><span style="color:#e0b24d;"><b>Chưa khớp được:</b> ' + fmtInt(K.leTong)
+        note += '<br><span style="color:var(--ton-du);"><b>Chưa khớp được:</b> ' + fmtInt(K.leTong)
             + ' máy nhập dưới ' + K.leMa + ' mã đại lý không nằm trong danh sách IND — phần lớn là đại lý tỉnh khác cùng nhà phân phối. Không cộng vào tồn.</span>';
     }
     document.getElementById('ind-ton-note').innerHTML = note;
@@ -6663,39 +7649,129 @@ function renderIndTonKho() {
         return r;
     }).sort((a, b) => b.ton - a.ton);
 
-    body.innerHTML = dsModel.length ? dsModel.map(r => {
+    /* ---- ẨN CÁC DÒNG TỒN ÂM ------------------------------------------------
+       Tồn âm = bán ra nhiều hơn số nhập ghi nhận được. Không phải sai số: đó là
+       máy nhập từ 2025, trước kỳ mà sheet SELL IN có số, nên phần nhập của
+       chúng không nằm trong dữ liệu. Đo 29/08: 26 trong 38 model là tồn âm —
+       tức là hai phần ba bảng chỉ là nhiễu, che mất số model thật sự đang nằm kho.
+       ẨN khỏi bảng, nhưng KHÔNG bỏ khỏi con số tổng (tổng vẫn là phép trừ thật),
+       và ghi rõ đã ẩn bao nhiêu để không ai tưởng số bị mất. */
+    const modelAm = dsModel.filter(r => r.ton < 0);
+    const modelHien = dsModel.filter(r => r.ton >= 0);
+    if (modelAm.length) {
+        const tongAm = modelAm.reduce((a, r) => a + r.ton, 0);
+        document.getElementById('ind-ton-note').innerHTML += '<br><span style="color:var(--text-secondary);">'
+            + '<b>Đã ẩn ' + modelAm.length + ' model tồn âm</b> (' + fmtInt(tongAm)
+            + ' máy) — hàng nhập từ trước kỳ sheet SELL IN có số nên chỉ thấy phần bán ra.'
+            + ' Vẫn được trừ trong ô Tồn ở trên, chỉ không hiện thành dòng cho đỡ rối.</span>';
+    }
+
+    body.innerHTML = modelHien.length ? modelHien.map(r => {
         const pct = r.nhap ? (r.ban / r.nhap * 100) : null;
-        const mau = r.ton > 0 ? '#e0b24d' : (r.ton < 0 ? '#5b8fd6' : 'var(--text-secondary)');
+        const mau = r.ton > 0 ? 'var(--ton-du)' : 'var(--text-secondary)';
         return '<tr><td>' + r.n + '</td>'
             + '<td class="num">' + fmtInt(r.nhap) + '</td>'
             + '<td class="num">' + fmtInt(r.ban) + '</td>'
             + '<td class="num" style="color:' + mau + '; font-weight:700;">' + fmtInt(r.ton) + '</td>'
             + '<td class="num">' + tonKhoIndSoNgayBan(r.ton, r.nhip) + '</td>'
             + '<td class="num">' + (pct === null ? '-' : pct.toFixed(0) + '%') + '</td></tr>';
-    }).join('') : '<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-secondary);">Không có dữ liệu (theo bộ lọc hiện tại).</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-secondary);">Không có model nào còn tồn (theo bộ lọc hiện tại).</td></tr>';
+
+    /* ---- TAB THEO SALE cho bảng "Tồn theo đại lý" ------------------------
+       169 đại lý trong một bảng thì không dò bằng mắt được. Bấm tên Sale là
+       bảng rút xuống còn đại lý của Sale đó.
+       Một đại lý nhiều chi nhánh có thể do NHIỀU Sale phụ trách -> nó xuất hiện
+       ở tab của từng người, đúng thực tế chứ không ép chia một người. */
+    const dsSale = [];
+    K.dsDaiLy.forEach(x => (x.sale.length ? x.sale : ['(Không rõ)']).forEach(s => {
+        if (dsSale.indexOf(s) < 0) dsSale.push(s);
+    }));
+    const cuaSale = (x, s) => (s === TON_TAT_CA) || (s === '(Không rõ)' ? !x.sale.length : x.sale.indexOf(s) >= 0);
+    const tonCua = (s) => K.dsDaiLy.filter(x => cuaSale(x, s)).reduce((a, x) => a + x.ton, 0);
+    const soDlCua = (s) => K.dsDaiLy.filter(x => cuaSale(x, s)).length;
+    // Xếp Sale nào TỒN NHIỀU NHẤT lên trước — đó mới là người cần gọi trước.
+    dsSale.sort((a, b) => tonCua(b) - tonCua(a));
+    // Sale đang chọn mà biến mất khỏi dữ liệu (đổi bộ lọc) thì bỏ chọn.
+    if (tonKhoIndSale !== null && tonKhoIndSale !== TON_TAT_CA && dsSale.indexOf(tonKhoIndSale) < 0) tonKhoIndSale = null;
+
+    const tabs = document.getElementById('ind-ton-dl-tabs');
+    if (tabs) {
+        /* Số trên nút là TỔNG TỒN của Sale đó, không phải số shop — anh Thái
+           29/08: nhìn hàng nút là biết ngay hàng đang nằm ở tay ai nhiều nhất,
+           chứ số shop thì không nói lên điều gì. Số shop chuyển xuống dòng
+           tóm tắt bên dưới. */
+        const oTab = (giaTri, nhan) => '<button type="button" class="ind-ton-tab'
+            + (tonKhoIndSale === giaTri ? ' active' : '')
+            + '" data-sale="' + escapeHtml(giaTri) + '" title="' + escapeHtml(nhan)
+            + ' — tồn ' + fmtInt(tonCua(giaTri)) + ' máy, ' + soDlCua(giaTri) + ' đại lý">'
+            + '<span class="ten">' + escapeHtml(nhan) + '</span>'
+            + '<span class="dem">' + fmtInt(tonCua(giaTri)) + '</span></button>';
+        tabs.innerHTML = dsSale.map(s => oTab(s, shortSaleName(s))).join('')
+            + oTab(TON_TAT_CA, 'Tất cả');
+        tabs.querySelectorAll('.ind-ton-tab').forEach(b => {
+            b.addEventListener('click', () => {
+                // Bấm lại đúng Sale đang chọn thì bỏ chọn — bảng thu lại.
+                tonKhoIndSale = (tonKhoIndSale === b.dataset.sale) ? null : b.dataset.sale;
+                renderIndTonKho();
+            });
+        });
+    }
+
+    /* Chưa chọn Sale thì KHÔNG đổ bảng ra. 169 đại lý bày sẵn là thứ anh Thái
+       gọi là rối; bảng chỉ hiện khi đã chọn người cần xem. */
+    const dsHien = tonKhoIndSale === null ? [] : K.dsDaiLy.filter(x => cuaSale(x, tonKhoIndSale));
+    const oBang = document.getElementById('ind-ton-dl-wrap');
+    if (oBang) oBang.hidden = (tonKhoIndSale === null);
+    const tomTat = document.getElementById('ind-ton-dl-tomtat');
+    if (tomTat) {
+        const tonHien = dsHien.reduce((a, x) => a + x.ton, 0);
+        const soDiem = dsHien.reduce((a, x) => a + x.shops.length, 0);
+        tomTat.innerHTML = tonKhoIndSale === null
+            ? ('Bấm một Sale ở trên để xem đại lý của Sale đó. <span style="color:var(--text-secondary);">'
+               + K.dsDaiLy.length + ' đại lý · ' + dsSale.length + ' Sale.</span>')
+            : ('<b>' + escapeHtml(tonKhoIndSale === TON_TAT_CA ? 'Tất cả' : shortSaleName(tonKhoIndSale))
+               + '</b>: <b>' + dsHien.length + '</b> đại lý · <b>' + soDiem + '</b> điểm bán · tồn <b>'
+               + fmtInt(tonHien) + '</b> máy. '
+               + '<span style="color:var(--text-secondary);">Bấm lại nút đó để thu bảng lại. '
+               + '3 ô số ở trên và bảng model vẫn là số của cả vùng.</span>');
+    }
 
     // ---- bang theo dai ly
-    dlBody.innerHTML = K.dsDaiLy.length ? K.dsDaiLy.map((x, i) => {
+    dlBody.innerHTML = dsHien.length ? dsHien.map((x, i) => {
         const top = x.md.filter(r => r.ton > 0)[0];
-        const mau = x.ton > 0 ? '#e0b24d' : (x.ton < 0 ? '#5b8fd6' : 'var(--text-secondary)');
+        const mau = x.ton > 0 ? 'var(--ton-du)' : (x.ton < 0 ? 'var(--ton-am)' : 'var(--text-secondary)');
         const idCt = 'ind-ton-ct-' + i;
+        // Bảng con cũng bỏ dòng tồn âm, giống bảng model ở trên.
+        const mdHien = x.md.filter(r => r.ton >= 0);
+        const mdAm = x.md.length - mdHien.length;
         const ct = '<tr id="' + idCt + '" hidden><td colspan="8" style="padding:0 12px 12px;">'
             + '<div style="font-size:12px; color:var(--text-secondary); margin:6px 0;">Điểm bán: '
-            + x.shops.map(t => '· ' + t).join('<br>') + '</div>'
+            + x.shops.map(t => '· <span title="' + escapeHtml(String(t)) + '">'
+                + escapeHtml(tonKhoIndTenGon(t)) + '</span>').join('<br>') + '</div>'
             + '<table class="data-table" style="margin:0;"><thead><tr><th>Model</th><th class="num">Nhập</th><th class="num">Bán</th><th class="num">Tồn</th></tr></thead><tbody>'
-            + x.md.map(r => '<tr><td>' + r.n + '</td><td class="num">' + fmtInt(r.nhap)
-                + '</td><td class="num">' + fmtInt(r.ban) + '</td><td class="num">' + fmtInt(r.ton) + '</td></tr>').join('')
-            + '</tbody></table></td></tr>';
+            + (mdHien.length ? mdHien.map(r => '<tr><td>' + r.n + '</td><td class="num">' + fmtInt(r.nhap)
+                + '</td><td class="num">' + fmtInt(r.ban) + '</td><td class="num" style="color:'
+                + (r.ton > 0 ? 'var(--ton-du)' : 'var(--text-secondary)') + '; font-weight:700;">'
+                + fmtInt(r.ton) + '</td></tr>').join('')
+                : '<tr><td colspan="4" style="color:var(--text-secondary);">Không còn model nào tồn.</td></tr>')
+            + '</tbody></table>'
+            + (mdAm ? '<div style="font-size:11.5px; color:var(--text-secondary); margin-top:6px;">Đã ẩn '
+                + mdAm + ' model tồn âm (hàng nhập trước kỳ sheet SELL IN có số).</div>' : '')
+            + '</td></tr>';
         return '<tr class="ind-ton-dl-row" data-ct="' + idCt + '" style="cursor:pointer;">'
             + '<td>' + (i + 1) + '</td>'
-            + '<td><b>' + x.ten + '</b></td>'
+            + tonKhoIndOTen(x.ten, true)
             + '<td class="num">' + x.shops.length + '</td>'
             + '<td>' + x.sale.join(', ') + '</td>'
             + '<td class="num">' + fmtInt(x.nhap) + '</td>'
             + '<td class="num">' + fmtInt(x.ban) + '</td>'
             + '<td class="num" style="color:' + mau + '; font-weight:700;">' + fmtInt(x.ton) + '</td>'
             + '<td>' + (top ? (top.n + ' — ' + fmtInt(top.ton) + ' máy') : '-') + '</td></tr>' + ct;
-    }).join('') : '<tr><td colspan="8" style="text-align:center; padding:16px; color:var(--text-secondary);">Không có dữ liệu (theo bộ lọc hiện tại).</td></tr>';
+    }).join('') : '<tr><td colspan="8" style="text-align:center; padding:16px; color:var(--text-secondary);">'
+        + (tonKhoIndSale === null || tonKhoIndSale === TON_TAT_CA
+            ? 'Không có dữ liệu (theo bộ lọc hiện tại).'
+            : 'Sale ' + escapeHtml(shortSaleName(tonKhoIndSale)) + ' chưa có đại lý nào ghép được sell-in.')
+        + '</td></tr>';
 
     dlBody.querySelectorAll('.ind-ton-dl-row').forEach(tr => {
         tr.addEventListener('click', () => {
@@ -7044,12 +8120,15 @@ function renderIndSelloutMiniTable() {
     const avgShopCount = activeMonths.length ? Math.round(activeMonths.reduce((s,m) => s + shopsByMonth[m].size, 0) / activeMonths.length) : 0;
     const headRow = '<tr class="mwt-week"><td class="mwt-label"></td><td>2026</td>' + months.map(m => `<td>T${m}</td>`).join('') + '</tr>';
     const fmtVndBil = v => (v / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+    /* CHỈ GIỮ DÒNG MÀ BIỂU ĐỒ KHÔNG VẼ.
+       Anh Thái 29/08: "bỏ luôn bảng mini". Bỏ sạch thì mất số thật — nên bỏ
+       đúng phần THỪA: ba dòng O.C / Normal / Tổng biểu đồ đã ghi sẵn trong cột
+       và trên đỉnh cột rồi, để lại chỉ tổ rối. Hai dòng Shop S.O và D.Thu thì
+       KHÔNG có ở đâu khác, phải giữ. Bảng 5 dòng còn 2 dòng. */
     tbl.innerHTML = headRow
         + miniSummaryRowHtml('Shop S.O', avgShopCount, shopCells, fmtInt)
-        + miniSummaryRowHtml('O.C', ocCells.reduce((a,b)=>a+b,0), ocCells, fmtInt)
-        + miniSummaryRowHtml('Normal', normalCells.reduce((a,b)=>a+b,0), normalCells, fmtInt)
-        + miniSummaryRowHtml('Tổng', totalSoCells.reduce((a,b)=>a+b,0), totalSoCells, fmtInt)
         + miniSummaryRowHtml('D.Thu', revCells.reduce((a,b)=>a+b,0), revCells, fmtVndBil);
+    void totalSoCells; void ocCells; void normalCells;   // biểu đồ đã vẽ
 }
 function renderIndSellInMiniTable() {
     const { months, shopsByMonth, ocByMonth, normalByMonth, oppoByMonth, pkByMonth } = computeIndSellInMiniSummary();
@@ -7068,14 +8147,16 @@ function renderIndSellInMiniTable() {
     const avgShopCount = activeMonths.length ? Math.round(activeMonths.reduce((s,m) => s + shopsByMonth[m].size, 0) / activeMonths.length) : 0;
     const headRow = '<tr class="mwt-week"><td class="mwt-label"></td><td>2026</td>' + months.map(m => `<td>T${m}</td>`).join('') + '</tr>';
     const fmtVndBil = v => (v / 1e9).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+    /* Chỉ giữ dòng biểu đồ KHÔNG vẽ — xem ghi chú ở bảng Sell Out phía trên.
+       O.C / Normal đã nằm trong cột. "Tổng OPPO" khác với O.C+Normal (nó tính
+       trên TOÀN BỘ shop, không tách nhóm) nên vẫn phải giữ. */
     tbl.innerHTML = headRow
         + miniSummaryRowHtml('Shop S.I', avgShopCount, shopCells, fmtInt)
-        + miniSummaryRowHtml('O.C', ocCells.reduce((a,b)=>a+b,0), ocCells, fmtInt)
-        + miniSummaryRowHtml('Normal', normalCells.reduce((a,b)=>a+b,0), normalCells, fmtInt)
         + miniSummaryRowHtml('Tổng OPPO', oppoCells.reduce((a,b)=>a+b,0), oppoCells, fmtInt)
         + miniSummaryRowHtml('Tổng PK', pkCells.reduce((a,b)=>a+b,0), pkCells, fmtInt)
         // D.Thu chỉ có của OPPO (sheet SELL IN không có đơn giá PK nên không tính được doanh thu PK).
         + miniSummaryRowHtml('D.Thu', revCells.reduce((a,b)=>a+b,0), revCells, fmtVndBil);
+    void ocCells; void normalCells;   // biểu đồ đã vẽ
 }
 // "Doanh số theo tuần — Cả năm 2026" RIÊNG cho kênh IND, tách O.C/Normal (thay cho "Bộ lọc chung —
 // Chi tiết IND" đã bỏ) - dùng lại ind_daily_by_date (đã có sẵn theo Shop + theo ngày, phủ đủ năm) +
@@ -7105,10 +8186,12 @@ function computeIndWeeklyOcNormal() {
 let indWeeklyChart = null;
 function renderIndWeeklyChart() {
     const { ocByWeek, normalByWeek, dtByWeek, ocModelsByWeek, normalModelsByWeek } = computeIndWeeklyOcNormal();
-    const labels = ALL_2026_WEEKS.map(fmtWeekLabel);
-    const ocData = ALL_2026_WEEKS.map(wk => ocByWeek[wk]);
-    const normalData = ALL_2026_WEEKS.map(wk => normalByWeek[wk]);
-    const dtData = ALL_2026_WEEKS.map(wk => dtByWeek[wk]);
+    // Chi ve toi tuan cuoi cung co so (xem tuanCanVe) thay vi keo het W53.
+    const TUAN = tuanCanVe(wk => (ocByWeek[wk] || 0) + (normalByWeek[wk] || 0) > 0);
+    const labels = TUAN.map(fmtWeekLabel);
+    const ocData = TUAN.map(wk => ocByWeek[wk]);
+    const normalData = TUAN.map(wk => normalByWeek[wk]);
+    const dtData = TUAN.map(wk => dtByWeek[wk]);
     const totalArr = ocData.map((v, i) => v + normalData[i]);
     const canvasEl = document.getElementById('chart-ind-weekly');
     if (canvasEl) {
@@ -7145,7 +8228,7 @@ function renderIndWeeklyChart() {
                     legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 11 } } },
                     // Rê chuột vào cột để xem chi tiết theo từng model - giống 2 biểu đồ tháng O.C/Normal bên dưới.
                     tooltip: { callbacks: { label: ctx => {
-                        const wk = ALL_2026_WEEKS[ctx.dataIndex];
+                        const wk = TUAN[ctx.dataIndex];
                         const breakdown = ctx.dataset.label === 'O.C' ? ocModelsByWeek[wk] : normalModelsByWeek[wk];
                         return groupMonthTooltipLines(ctx.dataset.label, ctx.parsed.y, breakdown);
                     } } }
@@ -7159,10 +8242,11 @@ function renderIndWeeklyChart() {
     }
     const tbl = document.getElementById('mini-table-ind-weekly');
     if (tbl) {
-        const colgroup = '<colgroup><col style="width:55px;">' + ALL_2026_WEEKS.map(() => '<col>').join('') + '</colgroup>';
+        const colgroup = '<colgroup><col style="width:55px;">' + TUAN.map(() => '<col>').join('') + '</colgroup>';
         const weekRow = '<tr class="mwt-week"><td class="mwt-label">Tuần</td>' + labels.map(l => `<td>${l}</td>`).join('') + '</tr>';
         const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
-        const totalRow = '<tr class="mwt-value" style="font-weight:800;"><td class="mwt-label">TỔNG</td>' + totalArr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
+        // Dòng TỔNG bỏ đi: biểu đồ đã ghi tổng ngay trên đỉnh từng cột tuần.
+        const totalRow = '';
         // DT: đơn vị tỷ đồng (B), giống hàng DT ở "Doanh số theo tuần" bên Tổng quan.
         const dtRow = '<tr class="mwt-value" style="border-top:2px solid rgba(255,255,255,0.15);"><td class="mwt-label">DT</td>' + dtData.map(v => `<td>${v ? (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}) : '-'}</td>`).join('') + '</tr>';
         tbl.innerHTML = colgroup + weekRow + rowHtml('O.C', ocData) + rowHtml('Normal', normalData) + totalRow + dtRow;
@@ -7192,13 +8276,92 @@ function refreshIndCluster() {
 // Đã bỏ UI "Bộ lọc chung — Chi tiết IND" (ms-ind-sale/ms-ind-shop/ind-reset) theo yêu cầu anh Thái -
 // indFilters giữ nguyên state {sales:[],stores:[]} mặc định (không lọc gì), refreshIndCluster() chỉ
 // cần gọi 1 lần khi khởi tạo (không còn UI nào làm nó đổi giá trị nữa).
-document.querySelectorAll('.ind-sale-metric-btn').forEach(btn => {
+// Chỉ gắn cho ĐÚNG 5 nút chỉ số của bảng nhiệt Sale. Trước đây quét cả class .ind-sale-metric-btn
+// nên 2 nút Gói (Platinum&Titan / Gold) cũng dính handler này: chúng không có data-metric, bấm vào
+// là indSaleChartMetric = undefined -> IND_SALE_METRIC_META[undefined] -> renderIndSaleTrendChart()
+// văng lỗi và cả cụm Sale/ASM đứng hình. Nút chỉ số Thị phần KA cũng vậy (metric của KA là
+// ds/b1015/b1520/b1020, không có trong IND_SALE_METRIC_META). Hai nhóm nút đó đã có handler riêng.
+document.querySelectorAll('.ind-sale-metric-btn:not(.ka-market-share-metric-btn):not(.oc-target-tab)').forEach(btn => {
     btn.addEventListener('click', () => {
         indSaleChartMetric = btn.dataset.metric;
         renderIndSaleTrendChart();
     });
 });
 refreshIndCluster();
+
+/* ---- Nút "Cách đọc" cho cả một tab -----------------------------------------
+   Gấp toàn bộ đoạn diễn giải dài trong tab lại; bấm là mở ra hết. Mặc định GẤP:
+   anh Thái xem hằng ngày, đọc thuộc rồi, chỉ người mới mới cần đọc.
+   Nhớ lựa chọn trong máy nên mở ra một lần là lần sau vào vẫn mở. */
+(function () {
+    var KHO = 'dbtg-gap-cach-doc';
+    function dat(vung, gap) {
+        var el = document.getElementById(vung);
+        if (!el) return;
+        el.classList.toggle('dm-gap-doc', gap);
+        var nut = document.querySelector('.dm-nut-doc[data-vung="' + vung + '"]');
+        if (nut) {
+            nut.setAttribute('aria-expanded', gap ? 'false' : 'true');
+            nut.textContent = gap ? 'Cách đọc' : 'Ẩn cách đọc';
+        }
+    }
+    var gapSan = true;
+    try { gapSan = localStorage.getItem(KHO) !== 'mo'; } catch (e) {}
+    document.querySelectorAll('.dm-nut-doc').forEach(function (nut) {
+        var vung = nut.dataset.vung;
+        dat(vung, gapSan);
+        nut.addEventListener('click', function () {
+            var dangGap = document.getElementById(vung).classList.contains('dm-gap-doc');
+            dat(vung, !dangGap);
+            try { localStorage.setItem(KHO, dangGap ? 'mo' : 'gap'); } catch (e) {}
+            // Gấp/mở làm đổi chiều cao thẻ -> đánh thức biểu đồ vẽ lại cho đúng khổ.
+            window.dispatchEvent(new Event('resize'));
+        });
+    });
+})();
+
+/* ---- Tab của cụm "O.C / Normal theo tháng" -------------------------------
+   Biểu đồ nằm trong tab ĐANG ẨN thì Chart.js đo bề ngang ra 0 và ghi cứng
+   width:0 vào thẻ vẽ — bấm sang tab đó chỉ thấy khoảng trắng (đúng cái bẫy đã
+   dính ở tab KA). Nên sau khi hiện panel phải đánh thức lại: bắn sự kiện resize
+   và gọi thẳng chart.resize(). Lớp phủ bản demo còn một lớp cứu nữa
+   (hoiSinh + ResizeObserver trong demo-chart-shim.js) nghe theo data-tab. */
+(function () {
+    const cum = document.getElementById('ind-oc-cum');
+    if (!cum) return;
+    const tabs = [...cum.querySelectorAll('.ind-oc-tab')];
+    const panels = [...cum.querySelectorAll('.ind-oc-panel')];
+    function mo(ten) {
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === ten));
+        panels.forEach(p => { p.hidden = (p.id !== ten); });
+        window.dispatchEvent(new Event('resize'));
+        [0, 60, 260].forEach(ms => setTimeout(function () {
+            panels.forEach(p => {
+                if (p.hidden) return;
+                p.querySelectorAll('canvas').forEach(c => {
+                    try {
+                        const ch = window.Chart && window.Chart.getChart && window.Chart.getChart(c);
+                        if (!ch) return;
+                        if (!c.offsetWidth) { c.style.width = ''; c.style.height = ''; }
+                        ch.resize();
+                    } catch (e) { /* không để lỗi vẽ làm hỏng việc đổi tab */ }
+                });
+            });
+        }, ms));
+    }
+    tabs.forEach(t => t.addEventListener('click', () => mo(t.dataset.tab)));
+
+    // Nút "Cách đọc": gấp phần diễn giải dài lại, mở ra khi cần.
+    const nut = document.getElementById('ind-oc-nut-doc');
+    if (nut) {
+        nut.addEventListener('click', () => {
+            const mo2 = nut.getAttribute('aria-expanded') !== 'true';
+            nut.setAttribute('aria-expanded', mo2 ? 'true' : 'false');
+            nut.textContent = mo2 ? 'Ẩn cách đọc' : 'Cách đọc';
+            cum.querySelectorAll('.ind-oc-giai').forEach(e => { e.hidden = !mo2; });
+        });
+    }
+})();
 
 // Bộ lọc Tháng DÙNG CHUNG cho "Phần 2 — Review Tháng" (Tổng quan Mục tiêu Shop / Tiến độ Target O.C /
 // Chương trình Xe) - đổi 1 lần, cả 3 phần cùng cập nhật theo đúng Tháng đang chọn.
@@ -7776,10 +8939,12 @@ let kaWeeklyChart = null;
 function renderKaWeeklyChart() {
     const { bySub, dtByWeek } = computeKaWeeklyBySubchannel();
     const subs = kaSubchannelList();
-    const labels = ALL_2026_WEEKS.map(fmtWeekLabel);
-    const totalByWeek = ALL_2026_WEEKS.map(wk => subs.reduce((s, sub) => s + ((bySub[sub] && bySub[sub][wk]) || 0), 0));
+    // Chi ve toi tuan cuoi cung co so (xem tuanCanVe) thay vi keo het W53.
+    const TUAN = tuanCanVe(wk => subs.some(sub => (bySub[sub] && bySub[sub][wk]) > 0));
+    const labels = TUAN.map(fmtWeekLabel);
+    const totalByWeek = TUAN.map(wk => subs.reduce((s, sub) => s + ((bySub[sub] && bySub[sub][wk]) || 0), 0));
     const datasets = subs.map((sub, idx) => {
-        const data = ALL_2026_WEEKS.map(wk => (bySub[sub] && bySub[sub][wk]) || 0);
+        const data = TUAN.map(wk => (bySub[sub] && bySub[sub][wk]) || 0);
         const ds = { label: sub, data, backgroundColor: KA_SUBCHANNEL_COLORS[sub] || '#8b98a9', stack: 's1', barPercentage: 0.95, categoryPercentage: 0.98 };
         if (idx === subs.length - 1) {
             ds.datalabels = {
@@ -7811,13 +8976,14 @@ function renderKaWeeklyChart() {
     }
     const tbl = document.getElementById('mini-table-ka-weekly');
     if (tbl) {
-        const colgroup = '<colgroup><col style="width:55px;">' + ALL_2026_WEEKS.map(() => '<col>').join('') + '</colgroup>';
+        const colgroup = '<colgroup><col style="width:55px;">' + TUAN.map(() => '<col>').join('') + '</colgroup>';
         const weekRow = '<tr class="mwt-week"><td class="mwt-label">Tuần</td>' + labels.map(l => `<td>${l}</td>`).join('') + '</tr>';
         const rowHtml = (label, arr) => '<tr class="mwt-value"><td class="mwt-label">' + escapeHtml(label) + '</td>' + arr.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
-        const totalRow = '<tr class="mwt-value" style="font-weight:800;"><td class="mwt-label">TỔNG</td>' + totalByWeek.map(v => `<td>${v ? fmtInt(v) : '-'}</td>`).join('') + '</tr>';
-        const dtArr = ALL_2026_WEEKS.map(wk => dtByWeek[wk]);
+        // Dòng TỔNG bỏ đi: biểu đồ đã ghi tổng ngay trên đỉnh từng cột tuần.
+        const totalRow = '';
+        const dtArr = TUAN.map(wk => dtByWeek[wk]);
         const dtRow = '<tr class="mwt-value" style="border-top:2px solid rgba(255,255,255,0.15);"><td class="mwt-label">DT</td>' + dtArr.map(v => `<td>${v ? (v/1e9).toLocaleString('vi-VN', {maximumFractionDigits:1}) : '-'}</td>`).join('') + '</tr>';
-        tbl.innerHTML = colgroup + weekRow + subs.map(s => rowHtml(s, ALL_2026_WEEKS.map(wk => (bySub[s]&&bySub[s][wk])||0))).join('') + totalRow + dtRow;
+        tbl.innerHTML = colgroup + weekRow + subs.map(s => rowHtml(s, TUAN.map(wk => (bySub[s]&&bySub[s][wk])||0))).join('') + totalRow + dtRow;
     }
 }
 renderKaWeeklyChart();
@@ -8216,9 +9382,26 @@ function shareKaNormalizeBucket(pk) {
     if (!pk) return '';
     return String(pk).trim().replace(/^\d+_/, '').replace(/\s+/g, '').toLowerCase();
 }
+// Cột "Ngày" đọc được từ HAI nguồn nên phải chịu được cả hai kiểu ghi:
+//   - Sheet đọc thẳng (CSV): ô là chữ "01.01.2026"
+//   - Gói mã hoá (Apps Script getValues): ô ngày thật -> chuỗi ISO "2026-01-01T..."
 function shareKaParseFptMonth(dateStr) {
-    const m = String(dateStr || '').match(/^\d{2}\.(\d{2})\.\d{4}$/);
-    return m ? parseInt(m[1], 10) : null;
+    const t = String(dateStr || '').trim();
+    const m = t.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
+    if (m) return parseInt(m[2], 10);
+    const d = new Date(t);
+    if (isNaN(d.getTime())) return null;
+    /* BẪY MÚI GIỜ. Ô ngày thật trong sheet khi qua Apps Script thành chuỗi UTC:
+       ngày 01.01.2026 (giờ VN) ra "2025-12-31T17:00:00.000Z". Đọc bằng giờ của
+       máy người xem thì máy nào lệch múi giờ sẽ ra THÁNG 12 thay vì THÁNG 1 —
+       tức là mọi dòng ghi ngày mùng 1 bị đẩy nhầm sang tháng trước. Ép đọc theo
+       đúng múi giờ của sheet (giờ Việt Nam) thì máy nào mở cũng ra một kết quả. */
+    try {
+        const s = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit',
+        }).format(d);
+        return parseInt(s.slice(5, 7), 10);
+    } catch (e) { return d.getMonth() + 1; }
 }
 function shareKaParseViettelMonth(thangStr) {
     const m = String(thangStr || '').match(/(\d+)/);
@@ -8235,12 +9418,11 @@ function shareKaAddEntry(sub, brand, month, qty, bucket) {
 }
 const SHARE_KA_RAW_ROWS = { FPT: [], VIETTEL: [] };
 let kaMarketShareShopFilter = { FPT: [], VIETTEL: [] };
-function loadShareKaMarketShare() {
-    return fetch(shareKaGvizUrl()).then(res => {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.text();
-    }).then(text => {
-        const rows = Papa.parse(text, { skipEmptyLines: false }).data;
+/* NẠP SỐ THỊ PHẦN TỪ MẢNG DÒNG THÔ.
+   Dùng chung cho cả hai nguồn (gói mã hoá và đọc thẳng Sheet) vì cấu trúc cột
+   giống hệt nhau: FPT cột 0-7, VIETTEL cột 12-18. */
+function shareKaNapRows(rows) {
+    {
         let headerRow = -1;
         for (let i = 0; i < rows.length && i < 6; i++) {
             if (rows[i][0] === 'Ngày' || rows[i][1] === 'Mã Shop') { headerRow = i; break; }
@@ -8276,6 +9458,27 @@ function loadShareKaMarketShare() {
         if (SHARE_KA_RAW_ROWS.FPT.length < 5 && SHARE_KA_RAW_ROWS.VIETTEL.length < 5) throw new Error('Đọc được quá ít dòng dữ liệu, có thể sheet đổi cấu trúc');
         shareKaRebuildData('FPT');
         shareKaRebuildData('VIETTEL');
+    }
+}
+/* NGUỒN SỐ THỊ PHẦN — ƯU TIÊN GÓI MÃ HOÁ.
+   Trước đây trang này fetch thẳng Sheet "Share KA" qua đường gviz công khai, nên
+   sheet BẮT BUỘC phải mở "ai có link cũng xem được". Anh Thái đã đóng link đó lại
+   (29/08) -> fetch bị chặn CORS -> bảng thị phần trống.
+   Nay đọc từ chính gói mã hoá mà robot dựng mỗi ngày (robot lấy sheet qua Apps
+   Script, có chìa khoá riêng) -> sheet giữ kín, bảng vẫn có số.
+   Vẫn giữ đường lùi đọc thẳng Sheet: nếu ngày nào gói chưa có phần này thì trang
+   thử cách cũ, mở được thì vẫn ra số. */
+function loadShareKaMarketShare() {
+    return Promise.resolve(window.__goiDBTG || null).then(goi => {
+        const rows = goi && goi.shareKa;
+        if (Array.isArray(rows) && rows.length > 5) { shareKaNapRows(rows); return 'gói'; }
+        return fetch(shareKaGvizUrl()).then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+        }).then(text => {
+            shareKaNapRows(Papa.parse(text, { skipEmptyLines: false }).data);
+            return 'sheet';
+        });
     });
 }
 // Dựng lại KA_MARKET_SHARE_DATA[sub] từ dữ liệu thô, áp dụng bộ lọc Shop đang chọn (nếu có).
@@ -8377,7 +9580,7 @@ function renderKaMarketShareTable(subchannel, tbodyId) {
         });
     }).catch(err => {
         console.error('Không tải được dữ liệu Thị phần (Share KA):', err);
-        if (noteEl) noteEl.insertAdjacentHTML('afterend', '<div style="color:var(--negative); font-size:11.5px; margin-top:4px;">⚠️ Không tải được dữ liệu thị phần từ Sheet Share KA (' + escapeHtml(err.message) + ') — đang hiện bảng trống.</div>');
+        if (noteEl) noteEl.insertAdjacentHTML('afterend', '<div style="color:var(--negative); font-size:11.5px; margin-top:4px;">⚠️ Chưa có số thị phần trong gói dữ liệu, và cũng không đọc thẳng được Sheet Share KA (' + escapeHtml(err.message) + ') — đang hiện bảng trống. Gói được robot làm mới mỗi ngày lúc 10:00.</div>');
     });
 })();
 
@@ -8434,7 +9637,9 @@ async function createCheckpoint() {
     }
 }
 
-loadAndRender();
+// Co goi ma hoa thi ve thang tu goi (vai giay). Khong co thi chay cach cu.
+// initDashboard/loadAndRender phai CHUP TAI DAY vi khoi <script> sau se de len.
+window.__khoiDongDBTG(initDashboard, 'center', 'loading-overlay', loadAndRender);
 
 </script>
 
@@ -8540,49 +9745,24 @@ loadAndRender();
 </script>
 
 <script>
+/* ĐÁNH DẤU CỘT "THÁNG HIỆN TẠI" — ĐÃ GỠ (29/08).
+   Trước đây khối này chạy một MutationObserver quét MỌI bảng trong trang, tìm
+   cột có tiêu đề trùng tháng hiện tại rồi tô nền vàng + gắn dấu ★. Bảng theo
+   hãng còn tự gắn thêm một dấu nữa của riêng nó, nên ra "T8 ★ ★".
+   Anh Thái 29/08: "bỏ toàn bộ các ngôi sao highlight tháng hiện tại đi, nhìn
+   rối quá, trả về bình thường cho tối giản".
+   Gỡ luôn cả observer — nó chạy lại sau MỖI lần bảng vẽ lại, quét toàn bộ
+   trang, giờ không còn việc gì để làm nữa. Chỉ giữ một lần dọn cho sạch các
+   dấu cũ nếu còn sót. */
 (function () {
-    var now = new Date();
-    var currentMonthLabel = 'T' + (now.getMonth() + 1);
-    var pending = false;
-    var observer = null;
-    function cleanText(s) { return (s || '').replace(/[▲▼★]/g, '').trim(); }
-    function highlightAll() {
-        // QUAN TRỌNG: tạm ngắt observer trước khi tự mình sửa DOM (thêm/xóa sao, đổi class) - nếu không
-        // chính những thay đổi này lại kích observer gọi lại highlightAll() vô hạn (treo tab/CPU 100%).
-        if (observer) observer.disconnect();
-        document.querySelectorAll('table').forEach(function (table) {
-            table.querySelectorAll('.cm-star').forEach(function (el) { el.remove(); });
-            table.querySelectorAll('.cm-col-header').forEach(function (el) { el.classList.remove('cm-col-header'); });
-            var headerRow = (table.tHead && table.tHead.rows.length) ? table.tHead.rows[table.tHead.rows.length - 1] : table.rows[0];
-            if (!headerRow) return;
-            var headerCells = Array.prototype.slice.call(headerRow.children);
-            var colIdx = -1;
-            headerCells.forEach(function (cell, idx) {
-                if (cleanText(cell.textContent) === currentMonthLabel) colIdx = idx;
-            });
-            if (colIdx === -1) return;
-            var th = headerCells[colIdx];
-            th.classList.add('cm-col-header');
-            var star = document.createElement('span');
-            star.className = 'cm-star';
-            star.textContent = ' ★';
-            th.appendChild(star);
-        });
-        if (observer) observer.observe(document.body, { childList: true, subtree: true });
+    function don() {
+        document.querySelectorAll('.cm-star').forEach(function (el) { el.remove(); });
+        document.querySelectorAll('.cm-col-header').forEach(function (el) { el.classList.remove('cm-col-header'); });
+        document.querySelectorAll('.latest-month-col').forEach(function (el) { el.classList.remove('latest-month-col'); });
     }
-    function schedule() {
-        if (pending) return;
-        pending = true;
-        setTimeout(function () { pending = false; highlightAll(); }, 60);
-    }
-    function start() {
-        observer = new MutationObserver(schedule);
-        observer.observe(document.body, { childList: true, subtree: true });
-        schedule();
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-    else start();
-    window.addEventListener('load', schedule);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', don);
+    else don();
+    window.addEventListener('load', don);
 })();
 </script>
 <script>
@@ -8629,7 +9809,8 @@ function hourSlotLabel(h) {
 // Danh sách phân Size shop do anh Thái cung cấp (khớp theo cột "Mã siêu thị xuất hàng" = PARTNER ID trong file gốc), cập nhật thủ công khi có danh sách mới
 const SHOP_SIZE_BY_STORE_ID = {"189": "S", "752": "S", "456": "S", "823": "S", "361": "S", "724": "S", "614": "S", "953": "S", "954": "S", "435": "S", "9390": "A", "716": "S", "303": "A", "1660": "B", "1840": "B", "155": "A", "552": "A", "1498": "A", "650": "A", "9257": "A", "1570": "B", "1051": "A", "863": "A", "1683": "B", "938": "A", "647": "B", "1457": "C", "6270": "B", "644": "C", "9105": "B", "5321": "C", "1348": "A", "1882": "B", "434": "B", "1050": "B", "3063": "C", "2342": "C", "1982": "C", "627": "D", "10510": "C", "6325": "D", "2410": "B", "7051": "C", "5248": "C", "3062": "C", "1166": "C", "1887": "C", "5499": "C", "13861": "C", "1503": "C", "2054": "D", "744": "C", "984": "B", "2413": "D", "1784": "C", "2245": "C", "7340": "C", "2870": "C", "12327": "C", "1581": "C", "9256": "C", "2244": "D", "2755": "C", "9189": "D", "8076": "C", "1922": "D", "1677": "D", "8742": "C", "2204": "C", "7803": "D", "2469": "D", "2881": "D", "7146": "C", "7095": "C", "6600": "D", "9236": "D", "5751": "D", "2740": "D", "6324": "D", "7825": "D", "9201": "D", "9987": "D", "7008": "D", "1397": "D", "10731": "D", "7610": "D", "9408": "D", "7826": "D", "6883": "D", "8983": "D", "7755": "D", "10177": "D", "6977": "D", "7094": "D", "7142": "D", "13900": "D", "10006": "D", "7125": "D", "6881": "D", "7620": "D", "7701": "D", "7611": "D", "7249": "D", "7693": "D", "7084": "D", "6929": "D", "7093": "D", "10344": "D", "8011": "D", "10471": "D", "7692": "D", "10544": "D", "10705": "D", "10479": "D", "6997": "D", "7318": "D", "7009": "D", "12061": "D", "7562": "D", "7092": "D", "9976": "D", "7702": "D", "7621": "D", "6909": "D"};
 // PARTNER ID (= Mã siêu thị xuất hàng trong DATA MWG) -> STORE ID thật (khớp với cột Store ID trong sheet Target 2026) — 2 mã khác nhau cho cùng 1 shop
-const PARTNER_TO_STORE_ID = {"189": "789", "752": "782", "456": "791", "823": "783", "361": "7742", "724": "790", "614": "11545", "953": "12325", "954": "12245", "435": "10169", "9390": "29770", "716": "531", "303": "6835", "1660": "17677", "1840": "18662", "155": "12888", "552": "11763", "1498": "16807", "650": "11759", "9257": "29695", "1570": "17019", "1051": "13561", "863": "792", "1683": "18290", "938": "12184", "647": "11947", "1457": "16504", "6270": "28260", "644": "11666", "9105": "29608", "5321": "24688", "1348": "14735", "1882": "19516", "434": "10170", "1050": "13560", "3063": "22454", "2342": "21369", "1982": "20426", "627": "11762", "10510": "30228", "6325": "28262", "2410": "21489", "7051": "28376", "5248": "24678", "3062": "22287", "1166": "14087", "1887": "19589", "5499": "28722", "13861": "31168", "1503": "16505", "2054": "20837", "744": "13162", "984": "14086", "2413": "21486", "1784": "18666", "2245": "21295", "7340": "28807", "2870": "22292", "12327": "30972", "1581": "17505", "9256": "29815", "2244": "21252", "2755": "22000", "9189": "29548", "8076": "29162", "1922": "20235", "1677": "18438", "8742": "29450", "2204": "20751", "7803": "28916", "2469": "21702", "2881": "22486", "7146": "28424", "7095": "28464", "6600": "28263", "9236": "29633", "5751": "24952", "2740": "22026", "6324": "28249", "7825": "28932", "9201": "29697", "9987": "30036", "7008": "28297", "1397": "16924", "10731": "30413", "7610": "28978", "9408": "29788", "7826": "28860", "6883": "28152", "8983": "29618", "7755": "28782", "10177": "30119", "6977": "28401", "7094": "28402", "7142": "28434", "13900": "31191", "10006": "30067", "7125": "28433", "6881": "28151", "7620": "28813", "7701": "28746", "7611": "28723", "7249": "28516", "7693": "28814", "7084": "28377", "6929": "28250", "7093": "28386", "10344": "30166", "8011": "29012", "10471": "30235", "7692": "28912", "10544": "30334", "10705": "30387", "10479": "30238", "6997": "28430", "7318": "28651", "7009": "28308", "12061": "30847", "7562": "28718", "7092": "28432", "9976": "29955", "7702": "28759", "7621": "28720", "6909": "28400"};
+window.__bcMwg = window.__bcMwg || {};
+const PARTNER_TO_STORE_ID = window.__bcMwg.partnerToStore = {"189": "789", "752": "782", "456": "791", "823": "783", "361": "7742", "724": "790", "614": "11545", "953": "12325", "954": "12245", "435": "10169", "9390": "29770", "716": "531", "303": "6835", "1660": "17677", "1840": "18662", "155": "12888", "552": "11763", "1498": "16807", "650": "11759", "9257": "29695", "1570": "17019", "1051": "13561", "863": "792", "1683": "18290", "938": "12184", "647": "11947", "1457": "16504", "6270": "28260", "644": "11666", "9105": "29608", "5321": "24688", "1348": "14735", "1882": "19516", "434": "10170", "1050": "13560", "3063": "22454", "2342": "21369", "1982": "20426", "627": "11762", "10510": "30228", "6325": "28262", "2410": "21489", "7051": "28376", "5248": "24678", "3062": "22287", "1166": "14087", "1887": "19589", "5499": "28722", "13861": "31168", "1503": "16505", "2054": "20837", "744": "13162", "984": "14086", "2413": "21486", "1784": "18666", "2245": "21295", "7340": "28807", "2870": "22292", "12327": "30972", "1581": "17505", "9256": "29815", "2244": "21252", "2755": "22000", "9189": "29548", "8076": "29162", "1922": "20235", "1677": "18438", "8742": "29450", "2204": "20751", "7803": "28916", "2469": "21702", "2881": "22486", "7146": "28424", "7095": "28464", "6600": "28263", "9236": "29633", "5751": "24952", "2740": "22026", "6324": "28249", "7825": "28932", "9201": "29697", "9987": "30036", "7008": "28297", "1397": "16924", "10731": "30413", "7610": "28978", "9408": "29788", "7826": "28860", "6883": "28152", "8983": "29618", "7755": "28782", "10177": "30119", "6977": "28401", "7094": "28402", "7142": "28434", "13900": "31191", "10006": "30067", "7125": "28433", "6881": "28151", "7620": "28813", "7701": "28746", "7611": "28723", "7249": "28516", "7693": "28814", "7084": "28377", "6929": "28250", "7093": "28386", "10344": "30166", "8011": "29012", "10471": "30235", "7692": "28912", "10544": "30334", "10705": "30387", "10479": "30238", "6997": "28430", "7318": "28651", "7009": "28308", "12061": "30847", "7562": "28718", "7092": "28432", "9976": "29955", "7702": "28759", "7621": "28720", "6909": "28400"};
 const EXCLUDED_SHOPS = new Set([
     'AAR_BTR_BAT - 21A1 Trần Hưng Đạo (Ba Tri)',
     'AAR_TGI_GCO - 313 Nguyễn Huệ',
@@ -9089,11 +10270,12 @@ async function fetchRowsFromAppsScript(baseUrl, startRow) {
     // Bước 1: hỏi tổng số dòng
     if (msgEl) msgEl.textContent = 'Đang kiểm tra kích thước dữ liệu...';
     let info;
-    try {
-        info = await fetchJSON(baseUrl + '?mode=info', 120000);
-    } catch (err) {
-        throw new Error('Không gọi được Apps Script (bước info): ' + err.message);
+    let infoErr = null;   // 03/09/2026: thu lai 3 lan nhu ban CENTER (Apps Script hay tra 404 tam thoi)
+    for (let lanInfo = 1; lanInfo <= 3 && !info; lanInfo++) {
+        try { info = await fetchJSON(baseUrl + '?mode=info', 120000); }
+        catch (err) { infoErr = err; if (msgEl) msgEl.textContent = 'Apps Script chưa trả lời (lần ' + lanInfo + '/3) — thử lại...'; await sleep(4000); }
     }
+    if (!info) throw new Error('Không gọi được Apps Script (bước info, đã thử 3 lần): ' + (infoErr && infoErr.message));
     if (info && info.error) throw new Error('Apps Script báo lỗi: ' + info.error);
     const lastRow = info.lastRow;
     if (!lastRow || lastRow < 2) throw new Error('Sheet không có dữ liệu (lastRow=' + lastRow + ')');
@@ -9506,7 +10688,7 @@ async function loadAndRender() {
 
         if (loadingEl) loadingEl.style.display = 'none';
         const updEl = document.getElementById('mwg-last-updated');
-        if (updEl) updEl.textContent = 'Dữ liệu tải lúc: ' + new Date().toLocaleString('vi-VN') + ' · ' + sourceNote;
+        if (updEl) window.__nhanMoc(updEl, sourceNote);
         initDashboard(DATA);
     } catch (err) {
         console.error('Lỗi tải/ tính dashboard:', err);
@@ -9552,7 +10734,7 @@ async function createCheckpoint() {
     }
 }
 
-loadAndRender();
+window.__khoiDongDBTG(initDashboard, 'dataMwg', 'mwg-loading-overlay', loadAndRender);
 
 
 function initDashboard(DATA) {
@@ -10244,7 +11426,7 @@ function renderBrandHeatTable() {
     const colgroup = `<colgroup><col style="width:${namePct}%;">${labels.map(()=>`<col style="width:${monthPct}%;">`).join('')}<col style="width:${yearColPct}%;"></colgroup>`;
     const head = `<thead><tr><th style="text-align:left; padding-left:8px;">Hãng</th>${labels.map((lbl,i) => {
         const isLatest = activeMonths[i] === latestRealMonthIdx;
-        return `<th${isLatest?' class="latest-month-col"':''}>${lbl}${isLatest?' ★':''}</th>`;
+        return `<th>${lbl}</th>`;   // đã bỏ tô vàng + dấu ★ cho tháng hiện tại (29/08)
     }).join('')}<th class="bht-year-col">2026</th></tr></thead>`;
     const rows = order.map(b => brandHeatRowHtml(brandDisplay(b), series[b], meta, false, pctSeries ? pctSeries[b] : null, yearSeries[b], yearPctSeriesForMetric ? yearPctSeriesForMetric[b] : null)).join('');
     const totalRow = brandHeatRowHtml('TỔNG', totalArr, meta, true, totalPctArr, yearTotalMap[brandHeatMetric], brandHeatMetric === 'avgprice' ? null : 100);
@@ -13166,698 +14348,14 @@ body.zoom-on { overflow: hidden; }
 </script>
 
 
-<!-- ===== DB TG: giao dien Sang / Toi (ban 9) ===== -->
-<style id="dbtg-light-css">
-:root[data-theme="light"]{--bg-primary:#ffffff;--bg-card:#ffffff;--bg-card-hover:#ffffff;--bg-input:#ffffff;--bg-header:#ffffff;--border-color:rgba(21,24,28,0.085);--text-primary:#15181c;--text-secondary:#5c6773;--text-on-dark:#15181c;--oppo-green:#006b33;--oppo-green-dark:#004d24;--positive:#0c6231;--negative:#c62828;--neutral:#5c6773;--glow-soft:0 0 12px rgba(0,107,51,0.14);--glow-strong:0 0 16px rgba(0,107,51,0.22)}
-[data-theme="light"] ::selection, [data-theme="light"]::selection{background-color:rgba(0,107,51,0.35);color:#15181c}
-[data-theme="light"] ::-webkit-scrollbar-thumb, [data-theme="light"]::-webkit-scrollbar-thumb{background-color:#f0f2f4}
-[data-theme="light"] .dashboard-header{background-image:linear-gradient(135deg, #eef2f6 0%, #eef6f6 55%, #eef6f4 100%);box-shadow:rgba(16,24,40,0.1) 0px 0px 30px, rgba(16,24,40,0.1) 0px 4px 20px;border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .dashboard-header p{color:rgba(21,24,28,0.637)}
-[data-theme="light"] .dashboard-header .badge{color:#ffffff;box-shadow:rgba(16,24,40,0.1) 0px 0px 12px}
-[data-theme="light"] .kpi-card{box-shadow:rgba(16,24,40,0.1) 0px 1px 3px}
-[data-theme="light"] .kpi-card:hover{box-shadow:var(--glow-strong), 0 10px 24px rgba(16,24,40,0.1);border-top-color:rgba(0,107,51,0.35);border-right-color:rgba(0,107,51,0.35);border-bottom-color:rgba(0,107,51,0.35);border-left-color:rgba(0,107,51,0.35)}
-[data-theme="light"] .chart-container{box-shadow:rgba(16,24,40,0.1) 0px 1px 3px}
-[data-theme="light"] .chart-container:hover{box-shadow:var(--glow-soft), 0 6px 18px rgba(16,24,40,0.1);border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .chart-container h3::before{box-shadow:rgba(16,24,40,0.1) 0px 0px 6px}
-[data-theme="light"] .filter-bar select:focus, [data-theme="light"] .filter-bar input:focus{box-shadow:rgba(16,24,40,0.1) 0px 0px 0px 3px}
-[data-theme="light"] .filter-bar .reset-btn:hover{border-top-color:rgba(0,107,51,0.35);border-right-color:rgba(0,107,51,0.35);border-bottom-color:rgba(0,107,51,0.35);border-left-color:rgba(0,107,51,0.35)}
-[data-theme="light"] .multiselect-btn.active{box-shadow:rgba(16,24,40,0.1) 0px 0px 0px 3px}
-[data-theme="light"] .multiselect-panel{box-shadow:0 8px 24px rgba(16,24,40,0.1), var(--glow-soft)}
-[data-theme="light"] .table-section{box-shadow:rgba(16,24,40,0.1) 0px 1px 3px}
-[data-theme="light"] .table-section:hover{box-shadow:var(--glow-soft), 0 6px 18px rgba(16,24,40,0.1);border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .table-section h3::before{box-shadow:rgba(16,24,40,0.1) 0px 0px 6px}
-[data-theme="light"] .table-scroll{background-color:#e3e7eb}
-[data-theme="light"] .data-table thead th{background-color:#f6f7f8}
-[data-theme="light"] .data-table thead th:hover{color:#ffffff}
-[data-theme="light"] .data-table tbody tr:hover{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .data-table tbody tr.total-row{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .data-table tbody tr.row-neutral{border-left-color:#e3e7eb}
-[data-theme="light"] .mini-month-table tr.mmt-month td{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .mini-month-table td.mmt-label{background-color:#eef2f6}
-[data-theme="light"] .tag{background-color:rgba(16,24,40,0.006)}
-[data-theme="light"] .notes-section{background-color:#fbf4e8;border-top-color:#fbf4e8;border-right-color:#fbf4e8;border-bottom-color:#fbf4e8;border-left-color:#fbf4e8;color:#9a5b00}
-[data-theme="light"] .notes-section h4{color:#9a5b00}
-@media print{html[data-theme="light"] body{color:#ffffff}}
-[data-theme="light"] .db-tg-tab{border-top-color:rgba(16,24,40,0.028);border-right-color:rgba(16,24,40,0.028);border-bottom-color:rgba(16,24,40,0.028);border-left-color:rgba(16,24,40,0.028);background-color:rgba(16,24,40,0.006);color:#15181c}
-[data-theme="light"] .db-tg-tab:hover{background-color:rgba(16,24,40,0.014)}
-[data-theme="light"] .db-tg-tab.active{color:#ffffff;box-shadow:rgba(16,24,40,0.1) 0px 0px 12px}
-[data-theme="light"] .ind-unresolved-sale-warning{background-color:#fbf4e8;border-top-color:#fbf4e8;border-right-color:#fbf4e8;border-bottom-color:#fbf4e8;border-left-color:#fbf4e8;color:#9a5b00}
-[data-theme="light"] .ka-shop-revenue-group-row td{background-color:rgba(16,24,40,0.004)}
-[data-theme="light"] .ka-shop-revenue-total-row td{background-color:rgba(16,24,40,0.002)}
-[data-theme="light"] .cm-col-header{background-color:#fbf4e8 !important;color:#ffffff !important}
-[data-theme="light"] .ind-sale-xe-row td{background-color:rgba(16,24,40,0.003)}
-[data-theme="light"] .ind-sale-metric-btn:hover{border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .ind-sale-metric-btn.active{color:#ffffff;box-shadow:rgba(16,24,40,0.1) 0px 0px 10px}
-[data-theme="light"] .ind-sale-summary-wrap{box-shadow:rgba(16,24,40,0.1) 0px 1px 3px}
-[data-theme="light"] .metric-tag.units{background-color:rgba(16,24,40,0.035);color:#1b65a7}
-[data-theme="light"] .metric-tag.revenue{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .metric-tag.avgprice{background-color:rgba(16,24,40,0.035);color:#672bb6}
-[data-theme="light"] .metric-tag.oppo{background-color:#fbf4e8;color:#9a5b00}
-[data-theme="light"] .metric-tag.pk{background-color:rgba(16,24,40,0.035);color:#1b65a7}
-[data-theme="light"] .metric-tag.shop{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .shop-detail-table tbody tr:not(.sdt-grand):nth-child(2n){background-color:rgba(16,24,40,0.002)}
-[data-theme="light"] .shop-detail-table tbody tr:not(.sdt-grand):hover{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .sdt-grand{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .sdt-miss{background-color:#fdf0f0}
-[data-theme="light"] .sdt-hit{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .goi-badge.goi-platinum{background-color:rgba(16,24,40,0.007);color:#4f5e73}
-[data-theme="light"] .goi-badge.goi-titan{background-color:rgba(16,24,40,0.035);color:#1b65a7}
-[data-theme="light"] .goi-badge.goi-gold{background-color:#fbf4e8;color:#9a5b00}
-[data-theme="light"] .mini-week-table tr.mwt-week td{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .mini-week-table td.mwt-label{background-color:#eef2f6}
-[data-theme="light"] ::selection, [data-theme="light"]::selection{background-color:rgba(0,107,51,0.35);color:#15181c}
-[data-theme="light"] ::-webkit-scrollbar-thumb, [data-theme="light"]::-webkit-scrollbar-thumb{background-color:#f0f2f4}
-[data-theme="light"] .dashboard-header{background-image:linear-gradient(135deg, #eef2f6 0%, #eef6f6 55%, #eef6f4 100%);box-shadow:rgba(16,24,40,0.1) 0px 0px 30px, rgba(16,24,40,0.1) 0px 4px 20px;border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .dashboard-header p{color:rgba(21,24,28,0.637)}
-[data-theme="light"] .dashboard-header .badge{color:#ffffff;box-shadow:rgba(16,24,40,0.1) 0px 0px 12px}
-[data-theme="light"] .kpi-card{box-shadow:rgba(16,24,40,0.1) 0px 1px 3px}
-[data-theme="light"] .kpi-card:hover{box-shadow:var(--glow-strong), 0 10px 24px rgba(16,24,40,0.1);border-top-color:rgba(0,107,51,0.35);border-right-color:rgba(0,107,51,0.35);border-bottom-color:rgba(0,107,51,0.35);border-left-color:rgba(0,107,51,0.35)}
-[data-theme="light"] .chart-container{box-shadow:rgba(16,24,40,0.1) 0px 1px 3px}
-[data-theme="light"] .chart-container:hover{box-shadow:var(--glow-soft), 0 6px 18px rgba(16,24,40,0.1);border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .chart-container h3::before{box-shadow:rgba(16,24,40,0.1) 0px 0px 6px}
-[data-theme="light"] .filter-bar select:focus, [data-theme="light"] .filter-bar input:focus{box-shadow:rgba(16,24,40,0.1) 0px 0px 0px 3px}
-[data-theme="light"] .filter-bar .reset-btn:hover{border-top-color:rgba(0,107,51,0.35);border-right-color:rgba(0,107,51,0.35);border-bottom-color:rgba(0,107,51,0.35);border-left-color:rgba(0,107,51,0.35)}
-[data-theme="light"] .view-toggle-btn.active{color:#ffffff;box-shadow:rgba(16,24,40,0.1) 0px 0px 10px inset}
-[data-theme="light"] .multiselect-btn.active{box-shadow:rgba(16,24,40,0.1) 0px 0px 0px 3px}
-[data-theme="light"] .multiselect-panel{box-shadow:0 8px 24px rgba(16,24,40,0.1), var(--glow-soft)}
-[data-theme="light"] .sale-card-btn:hover:not(.active){border-top-color:rgba(0,107,51,0.35);border-right-color:rgba(0,107,51,0.35);border-bottom-color:rgba(0,107,51,0.35);border-left-color:rgba(0,107,51,0.35)}
-[data-theme="light"] .sale-card-btn.active{color:#ffffff;box-shadow:rgba(16,24,40,0.1) 0px 0px 10px inset}
-[data-theme="light"] .mc-kpi-oppo-label{color:#ffffff;box-shadow:rgba(16,24,40,0.1) 0px 0px 8px}
-[data-theme="light"] #mc-kpi-row .kpi-card{background-color:#eef2f6}
-[data-theme="light"] .table-section{box-shadow:rgba(16,24,40,0.1) 0px 1px 3px}
-[data-theme="light"] .table-section:hover{box-shadow:var(--glow-soft), 0 6px 18px rgba(16,24,40,0.1);border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .table-section h3::before{box-shadow:rgba(16,24,40,0.1) 0px 0px 6px}
-[data-theme="light"] .table-scroll{background-color:#e3e7eb}
-[data-theme="light"] .data-table thead th{background-color:#f6f7f8}
-[data-theme="light"] .data-table thead th:hover{color:#ffffff}
-[data-theme="light"] .data-table tbody tr:hover{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .data-table tbody tr.total-row{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .data-table tbody tr.row-neutral{border-left-color:#e3e7eb}
-[data-theme="light"] .table-box{background-color:#f6f7f8;box-shadow:rgba(16,24,40,0.1) 0px 1px 2px}
-[data-theme="light"] .mini-month-table tr.mmt-month td{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .mini-month-table td.mmt-label{background-color:#eef2f6}
-[data-theme="light"] .latest-month-col{background-color:#fbf4e8 !important}
-[data-theme="light"] thead th.latest-month-col{background-color:#fbf4e8 !important}
-[data-theme="light"] #sale-table th.khung-so, [data-theme="light"] #sale-table td.khung-so{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #sale-table th.khung-dt, [data-theme="light"] #sale-table td.khung-dt{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #sale-table th.khung-pk, [data-theme="light"] #sale-table td.khung-pk{background-color:#fbf4e8}
-[data-theme="light"] #sale-table tbody tr:hover td.khung-so{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #sale-table tbody tr:hover td.khung-dt{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #sale-table tbody tr:hover td.khung-pk{background-color:#fbf4e8}
-[data-theme="light"] #target-attainment-table th.khung-actual, [data-theme="light"] #target-attainment-table td.khung-actual{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #target-attainment-table th.khung-proj, [data-theme="light"] #target-attainment-table td.khung-proj{background-color:#fbf4e8}
-[data-theme="light"] #target-attainment-table th.khung-bonus, [data-theme="light"] #target-attainment-table td.khung-bonus{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #target-attainment-table tbody tr:hover td.khung-bonus{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #target-attainment-table tbody tr:hover td.khung-actual{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #target-attainment-table tbody tr:hover td.khung-proj{background-color:#fbf4e8}
-[data-theme="light"] #thidua-size-table th.khung-base, [data-theme="light"] #thidua-size-table td.khung-base{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #thidua-size-table th.khung-live, [data-theme="light"] #thidua-size-table td.khung-live{background-color:#fbf4e8}
-[data-theme="light"] #thidua-size-table tbody tr:hover td.khung-base{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #thidua-size-table tbody tr:hover td.khung-live{background-color:#fbf4e8}
-[data-theme="light"] .tag.focus{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .tag.normal{background-color:rgba(16,24,40,0.006)}
-[data-theme="light"] .tag.unknown{background-color:#fbf4e8;color:#9a5b00}
-[data-theme="light"] .bar-fill{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .mini-bar-track{background-color:rgba(16,24,40,0.006)}
-[data-theme="light"] .mini-bar-oppo{box-shadow:rgba(16,24,40,0.1) 0px 0px 6px}
-[data-theme="light"] .mini-bar-other{background-color:#e3e7eb}
-[data-theme="light"] .notes-section{background-color:#fbf4e8;border-top-color:#fbf4e8;border-right-color:#fbf4e8;border-bottom-color:#fbf4e8;border-left-color:#fbf4e8;color:#9a5b00}
-[data-theme="light"] .notes-section h4{color:#9a5b00}
-[data-theme="light"] .metric-tag.units{background-color:rgba(16,24,40,0.035);color:#1b65a7}
-[data-theme="light"] .metric-tag.revenue{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .metric-tag.avgprice{background-color:rgba(16,24,40,0.035);color:#672bb6}
-[data-theme="light"] .brand-heat-metric-btn:hover{border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .brand-heat-metric-btn.active{color:#ffffff;box-shadow:rgba(16,24,40,0.1) 0px 0px 10px}
-[data-theme="light"] .brand-heat-table th.latest-month-col{background-color:#fbf4e8 !important}
-[data-theme="light"] .brand-heat-table .bht-year, [data-theme="light"] .brand-heat-table th.bht-year-col{background-color:rgba(16,24,40,0.004) !important}
-[data-theme="light"] .brand-heat-table tr:last-child .bht-year{background-color:rgba(16,24,40,0.007) !important}
-[data-theme="light"] #shop-combined-table tbody tr.total-row td{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #shop-combined-table thead th{background-color:#f6f7f8}
-[data-theme="light"] .chart-container.accent-blue h3::before{background-color:#1f5fad;box-shadow:rgba(16,24,40,0.1) 0px 0px 6px}
-[data-theme="light"] #chart-daily-mini-table tr.mmt-month td{background-color:rgba(16,24,40,0.035);color:#1b65a7}
-[data-theme="light"] #chart-daily-mini-table td.mmt-label{background-color:#eef1f6}
-[data-theme="light"] #chart-daily-revenue-mini-table tr.mmt-month td{background-color:rgba(16,24,40,0.035)}
-[data-theme="light"] #chart-daily-revenue-mini-table td.mmt-label{background-color:#f6f7f8}
-[data-theme="light"] .part-wrap.part-gray{background-color:#eef2f6}
-[data-theme="light"] .part-wrap.part-green{background-color:#eef6f4;border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035)}
-[data-theme="light"] .part-wrap.part-gray .part-title::before{background-color:#f6f7f8}
-[data-theme="light"] .part-wrap.part-green .part-title::before{box-shadow:rgba(16,24,40,0.1) 0px 0px 6px}
-[data-theme="light"] .cluster-wrap{background-color:rgba(16,24,40,0.002);box-shadow:rgba(16,24,40,0.04) 0px 1px 0px inset}
-[data-theme="light"] .quick-nav{border-top-color:rgba(16,24,40,0.035);border-right-color:rgba(16,24,40,0.035);border-bottom-color:rgba(16,24,40,0.035);border-left-color:rgba(16,24,40,0.035);box-shadow:rgba(16,24,40,0.1) 0px 3px 14px, rgba(16,24,40,0.08) 0px 0px 20px}
-[data-theme="light"] .quick-nav a{color:rgba(21,24,28,0.697)}
-[data-theme="light"] .quick-nav a:hover{background-color:rgba(16,24,40,0.008);color:#15181c}
-[data-theme="light"] .quick-nav a.active{color:#ffffff;box-shadow:rgba(16,24,40,0.1) 0px 0px 12px}
-[data-theme="light"] .shop-link:hover, [data-theme="light"] a[data-sale-expand]:hover, [data-theme="light"] a[data-sizeperf]:hover{text-shadow:rgba(16,24,40,0.1) 0px 0px 8px}
-@media print{html[data-theme="light"] body{color:#ffffff}}
-[data-theme="light"] .zoom-btn{color:var(--text-secondary, #5c6773)}
-[data-theme="light"] .zoom-btn:hover{color:var(--oppo-green, #006b33)}
-[data-theme="light"] #zoom-backdrop{background-color:rgba(16,24,40,0.072)}
-[data-theme="light"] .zoomed{box-shadow:rgba(16,24,40,0.1) 0px 18px 60px !important}
-
-:root[data-theme="light"]{
-  --bg-primary:#f6f7f8; --bg-card:#ffffff; --bg-card-hover:#f0f2f4; --bg-input:#ffffff; --bg-header:#ffffff;
-  --border-color:rgba(16,24,40,.12);
-  --text-primary:#15181c; --text-secondary:#5c6773; --text-on-dark:#ffffff;
-  --oppo-green:#006b33; --oppo-green-dark:#004d24;
-  --positive:#0e6f37; --negative:#c62828; --neutral:#5c6773;
-  --glow-soft:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.04);
-  --glow-strong:0 2px 8px rgba(16,24,40,.08);
-}
-html[data-theme="light"] body{background:#f6f7f8;color:#15181c;}
-[data-theme="light"] ::-webkit-scrollbar-track{background:#f0f2f4;}
-[data-theme="light"] ::-webkit-scrollbar-thumb{background:#c9d0d8;}
-[data-theme="light"] ::-webkit-scrollbar-thumb:hover{background:#aab4bf;}
-[data-theme="light"] ::selection{background:rgba(0,107,51,.18);color:#15181c;}
-
-/* ===== thanh tieu de: nen sang thi chu phai toi ===== */
-[data-theme="light"] .dashboard-header{
-  background:linear-gradient(135deg,#f2f6fa 0%,#eef6f6 55%,#e9f4ee 100%) !important;
-  border:1px solid rgba(16,24,40,.10) !important;
-  box-shadow:0 1px 3px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.05) !important;
-  color:#15181c !important;}
-[data-theme="light"] .dashboard-header h1,
-[data-theme="light"] .dashboard-header h2,
-[data-theme="light"] .dashboard-header h3,
-[data-theme="light"] .dashboard-header strong,
-[data-theme="light"] .dashboard-header b{color:#15181c !important;}
-[data-theme="light"] .dashboard-header p,
-[data-theme="light"] .dashboard-header small,
-[data-theme="light"] .dashboard-header span:not(.badge):not([class*="chip"]){color:#5c6773 !important;}
-[data-theme="light"] .dashboard-header a{color:#006b33 !important;}
-[data-theme="light"] .dashboard-header .badge{
-  background:#006b33 !important;color:#ffffff !important;box-shadow:none !important;}
-
-/* ===== nut chuyen tab trong thanh tieu de ===== */
-[data-theme="light"] .dashboard-header button,
-[data-theme="light"] .dashboard-header .tab-btn,
-[data-theme="light"] .dashboard-header [class*="tab"]{
-  background:#ffffff !important;border:1px solid rgba(16,24,40,.12) !important;color:#15181c !important;}
-[data-theme="light"] .dashboard-header button:hover{background:#f0f2f4 !important;}
-[data-theme="light"] .dashboard-header button.active,
-[data-theme="light"] .dashboard-header button[aria-selected="true"],
-[data-theme="light"] .dashboard-header .tab-btn.active{
-  background:#e7f2ec !important;border-color:#bfdccc !important;color:#006b33 !important;}
-
-/* ===== man che khi dang tai ===== */
-[data-theme="light"] #loading-overlay,
-[data-theme="light"] #mwg-loading-overlay,
-[data-theme="light"] [id$="loading-overlay"]{background:#f6f7f8 !important;color:#5c6773 !important;}
-
-/* ===== nut doi giao dien ===== */
-#dbtg-theme-btn{position:fixed;top:10px;right:14px;z-index:99999;display:inline-flex;
-  padding:3px;gap:2px;border-radius:999px;border:1px solid var(--border-color);background:var(--bg-card);
-  box-shadow:0 2px 10px rgba(0,0,0,.30);
-  font:600 12.5px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;}
-[data-theme="light"] #dbtg-theme-btn{box-shadow:0 1px 3px rgba(16,24,40,.10),0 2px 8px rgba(16,24,40,.06);}
-#dbtg-theme-btn button{appearance:none;border:0;background:transparent;color:var(--text-secondary);
-  cursor:pointer;font:inherit;padding:7px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;
-  transition:background .15s,color .15s;line-height:1;}
-#dbtg-theme-btn button svg{width:14px;height:14px;display:block;flex:0 0 auto;}
-#dbtg-theme-btn button[aria-pressed="true"]{background:var(--oppo-green);color:#08120d;}
-[data-theme="light"] #dbtg-theme-btn button[aria-pressed="true"]{color:#ffffff;}
-#dbtg-theme-btn button:not([aria-pressed="true"]):hover{color:var(--text-primary);background:var(--bg-card-hover);}
-@media print{#dbtg-theme-btn{display:none;}}
-@media (max-width:640px){#dbtg-theme-btn button span{display:none;} #dbtg-theme-btn button{padding:7px 9px;}}
-
-/* ===== LUOI AN TOAN: chu tren nut/chip co nen nhan phai TRANG ===== */
-[data-theme="light"] .view-toggle-btn.active,
-[data-theme="light"] .brand-heat-metric-btn.active,
-[data-theme="light"] .sale-card-btn.active,
-[data-theme="light"] .ind-sale-metric-btn.active,
-[data-theme="light"] .ind-sale-metric-switch .active,
-[data-theme="light"] .mc-kpi-oppo-label,
-[data-theme="light"] .badge{color:#ffffff !important;}
-[data-theme="light"] .view-toggle-btn.active,
-[data-theme="light"] .brand-heat-metric-btn.active,
-[data-theme="light"] .sale-card-btn.active,
-[data-theme="light"] .ind-sale-metric-btn.active{background:#006b33 !important;border-color:#006b33 !important;}
-/* chu phu: nang tuong phan dat chuan doc duoc */
-[data-theme="light"] .kpi-period,[data-theme="light"] .kpi-sub,
-[data-theme="light"] .chart-sub,[data-theme="light"] .table-sub{color:#6b7480 !important;}
-
-[data-theme="light"] .dbtg-ink{color:#15181c !important;}
-[data-theme="light"] .dbtg-white{color:#ffffff !important;}
-
-
-/* ===== Nang bo cuc — CHI ap cho che do SANG ===== */
-:root[data-theme="light"]{ --radius:12px; }
-
-[data-theme="light"] .kpi-card,[data-theme="light"] .table-section,[data-theme="light"] .table-box,
-[data-theme="light"] .db-tg-panel,[data-theme="light"] .notes-section,[data-theme="light"] .cluster-wrap{
-  border:1px solid rgba(16,24,40,.10) !important;border-radius:12px !important;
-  box-shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.04) !important;
-  background:#ffffff !important;}
-[data-theme="light"] .kpi-card:hover,[data-theme="light"] .table-section:hover,[data-theme="light"] .table-box:hover{
-  box-shadow:0 2px 6px rgba(16,24,40,.07),0 6px 18px rgba(16,24,40,.06) !important;
-  border-color:rgba(16,24,40,.16) !important;}
-
-[data-theme="light"] .kpi-label{text-transform:uppercase;letter-spacing:.045em;font-size:11.5px !important;
-  font-weight:600 !important;color:#5c6773 !important;}
-[data-theme="light"] .kpi-value{font-weight:700 !important;letter-spacing:-.02em;color:#15181c !important;}
-[data-theme="light"] .kpi-sub,[data-theme="light"] .kpi-period{color:#6b7480 !important;}
-
-/* ===== tang / giam: vien thuoc nen nhat (bat theo CLASS, khong theo inline) ===== */
-[data-theme="light"] .kpi-mom,[data-theme="light"] .kpi-ch-growth,
-[data-theme="light"] .mmt-up,[data-theme="light"] .mmt-down,[data-theme="light"] .metric-tag{
-  display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;
-  font-weight:600 !important;line-height:1.55;}
-[data-theme="light"] .kpi-mom.positive,[data-theme="light"] .kpi-ch-growth.positive,
-[data-theme="light"] .mmt-up,[data-theme="light"] .kpi-sub.positive{
-  background:#e8f4ec !important;color:#0f7a3d !important;}
-[data-theme="light"] .kpi-mom.negative,[data-theme="light"] .kpi-ch-growth.negative,
-[data-theme="light"] .mmt-down,[data-theme="light"] .kpi-sub.negative{
-  background:#fbeaea !important;color:#c62828 !important;}
-[data-theme="light"] .metric-tag{background:rgba(16,24,40,.05) !important;color:#5c6773 !important;}
-[data-theme="light"] .metric-tag.revenue{background:#e8f4ec !important;color:#00552a !important;}
-[data-theme="light"] .metric-tag.units{background:#eaf1f8 !important;color:#1f5fad !important;}
-[data-theme="light"] .metric-tag.avgprice{background:#f0ecf8 !important;color:#521fad !important;}
-
-/* ===== bang ===== */
-[data-theme="light"] .data-table thead th,[data-theme="light"] table thead th{
-  background:#fafbfc !important;color:#5c6773 !important;text-transform:uppercase;
-  letter-spacing:.04em;font-size:11.5px !important;font-weight:600 !important;
-  border-bottom:1px solid rgba(16,24,40,.12) !important;}
-[data-theme="light"] .data-table tbody td,[data-theme="light"] table tbody td{
-  border-bottom:1px solid rgba(16,24,40,.06) !important;}
-[data-theme="light"] .data-table tbody tr:hover,[data-theme="light"] table tbody tr:hover{
-  background:#fafbfc !important;}
-/* dong TONG: khong to mau, chi dam chu + ke tren */
-[data-theme="light"] tr.total-row td,[data-theme="light"] tr.total-row th{
-  background:#f7f9f8 !important;font-weight:700 !important;color:#15181c !important;
-  border-top:1.5px solid rgba(16,24,40,.18) !important;}
-/* o tieu de cot COST Model: bo nen cam dac */
-[data-theme="light"] td.cm-col-header,[data-theme="light"] th.cm-col-header{
-  background:#fbf1e3 !important;color:#7a4a00 !important;font-weight:700 !important;}
-/* o nhan cua bang mini */
-[data-theme="light"] td.mwt-label,[data-theme="light"] td.mmt-label{
-  background:#f7f8f9 !important;color:#15181c !important;font-weight:600 !important;}
-
-[data-theme="light"] .table-section h3::before,[data-theme="light"] .table-box-title::before{
-  box-shadow:none !important;background:#006b33 !important;}
-[data-theme="light"] .sale-card-btn,[data-theme="light"] select,[data-theme="light"] input,
-[data-theme="light"] button{border-radius:9px;}
-[data-theme="light"] select,[data-theme="light"] input{
-  border:1px solid rgba(16,24,40,.14) !important;background:#ffffff !important;color:#15181c !important;}
-[data-theme="light"] .badge{background:#006b33 !important;color:#ffffff !important;}
-
-</style>
-<script id="dbtg-theme-core">
-(function(){'use strict';
-  var FIX={"#10151d":"#f6f7f8","#0d131b":"#f6f7f8","#0a0e14":"#f6f7f8","#0a1420":"#f6f7f8","#04140e":"#f6f7f8","#101a15":"#f6f7f8","#080c12":"#f6f7f8","#1a222c":"#ffffff","#161e27":"#ffffff","#101c27":"#ffffff","#141b24":"#fafbfc","#212b38":"#f0f2f4","#263041":"#e3e7eb","#3a4557":"#e3e7eb","#48566a":"#d7dce2","#e8edf2":"#15181c","#ffffff":"#15181c","#fff":"#15181c","#f0f4f8":"#15181c","#8b98a9":"#5c6773","#b0b7bd":"#5c6773","#c3cbd6":"#5c6773","#8e8e93":"#5c6773","#7d8896":"#5c6773","#64748b":"#5c6773","#57687e":"#8a939e","#2ad998":"#006b33","#22e5a0":"#006b33","#16ab7f":"#004d24","#0f5c46":"#e7f2ec","#0d3a3d":"#e6eff0","#2ee673":"#0c6231","#1bb350":"#0c6231","#ff5c72":"#c62828","#ff8fa3":"#c62828","#ffd873":"#9a5b00","#ffc800":"#9a5b00","#e0b24d":"#9a5b00"};
-  var BG='#f6f7f8',CARD='#ffffff',LINE='#e3e7eb',INK='#15181c',SUB='#5c6773',
-      OPPO='#006b33',OPPO_D='#004d24',NEG='#c62828',WARN='#9a5b00';
-  var CTOK=/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g;
-  function parse(c){c=(''+c).trim().toLowerCase();var r,g,b,a=1,h;
-    if(c[0]==='#'){h=c.slice(1);
-      if(h.length===3||h.length===4){h=h.split('').map(function(x){return x+x;}).join('');}
-      if(h.length===8){a=parseInt(h.slice(6,8),16)/255;h=h.slice(0,6);}
-      if(h.length!==6)return null;
-      r=parseInt(h.slice(0,2),16);g=parseInt(h.slice(2,4),16);b=parseInt(h.slice(4,6),16);
-    }else if(/^rgba?\(/.test(c)){var p=(c.match(/-?[\d.]+/g)||[]).map(Number);
-      if(p.length<3)return null;r=p[0];g=p[1];b=p[2];a=p.length>3?p[3]:1;
-    }else return null;
-    if([r,g,b].some(isNaN))return null;return {r:r,g:g,b:b,a:a};}
-  function toHsl(o){var r=o.r/255,g=o.g/255,b=o.b/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),
-    l=(mx+mn)/2,h=0,s=0,d;
-    if(mx!==mn){d=mx-mn;s=l>0.5?d/(2-mx-mn):d/(mx+mn);
-      h=mx===r?((g-b)/d+(g<b?6:0)):mx===g?((b-r)/d+2):((r-g)/d+4);h*=60;}
-    return {h:h,s:s,l:l,a:o.a};}
-  function hsl2hex(h,s,l){h=((h%360)+360)%360;s=Math.max(0,Math.min(1,s));l=Math.max(0,Math.min(1,l));
-    var c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2,r,g,b;
-    if(h<60){r=c;g=x;b=0;}else if(h<120){r=x;g=c;b=0;}else if(h<180){r=0;g=c;b=x;}
-    else if(h<240){r=0;g=x;b=c;}else if(h<300){r=x;g=0;b=c;}else{r=c;g=0;b=x;}
-    function f(v){return Math.round((v+m)*255).toString(16).padStart(2,'0');}
-    return '#'+f(r)+f(g)+f(b);}
-  function isSurface(p){return /^(background|border|outline|box-shadow|text-shadow|column-rule|caret)/.test(p||'');}
-  function isShadow(p){return /shadow/.test(p||'');}
-  function toLight(str,prop){
-    var o=parse(str);if(!o)return null;
-    var q=toHsl(o),h=q.h,s=q.s,l=q.l,a=q.a,hex,w;
-    if(isShadow(prop))return 'rgba(16,24,40,'+(+Math.min(a,0.10).toFixed(3))+')';
-    if(isSurface(prop)&&!isShadow(prop)&&a>=0.32&&s>=0.25){
-      if(h>=335||h<=14)return '#fdf0f0';
-      if(h>14&&h<70)return '#fbf4e8';}
-    if(isSurface(prop)&&!isShadow(prop)&&a<0.32&&s>=0.18){
-      if(h>=335||h<=14)return '#fdf0f0';
-      if(h>14&&h<70)return '#fbf4e8';
-      return 'rgba(16,24,40,0.035)';}
-    if(isSurface(prop)){
-      if(s<0.35&&l<0.55){hex=l<0.11?BG:l<0.16?CARD:l<0.22?'#f0f2f4':l<0.35?LINE:'#f6f7f8';}
-      else if(s<0.18){hex='#f6f7f8';}
-      else if(l<0.45){hex=hsl2hex(h,Math.min(s,0.30),0.95);}
-      else if(h>=125&&h<=178)hex=OPPO;
-      else if(h>=335||h<=14)hex=NEG;
-      else if(h>14&&h<70)hex=WARN;
-      else hex=hsl2hex(h,Math.min(s,0.70),0.40);
-      if(a>=0.999)return hex;
-      if(s<0.35&&o.r>240)return 'rgba(16,24,40,'+(+(a*0.07).toFixed(3))+')';
-      if(s<0.35&&o.r<20)return 'rgba(16,24,40,'+(+(a*0.10).toFixed(3))+')';
-      w=parse(hex);return 'rgba('+w.r+','+w.g+','+w.b+','+a+')';
-    }
-    if(a>=0.6&&l<0.20)return '#ffffff';
-    var k=(''+str).trim().toLowerCase().replace(/\s+/g,'');
-    if(FIX[k])return FIX[k];
-    if(s<0.18){hex=l<0.34?INK:l<0.62?SUB:INK;}
-    else if(h>=125&&h<=178)hex=l>0.45?OPPO:OPPO_D;
-    else if(h>=335||h<=14)hex=NEG;
-    else if(h>14&&h<70)hex=WARN;
-    else if(h>=178&&h<265)hex=hsl2hex(h,Math.min(s,0.72),0.38);
-    else hex=hsl2hex(h,Math.min(s,0.62),0.44);
-    if(a>=0.999)return hex;
-    if(s<0.18&&o.r>240)return 'rgba(21,24,28,'+(+(a*0.85).toFixed(3))+')';
-    w=parse(hex);return 'rgba('+w.r+','+w.g+','+w.b+','+a+')';}
-  // doi mau ca chuoi style="a:b;c:d" theo dung tung thuoc tinh
-  function mapDecls(css){
-    return (''+css).split(';').map(function(part){
-      var i=part.indexOf(':'); if(i<0)return part;
-      var p=part.slice(0,i), v=part.slice(i+1);
-      if(!/#[0-9a-fA-F]{3,8}|rgba?\(/.test(v))return part;
-      return p+':'+v.replace(new RegExp(CTOK.source,'g'),function(m){return toLight(m,p.trim().toLowerCase())||m;});
-    }).join(';');}
-  window.__dbtgToLight=toLight;
-  window.__dbtgMapDecls=mapDecls;
-})();</script>
-<script id="dbtg-theme-engine">(function(){'use strict';
-var KEY='dbtg-theme';
-var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
-var MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>';
-var BRAND={oppo:{l:'#006b33',d:'#2ad998'},apple:{l:'#1a1a1a',d:'#edeff2'},samsung:{l:'#1428a0',d:'#6e8cf0'},xiaomi:{l:'#e85d00',d:'#ff9147'},vivo:{l:'#6c7cff',d:'#a9b6ff'},realme:{l:'#d9a400',d:'#f0c64a'},honor:{l:'#00a0e9',d:'#3fc3f7'},khac:{l:'#8a8a8a',d:'#8b98a9'}};
-var ALIAS={op:'oppo',oppo:'oppo',ip:'apple',apple:'apple',iphone:'apple',ss:'samsung',samsung:'samsung',xm:'xiaomi',xiaomi:'xiaomi',mi:'xiaomi',redmi:'xiaomi',poco:'xiaomi',ho:'honor',honor:'honor',vv:'vivo',vivo:'vivo',rm:'realme',realme:'realme',fp:'khac',others:'khac',other:'khac',khac:'khac',khc:'khac',conlai:'khac',hangkhac:'khac'};
-var KENH={mwg:{l:'#006b33',d:'#2ad998'},tgdd:{l:'#006b33',d:'#2ad998'},dmx:{l:'#1e8a5a',d:'#5fe0b0'},ind:{l:'#2e7cb8',d:'#68b6ef'},ka:{l:'#c98a2e',d:'#e8b45e'},fpt:{l:'#2e7cb8',d:'#68b6ef'},viettel:{l:'#c98a2e',d:'#e8b45e'},tong:{l:'#5c6773',d:'#8b98a9'}};
-var KALIAS={mwg:'mwg',tgddmx:'mwg',tgdd:'tgdd',dmx:'dmx',dienmayxanh:'dmx',thegioididong:'tgdd',ind:'ind',ka:'ka',fpt:'fpt',fptshop:'fpt',viettel:'viettel',tong:'tong',total:'tong'};
-var PK_L=['#b5ddc8','#8ac7a9','#63b18c','#3f9b70','#1e8558','#006b41','#00522f','#00391f'];
-var PK_D=['#0a4530','#0f5b3e','#15724d','#1c8a5d','#26a26f','#3fbb87','#68d3a6','#9ce8c8'];
-var CAT_L=['#006b33','#1428a0','#e85d00','#6c7cff','#d9a400','#00a0e9','#8a8a8a','#1a1a1a'];
-var CAT_D=['#2ad998','#6e8cf0','#ff9147','#a9b6ff','#f0c64a','#3fc3f7','#8b98a9','#edeff2'];
-function chuan(x){if(x==null)return '';return (''+x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
-function brandOf(x){var k=chuan(x);return ALIAS[k]||null;}
-function kenhOf(x){var k=chuan(x);return KALIAS[k]||null;}
-function laPhanKhuc(x){return /^\s*[<>≥≤]?\s*\d+(\s*[-–~]\s*\d+)?\s*(m|tr|trieu|triệu)?\s*$/i.test((''+x).trim());}
-function theme(){return document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';}
-function bc(n){var b=BRAND[n];return b?(theme()==='light'?b.l:b.d):null;}
-function kc(n){var b=KENH[n];return b?(theme()==='light'?b.l:b.d):null;}
-function ML(v){var f=window.__dbtgMapDecls;if(!f||typeof v!=='string')return v;return f(v);}
-function MC(v){var f=window.__dbtgToLight;if(!f||typeof v!=='string')return v;return v.replace(/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g,function(m){return f(m,'color')||m;});}
-function mauCho(nhan,idx,laPK,light,nhieu){
-  var b=brandOf(nhan); if(b)return bc(b);
-  var k=kenhOf(nhan); if(k)return kc(k);
-  if(laPK){var A=light?PK_L:PK_D;return A[Math.min(idx,A.length-1)];}
-  if(nhieu){var B=light?CAT_L:CAT_D;return B[idx%B.length];}
-  return null;}
-var busy=false;
-function sweepInline(root){
-  if(busy)return;busy=true;
-  try{var light=theme()==='light';var els=(root||document).querySelectorAll('[style]');
-    for(var i=0;i<els.length;i++){var el=els[i];
-      if(el.id==='dbtg-theme-btn'||(el.closest&&el.closest('#dbtg-theme-btn')))continue;
-      var cur=el.getAttribute('style')||'';var s1=el.getAttribute('data-dbtg-s1');var orig;
-      if(cur!==s1){if(!/#[0-9a-fA-F]{3,8}|rgba?\(/.test(cur)){continue;}orig=cur;el.setAttribute('data-dbtg-s0',orig);}
-      else{orig=el.getAttribute('data-dbtg-s0');if(orig==null)orig=cur;}
-      var want=light?ML(orig):orig;
-      if(want!==cur)el.setAttribute('style',want);
-      el.setAttribute('data-dbtg-s1',want);}
-  }catch(e){}
-  busy=false;}
-function paintCharts(){
-  var C=window.Chart;if(!C)return;var light=theme()==='light';
-  var cs=getComputedStyle(document.documentElement);
-  var sub=(cs.getPropertyValue('--text-secondary')||'').trim()||(light?'#5c6773':'#8b98a9');
-  var grid=light?'rgba(16,24,40,0.10)':'rgba(255,255,255,0.10)';
-  try{C.defaults.color=sub;C.defaults.borderColor=grid;}catch(e){}
-  var inst=C.instances||{};
-  Object.keys(inst).forEach(function(k){var ch=inst[k];if(!ch||!ch.data)return;var changed=false;
-    try{var labs=ch.data.labels||[];var dss=ch.data.datasets||[];
-      var ten=(dss.length>1)?dss.map(function(d){return d.label;}):labs;
-      var laPK=(ten.length>1)&&ten.every(laPhanKhuc);
-      dss.forEach(function(d,i){
-        if(!d.__c0)d.__c0={bg:d.backgroundColor,bd:d.borderColor,pt:d.pointBackgroundColor};
-        if(Array.isArray(d.__c0.bg)&&labs.length){
-          var arr=d.__c0.bg.map(function(v,j){var c=mauCho(labs[j],j,laPK,light,labs.length<=8);return c||(light?MC(v):v);});
-          if(JSON.stringify(arr)!==JSON.stringify(d.backgroundColor)){d.backgroundColor=arr;changed=true;}
-          if(Array.isArray(d.__c0.bd)){var ab=arr.slice();if(JSON.stringify(ab)!==JSON.stringify(d.borderColor)){d.borderColor=ab;changed=true;}}
-          return;}
-        var c=mauCho(d.label,i,laPK,light,dss.length>1&&dss.length<=8);
-        if(!c&&light&&typeof d.__c0.bg==='string')c=MC(d.__c0.bg);
-        if(!c&&!light&&typeof d.__c0.bg==='string')c=d.__c0.bg;
-        if(c&&d.backgroundColor!==c){d.backgroundColor=c;changed=true;}
-        if(c&&(typeof d.__c0.bd==='string'||d.__c0.bd==null)&&d.borderColor!==c){d.borderColor=c;changed=true;}
-        if(typeof d.__c0.pt==='string'){var wp=c||(light?MC(d.__c0.pt):d.__c0.pt);if(d.pointBackgroundColor!==wp){d.pointBackgroundColor=wp;changed=true;}}
-      });
-      var sc=(ch.options&&ch.options.scales)||{};
-      Object.keys(sc).forEach(function(s){var a=sc[s];if(!a)return;
-        if(a.ticks){a.ticks.color=sub;changed=true;}
-        if(a.grid){a.grid.color=grid;a.grid.borderColor=grid;}
-        if(a.title)a.title.color=sub;});
-      var pl=(ch.options&&ch.options.plugins)||{};
-      if(pl.legend&&pl.legend.labels)pl.legend.labels.color=sub;
-      if(pl.title)pl.title.color=sub;
-      if(pl.datalabels)pl.datalabels.color=light?'#15181c':'#e8edf2';
-      if(changed)ch.update('none');}catch(e){}});}
-function _px(c){var m=(c||'').match(/[\d.]+/g);if(!m||m.length<3)return null;
-  return {r:+m[0],g:+m[1],b:+m[2],a:m.length>3?+m[3]:1};}
-function _over(f,b){var a=f.a;return{r:f.r*a+b.r*(1-a),g:f.g*a+b.g*(1-a),b:f.b*a+b.b*(1-a),a:1};}
-function _L(c){function f(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}
-  return 0.2126*f(c.r)+0.7152*f(c.g)+0.0722*f(c.b);}
-function _ty(a,b){var l1=_L(a),l2=_L(b);return (Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);}
-function _nen(el){var lop=[],cur=el,c;
-  while(cur&&cur!==document.documentElement){c=_px(getComputedStyle(cur).backgroundColor);
-    if(c&&c.a>0){lop.push(c);if(c.a>=0.999)break;} cur=cur.parentElement;}
-  var bg={r:255,g:255,b:255,a:1};
-  for(var i=lop.length-1;i>=0;i--)bg=_over(lop[i],bg);
-  return bg;}
-var _dangSua=false;
-function suaTuongPhan(){
-  if(_dangSua||theme()!=='light')return; _dangSua=true;
-  try{var els=document.querySelectorAll('body *');
-    for(var i=0;i<els.length;i++){var el=els[i];
-      if(el.closest('#dbtg-theme-btn'))continue;
-      var tag=el.tagName; if(tag==='SCRIPT'||tag==='STYLE'||tag==='CANVAS'||tag==='SVG'||tag==='PATH')continue;
-      var coChu=false,cn=el.childNodes;
-      for(var j=0;j<cn.length;j++){if(cn[j].nodeType===3&&cn[j].textContent.trim()){coChu=true;break;}}
-      if(!coChu)continue;
-      var r=el.getBoundingClientRect(); if(r.width<3||r.height<3)continue;
-      var cs=getComputedStyle(el); if(cs.visibility==='hidden'||+cs.opacity<0.1)continue;
-      var fg=_px(cs.color); if(!fg)continue;
-      var bg=_nen(el); var ty=_ty(_over(fg,bg),bg);
-      if(ty<2.6){var sang=_L(bg)>0.45;
-        el.classList.toggle('dbtg-ink',sang);el.classList.toggle('dbtg-white',!sang);}
-      else if(el.classList.contains('dbtg-ink')||el.classList.contains('dbtg-white')){
-        el.classList.remove('dbtg-ink');el.classList.remove('dbtg-white');}
-    }}catch(e){}
-  _dangSua=false;}
-window.__dbtgSuaTuongPhan=suaTuongPhan;
-function label(){var b=document.getElementById('dbtg-theme-btn');if(!b)return;var l=theme()==='light';
-  var bs=b.querySelectorAll('button');
-  bs[0].setAttribute('aria-pressed',l?'true':'false');
-  bs[1].setAttribute('aria-pressed',l?'false':'true');}
-function setTheme(v){document.documentElement.setAttribute('data-theme',v);
-  try{localStorage.setItem(KEY,v);}catch(e){}label();sweepInline();paintCharts();setTimeout(suaTuongPhan,120);}
-function ensureBtn(){if(document.getElementById('dbtg-theme-btn'))return;if(!document.body)return;
-  var b=document.createElement('div');b.id='dbtg-theme-btn';b.setAttribute('role','group');
-  b.innerHTML='<button type="button" data-v="light" title="Giao di\u1ec7n s\u00e1ng">'+SUN+'<span>S\u00e1ng</span></button>'+
-              '<button type="button" data-v="dark" title="Giao di\u1ec7n t\u1ed1i">'+MOON+'<span>T\u1ed1i</span></button>';
-  b.addEventListener('click',function(e){var t=e.target.closest('button');if(t)setTheme(t.getAttribute('data-v'));});
-  document.body.appendChild(b);label();}
-function boot(){ensureBtn();sweepInline();paintCharts();
-  try{var mo=new MutationObserver(function(){if(window.__dbtgT)cancelAnimationFrame(window.__dbtgT);
-    window.__dbtgT=requestAnimationFrame(function(){sweepInline();clearTimeout(window.__dbtgT2);window.__dbtgT2=setTimeout(suaTuongPhan,350);});});
-    mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});}catch(e){}
-  setInterval(function(){ensureBtn();paintCharts();},2000);setTimeout(suaTuongPhan,900);}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-window.__dbtgSetTheme=setTheme;})();</script>
-
-<style id="dbtg-demo-css">
-:root{--dg-card:#FFF;--dg-line:#E4E8EC;--dg-line2:#EFF2F5;--dg-ink:#14171B;--dg-sub:#59636F;--dg-mut:#69727E;--dg-brand:#006B33;--dg-bsoft:#E8F3EC;--dg-bline:#BEDCCB;--dg-pos:#0C6231;--dg-neg:#C62828;--dg-warn:#9A5B00;--dg-sh:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.04)}
-:root[data-theme="dark"]{--dg-card:#1A222C;--dg-line:rgba(255,255,255,.10);--dg-line2:rgba(255,255,255,.06);--dg-ink:#E8EDF2;--dg-sub:#8B98A9;--dg-mut:#98A4B3;--dg-brand:#2AD998;--dg-bsoft:rgba(42,217,152,.12);--dg-bline:rgba(42,217,152,.32);--dg-pos:#2EE673;--dg-neg:#FF5C72;--dg-warn:#E0B24D;--dg-sh:0 1px 2px rgba(0,0,0,.4)}
-:root:root:root header.dashboard-header{background:var(--dg-card)!important;background-image:none!important;border:1px solid var(--dg-line)!important;border-radius:14px!important;box-shadow:var(--dg-sh)!important;color:var(--dg-ink)!important}
-:root:root:root header.dashboard-header h1{color:var(--dg-ink)!important}
-:root:root:root header.dashboard-header p,:root:root:root header.dashboard-header>div,:root:root:root header.dashboard-header small{color:var(--dg-sub)!important}
-:root:root:root header.dashboard-header .badge{background:var(--dg-bsoft)!important;background-image:none!important;border:1px solid var(--dg-bline)!important;color:var(--dg-brand)!important;border-radius:999px!important;font-weight:600!important}
-:root:root:root header.dashboard-header .badge *{color:var(--dg-brand)!important;background:transparent!important}
-:root:root:root button.db-tg-tab{background:var(--dg-card)!important;background-image:none!important;border:1px solid var(--dg-line)!important;color:var(--dg-sub)!important;box-shadow:var(--dg-sh)!important;border-radius:10px!important}
-:root:root:root button.db-tg-tab.active{background:var(--dg-bsoft)!important;border-color:var(--dg-bline)!important;color:var(--dg-brand)!important}
-:root:root:root .db-tg-panel>h2,:root:root:root #panel-overview>h2{color:var(--dg-ink)!important}
-:root:root:root .kpi-card{border-left:1px solid var(--dg-line)!important}
-:root:root:root .kpi-card.dbtg-len{border-left:3px solid var(--dg-pos)!important}
-:root:root:root .kpi-card.dbtg-giam{border-left:3px solid var(--dg-neg)!important}
-:root:root:root #dbtg-tq-ins{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 4px}
-@media(max-width:900px){:root:root:root #dbtg-tq-ins{grid-template-columns:1fr}}
-:root:root:root .dbtg-ic{background:var(--dg-card);border:1px solid var(--dg-line);border-left:3px solid var(--dg-brand);border-radius:12px;padding:13px 15px;box-shadow:var(--dg-sh)}
-:root:root:root .dbtg-ic.w{border-left-color:var(--dg-warn)}
-:root:root:root .dbtg-ic.b{border-left-color:var(--dg-neg)}
-:root:root:root .dbtg-ic .t{font-size:12.5px;font-weight:700;margin-bottom:4px;color:var(--dg-ink)}
-:root:root:root .dbtg-ic .d{color:var(--dg-sub);font-size:12.5px;line-height:1.5}
-:root:root:root .dbtg-ic .d b{color:var(--dg-ink);font-weight:700}
-:root:root:root .dbtg-ic .up{color:var(--dg-pos);font-weight:700}
-:root:root:root .dbtg-ic .dn{color:var(--dg-neg);font-weight:700}
-:root:root:root .dbtg-spark{margin:9px 0 3px;height:30px}
-</style>
-
-<script id="dbtg-tongquan">
-(function(){
-'use strict';
-var KEY='dbtg-tongquan';
-function tat(){try{return localStorage.getItem(KEY)==='off'}catch(e){return false}}
-function sang(){return document.documentElement.getAttribute('data-theme')==='light'}
-function bd(id){try{if(!window.Chart)return null;var I=Chart.instances,k;for(k in I){var c=I[k];if(c&&c.canvas&&c.canvas.id===id)return c;}}catch(e){}return null;}
-function catDuoi(a){var i=a.length-1;while(i>0&&!a[i])i--;return a.slice(0,i+1);}
-function n1(x){return x.toFixed(1).replace('.',',');}
-function pt(x){return '<span class="'+(x>=0?'up':'dn')+'">'+(x>=0?'+':'−')+n1(Math.abs(x))+'%</span>';}
-function dm(x){return '<span class="'+(x>=0?'up':'dn')+'">'+(x>=0?'+':'−')+n1(Math.abs(x))+' điểm</span>';}
-function laThang(l){l=String(l);if(l.charAt(0)!=='T')return false;var n=parseInt(l.slice(1),10);return n>=1&&n<=12&&l.length<=3;}
-function mom(el){
- if(!el)return null;var m=el.querySelector('.kpi-mom');if(!m)return null;
- var s=m.textContent||'',i=s.indexOf('MoM');if(i<0)return null;
- var j=s.indexOf('%',i);if(j<0)return null;
- var raw=s.slice(i+3,j),out='',k,c;
- for(k=0;k<raw.length;k++){c=raw.charAt(k);
-  if('0123456789+-.'.indexOf(c)>=0)out+=c;else if(c===',')out+='.';}
- var v=parseFloat(out);return isFinite(v)?v:null;
-}
-function spark(arr,xuong){
- if(!arr||arr.length<2)return '';
- var w=200,h=30,mn=Math.min.apply(null,arr),mx=Math.max.apply(null,arr),d=(mx-mn)||1,i,pts=[];
- for(i=0;i<arr.length;i++){pts.push(((i/(arr.length-1))*w).toFixed(1)+','+(h-3-((arr[i]-mn)/d)*(h-7)).toFixed(1));}
- var L=sang();
- var mau=xuong?(L?'#C62828':'#FF5C72'):(L?'#0C6231':'#2EE673');
- var fi=xuong?(L?'rgba(198,40,40,.10)':'rgba(255,92,114,.13)'):(L?'rgba(12,98,49,.10)':'rgba(46,230,115,.13)');
- var la=pts[pts.length-1].split(',');
- return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" width="100%" height="'+h+'" style="display:block">'
- +'<polygon points="0,'+h+' '+pts.join(' ')+' '+w+','+h+'" fill="'+fi+'"/>'
- +'<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+mau+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
- +'<circle cx="'+la[0]+'" cy="'+la[1]+'" r="3" fill="'+mau+'" vector-effect="non-scaling-stroke"/></svg>';
-}
-function cong(c){
- if(!c||!c.data||!c.data.datasets||!c.data.labels)return null;
- var n=c.data.labels.length,out=[],i,j;
- for(i=0;i<n;i++){var s=0,m=0;
-  for(j=0;j<c.data.datasets.length;j++){var v=c.data.datasets[j].data[i];
-   if(typeof v==='number'&&isFinite(v)){s+=v;m++;}}
-  if(m)out.push(s);}
- out=catDuoi(out);
- return out.length>1?out:null;
-}
-
-function duLieu(){
- var may=cong(bd('chart-channel-month-units')),dt=cong(bd('chart-channel-month-revenue')),asp=null,i,n;
- if(may&&dt){n=Math.min(may.length,dt.length);may=may.slice(0,n);dt=dt.slice(0,n);
-  asp=[];for(i=0;i<n;i++)asp.push(may[i]?dt[i]/may[i]:0);
-  asp=catDuoi(asp);if(asp.length<2)asp=null;}
- return {may:may,dt:dt,asp:asp};
-}
-function veSpark(){
- var p=document.getElementById('panel-overview');if(!p)return 0;
- var the=[].slice.call(p.querySelectorAll('.kpi-row .kpi-card')).slice(0,4);
- if(the.length<4)return 0;
- var D=duLieu(),bo=[D.may,D.dt,D.asp,null],n=0;
- the.forEach(function(k,i){
-  var m=mom(k);
-  k.classList.remove('dbtg-len','dbtg-giam');
-  if(m!==null&&isFinite(m))k.classList.add(m>=0?'dbtg-len':'dbtg-giam');
-  var cu=k.querySelector('.dbtg-spark');if(cu&&cu.parentNode)cu.parentNode.removeChild(cu);
-  var a=bo[i];
-  var d=document.createElement('div');d.className='dbtg-spark';
-  if(a&&a.length>1){d.innerHTML=spark(a,(m!==null)?(m<0):(a[a.length-1]<a[0]));n++;}else d.innerHTML='';
-  var ch=k.querySelector('.kpi-channels');
-  if(ch)k.insertBefore(d,ch);else k.appendChild(d);
- });
- return n;
-}
-function oThiPhan(){
- var c=bd('chart-monthly-brand');if(!c||!c.data||!c.data.datasets||!c.data.labels)return null;
- var ds=c.data.datasets,L=c.data.labels,idx=[],i,j;
- for(i=0;i<L.length;i++)if(laThang(L[i]))idx.push(i);
- if(idx.length<2){idx=[];for(i=0;i<L.length;i++)idx.push(i);}
- function sh(k,ten){var s=0,v=null,q;
-  for(q=0;q<ds.length;q++){var x=ds[q].data[k];
-   if(typeof x==='number'&&isFinite(x)){s+=x;
-    if((ds[q].label||'').toLowerCase().indexOf(ten)>=0)v=x;}}
-  return (s>0&&v!==null)?v/s*100:null;}
- var ok=[];
- for(i=0;i<idx.length;i++){var y=sh(idx[i],'oppo');if(y!==null&&y>0)ok.push({i:idx[i],v:y});}
- if(ok.length<2)return null;
- var a=ok[0],b=ok[ok.length-1],d=b.v-a.v,doi=[];
- for(j=0;j<ds.length;j++){var nm=ds[j].label||'';
-  if(nm.toLowerCase().indexOf('oppo')>=0)continue;
-  var p1=sh(a.i,nm.toLowerCase()),p2=sh(b.i,nm.toLowerCase());
-  if(p1!==null&&p2!==null)doi.push({t:nm,d:p2-p1,nay:p2});}
- doi.sort(function(x,y){return y.d-x.d});
- var them=doi.length?(' '+doi[0].t+' cùng kỳ '+(doi[0].d>=0?'tăng':'giảm')+' lên <b>'+n1(doi[0].nay)+'%</b>.'):'';
- return {k:d<0?'b':'',t:'Thị phần OPPO đang '+(d<0?'trượt':'lên'),
-  d:'Từ <b>'+n1(a.v)+'%</b> '+L[a.i]+' về <b>'+n1(b.v)+'%</b> '+L[b.i]+' — '+(d<0?'mất':'thêm')+' '+dm(d)+'.'+them};
-}
-function oTarget(){
- var c=bd('chart-target-trend');if(!c||!c.data||!c.data.datasets||!c.data.labels)return null;
- var t=c.data.datasets,L=c.data.labels,li=-1,i,j;
- for(i=L.length-1;i>=0;i--){var co=false;
-  for(j=0;j<t.length;j++){var v=t[j].data[i];if(typeof v==='number'&&v>0)co=true;}
-  if(co){li=i;break;}}
- if(li<0)return null;
- var kq=[];
- for(j=0;j<t.length;j++){var v2=t[j].data[li];if(typeof v2==='number'&&v2>0)kq.push({t:t[j].label,v:v2});}
- if(!kq.length)return null;
- var hut=kq.filter(function(x){return x.v<100});
- var txt=kq.map(function(x){return x.t+' <b>'+n1(x.v)+'%</b>';}).join(' · ');
- return {k:hut.length===kq.length?'b':(hut.length?'w':''),
-  t:hut.length===kq.length?('Cả '+kq.length+' kênh đều hụt Target '+L[li])
-   :(hut.length?(hut.length+' kênh hụt Target '+L[li]):('Cả '+kq.length+' kênh đạt Target '+L[li])),
-  d:txt+'.'};
-}
-
-function veIns(){
- var p=document.getElementById('panel-overview');if(!p)return 0;
- var row=p.querySelector('.kpi-row');if(!row)return 0;
- var old=document.getElementById('dbtg-tq-ins');if(old&&old.parentNode)old.parentNode.removeChild(old);
- var o=[],x;
- x=oThiPhan(); if(x)o.push(x);
- var the=[].slice.call(p.querySelectorAll('.kpi-row .kpi-card')).slice(0,4);
- var q=mom(the[0]),r=mom(the[1]),g=mom(the[2]);
- if(q!==null&&r!==null&&g!==null){
-  o.push({k:(g<0&&q>0)?'w':'',
-   t:(g<0&&q>0)?'Tăng nhờ lượng, không nhờ giá':'Sản lượng và giá bán',
-   d:(g<0&&q>0)?('Doanh số '+pt(q)+' nhưng đơn giá '+pt(g)+'. Doanh thu chỉ theo được '+pt(r)+'.')
-    :('Doanh số '+pt(q)+' &middot; đơn giá '+pt(g)+' &middot; doanh thu '+pt(r)+'.')});
- }
- x=oTarget(); if(x)o.push(x);
- if(!o.length)return 0;
- var box=document.createElement('div');box.id='dbtg-tq-ins';
- var i,html='';
- for(i=0;i<o.length;i++)html+='<div class="dbtg-ic '+o[i].k+'"><div class="t">'+o[i].t+'</div><div class="d">'+o[i].d+'</div></div>';
- box.innerHTML=html;
- row.parentNode.insertBefore(box,row.nextSibling);
- return o.length;
-}
-function demHienCo(){
- var b=document.getElementById('dbtg-tq-ins');
- return document.querySelectorAll('#panel-overview .dbtg-spark svg').length+(b?b.children.length:0);
-}
-var TOT=6,best=0;
-function chay(){
- if(tat()){
-  var b=document.getElementById('dbtg-tq-ins');if(b&&b.parentNode)b.parentNode.removeChild(b);
-  var e=document.querySelectorAll('#panel-overview .dbtg-spark'),i;
-  for(i=0;i<e.length;i++){if(e[i].parentNode)e[i].parentNode.removeChild(e[i]);}
-  var kc=document.querySelectorAll('.kpi-card.dbtg-len,.kpi-card.dbtg-giam');
-  for(i=0;i<kc.length;i++)kc[i].classList.remove('dbtg-len','dbtg-giam');
-  var st=document.getElementById('dbtg-demo-css');if(st)st.disabled=true;
-  best=0;return 0;}
- var st2=document.getElementById('dbtg-demo-css');if(st2)st2.disabled=false;
- var a=0,c=0;
- try{a=veSpark()}catch(err){}
- try{c=veIns()}catch(err){}
- if(a+c>best)best=a+c;
- return a+c;
-}
-window.__dbtgTongQuan=chay;
-window.__dbtgTongQuanTat=function(){try{localStorage.setItem(KEY,'off')}catch(e){}return chay();};
-window.__dbtgTongQuanBat=function(){try{localStorage.removeItem(KEY)}catch(e){}return chay();};
-var dem=0,iv=setInterval(function(){dem++;var n=0;try{n=chay()}catch(e){}if(n>=TOT||dem>40)clearInterval(iv);},1500);
-setInterval(function(){try{if(tat())return;
- if(best>0&&demHienCo()<best)chay();}catch(e){}},3000);
-try{new MutationObserver(function(){setTimeout(chay,60)}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(chay,300)});
-setTimeout(chay,600);
-})();
-</script>
-
+<script src="scripts/demo-mau.js?v=202609010322"></script>
+<script src="scripts/demo-ve.js?v=202609010322"></script>
+<script src="scripts/demo-chart-shim.js?v=202609010322"></script>
+<script src="scripts/demo-bang.js?v=202609010322"></script>
+<script src="scripts/demo-bo-cuc.js?v=202609010322"></script>
+<script src="scripts/demo-sang.js?v=202609010322"></script>
+<!-- 03/09/2026: Bao cao tuan / thang — lop trinh bay moi (anh Thai chot khung 03/09). Go 2 dong nay la ve y nhu cu. -->
+<link rel="stylesheet" href="scripts/bc.css?v=202609031200">
+<script src="scripts/bc.js?v=202609031245"></script>
+<script src="scripts/bc-chitiet.js?v=202609031245"></script>
 </html>
