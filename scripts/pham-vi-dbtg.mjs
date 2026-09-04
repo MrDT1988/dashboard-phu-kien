@@ -87,6 +87,11 @@ export function catPhamVi(A, B, ai) {
   C.sell_in_rows = locMang(A.sell_in_rows, (r) => storeIds.has(String(r && r[0]).trim()));
   C.shop_sale_map = locDoiTuong(A.shop_sale_map, (k) => shopC.has(k));
   C.shop_level_map = locDoiTuong(A.shop_level_map, (k) => shopC.has(k));
+  /* ==== them 04/09/2026 — shop_sale_by_id (tg.html them 03/09 cho tab MWG, bc-chitiet.js).
+     Thieu dong nay -> moi goi leader/sale thieu truong -> kiem-goi-that do -> robot KHONG phat hanh
+     goi moi -> app/DB TG dung so tu 03/09 11:32 toi 04/09 dem. Loc theo Store ID trong pham vi. */
+  C.shop_sale_by_id = locDoiTuong(A.shop_sale_by_id || {}, (k) => storeIds.has(String(k).trim()));
+  /* ==== het khoi them 04/09/2026 ==== */
   C.store_month_lookup = locDoiTuong(A.store_month_lookup, (k) => shopC.has(k));
   C.ind_daily_by_date = {};
   Object.keys(A.ind_daily_by_date || {}).forEach((ngay) => {
@@ -249,11 +254,31 @@ export function catPhamVi(A, B, ai) {
     M.top_brands = M.brand_ranking.slice(0, 6).map((x) => x.brand);
   }
 
+  /* ==== them 04/09/2026 — LUOI AN TOAN: truong MOI trong tg.html ma file nay chua biet cat.
+     Truoc: truong la bi BO im lang -> goi thieu truong -> kiem-goi-that do -> robot dung phat hanh
+     (1,5 ngay 03-04/09 app khong co so moi). Nay: truong la duoc dua vao goi o dang RONG cung kieu
+     ({} / [] / 0 / '') -> khong lo so cua ai, DB TG khong vo, robot van phat hanh; ten truong ghi
+     vao thongKe.truongChuaCat de bo kiem in ra cho nguoi sua pham-vi-dbtg.mjs sau. */
+  const BO_CO_Y = new Set(['debug_target']);
+  const truongChuaCat = [];
+  const rongCungKieu = (v) => (Array.isArray(v) ? [] : (v && typeof v === 'object') ? {} : (typeof v === 'number') ? 0 : (typeof v === 'string') ? '' : null);
+  [[A, C], [B, M]].forEach(([goc, cat]) => {
+    if (!goc || !cat) return;
+    Object.keys(goc).forEach((k) => {
+      if (cat[k] !== undefined || BO_CO_Y.has(k)) return;
+      cat[k] = rongCungKieu(goc[k]);
+      truongChuaCat.push(k);
+    });
+  });
+  if (truongChuaCat.length) console.warn('[pham-vi] truong moi chua co luat cat, da de RONG: ' + truongChuaCat.join(', ') + ' -> them luat vao scripts/pham-vi-dbtg.mjs');
+  /* ==== het khoi them 04/09/2026 ==== */
+
   return {
     center: C, dataMwg: M,
     thongKe: {
       vaiTro: ai.vaiTro, soSale: saleCho.size,
       shopCENTER: shopC.size, shopMWG: shopM.size, kenh: [...kenhCon].sort(),
+      truongChuaCat,
     },
   };
 }
