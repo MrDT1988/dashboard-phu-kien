@@ -142,3 +142,37 @@ jobs:
         run: |
           echo "::error::Khong cap nhat duoc so lieu. App van dung ban cu, khong bi mat so."
           echo "Kiem tra: DB TG co mo duoc khong, Apps Script con song khong."
+
+      # ==== them 04/09/2026 — ghi TRANG THAI ROBOT ra file nho de app.html hien bang vang.
+      # 03-04/09 robot do 40+ lan lien tiep (goi thieu truong shop_sale_by_id) ma khong ai biet,
+      # vi may Mac khong doc duoc log Action. Tu nay moi lan chay (ke ca khi bo qua vi khong co
+      # so moi) deu ghi data/trang-thai-robot.json: loi=true/false + buoc hong + gio VN.
+      # File chi co trang thai, KHONG co so lieu kinh doanh (repo public).
+      - name: Ghi trang thai robot (luon chay)
+        if: always()
+        env:
+          KET_QUA: ${{ job.status }}
+          CO_MOI: ${{ steps.do.outputs.co_moi }}
+        run: |
+          mkdir -p data
+          BUOC=""
+          if [ "$KET_QUA" != "success" ]; then
+            if [ ! -f /tmp/moc-nguon-moi.json ]; then BUOC="Lay so lieu moi tu DB TG (Apps Script/Playwright)"; fi
+            if [ -f data/ket-qua-kiem-goi.json ] && grep -q '"khongDat": *[1-9]' data/ket-qua-kiem-goi.json 2>/dev/null; then BUOC="Soi goi that (kiem-goi-that)"; fi
+            [ -z "$BUOC" ] && BUOC="khong ro - xem Actions"
+          fi
+          printf '{"loi":%s,"buoc":"%s","luc":"%s","coMoi":"%s","run":"%s"}\n' \
+            "$([ "$KET_QUA" = success ] && echo false || echo true)" "$BUOC" \
+            "$(TZ=Asia/Ho_Chi_Minh date '+%d/%m %H:%M')" "${CO_MOI:-?}" "${{ github.run_number }}" > data/trang-thai-robot.json
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f data/trang-thai-robot.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Trang thai robot #${{ github.run_number }}: $KET_QUA" >/dev/null
+          for i in 1 2 3; do
+            git push && exit 0
+            git pull --rebase --autostash origin main || exit 0
+            sleep 4
+          done
+          exit 0
+      # ==== het khoi them 04/09/2026 ====
