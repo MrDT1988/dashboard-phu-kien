@@ -8,7 +8,7 @@
  *    ghi đè tháng hiện tại, giữ nguyên các tháng trước -> nhờ vậy có "tháng trước" để so cùng kỳ / nối chuỗi đứt.
  * 3. Đóng gói theo ĐÚNG cấu trúc gói App Sale (sales[] = khu vực, s[] = shop, dk/dkp/dnB/pkD/dmN)
  *    để review-mt.html dùng chung toàn bộ code + rule với review.html Tiền Giang.
- * 4. Mã hoá -> data/mt-review.json ; mốc -> data/mt-index.json (không có số kinh doanh).
+ * 4. Ghi THÔ -> data/mt-review.json (quyết định 05/09, không mã hoá) ; mốc -> data/mt-index.json (không có số kinh doanh).
  *
  * Mã: SALE_CODES.admin.pin (GitHub Secret). Không in ra log.
  */
@@ -163,7 +163,8 @@ async function main() {
   Object.keys(archive.months).sort().slice(0, -3).forEach((k) => delete archive.months[k]);
   const goi = dungGoi(archive, new Date().toISOString());
   fs.writeFileSync(archPath, JSON.stringify(maHoa(archive, pin)));
-  fs.writeFileSync(OUTDIR + '/mt-review.json', JSON.stringify(maHoa(goi, pin)));
+  // 05/09/2026: Quản lý vùng quyết định gói review Miền Trung ĐỂ THÔ (không mã hoá, trang không đăng nhập). Kho lịch sử vẫn mã hoá.
+  fs.writeFileSync(OUTDIR + '/mt-review.json', JSON.stringify(goi));
   fs.writeFileSync(OUTDIR + '/mt-index.json', JSON.stringify({ updated: goi.updated, maxDay: goi.maxDay, month: goi.months[goi.months.length - 1], year: goi.year, it: VONG, thang: Object.keys(archive.months) }));
   log(`XONG: ${goi.sales.length} khu vuc · ${goi.all.shops} shop · thang ${goi.months.join(',')} · ngay cuoi ${goi.maxDay} · goi ${Math.round(fs.statSync(OUTDIR + '/mt-review.json').size / 1024)} KB`);
 }
