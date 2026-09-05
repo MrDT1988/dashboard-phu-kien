@@ -164,3 +164,36 @@ html.bc-dt .bc-top-2 { grid-template-columns: 1fr; }
 .bc-mini-shop .bc-mini td:first-child { white-space: pre; }
 .bc-mini-shop .bc-mini tr:has(> td:first-child .bc-cham) td { font-weight: 800; background: rgba(139,152,169,.10); }
 html.bc-dt .bc-bang-shop { min-width: 720px; }
+
+/* ================= Sắp xếp lại Tổng quan (anh Thái chốt 05/09/2026) ================= */
+/* 6 thẻ KPI: 3 cột × 2 hàng cho cân, điện thoại vẫn 2 cột */
+.bc-kpi-row.bc-kpi-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .bc-kpi-row.bc-kpi-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+html.bc-dt .bc-kpi-row.bc-kpi-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* Bộ lọc Tháng nằm ở góc phải đầu khối */
+.bc-loc-thang { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; }
+.bc-loc-thang select { font: inherit; font-size: 12.5px; font-weight: 600; text-transform: none; letter-spacing: 0; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); }
+
+/* 3 biểu đồ tỉ trọng trên 1 hàng */
+.bc-3bd { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.bc-3bd-o { min-width: 0; padding: 10px 10px 6px; border-radius: 10px; background: rgba(139,152,169,.06); border: 1px solid var(--border-color, rgba(255,255,255,.06)); }
+.bc-bd-ten { font-size: 12px; font-weight: 800; text-align: center; color: var(--text-secondary); margin-bottom: 2px; text-transform: uppercase; letter-spacing: .04em; }
+@media (max-width: 1100px) { .bc-3bd { grid-template-columns: 1fr; } }
+html.bc-dt .bc-3bd { grid-template-columns: 1fr; }
+
+/* Bảng Sale gom nhóm MWG → KA → IND, mỗi nhóm 1 nền màu */
+.bc-bang tr.bc-nhom-dau td { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; text-align: left; padding-top: 10px; }
+.bc-bang tr.bc-nhom-dau td small { text-transform: none; letter-spacing: 0; font-weight: 600; }
+.bc-bang tr.bc-nhom-tong td { font-weight: 800; border-bottom: 2px solid var(--border-color, rgba(255,255,255,.15)); }
+.bc-bang tr.bc-nhom-MWG td { background: rgba(42,217,152,.07); }
+.bc-bang tr.bc-nhom-KA  td { background: rgba(232,180,94,.08); }
+.bc-bang tr.bc-nhom-IND td { background: rgba(104,182,239,.08); }
+.bc-bang tr.bc-nhom-KHAC td { background: rgba(139,152,169,.07); }
+:root[data-theme="light"] .bc-bang tr.bc-nhom-MWG td { background: rgba(0,107,51,.06); }
+:root[data-theme="light"] .bc-bang tr.bc-nhom-KA  td { background: rgba(201,138,46,.08); }
+:root[data-theme="light"] .bc-bang tr.bc-nhom-IND td { background: rgba(46,124,184,.07); }
+
+.bc-tg-ky { font-size: 12px; color: var(--text-secondary); margin-bottom: 2px; }
+.bc-loc-tick { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.bc-loc-tick input { accent-color: var(--bc-nhan); }
