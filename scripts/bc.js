@@ -719,15 +719,64 @@
     return { cd: cd, k: k, kt: kt, ktKy: kt ? (cd === 'tuan' ? khoangKy('tuan', kt.tu) : khoangKy('thang', k.so - 1)) : null, tenKyTruoc: kt ? kt.nhan + (kt.cungKy ? ' (cùng số ngày)' : '') : '',
       mwg: { k: kM, kt: ktM, tenKyTruoc: ktM ? ktM.nhan + (ktM.cungKy ? ' (cùng số ngày)' : '') : '' } };
   }
-  function veTatCa() {
-    charts.forEach(function (c) { c.huy(); }); charts = [];
-    if (goc) { try { veTongQuan(goc); } catch (e) { console.error('bc Tổng quan:', e); goc.innerHTML = '<p class="bc-trong">Lỗi dựng Tổng quan: ' + esc(e.message) + '</p>'; } }
-    Object.keys(DANG_KY).forEach(function (pid) {
-      var r = GOC[pid] || chuanBiPanel(pid, DANG_KY[pid].muon); if (!r) return;
-      try { r.innerHTML = ''; DANG_KY[pid].ve(r, boiCanh()); } catch (e) { console.error('bc ' + pid + ':', e); r.innerHTML = '<p class="bc-trong">Lỗi dựng tab: ' + esc(e.message) + '</p>'; }
-    });
-    setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
-  }
+  /* ---- Anh Thái 05/09: OPPO luôn viết HOA trên toàn DB TG ----
+       Quét text node (bỏ script/style) rồi thay mọi biến thể Oppo/oppo -> OPPO.
+            Idempotent: giá trị không đổi thì không gán lại nên MutationObserver không lặp. */
+     var BO_QUA_TAG = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1 };
+     function hoaOppo(nut) {
+            if (!nut) return;
+            if (nut.nodeType === 3) {
+                     var p = nut.parentNode;
+                     if (p && BO_QUA_TAG[p.nodeName]) return;
+                     if (!/oppo/i.test(nut.nodeValue)) return;
+                     var v = nut.nodeValue.replace(/oppo/gi, 'OPPO');
+                     if (v !== nut.nodeValue) nut.nodeValue = v;
+                     return;
+            }
+            if (nut.nodeType !== 1 && nut.nodeType !== 9 && nut.nodeType !== 11) return;
+            if (nut.nodeName && BO_QUA_TAG[nut.nodeName]) return;
+            var w = document.createTreeWalker(nut, NodeFilter.SHOW_TEXT, null);
+            var ds = [], n;
+            while ((n = w.nextNode())) if (/oppo/i.test(n.nodeValue)) ds.push(n);
+            for (var i = 0; i < ds.length; i++) {
+                     var t = ds[i], pp = t.parentNode;
+                     if (pp && BO_QUA_TAG[pp.nodeName]) continue;
+                     var nv = t.nodeValue.replace(/oppo/gi, 'OPPO');
+                     if (nv !== t.nodeValue) t.nodeValue = nv;
+            }
+     }
+     var hangCho = [], hangHen = 0;
+     function xepHoaOppo(nut) {
+            hangCho.push(nut);
+            if (hangHen) return;
+            hangHen = setTimeout(function () { hangHen = 0; var ds = hangCho; hangCho = []; ds.forEach(hoaOppo); }, 60);
+     }
+     if (typeof MutationObserver === 'function' && typeof document !== 'undefined') {
+            var batDau = function () {
+                     if (!document.body || window.__bcOppoHoa) return;
+                     window.__bcOppoHoa = 1;
+                     hoaOppo(document.body);
+                     new MutationObserver(function (ms) {
+                                for (var i = 0; i < ms.length; i++) {
+                                             var m = ms[i];
+                                             if (m.type === 'characterData') xepHoaOppo(m.target);
+                                             else for (var j = 0; j < m.addedNodes.length; j++) xepHoaOppo(m.addedNodes[j]);
+                                }
+                     }).observe(document.body, { childList: true, subtree: true, characterData: true });
+            };
+            if (document.body) batDau(); else document.addEventListener('DOMContentLoaded', batDau);
+     }
+
+     function veTatCa() {
+            charts.forEach(function (c) { c.huy(); }); charts = [];
+            if (goc) { try { veTongQuan(goc); } catch (e) { console.error('bc Tổng quan:', e); goc.innerHTML = '<p class="bc-trong">Lỗi dựng Tổng quan: ' + esc(e.message) + '</p>'; } }
+            Object.keys(DANG_KY).forEach(function (pid) {
+                     var r = GOC[pid] || chuanBiPanel(pid, DANG_KY[pid].muon); if (!r) return;
+                     try { r.innerHTML = ''; DANG_KY[pid].ve(r, boiCanh()); } catch (e) { console.error('bc ' + pid + ':', e); r.innerHTML = '<p class="bc-trong">Lỗi dựng tab: ' + esc(e.message) + '</p>'; }
+            });
+            setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 80);
+            try { hoaOppo(document.body); } catch (e) {}
+     }
   // Đổi Sáng/Tối -> vẽ lại biểu đồ (màu khác nhau)
   new MutationObserver(function () { charts.forEach(function (c) { try { c.ve(); } catch (e) {} }); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
