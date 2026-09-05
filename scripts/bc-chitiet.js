@@ -10,8 +10,13 @@
     var ext = function () { try { return window.__bcTarget ? window.__bcTarget() : {}; } catch (e) { return {}; } };
     var $ = function (s, r) { return (r || document).querySelector(s); };
     var pad2 = function (n) { return String(n).padStart(2, '0'); };
-    var mauHang = function (h) { var b = { sang: { Oppo: '#006B33', Samsung: '#1428A0', Xiaomi: '#E85D00', Apple: '#1A1A1A', Vivo: '#6C7CFF', Realme: '#D9A400', 'Khác': '#8A8A8A' }, toi: { Oppo: '#2AD998', Samsung: '#6E8CF0', Xiaomi: '#FF9147', Apple: '#EDEFF2', Vivo: '#A9B6FF', Realme: '#F0C64A', 'Khác': '#8B98A9' } }[sang() ? 'sang' : 'toi']; return b[h] || b['Khác']; };
-    var mauSub = function (s) { var m = (ext().kaMau || {})[s]; return m || mau('KA'); };
+    /* Anh Thái 05-09: OPPO luôn viết HOA — tên hãng lấy từ data nên chuẩn hoá ngay đầu vào */
+         var tenHoa = function (s) { return String(s == null ? '' : s).replace(/oppo/gi, 'OPPO'); };
+         var mauHang = function (h) {
+                  var b = { sang: { oppo: '#006B33', samsung: '#1428A0', xiaomi: '#E85D00', apple: '#1A1A1A', vivo: '#6C7CFF', realme: '#D9A400', 'khác': '#8A8A8A' }, toi: { oppo: '#2AD998', samsung: '#6E8CF0', xiaomi: '#FF9147', apple: '#EDEFF2', vivo: '#A9B6FF', realme: '#F0C64A', 'khác': '#8B98A9' } }[sang() ? 'sang' : 'toi'];
+                  return b[String(h == null ? '' : h).toLowerCase()] || b['khác'];
+         };
+     var mauSub = function (s) { var m = (ext().kaMau || {})[s]; return m || mau('KA'); };
     var mauOC = function (g) { return g === 'O.C' ? (sang() ? '#006B33' : '#2AD998') : (sang() ? '#8FBFA6' : '#1E6B4E'); };
 
     /* ===================== dữ liệu dùng chung ===================== */
@@ -52,8 +57,8 @@
       /* LUẬT NGUỒN: Sale phụ trách shop = sheet SHOP THEO SALE (khớp Store ID thật qua PARTNER_TO_STORE_ID), không dùng cột Sale của DATA MWG */
       var P2S = (window.__bcMwg && window.__bcMwg.partnerToStore) || {}, SALE_ID = d.D.shop_sale_by_id || {};
       var saleCua = function (meta) { var code = meta && meta.store_code ? String(meta.store_code) : ''; var id = P2S[code] || code; var sl = SALE_ID[id]; return sl ? { sale: sl, chuaGan: false } : { sale: (meta && meta.sale) || '(Không rõ)', chuaGan: true }; };
-      var DL = B.daily, R = DL.rows, HANG = DL.brands, SEG = DL.segments, SALE = DL.sales, SIZE = DL.sizes, MODEL = DL.models;
-      var iOppo = HANG.findIndex(function (h) { return /oppo/i.test(h); });
+      var DL = B.daily, R = DL.rows, HANG = (DL.brands || []).map(tenHoa), SEG = DL.segments, SALE = DL.sales, SIZE = DL.sizes, MODEL = DL.models;
+       var iOppo = HANG.findIndex(function (h) { return /oppo/i.test(h); });
       var trongKhoang = function (tu, den) { return function (r) { var ng = '2026-' + pad2(r[0]) + '-' + pad2(r[1]); return ng >= tu && ng <= den; }; };
           /* ---- chỉ số phụ dùng chung ---- */
              var iSS = HANG.findIndex(function (h) { return /samsung/i.test(h); });
@@ -167,24 +172,34 @@
                                                   + (soChuaGan ? ' · <b class="bc-giam-chu">' + soChuaGan + ' shop chưa gán sale trong sheet</b>' : '')));
              var share = function (g) { return g.tong.u ? g.oppo.u / g.tong.u * 100 : 0; };
 
-             /* ================= 1. Kết quả MWG — mỗi thẻ 1 Sale ================= */
+      /* ================= 1. Kết quả MWG — 4 thẻ, dưới thẻ là chi tiết từng Sale =================
+               Anh Thái 05-09: giữ 4 thẻ như cũ (Doanh số / Doanh thu / PK 10-20M / Đơn giá),
+                        phần dưới mỗi thẻ là số của từng Sale + chip so kỳ trước. */
              (function () {
                         var kq = khoi({ stt: 1, ten: 'Kết quả MWG ' + k.nhan.toLowerCase(), rong: true, cls: 'bc-kpi-khoi',
-                                                 dangXem: 'Mỗi thẻ 1 Sale — máy OPPO, thị phần trong chợ của chính Sale đó, chip so ' + esc(ctx.tenKyTruoc || 'kỳ trước') });
-                        var the = el('div', 'bc-kpi-row' + (SALES_MWG.length > 4 ? ' bc-kpi-6' : ''));
-                        the.innerHTML = SALES_MWG.map(function (s) {
-                                     var a = saleNay[s], b = saleTruoc ? saleTruoc[s] : null;
-                                     var sh = shDs(a, a.oU), shT = b ? shDs(b, b.oU) : null;
-                                     var rows = [
-                                                    ['DT OPPO', fTyNgan(a.oDt), b ? pct(a.oDt, b.oDt) : null],
-                                                    ['Máy chợ', fInt(a.tU), b ? pct(a.tU, b.tU) : null],
-                                                    ['PK 10-20M', fInt(a.pkO), b ? pct(a.pkO, b.pkO) : null],
-                                                    ['Shop bán', fInt(a.shops - a.shop0) + '/' + a.shops, b ? pct(a.shops - a.shop0, b.shops - b.shop0) : null]
-                                                  ].map(function (x) { return '<div><i class="bc-cham" style="background:' + mau('MWG') + '"></i><b>' + esc(x[0]) + '</b><span>' + x[1] + '</span>' + chip(x[2]) + '</div>'; }).join('');
-                                     return theKpi(esc(s.split(' ').slice(-2).join(' ')), fInt(a.oU) + ' <small>máy</small>',
-                                                               chip(b ? pct(a.oU, b.oU) : null),
-                                                               'Thị phần <b>' + pcCh(sh) + '</b>' + (shT != null ? ' · ' + esc(ctx.tenKyTruoc) + ' ' + pcCh(shT) : ''), rows);
-                        }).join('');
+                                                 dangXem: '4 chỉ số OPPO tại chợ MWG · dưới mỗi thẻ là chi tiết từng Sale, chip so ' + esc(ctx.tenKyTruoc || 'kỳ trước') });
+                        var tatCa = function (sh) { return gomTheo(sh, function () { return 'ALL'; })['ALL'] || null; };
+                        var TG = tatCa(shopNay), TT = shopTruoc ? tatCa(shopTruoc) : null;
+                        var dgia = function (a) { return a && a.oU ? a.oDt / a.oU : 0; };
+                        var tenSale = function (s) { return String(s).split(' ').slice(-2).join(' '); };
+                        var CHI = [
+                           { nhan: 'Doanh số', gt: function (a) { return fInt(a.oU) + ' <small>máy</small>'; }, lay: function (a) { return a.oU; }, fmt: fInt,
+                                        sub: function (a) { return 'Thị phần máy <b>' + pcCh(shDs(a, a.oU)) + '</b>'; } },
+                           { nhan: 'Doanh thu', gt: function (a) { return fTyNgan(a.oDt); }, lay: function (a) { return a.oDt; }, fmt: fTyNgan,
+                                        sub: function (a) { return 'Thị phần DT <b>' + pcCh(shDt(a, a.oDt)) + '</b>'; } },
+                           { nhan: 'PK 10-20M', gt: function (a) { return fInt(a.pkO) + ' <small>máy</small>'; }, lay: function (a) { return a.pkO; }, fmt: fInt,
+                                        sub: function (a) { return 'Chiếm <b>' + pcCh(a.pkT ? a.pkO / a.pkT * 100 : 0) + '</b> PK chợ'; } },
+                           { nhan: 'Đơn giá', gt: function (a) { return fTr(dgia(a)); }, lay: dgia, fmt: fTr,
+                                        sub: function (a) { return 'Chợ <b>' + fTr(a.tU ? a.tDt / a.tU : 0) + '</b>'; } }
+                                   ];
+                        var the = el('div', 'bc-kpi-row');
+                        the.innerHTML = TG ? CHI.map(function (c) {
+                                     var rows = SALES_MWG.map(function (s) {
+                                                    var a = saleNay[s], b = saleTruoc ? saleTruoc[s] : null;
+                                                    return dongKenh(tenSale(s), mau('MWG'), c.lay(a), b ? c.lay(b) : null, c.fmt);
+                                     }).join('');
+                                     return theKpi(esc(c.nhan), c.gt(TG), chip(TT ? pct(c.lay(TG), c.lay(TT)) : null), c.sub(TG), rows);
+                        }).join('') : '<p class="bc-trong">Chưa có dữ liệu shop MWG cho kỳ này.</p>';
                         $('.bc-than', kq).appendChild(the);
                         if (truoc) { var dS = share(nay) - share(truoc); chot(kq, 'Toàn MWG: thị phần máy OPPO ' + (dS >= 0 ? 'tăng' : 'giảm') + ' <b>' + Math.abs(dS).toFixed(1) + ' điểm</b> (' + pcCh(share(truoc)) + ' → ' + pcCh(share(nay)) + ') · máy OPPO ' + (nay.oppo.u >= truoc.oppo.u ? '+' : '') + fInt(nay.oppo.u - truoc.oppo.u) + ', toàn ngành ' + (nay.tong.u >= truoc.tong.u ? '+' : '') + fInt(nay.tong.u - truoc.tong.u) + ' máy.'); }
                         grid.appendChild(kq);
