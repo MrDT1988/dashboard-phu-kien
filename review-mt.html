@@ -417,7 +417,7 @@
    C. tính số cho ngày đang xem từ gói (dnB / dk / dkp / pkD / dmN / gt)
    D. vẽ trang
    ================================================================ */
-var REVIEW_VER='MT-2026-09-05.2';
+var REVIEW_VER='MT-2026-09-05.3';
 var VUNG_MT=true;
 var AREA_VN={'VUNG TAU':'Vũng Tàu','DA NANG':'Đà Nẵng','HUE':'Huế','NHA TRANG':'Nha Trang','TAY NGUYEN':'Tây Nguyên','BINH DINH':'Bình Định'};
 var $=function(s){return document.querySelector(s)};
@@ -782,9 +782,9 @@ function stamp(){
   var t=D.updated?new Date(D.updated):null, s='';
   if(t&&!isNaN(t)) s=dd2(t.getDate())+'/'+dd2(t.getMonth()+1)+' '+dd2(t.getHours())+':'+dd2(t.getMinutes());
   return '<div class="stamp"><span>Gói số robot đóng lúc <b>'+esc(s||'?')+'</b></span>'+
-    '<span>Đang xem: <b>'+esc(ME?ME.n:'')+'</b> · '+esc(VAI[D.vaiTro]||'')+(D.kenh?' '+esc(D.kenh):'')+'</span>'+
+    '<span>Toàn Miền Trung · '+esc(D.kenh||'MWG')+' · <b>không cần đăng nhập</b></span>'+
     '<span>Thị trường MWG tới ngày <b>'+DMAX+'</b>'+(D.src&&D.src.thangCoLichSu?' · kho: '+esc(D.src.thangCoLichSu.join(', ')):'')+'</span>'+
-    '<button type="button" id="lgout">Đăng xuất</button></div>';
+    '</div>';
 }
 /* ---- 1. thị phần luỹ kế theo sale (cột chồng) ---- */
 function colVal(s,mi){ // mi: 0=S.O 1=DT 2=PK ; trả về mảng [[tên hãng, giá trị, màu]] + tổng
@@ -1019,7 +1019,7 @@ function render(){
     '<div class="panel solo"><div class="body"><div>'+pkBars()+'</div><div class="foot">Đúng ô OPPO đang đo. Đủ 7 nhóm hãng từ DATA MWG.</div></div></div></section>'+
     '<section><div class="sec-head"><h2>Chi tiết theo khu vực</h2><div class="sec-note">cơ cấu hãng + đối thủ bán gì + toàn bộ shop MWG · ngày '+DAY+'</div></div><div id="sdet">'+saleDetail()+'</div></section>'+
     gtSec()+nxSec()+
-    '<footer><p><b>Nguồn:</b> gói số do robot GitHub đóng từ sheet REPORT CENTRAL (MWG tháng + SỐ LIỆU MWG) qua Apps Script Miền Trung, mã hoá bằng mã Quản lý vùng. Trang này tự tính, <b>không tốn token</b>.</p>'+
+    '<footer><p><b>Nguồn:</b> gói số do robot GitHub đóng từ sheet REPORT CENTRAL (MWG tháng + SỐ LIỆU MWG) qua Apps Script Miền Trung, <b>để thô, không mã hoá, không đăng nhập</b> (theo quyết định Quản lý vùng 05/09/2026 — ai có link đều xem được). Trang này tự tính, <b>không tốn token</b>.</p>'+
     '<p><b>Phạm vi:</b> toàn bộ shop MWG Miền Trung có dòng bán trong tháng; size shop lấy từ SỐ LIỆU MWG (shop chưa có size thì rule đứt sell out áp ngưỡng 3 ngày như C/D). Số tháng trước chỉ có từ khi robot bắt đầu lưu kho (rule so cùng kỳ im lặng tháng đầu).</p>'+
     '<p><b>Rule giải trình:</b> chép nguyên từ App Sale Tiền Giang (một rule xuyên suốt). File này sinh từ review.html bằng make-mt.py — sửa ở review.html rồi sinh lại. Bản '+REVIEW_VER+'.</p></footer></div>';
   $('#root').innerHTML=h; bind();
@@ -1097,17 +1097,11 @@ function boot(d){
 (function khoiDong(){
   // Đường kiểm thử: bơm sẵn gói đã mở khoá (Playwright) — không có gì để lộ vì gói do người kiểm tự đưa vào.
   if(window.__REVIEW_DATA){ME={id:'test',n:window.__REVIEW_DATA.__ten||'Kiểm thử',r:window.__REVIEW_DATA.vaiTro||'admin'};boot(window.__REVIEW_DATA);return}
-  var luu=null; try{luu=JSON.parse(localStorage.getItem(LS_ME))}catch(e){}
-  layIndex().then(function(idx){
-    IDX=idx; veDanhSach();
-    if(luu&&luu.id&&luu.pin&&luu.r==='admin'&&idx.users.some(function(u){return u.id===luu.id})){
-      ME={id:luu.id,n:luu.n,r:luu.r};
-      $('#loading').textContent='Đang mở khoá số liệu…';
-      return layGoi(luu.id).then(function(b){return moKhoa(b,luu.pin)}).then(function(d){boot(d)}).catch(function(){moLogin()});
-    }
-    moLogin();
-  }).catch(function(err){
-    $('#loading').innerHTML='Không tải được danh sách người dùng.<small>'+esc(err.message)+'</small>';
+  // Miền Trung: gói để thô (không mã hoá, không đăng nhập) — theo quyết định của Quản lý vùng 05/09/2026
+  ME={id:'mt',n:'Miền Trung',r:'admin'};
+  $('#loading').textContent='Đang tải số liệu…';
+  layGoi('mt').then(function(d){ if(d&&d.ct&&!d.sales) throw new Error('gói còn mã hoá — robot chưa chạy bản mới'); boot(d) }).catch(function(err){
+    $('#loading').innerHTML='Không tải được gói số.<small>'+esc(err.message)+'</small>';
   });
 })();
 </script>
