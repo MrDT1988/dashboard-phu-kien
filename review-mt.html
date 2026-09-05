@@ -283,6 +283,10 @@
   @media (max-width:880px){.gtsum{grid-template-columns:1fr;}}
   .gs{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--danger);border-radius:10px;padding:9px 12px 10px;}
   .gs.ok{border-left-color:var(--accent);}
+  .gs[data-gpick]{cursor:pointer;} .gs[data-gpick]:hover{box-shadow:0 2px 10px rgba(0,0,0,.08);} .gs.sel{outline:2px solid var(--danger);}
+  .gs-go{margin-top:6px;font-size:11px;font-weight:700;color:var(--muted);}
+  .gt-hint{padding:12px 14px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px;background:var(--surface);}
+  .gt-open{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;}
   .gs-h{display:flex;align-items:baseline;gap:8px;}
   .gs-n{font-weight:700;font-size:13.5px;}
   .gs-p{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-left:auto;}
@@ -387,7 +391,7 @@
 <body>
 <div id="login" hidden>
   <div class="lwrap">
-    <div class="brand">OPPO Tiền Giang</div>
+    <div class="brand">OPPO Miền Trung</div>
     <h1>Review ngày MWG · Miền Trung</h1>
     <p class="lead" id="lg-lead">Chỉ Quản lý vùng mở được trang này. Dùng đúng mã của App Sale.</p>
     <div class="who-list" id="lg-list"></div>
@@ -413,14 +417,14 @@
    C. tính số cho ngày đang xem từ gói (dnB / dk / dkp / pkD / dmN / gt)
    D. vẽ trang
    ================================================================ */
-var REVIEW_VER='MT-2026-09-05.1';
+var REVIEW_VER='MT-2026-09-05.2';
 var VUNG_MT=true;
 var AREA_VN={'VUNG TAU':'Vũng Tàu','DA NANG':'Đà Nẵng','HUE':'Huế','NHA TRANG':'Nha Trang','TAY NGUYEN':'Tây Nguyên','BINH DINH':'Bình Định'};
 var $=function(s){return document.querySelector(s)};
 var D=null;              // gói đã mở khoá (đúng cấu trúc app.html)
 var DAY=0;               // ngày đang xem (trong tháng hiện tại)
 var DMAX=0;              // ngày cuối có số thị trường
-var pick=-1, met2='ds', hopen={}, hopen3={};
+var pick=-1, met2='ds', hopen={}, hopen3={}, gpick=null;
 var GFORM='https://docs.google.com/forms/d/e/1FAIpQLScY0RRpM6nCiCKD_KfS5I_x4VCYCbJgpT43RRKKJmZkjrq7fA/viewform?usp=pp_url&entry.1084610876=';
 
 /* ---------- định dạng ---------- */
@@ -947,11 +951,11 @@ function saleHang(s){
 /* ---- 7. giải trình theo rule app ---- */
 function gtSumBox(){
   var rows=V.gt.sum; if(!rows.length) return '';
-  return '<div class="gtsum">'+rows.map(function(s){var ok=!s.miss.length;
-    return '<div class="gs'+(s.req?'':' ok')+'"><div class="gs-h"><span class="gs-n">'+esc(s.n)+'</span><span class="gs-p">Rule app · '+s.req+' shop</span></div>'+
+  return '<div class="gtsum">'+rows.map(function(s){var ok=!s.miss.length; var theo=V.gt.rows.filter(function(r){return !r.bat&&r.sale===s.n}).length;
+    return '<div class="gs'+(s.req?'':' ok')+(gpick===s.n?' sel':'')+'" data-gpick="'+esc(s.n)+'" role="button" tabindex="0"><div class="gs-h"><span class="gs-n">'+esc(s.n)+'</span><span class="gs-p">Rule app · '+s.req+' shop</span></div>'+
       '<div class="gs-b"><b>'+s.req+'</b><small> shop phải giải trình</small></div>'+
       '<div class="gs-s">'+(s.req?'PHẢI XỬ LÝ':'KHÔNG BỊ GỌI')+'</div>'+
-      '<div class="gs-m">'+(s.req?'Shop: <b>'+s.miss.map(esc).join(' , ')+'</b>':'<i>Rule không gọi shop nào ngày '+DAY+'.</i>')+'</div></div>'}).join('')+'</div>';
+      '<div class="gs-m">'+(s.req?'Shop: <b>'+s.miss.map(esc).join(' , ')+'</b>':'<i>Rule không gọi shop nào ngày '+DAY+'.</i>')+(theo?' · theo dõi '+theo:'')+'</div><div class="gs-go">'+(gpick===s.n?'▲ Đang xem — bấm để thu gọn':'▼ Bấm xem từng shop')+'</div></div>'}).join('')+'</div>';
 }
 function gtCard(s){
   var e=s.gt;
@@ -967,14 +971,15 @@ function gtGroup(rows){
   return ord.map(function(n){return '<div class="gc-grp">'+esc(n)+' <span>'+by[n].length+' shop</span></div><div class="gclist">'+by[n].map(gtCard).join('')+'</div>'}).join('');
 }
 function gtSec(){
-  var G=V.gt, bat=G.rows.filter(function(x){return x.bat}), theo=G.rows.filter(function(x){return !x.bat});
+  var G=V.gt, bat=G.rows.filter(function(x){return x.bat&&x.sale===gpick}), theo=G.rows.filter(function(x){return !x.bat&&x.sale===gpick});
+  var duo=gpick?('<div class="gt-open">Khu vực <b>'+esc(gpick)+'</b> · '+bat.length+' shop phải giải trình · '+theo.length+' theo dõi <button type="button" class="btn cancel" data-gpick="'+esc(gpick)+'">Thu gọn</button></div>'):'<div class="gt-hint">Bấm một khu vực ở trên để xem danh sách shop phải giải trình / theo dõi.</div>';
   var nNo=0; G.noDk.forEach(function(x){nNo+=x[1].length});
-  return '<section class="gt-sec"><div class="sec-head"><h2>Yêu cầu giải trình — ngày '+DAY+'/'+M+'</h2>'+
-    '<div class="sec-note">Đúng rule <b>App Sale Tiền Giang</b> · chạy hàm <i>ruleShop / topNang</i> trên gói robot Miền Trung · chưa có biểu mẫu giải trình MT</div></div>'+gtSumBox()+
-    '<div class="duo"><div class="panel"><h3>Phải giải trình — <em>'+bat.length+' shop</em></h3><div class="body"><div>'+gtGroup(bat)+'</div>'+
+  return '<section class="gt-sec" id="gtsec"><div class="sec-head"><h2>Yêu cầu giải trình — ngày '+DAY+'/'+M+'</h2>'+
+    '<div class="sec-note">Đúng rule <b>App Sale Tiền Giang</b> · chạy hàm <i>ruleShop / topNang</i> trên gói robot Miền Trung · chưa có biểu mẫu giải trình MT</div></div>'+gtSumBox()+duo+
+    (gpick?'<div class="duo"><div class="panel"><h3>Phải giải trình — <em>'+bat.length+' shop</em></h3><div class="body"><div>'+gtGroup(bat)+'</div>'+
     '<div class="foot">Cùng rule App Sale Tiền Giang, chạy theo từng khu vực. Shop đứt sell out đi thẳng, không bị trần '+N+' shop. Miền Trung chưa nối biểu mẫu giải trình nên chưa có nút Giải trình / trạng thái đã nộp.</div></div></div>'+
     '<div class="panel" style="background:var(--surface)"><h3 style="color:var(--warn)">Theo dõi — <em style="color:var(--warn)">dính rule, chưa tới mức nặng</em></h3><div class="body"><div>'+gtGroup(theo)+'</div>'+
-    '<div class="foot">Shop dính rule ngày nhưng chưa vượt ngưỡng nặng (app xếp "cần theo dõi") <b>+ shop đối thủ bán tốt mà mình không bán</b> (rule ⑥ riêng của review). Không bắt giải trình.</div></div></div></div>'+
+    '<div class="foot">Shop dính rule ngày nhưng chưa vượt ngưỡng nặng (app xếp "cần theo dõi") <b>+ shop đối thủ bán tốt mà mình không bán</b> (rule ⑥ riêng của review). Không bắt giải trình.</div></div></div></div>':'')+
     '<div class="panel solo" style="margin-top:14px"><h3>Rule đang chạy — <em>hằng số chép từ app</em></h3><div class="rules">'+
     '<div><b>① Đứt sell out</b> — S/A/B (có PG) trắng OPPO từ <b>'+NGAY_SAB+' ngày</b>, không sàn · C/D trắng từ <b>'+NGAY_KHAC+' ngày</b> <i>và</i> chợ tại shop ≥ '+(CHO_MIN*30)+' máy/tháng. Chuỗi nối sang tháng trước. <b>Luôn bắt buộc.</b></div>'+
     '<div><b>② Giảm liên tục 3 ngày</b> — máy OPPO d &lt; d−1 &lt; d−2 &lt; d−3, nền ≥ 2 máy.</div>'+
@@ -1028,6 +1033,7 @@ function bind(){
   // chống gắn trùng (bẫy phần tử cũ — bind() gọi lại nhiều lần, nút ngoài vùng vẽ lại vẫn còn)
   function once(sel,fn){[].forEach.call(document.querySelectorAll(sel),function(b){if(b.__w)return;b.__w=1;fn(b)})}
   once('[data-nav]',function(b){b.addEventListener('click',function(){var k=DAY+(+b.getAttribute('data-nav'));if(k<1||k>DMAX)return;DAY=k;pick=-1;hopen={};hopen3={};render();window.scrollTo({top:0,behavior:'smooth'})})});
+  once('[data-gpick]',function(b){b.addEventListener('click',function(){var v=b.getAttribute('data-gpick');gpick=(gpick===v)?null:v;var el=document.getElementById('gtsec');if(el){el.outerHTML=gtSec();bind();var el2=document.getElementById('gtsec');if(el2&&gpick)el2.scrollIntoView({block:'start',behavior:'smooth'})}})});
   once('[data-pick]',function(b){b.addEventListener('click',function(){pick=+b.getAttribute('data-pick');$('#sdet').innerHTML=saleDetail();bind()})});
   once('[data-met2]',function(b){b.addEventListener('click',function(){met2=b.getAttribute('data-met2');$('#tsbox').innerHTML=tsBang();bind()})});
   once('[data-hg]',function(b){b.addEventListener('click',function(){var k=b.getAttribute('data-hg');hopen[k]=!hopen[k];$('#mdlbox').innerHTML=hangList();bind()})});
