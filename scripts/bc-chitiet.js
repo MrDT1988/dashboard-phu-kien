@@ -55,171 +55,367 @@
       var DL = B.daily, R = DL.rows, HANG = DL.brands, SEG = DL.segments, SALE = DL.sales, SIZE = DL.sizes, MODEL = DL.models;
       var iOppo = HANG.findIndex(function (h) { return /oppo/i.test(h); });
       var trongKhoang = function (tu, den) { return function (r) { var ng = '2026-' + pad2(r[0]) + '-' + pad2(r[1]); return ng >= tu && ng <= den; }; };
-      function gomMWG(tu, den) {   // -> {tong:{u,dt}, oppo:{u,dt}, hang:[{u,dt}], seg:[{u,dt}], sale:[{u,dt,oppoU,oppoDt}], size:[{u,oppoU}], model:{i:{u,dt,h}}, segHang:[seg][hang]u}
-        var f = trongKhoang(tu, den), r = { tong: { u: 0, dt: 0 }, oppo: { u: 0, dt: 0 }, hang: HANG.map(function () { return { u: 0, dt: 0 }; }), seg: SEG.map(function () { return { u: 0, dt: 0 }; }), sale: SALE.map(function () { return { u: 0, dt: 0, oppoU: 0, oppoDt: 0 }; }), size: SIZE.map(function () { return { u: 0, oppoU: 0 }; }), model: {}, segHang: SEG.map(function () { return HANG.map(function () { return 0; }); }), ngay: {} };
-        for (var i = 0; i < R.length; i++) { var x = R[i]; if (!f(x)) continue; var dt = x[5] || 0, u = x[6] || 0, h = x[4], s = x[3], sl = x[2], sz = x[7], md = x[8];
-          r.tong.u += u; r.tong.dt += dt; r.hang[h].u += u; r.hang[h].dt += dt; if (s >= 0 && r.seg[s]) { r.seg[s].u += u; r.seg[s].dt += dt; r.segHang[s][h] += u; } if (sl >= 0 && r.sale[sl]) { r.sale[sl].u += u; r.sale[sl].dt += dt; } if (sz >= 0 && r.size[sz]) r.size[sz].u += u;
-          var ng = pad2(x[0]) + '-' + pad2(x[1]); var N = r.ngay[ng] || (r.ngay[ng] = { u: 0, dt: 0, oppoU: 0, oppoDt: 0 }); N.u += u; N.dt += dt;
-          if (h === iOppo) { r.oppo.u += u; r.oppo.dt += dt; if (sl >= 0 && r.sale[sl]) { r.sale[sl].oppoU += u; r.sale[sl].oppoDt += dt; } if (sz >= 0 && r.size[sz]) r.size[sz].oppoU += u; N.oppoU += u; N.oppoDt += dt; }
-          var M = r.model[md] || (r.model[md] = { u: 0, dt: 0, h: h }); M.u += u; M.dt += dt; }
-        return r;
-      }
-      function shopMWG(tu, den) {   // từ shop_day_data: shop -> {oppoU, oppoDt, ssU, xmU, apU, totU, totDt, sale, size}
-        var SD = B.shop_day_data || {}, meta = {}; (B.shop_rows_brand4 || []).forEach(function (s) { meta[s.shop] = s; });
-        var out = {};
-        Object.keys(SD).forEach(function (shop) { var m = meta[shop] || {}, sc = saleCua(m), o = { oppoU: 0, oppoDt: 0, ssU: 0, xmU: 0, apU: 0, totU: 0, totDt: 0, sale: sc.sale, chuaGan: sc.chuaGan, size: m.shop_size || '?' };
-          Object.keys(SD[shop]).forEach(function (k) { var p = k.split('-'); var ng = '2026-' + pad2(p[0]) + '-' + pad2(p[1]); if (ng < tu || ng > den) return; var v = SD[shop][k]; o.oppoU += v.oppo_units || 0; o.oppoDt += v.oppo_rev || 0; o.ssU += v.samsung_units || 0; o.xmU += v.xiaomi_units || 0; o.apU += v.apple_units || 0; o.totU += v.total_units || 0; o.totDt += v.total_rev || 0; });
-          out[shop] = o; });
-        return out;
-      }
-      var k = ctx.k, kt = ctx.kt, cd = ctx.cd;
-      var nay = gomMWG(k.tu, k.denCo), truoc = kt ? gomMWG(kt.tu, kt.denCo) : null;
-      var shopNay = shopMWG(k.tu, k.denCo), shopTruoc = kt ? shopMWG(kt.tu, kt.denCo) : null;
-      var ky12 = dsKy12(ctx), chuoi = ky12.map(function (q) { return gomMWG(q.tu, q.den); });
-      /* Gộp theo Sale từ shop (sale lấy từ SHOP THEO SALE) */
-      var theoSale = function (shops) { var r = {}; Object.keys(shops).forEach(function (s) { var x = shops[s]; var a = r[x.sale] || (r[x.sale] = { oppoU: 0, oppoDt: 0, u: 0, dt: 0, shops: 0, shop0: 0, chuaGan: 0 }); a.oppoU += x.oppoU; a.oppoDt += x.oppoDt; a.u += x.totU; a.dt += x.totDt; a.shops++; if (!x.oppoU) a.shop0++; if (x.chuaGan) a.chuaGan++; }); return r; };
-      var saleNay = theoSale(shopNay), saleTruoc = shopTruoc ? theoSale(shopTruoc) : null;
-      var SALES_MWG = Object.keys(saleNay).sort(function (a, b) { return saleNay[b].oppoU - saleNay[a].oppoU; });
-      var soChuaGan = Object.keys(shopNay).filter(function (s) { return shopNay[s].chuaGan; }).length;
-      var grid = el('div', 'bc-luoi'); root.appendChild(grid);
-      grid.appendChild(bangKyChung(ctx, 'Thị trường MWG Tiền Giang + Bến Tre (12 hãng) · Sale theo sheet SHOP THEO SALE' + (soChuaGan ? ' · <b class="bc-giam-chu">' + soChuaGan + ' shop chưa gán sale trong sheet</b>' : '')));
-      var share = function (g) { return g.tong.u ? g.oppo.u / g.tong.u * 100 : 0; };
-      var shareDt = function (g) { var ap = g.hang[HANG.findIndex(function (h) { return /apple/i.test(h); })]; var tt = g.tong.dt - (ap ? ap.dt : 0); return tt ? g.oppo.dt / tt * 100 : 0; };
+          /* ---- chỉ số phụ dùng chung ---- */
+             var iSS = HANG.findIndex(function (h) { return /samsung/i.test(h); });
+             var iXM = HANG.findIndex(function (h) { return /xiaomi/i.test(h); });
+             var PKI = SEG.map(function (s, i) { return /^(10-15M|15-20M)$/.test(s) ? i : -1; }).filter(function (i) { return i >= 0; });
+             var laPK = function (s) { return PKI.indexOf(s) >= 0; };
+             var THANG_MWG = (function () { var z = {}; for (var i = 0; i < R.length; i++) z[R[i][0]] = 1; return Object.keys(z).map(Number).sort(function (a, b) { return a - b; }); })();
+             var M_MOI = THANG_MWG[THANG_MWG.length - 1] || 0;
+             var khoangThang = function (m) { return BC.khoangKy('thang', m, 'mwg'); };
 
-      /* 1. KPI */
-      (function () {
-        var kq = khoi({ stt: 1, ten: 'Kết quả MWG ' + k.nhan.toLowerCase(), rong: true, dangXem: 'Toàn ngành 12 hãng · OPPO · thị phần — chip so ' + esc(ctx.tenKyTruoc || 'kỳ trước') });
-        var soShop = Object.keys(shopNay).filter(function (s) { return shopNay[s].oppoU > 0; }).length, soShopT = shopTruoc ? Object.keys(shopTruoc).filter(function (s) { return shopTruoc[s].oppoU > 0; }).length : null;
-        var top = HANG.map(function (h, i) { return { h: h, i: i, u: nay.hang[i].u, dt: nay.hang[i].dt }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 4);
-        var rowsH = function (lay, layT, fmt) { return top.map(function (x) { return dongKenh(x.h, mauHang(x.h), lay(x.i), truoc ? layT(x.i) : null, fmt); }).join(''); };
-        $('.bc-than', kq).innerHTML = '<div class="bc-kpi-row">' +
-          theKpi('Doanh thu toàn ngành', fTyNgan(nay.tong.dt), chip(truoc ? pct(nay.tong.dt, truoc.tong.dt) : null), fInt(nay.tong.u) + ' máy · ' + Object.keys(shopNay).length + ' shop', rowsH(function (i) { return nay.hang[i].dt; }, function (i) { return truoc.hang[i].dt; }, fTyNgan)) +
-          theKpi('Doanh thu OPPO', fTyNgan(nay.oppo.dt), chip(truoc ? pct(nay.oppo.dt, truoc.oppo.dt) : null), shareDt(nay).toFixed(1) + '% thị phần DT (trừ Apple)' + (truoc ? ' · kỳ trước ' + shareDt(truoc).toFixed(1) + '%' : ''), rowsH(function (i) { return nay.hang[i].u; }, function (i) { return truoc.hang[i].u; }, fInt)) +
-          theKpi('Máy OPPO', fInt(nay.oppo.u) + ' <small>máy</small>', chip(truoc ? pct(nay.oppo.u, truoc.oppo.u) : null), '<b>' + share(nay).toFixed(1) + '%</b> thị phần máy' + (truoc ? ' · kỳ trước ' + share(truoc).toFixed(1) + '%' : ''), SALES_MWG.map(function (s) { return dongKenh(s.split(' ').slice(-2).join(' '), mau('MWG'), saleNay[s].oppoU, saleTruoc && saleTruoc[s] ? saleTruoc[s].oppoU : null, fInt); }).join('')) +
-          theKpi('Shop có bán OPPO', fInt(soShop) + ' <small>/ ' + Object.keys(shopNay).length + '</small>', chip(soShopT != null ? pct(soShop, soShopT) : null), truoc ? ctx.tenKyTruoc + ': ' + soShopT : '', SIZE.map(function (sz, i) { var n = Object.keys(shopNay).filter(function (s) { return shopNay[s].size === sz && shopNay[s].oppoU > 0; }).length, nt = shopTruoc ? Object.keys(shopTruoc).filter(function (s) { return shopTruoc[s].size === sz && shopTruoc[s].oppoU > 0; }).length : null; return dongKenh('Size ' + sz, mau('MWG'), n, nt, fInt); }).join('')) + '</div>';
-        if (truoc) { var dS = share(nay) - share(truoc); chot(kq, 'Thị phần máy OPPO ' + (dS >= 0 ? 'tăng' : 'giảm') + ' <b>' + Math.abs(dS).toFixed(1) + ' điểm</b> (' + share(truoc).toFixed(1) + '% → ' + share(nay).toFixed(1) + '%); máy OPPO ' + (nay.oppo.u >= truoc.oppo.u ? '+' : '') + fInt(nay.oppo.u - truoc.oppo.u) + ', toàn ngành ' + (nay.tong.u >= truoc.tong.u ? '+' : '') + fInt(nay.tong.u - truoc.tong.u) + ' máy.'); }
-        grid.appendChild(kq);
-      })();
+             /* biểu đồ riêng của tab MWG — tự quản để bộ lọc tháng vẽ lại được */
+             var CT = (window.__bcCtCharts = window.__bcCtCharts || []);
+             CT.forEach(function (c) { try { c.huy(); } catch (e) {} }); CT.length = 0;
+             if (!window.__bcCtObs) { window.__bcCtObs = 1; new MutationObserver(function () { (window.__bcCtCharts || []).forEach(function (c) { try { c.ve(); } catch (e) {} }); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); }
+             function bdRieng(cao, cau) {
+                        var wrap = el('div', 'bc-bd'), hop = el('div', 'bc-bd-hop'); hop.style.height = cao + 'px';
+                        var cv = el('canvas'); hop.appendChild(cv); wrap.appendChild(hop);
+                        var ch = null;
+                        function ve() { if (ch) { try { ch.destroy(); } catch (e) {} ch = null; } var cfg = cau(); if (!cfg) return; cfg.options = cfg.options || {}; cfg.options.maintainAspectRatio = false; cfg.options.responsive = true; try { ch = new Chart(cv, cfg); } catch (e) { console.warn('bc-ct chart:', e); } }
+                        var o = { el: wrap, ve: ve, huy: function () { if (ch) { try { ch.destroy(); } catch (e) {} } } };
+                        CT.push(o); ve(); return o;
+             }
 
-      /* 7. Hiệu suất Sale/ASM (tuần: lên ngay sau KPI) */
-      var khoiSale = (function () {
-        var kq = khoi({ stt: 7, ten: 'Hiệu suất Sale / ASM — OPPO so với thị trường', rong: true, dangXem: k.nhan + ' · xếp Sale có vấn đề lên đầu · cờ đỏ: giảm >20% so kỳ trước hoặc mất ≥3 điểm thị phần' });
-        var rows = SALES_MWG.map(function (s) { var a = saleNay[s], b = saleTruoc ? saleTruoc[s] : null; var sh = a.u ? a.oppoU / a.u * 100 : 0, shT = b && b.u ? b.oppoU / b.u * 100 : null; var shop0 = a.shop0;
-          var co = []; var p = b ? pct(a.oppoU, b.oppoU) : null; if (p != null && p < -20) co.push('giảm ' + Math.abs(p).toFixed(0) + '%'); if (shT != null && sh - shT <= -3) co.push('mất ' + (shT - sh).toFixed(1) + ' điểm'); if (shop0 >= 3) co.push(shop0 + ' shop 0 máy');
-          return { s: s + (a.chuaGan ? ' (' + a.chuaGan + ' shop chưa gán)' : ''), oppoU: a.oppoU, oppoDt: a.oppoDt, u: a.u, sh: sh, shT: shT, p: p, shops: a.shops, shop0: shop0, co: co }; }).sort(function (a, b) { return (b.co.length - a.co.length) || ((a.p == null ? 0 : a.p) - (b.p == null ? 0 : b.p)); });
-        var h = '<div class="bc-cuon"><table class="bc-bang"><thead><tr><th>Sale / ASM</th><th>Máy OPPO</th><th>so kỳ trước</th><th>Máy thị trường</th><th>Thị phần</th><th>± điểm</th><th>Shop</th><th>Shop 0 máy</th><th>DT OPPO</th><th>Cảnh báo</th></tr></thead><tbody>';
-        rows.forEach(function (r) { h += '<tr' + (r.co.length ? ' class="bc-canh"' : '') + '><td>' + esc(r.s) + '</td><td><b>' + fInt(r.oppoU) + '</b></td><td>' + chip(r.p) + '</td><td>' + fInt(r.u) + '</td><td><b>' + r.sh.toFixed(1) + '%</b></td><td>' + (r.shT != null ? chipDiem(r.sh - r.shT) : '—') + '</td><td>' + r.shops + '</td><td>' + (r.shop0 ? '<span class="bc-giam-chu"><b>' + r.shop0 + '</b></span>' : '0') + '</td><td>' + fTyNgan(r.oppoDt) + '</td><td>' + (r.co.length ? '<span class="bc-co">' + r.co.map(esc).join(' · ') + '</span>' : '<span class="bc-len-chu">ổn</span>') + '</td></tr>'; });
-        h += '</tbody></table></div>';
-        $('.bc-than', kq).innerHTML = h;
-        var xau = rows.filter(function (r) { return r.co.length; });
-        chot(kq, xau.length ? '<b>' + xau.length + '</b> Sale có vấn đề ' + k.nhan.toLowerCase() + ': ' + xau.slice(0, 3).map(function (r) { return '<b>' + esc(r.s.split(' ').slice(-2).join(' ')) + '</b> (' + r.co.join(', ') + ')'; }).join(', ') + '.' : 'Không Sale nào chạm ngưỡng cảnh báo.');
-        return kq;
-      })();
-      if (cd === 'tuan') grid.appendChild(khoiSale);
+             function gomMWG(tu, den) {
+                        var f = trongKhoang(tu, den);
+                        var r = { tong: { u: 0, dt: 0 }, oppo: { u: 0, dt: 0 }, hang: HANG.map(function () { return { u: 0, dt: 0 }; }),
+                                           seg: SEG.map(function () { return { u: 0, dt: 0 }; }), segHang: SEG.map(function () { return HANG.map(function () { return 0; }); }),
+                                           hangPK: HANG.map(function () { return 0; }), model: {}, ngay: {} };
+                        for (var i = 0; i < R.length; i++) {
+                                     var x = R[i]; if (!f(x)) continue;
+                                     var dt = x[5] || 0, u = x[6] || 0, h = x[4], s = x[3], md = x[8];
+                                     r.tong.u += u; r.tong.dt += dt; r.hang[h].u += u; r.hang[h].dt += dt;
+                                     if (s >= 0 && r.seg[s]) { r.seg[s].u += u; r.seg[s].dt += dt; r.segHang[s][h] += u; if (laPK(s)) r.hangPK[h] += u; }
+                                     if (h === iOppo) { r.oppo.u += u; r.oppo.dt += dt; }
+                                     var ng = pad2(x[0]) + '-' + pad2(x[1]);
+                                     var N = r.ngay[ng] || (r.ngay[ng] = { h: HANG.map(function () { return { u: 0, dt: 0 }; }), pk: HANG.map(function () { return 0; }), reno: 0, find: 0 });
+                                     N.h[h].u += u; N.h[h].dt += dt; if (s >= 0 && laPK(s)) N.pk[h] += u;
+                                     if (h === iOppo) { var tm = MODEL[md] || ''; if (/reno/i.test(tm)) N.reno += u; else if (/find/i.test(tm)) N.find += u; }
+                                     var M = r.model[md] || (r.model[md] = { u: 0, dt: 0, h: h }); M.u += u; M.dt += dt;
+                        }
+                        return r;
+             }
+             function shopMWG(tu, den) {
+                        var SD = B.shop_day_data || {}, meta = {}; (B.shop_rows_brand4 || []).forEach(function (s) { meta[s.shop] = s; });
+                        var out = {};
+                        Object.keys(SD).forEach(function (shop) {
+                                     var m = meta[shop] || {}, sc = saleCua(m);
+                                     var o = { oU: 0, oDt: 0, sU: 0, sDt: 0, xU: 0, xDt: 0, aU: 0, aDt: 0, tU: 0, tDt: 0, pkO: 0, pkT: 0, sale: sc.sale, chuaGan: sc.chuaGan, size: m.shop_size || '?' };
+                                     Object.keys(SD[shop]).forEach(function (kk) {
+                                                    var p = kk.split('-'); var ng = '2026-' + pad2(p[0]) + '-' + pad2(p[1]); if (ng < tu || ng > den) return;
+                                                    var v = SD[shop][kk];
+                                                    o.oU += v.oppo_units || 0; o.oDt += v.oppo_rev || 0; o.sU += v.samsung_units || 0; o.sDt += v.samsung_rev || 0;
+                                                    o.xU += v.xiaomi_units || 0; o.xDt += v.xiaomi_rev || 0; o.aU += v.apple_units || 0; o.aDt += v.apple_rev || 0;
+                                                    o.tU += v.total_units || 0; o.tDt += v.total_rev || 0; o.pkO += v.pk1020_oppo_units || 0; o.pkT += v.pk1020_total_units || 0;
+                                     });
+                                     out[shop] = o;
+                        });
+                        return out;
+             }
+             var CONG = ['oU', 'oDt', 'sU', 'sDt', 'xU', 'xDt', 'aU', 'aDt', 'tU', 'tDt', 'pkO', 'pkT'];
+             function gomTheo(shops, lay) {
+                        var r = {};
+                        Object.keys(shops).forEach(function (s) {
+                                     var x = shops[s], k2 = lay(x); var a = r[k2];
+                                     if (!a) { a = r[k2] = { shops: 0, shop0: 0, chuaGan: 0, ten: [] }; CONG.forEach(function (f) { a[f] = 0; }); }
+                                     CONG.forEach(function (f) { a[f] += x[f]; });
+                                     a.shops++; if (!x.oU) a.shop0++; if (x.chuaGan) a.chuaGan++; a.ten.push(s);
+                        });
+                        return r;
+             }
+             var shDs = function (a, u) { return a.tU ? (u / a.tU * 100) : 0; };
+             var shDt = function (a, dt) { var md = a.tDt - a.aDt; return md ? (dt / md * 100) : 0; };
+             var pcCh = function (v) { return v.toFixed(1) + '%'; };
+             var oCotChinh = function (a) {
+                        return '<td><b>' + fInt(a.pkO) + '</b>' + (a.pkT ? ' <small>' + pcCh(a.pkO / a.pkT * 100) + '</small>' : '') + '</td>' +
+                                     '<td>' + pcCh(shDs(a, a.oU)) + ' <small>/ ' + pcCh(shDs(a, a.sU)) + ' / ' + pcCh(shDs(a, a.xU)) + '</small></td>' +
+                                     '<td>' + pcCh(shDt(a, a.oDt)) + ' <small>/ ' + pcCh(shDt(a, a.sDt)) + ' / ' + pcCh(shDt(a, a.xDt)) + '</small></td>';
+             };
+             var dauCotChinh = '<th>PK 10-20M</th><th>Share D.S <small>O/S/X</small></th><th>Share D.T <small>O/S/X</small></th>';
+             var selThangCT = function (ds, chon, coKy, onChon) {
+                        var l = el('label', 'bc-loc-thang', 'Tháng ');
+                        var s = el('select');
+                        if (coKy) { var o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Kỳ đang chọn'; s.appendChild(o0); }
+                        ds.forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = 'Tháng ' + m; s.appendChild(o); });
+                        s.value = chon == null ? '' : chon;
+                        s.addEventListener('change', function () { onChon(s.value); });
+                        l.appendChild(s); return l;
+             };
 
-      /* 2. Doanh số theo hãng — 12 kỳ, top 6 hãng + Khác */
-      (function () {
-        var kq = khoi({ stt: 2, ten: 'Doanh số theo hãng — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), cls: 'bc-c8', dangXem: 'Top 6 hãng theo máy trong kỳ đang chọn, còn lại gộp "Khác"' });
-        var top6 = HANG.map(function (h, i) { return { h: h, i: i, u: nay.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 6);
-        var labels = ky12.map(function (q) { return q.nhan; });
-        var lam = function (lay, tien) { var ds = top6.map(function (x) { return { label: x.h, data: chuoi.map(function (g) { return lay(g.hang[x.i]); }), borderColor: mauHang(x.h), backgroundColor: mauHang(x.h), tension: .3, pointRadius: 3, fill: false }; });
-          return { type: 'line', data: { labels: labels, datasets: ds }, options: { layout: { padding: { top: 14 } }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, color: mau('chuPhu') } } }, scales: { x: { grid: { display: false }, ticks: { color: mau('chuPhu') } }, y: { grid: { color: mau('luoi') }, ticks: { color: mau('chuPhu'), callback: function (v) { return tien ? fTyNgan(v) : fInt(v); } }, border: { display: false } } } } }; };
-        /* Thị phần = đường (quy ước cũ của DB TG: đường luôn là %); Máy / Doanh thu = cột chồng theo hãng (đọc được cả tổng chợ) */
-        var cotHang = function (lay, tien) { var khac = chuoi.map(function (g, j) { var t = lay(g.tong); top6.forEach(function (x) { t -= lay(g.hang[x.i]); }); return Math.max(0, t); }); return cauCotChong(labels, top6.map(function (x) { return { label: x.h, data: chuoi.map(function (g) { return lay(g.hang[x.i]); }), backgroundColor: mauHang(x.h) }; }).concat([{ label: 'Khác', data: khac, backgroundColor: mauHang('Khác') }]), { fmt: tien ? fTyNgan : fInt, tien: tien }); };
-        $('.bc-than', kq).appendChild(khungBieuDo({ cao: 420, tabs: [{ ten: 'Thị phần %', cau: function () { var c = lam(function (x) { return x.u; }); c.data.datasets.forEach(function (ds, j) { ds.data = chuoi.map(function (g) { return g.tong.u ? +(g.hang[top6[j].i].u / g.tong.u * 100).toFixed(1) : 0; }); }); c.options.scales.y.ticks.callback = function (v) { return v + '%'; }; return c; } }, { ten: 'Máy', cau: function () { return cotHang(function (x) { return x.u; }); } }, { ten: 'Doanh thu', cau: function () { return cotHang(function (x) { return x.dt; }, true); } }] }));
-        grid.appendChild(kq);
-      })();
+             var k = ctx.k, kt = ctx.kt, cd = ctx.cd;
+             /* Anh Thái 05/09: tab MWG lấy THÁNG MỚI NHẤT của DATA MWG (CENTER về chậm hơn).
+                      Chỉ tự nhảy khi đang ở tháng mặc định (tháng cuối CENTER) — chọn tay tháng cũ thì giữ nguyên. */
+             var doiThang = null;
+             if (cd === 'thang' && M_MOI && k.so < M_MOI) {
+                        var mCenter = d.NGAY.length ? U.thangCua(d.NGAY[d.NGAY.length - 1]) : 0;
+                        if (k.so === mCenter) { doiThang = M_MOI; k = khoangThang(M_MOI); kt = BC.kyTruoc('thang', k); ctx = Object.assign({}, ctx, { k: k, kt: kt, tenKyTruoc: kt ? kt.nhan : '' }); }
+             }
+             var thangKy = cd === 'tuan' ? U.thangCua(k.denCo) : k.so;
+             if (THANG_MWG.indexOf(thangKy) < 0) thangKy = M_MOI || thangKy;
 
-      /* 5. Tỉ trọng phân khúc giá — 3 tab */
-      (function () {
-        var kq = khoi({ stt: 5, ten: 'Tỉ trọng phân khúc giá ' + k.nhanNgan, cls: 'bc-c4', dangXem: 'Toàn thị trường · từng hãng theo phân khúc · phân khúc theo từng hãng' });
-        var pk = U.PK[sang() ? 'sang' : 'toi']; var segCo = SEG.map(function (s, i) { return { s: s, i: i, u: nay.seg[i].u }; }).filter(function (x) { return x.u > 0; });
-        var top5 = HANG.map(function (h, i) { return { h: h, i: i, u: nay.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 5);
-        $('.bc-than', kq).appendChild(khungBieuDo({ cao: 340, tabs: [
-          { ten: 'Thị trường', cau: function () { return cauVong(segCo.map(function (x) { return x.s; }), segCo.map(function (x) { return x.u; }), segCo.map(function (x, j) { return pk[Math.min(j, pk.length - 1)]; })); } },
-          { ten: 'Hãng → PK', cau: function () { var c = cauCotChong(top5.map(function (x) { return x.h; }), segCo.map(function (x, j) { return { label: x.s, data: top5.map(function (hh) { var t = nay.hang[hh.i].u; return t ? +(nay.segHang[x.i][hh.i] / t * 100).toFixed(1) : 0; }), backgroundColor: pk[Math.min(j, pk.length - 1)] }; }), { fmt: function (v) { return v.toFixed(0) + '%'; } }); c.plugins = []; return c; } },
-          { ten: 'PK → Hãng', cau: function () { return cauCotChong(segCo.map(function (x) { return x.s; }), top5.map(function (hh) { return { label: hh.h, data: segCo.map(function (x) { return nay.segHang[x.i][hh.i]; }), backgroundColor: mauHang(hh.h) }; })); } }
-        ] }));
-        grid.appendChild(kq);
-      })();
+             var nay = gomMWG(k.tu, k.denCo), truoc = kt ? gomMWG(kt.tu, kt.denCo) : null;
+             var shopNay = shopMWG(k.tu, k.denCo), shopTruoc = kt ? shopMWG(kt.tu, kt.denCo) : null;
+             var ky12 = dsKy12(ctx), chuoi = ky12.map(function (q) { return gomMWG(q.tu, q.den); });
+             var saleNay = gomTheo(shopNay, function (x) { return x.sale; });
+             var saleTruoc = shopTruoc ? gomTheo(shopTruoc, function (x) { return x.sale; }) : null;
+             var SALES_MWG = Object.keys(saleNay).sort(function (a, b) { return saleNay[b].oU - saleNay[a].oU; });
+             var soChuaGan = Object.keys(shopNay).filter(function (s) { return shopNay[s].chuaGan; }).length;
+             var grid = el('div', 'bc-luoi'); root.appendChild(grid);
+             grid.appendChild(bangKyChung(ctx, 'Thị trường MWG Tiền Giang + Bến Tre (12 hãng) · Sale theo sheet SHOP THEO SALE'
+                                                  + (doiThang ? ' · <b>đã nhảy sang tháng ' + doiThang + '</b> (tháng mới nhất DATA MWG có số)' : '')
+                                                  + (soChuaGan ? ' · <b class="bc-giam-chu">' + soChuaGan + ' shop chưa gán sale trong sheet</b>' : '')));
+             var share = function (g) { return g.tong.u ? g.oppo.u / g.tong.u * 100 : 0; };
 
-      /* 3. Bảng DT & DS theo hãng */
-      (function () {
-        var kq = khoi({ stt: 3, ten: 'Theo hãng — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), cls: 'bc-c6', dangXem: 'Nút DT · DS · ĐG · thị phần — màu ô so cột liền trước' });
-        var top8 = HANG.map(function (h, i) { return { h: h, i: i, u: nay.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 8);
-        $('.bc-than', kq).appendChild(bangMini({ cot: ky12.map(function (q) { return q.nhan; }), dong: top8.map(function (x) { return { ten: x.h, mau: mauHang(x.h), i: x.i }; }), chiSo: [
-          { ten: 'DT', fmt: fTyNgan, lay: function (d, j) { return chuoi[j].hang[d.i].dt; } }, { ten: 'DS', lay: function (d, j) { return chuoi[j].hang[d.i].u; } },
-          { ten: 'ĐG', fmt: fTr, khongTong: true, lay: function (d, j) { var x = chuoi[j].hang[d.i]; return x.u ? x.dt / x.u : 0; } },
-          { ten: 'Thị phần', fmt: function (v) { return v.toFixed(1) + '%'; }, khongTong: true, lay: function (d, j) { var g = chuoi[j]; return g.tong.u ? g.hang[d.i].u / g.tong.u * 100 : 0; } }] }));
-        grid.appendChild(kq);
-      })();
+             /* ================= 1. Kết quả MWG — mỗi thẻ 1 Sale ================= */
+             (function () {
+                        var kq = khoi({ stt: 1, ten: 'Kết quả MWG ' + k.nhan.toLowerCase(), rong: true, cls: 'bc-kpi-khoi',
+                                                 dangXem: 'Mỗi thẻ 1 Sale — máy OPPO, thị phần trong chợ của chính Sale đó, chip so ' + esc(ctx.tenKyTruoc || 'kỳ trước') });
+                        var the = el('div', 'bc-kpi-row' + (SALES_MWG.length > 4 ? ' bc-kpi-6' : ''));
+                        the.innerHTML = SALES_MWG.map(function (s) {
+                                     var a = saleNay[s], b = saleTruoc ? saleTruoc[s] : null;
+                                     var sh = shDs(a, a.oU), shT = b ? shDs(b, b.oU) : null;
+                                     var rows = [
+                                                    ['DT OPPO', fTyNgan(a.oDt), b ? pct(a.oDt, b.oDt) : null],
+                                                    ['Máy chợ', fInt(a.tU), b ? pct(a.tU, b.tU) : null],
+                                                    ['PK 10-20M', fInt(a.pkO), b ? pct(a.pkO, b.pkO) : null],
+                                                    ['Shop bán', fInt(a.shops - a.shop0) + '/' + a.shops, b ? pct(a.shops - a.shop0, b.shops - b.shop0) : null]
+                                                  ].map(function (x) { return '<div><i class="bc-cham" style="background:' + mau('MWG') + '"></i><b>' + esc(x[0]) + '</b><span>' + x[1] + '</span>' + chip(x[2]) + '</div>'; }).join('');
+                                     return theKpi(esc(s.split(' ').slice(-2).join(' ')), fInt(a.oU) + ' <small>máy</small>',
+                                                               chip(b ? pct(a.oU, b.oU) : null),
+                                                               'Thị phần <b>' + pcCh(sh) + '</b>' + (shT != null ? ' · ' + esc(ctx.tenKyTruoc) + ' ' + pcCh(shT) : ''), rows);
+                        }).join('');
+                        $('.bc-than', kq).appendChild(the);
+                        if (truoc) { var dS = share(nay) - share(truoc); chot(kq, 'Toàn MWG: thị phần máy OPPO ' + (dS >= 0 ? 'tăng' : 'giảm') + ' <b>' + Math.abs(dS).toFixed(1) + ' điểm</b> (' + pcCh(share(truoc)) + ' → ' + pcCh(share(nay)) + ') · máy OPPO ' + (nay.oppo.u >= truoc.oppo.u ? '+' : '') + fInt(nay.oppo.u - truoc.oppo.u) + ', toàn ngành ' + (nay.tong.u >= truoc.tong.u ? '+' : '') + fInt(nay.tong.u - truoc.tong.u) + ' máy.'); }
+                        grid.appendChild(kq);
+             })();
 
-      /* 4. Size shop */
-      (function () {
-        var kq = khoi({ stt: 4, ten: 'Hiệu suất theo Size shop', cls: 'bc-c6', dangXem: k.nhan + ' · OPPO trong từng size · chip so ' + esc(ctx.tenKyTruoc || 'kỳ trước') });
-        var h = '<table class="bc-bang"><thead><tr><th>Size</th><th>Shop</th><th>Có bán</th><th>Máy OPPO</th><th>so kỳ trước</th><th>Máy chợ</th><th>Thị phần</th><th>OPPO/shop</th></tr></thead><tbody>';
-        var tong = { n: 0, co: 0, o: 0, oT: 0, t: 0 };
-        SIZE.forEach(function (sz) { var shops = Object.keys(shopNay).filter(function (s) { return shopNay[s].size === sz; }); if (!shops.length) return; var co = shops.filter(function (s) { return shopNay[s].oppoU > 0; }).length; var o = 0, tt = 0, oT = 0; shops.forEach(function (s) { o += shopNay[s].oppoU; tt += shopNay[s].totU; if (shopTruoc && shopTruoc[s]) oT += shopTruoc[s].oppoU; }); tong.n += shops.length; tong.co += co; tong.o += o; tong.oT += oT; tong.t += tt;
-          h += '<tr><td><b>' + esc(sz) + '</b></td><td>' + shops.length + '</td><td>' + co + '</td><td><b>' + fInt(o) + '</b></td><td>' + chip(shopTruoc ? pct(o, oT) : null) + '</td><td>' + fInt(tt) + '</td><td>' + (tt ? (o / tt * 100).toFixed(1) + '%' : '-') + '</td><td>' + (shops.length ? (o / shops.length).toFixed(1) : '-') + '</td></tr>'; });
-        h += '<tr class="bc-tong"><td>Tổng</td><td>' + tong.n + '</td><td>' + tong.co + '</td><td>' + fInt(tong.o) + '</td><td>' + chip(shopTruoc ? pct(tong.o, tong.oT) : null) + '</td><td>' + fInt(tong.t) + '</td><td>' + (tong.t ? (tong.o / tong.t * 100).toFixed(1) + '%' : '-') + '</td><td>' + (tong.n ? (tong.o / tong.n).toFixed(1) : '-') + '</td></tr></tbody></table>';
-        $('.bc-than', kq).innerHTML = h;
-        grid.appendChild(kq);
-      })();
+             /* ================= 2. Doanh số theo hãng — 12 kỳ + bảng mini theo Sale ================= */
+             (function () {
+                        var kq = khoi({ stt: 2, ten: 'Doanh số theo hãng — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true,
+                                                 dangXem: 'Biểu đồ: top 6 hãng, còn lại gộp "Khác" · Bảng mini bên dưới: chi tiết từng Sale, lọc riêng theo tháng (mặc định cả năm)' });
+                        var top6 = HANG.map(function (h, i) { return { h: h, i: i, u: nay.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 6);
+                        var labels = ky12.map(function (q) { return q.nhan; });
+                        var cotHang = function (lay, tien) {
+                                     var khac = chuoi.map(function (g) { var t = lay(g.tong); top6.forEach(function (x) { t -= lay(g.hang[x.i]); }); return Math.max(0, t); });
+                                     return cauCotChong(labels, top6.map(function (x) { return { label: x.h, data: chuoi.map(function (g) { return lay(g.hang[x.i]); }), backgroundColor: mauHang(x.h) }; })
+                                                                    .concat([{ label: 'Khác', data: khac, backgroundColor: mauHang('Khác') }]), { fmt: tien ? fTyNgan : fInt, tien: tien });
+                        };
+                        var than = $('.bc-than', kq);
+                        than.appendChild(khungBieuDo({ cao: 420, tabs: [
+                           { ten: 'Thị phần %', cau: function () { return U.cauDuong(labels, top6.map(function (x) { return { label: x.h, data: chuoi.map(function (g) { return g.tong.u ? +(g.hang[x.i].u / g.tong.u * 100).toFixed(1) : 0; }), borderColor: mauHang(x.h), backgroundColor: mauHang(x.h) }; }), { phanTram: true, fmt: function (v) { return v + '%'; } }); } },
+                           { ten: 'Máy', cau: function () { return cotHang(function (x) { return x.u; }); } },
+                           { ten: 'Doanh thu', cau: function () { return cotHang(function (x) { return x.dt; }, true); } }
+                                   ] }));
 
-      /* 6. TOP 10 sản phẩm — 6 hãng */
-      (function () {
-        var kq = khoi({ stt: 6, ten: 'TOP 10 sản phẩm bán chạy', cls: cd === 'thang' ? 'bc-c6' : 'bc-c12',  dangXem: k.nhan + ' · chọn hãng · số máy và doanh thu' });
-        var top6 = HANG.map(function (h, i) { return { h: h, i: i, u: nay.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 6);
-        var box = el('div', 'bc-cuon');
-        function ve(j) { var hh = top6[j]; var ms = Object.keys(nay.model).filter(function (m) { return nay.model[m].h === hh.i; }).map(function (m) { return { m: MODEL[m], u: nay.model[m].u, dt: nay.model[m].dt, uT: truoc && truoc.model[m] ? truoc.model[m].u : null }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 10);
-          box.innerHTML = '<table class="bc-bang"><thead><tr><th>#</th><th>Model</th><th>Máy</th><th>so kỳ trước</th><th>DT</th></tr></thead><tbody>' + ms.map(function (x, i) { return '<tr><td>' + (i + 1) + '</td><td title="' + esc(x.m) + '">' + esc(x.m.replace(/^Điện thoại\s*/i, '').slice(0, 42)) + '</td><td><b>' + fInt(x.u) + '</b></td><td>' + chip(x.uT != null ? pct(x.u, x.uT) : null) + '</td><td>' + fTyNgan(x.dt) + '</td></tr>'; }).join('') + '</tbody></table>'; }
-        var than = $('.bc-than', kq); than.appendChild(nutChon(top6.map(function (x) { return x.h; }), 0, ve)); than.appendChild(box); ve(0);
-        grid.appendChild(kq);
-      })();
+                        var mSel = '', chon = 0;
+                        var CS = [
+                           { ten: 'Doanh số', fmt: fInt, lay: function (a, f) { return a[f + 'U']; }, tong: function (a) { return a.tU; } },
+                           { ten: 'Doanh thu', fmt: fTyNgan, lay: function (a, f) { return a[f + 'Dt']; }, tong: function (a) { return a.tDt; } },
+                           { ten: 'PK 10-20M', fmt: fInt, lay: function (a, f) { return f === 'o' ? a.pkO : null; }, tong: function (a) { return a.pkT; } }
+                                   ];
+                        var HNHOM = [['o', 'OPPO'], ['s', 'Samsung'], ['x', 'Xiaomi'], ['a', 'Apple']];
+                        var loc = el('div', 'bc-loc');
+                        loc.appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; veBang(); }));
+                        $('.bc-loc-thang select', loc).options[0].textContent = 'Cả năm';
+                        var hopNut = el('div'); hopNut.appendChild(nutChon(CS.map(function (c) { return c.ten; }), 0, function (i) { chon = i; veBang(); }));
+                        var box = el('div', 'bc-cuon');
+                        function veBang() {
+                                     var g = mSel ? gomTheo(shopMWG(khoangThang(+mSel).tu, khoangThang(+mSel).denCo), function (x) { return x.sale; })
+                                                               : gomTheo(shopMWG('2026-01-01', '2026-12-31'), function (x) { return x.sale; });
+                                     var cs = CS[chon];
+                                     var ss = Object.keys(g).sort(function (a, b) { return g[b].oU - g[a].oU; });
+                                     var h = '<table class="bc-bang"><thead><tr><th>Sale</th>' + HNHOM.map(function (x) { return '<th>' + x[1] + '</th>'; }).join('') + '<th>Khác</th><th>Tổng chợ</th><th>Share OPPO</th></tr></thead><tbody>';
+                                     var tg = {}; CONG.forEach(function (f) { tg[f] = 0; });
+                                     ss.forEach(function (s) {
+                                                    var a = g[s]; CONG.forEach(function (f) { tg[f] += a[f]; });
+                                                    var tong = cs.tong(a), biet = HNHOM.reduce(function (z, x) { return z + (cs.lay(a, x[0]) || 0); }, 0);
+                                                    h += '<tr><td>' + esc(s.split(' ').slice(-2).join(' ')) + '</td>' + HNHOM.map(function (x) { var v = cs.lay(a, x[0]); return '<td>' + (v == null ? '—' : cs.fmt(v)) + '</td>'; }).join('')
+                                                      + '<td>' + (chon === 2 ? '—' : cs.fmt(Math.max(0, tong - biet))) + '</td><td>' + cs.fmt(tong) + '</td><td><b>' + pcCh(tong ? (cs.lay(a, 'o') || 0) / tong * 100 : 0) + '</b></td></tr>';
+                                     });
+                                     var tT = cs.tong(tg), bT = HNHOM.reduce(function (z, x) { return z + (cs.lay(tg, x[0]) || 0); }, 0);
+                                     h += '<tr class="bc-tong"><td>Tổng</td>' + HNHOM.map(function (x) { var v = cs.lay(tg, x[0]); return '<td>' + (v == null ? '—' : cs.fmt(v)) + '</td>'; }).join('')
+                                       + '<td>' + (chon === 2 ? '—' : cs.fmt(Math.max(0, tT - bT))) + '</td><td>' + cs.fmt(tT) + '</td><td><b>' + pcCh(tT ? (cs.lay(tg, 'o') || 0) / tT * 100 : 0) + '</b></td></tr>';
+                                     box.innerHTML = h + '</tbody></table>';
+                        }
+                        than.appendChild(loc); than.appendChild(hopNut); than.appendChild(box); veBang();
+                        grid.appendChild(kq);
+             })();
 
-      if (cd !== 'tuan') grid.appendChild(khoiSale);
+             /* ================= 3. Tỉ trọng phân khúc giá — 3 biểu đồ 1 hàng + TOP 10 ================= */
+             (function () {
+                        var mSel = thangKy;
+                        var kq = khoi({ stt: 3, ten: 'Tỉ trọng phân khúc giá', rong: true,
+                                                 dangXem: 'Phân khúc xếp từ thấp lên cao · 3 biểu đồ và bảng TOP 10 bên dưới dùng chung bộ lọc Tháng' });
+                        $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, mSel, false, function (v) { mSel = +v; nap(); b1.ve(); b2.ve(); b3.ve(); veTop(); veChot(); }));
+                        var than = $('.bc-than', kq);
+                        var G = null;
+                        function nap() { var kk = khoangThang(mSel); G = gomMWG(kk.tu, kk.denCo); }
+                        nap();
+                        var pkMau = function () { return U.PK[sang() ? 'sang' : 'toi']; };
+                        var segCo = function () { return SEG.map(function (s, i) { return { s: s, i: i, u: G.seg[i].u }; }).filter(function (x) { return x.u > 0; }); };
+                        var top5 = function () { return HANG.map(function (h, i) { return { h: h, i: i, u: G.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 5); };
+                        var hang3 = el('div', 'bc-3bd'); than.appendChild(hang3);
+                        function o3(ten, cau) { var w = el('div', 'bc-3bd-o'); w.appendChild(el('div', 'bc-bd-ten', esc(ten))); var b = bdRieng(300, cau); w.appendChild(b.el); hang3.appendChild(w); return b; }
+                        var b1 = o3('Thị trường theo phân khúc', function () { var sc = segCo(), p = pkMau(); return cauVong(sc.map(function (x) { return x.s; }), sc.map(function (x) { return x.u; }), sc.map(function (x, j) { return p[Math.min(j, p.length - 1)]; })); });
+                        var b2 = o3('Hãng → phân khúc (%)', function () { var sc = segCo(), t5 = top5(), p = pkMau(); var c = cauCotChong(t5.map(function (x) { return x.h; }), sc.map(function (x, j) { return { label: x.s, data: t5.map(function (hh) { var t = G.hang[hh.i].u; return t ? +(G.segHang[x.i][hh.i] / t * 100).toFixed(1) : 0; }), backgroundColor: p[Math.min(j, p.length - 1)] }; }), { fmt: function (v) { return v.toFixed(0) + '%'; } }); c.plugins = []; return c; });
+                        var b3 = o3('Phân khúc → hãng (máy)', function () { var sc = segCo(), t5 = top5(); return cauCotChong(sc.map(function (x) { return x.s; }), t5.map(function (hh) { return { label: hh.h, data: sc.map(function (x) { return G.segHang[x.i][hh.i]; }), backgroundColor: mauHang(hh.h) }; })); });
+                        var tenTop = el('div', 'bc-bd-ten'); tenTop.style.textAlign = 'left'; tenTop.textContent = 'TOP 10 SẢN PHẨM BÁN CHẠY';
+                        var hopNut = el('div'), box = el('div', 'bc-cuon'), chonH = 0;
+                        than.appendChild(tenTop); than.appendChild(hopNut); than.appendChild(box);
+                        function veTop() {
+                                     var t6 = HANG.map(function (h, i) { return { h: h, i: i, u: G.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 6);
+                                     if (chonH >= t6.length) chonH = 0;
+                                     hopNut.innerHTML = ''; hopNut.appendChild(nutChon(t6.map(function (x) { return x.h; }), chonH, function (i) { chonH = i; veTop(); }));
+                                     var hh = t6[chonH]; if (!hh) { box.innerHTML = '<p class="bc-trong">Chưa có số.</p>'; return; }
+                                     var ms = Object.keys(G.model).filter(function (m) { return G.model[m].h === hh.i; }).map(function (m) { return { m: MODEL[m], u: G.model[m].u, dt: G.model[m].dt }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 10);
+                                     box.innerHTML = '<table class="bc-bang"><thead><tr><th>#</th><th>Model</th><th>Máy</th><th>DT</th><th>ĐG TB</th></tr></thead><tbody>'
+                                       + ms.map(function (x, i) { return '<tr><td>' + (i + 1) + '</td><td title="' + esc(x.m) + '">' + esc(x.m.replace(/^Điện thoại\s*/i, '').slice(0, 42)) + '</td><td><b>' + fInt(x.u) + '</b></td><td>' + fTyNgan(x.dt) + '</td><td>' + fTr(x.u ? x.dt / x.u : 0) + '</td></tr>'; }).join('') + '</tbody></table>';
+                        }
+                        function veChot() { var t = G.seg.reduce(function (z, x) { return z + x.u; }, 0); var pkU = PKI.reduce(function (z, i) { return z + G.seg[i].u; }, 0); chot(kq, 'Tháng ' + mSel + ': phân khúc <b>10-20M</b> chiếm <b>' + pcCh(t ? pkU / t * 100 : 0) + '</b> máy toàn chợ; OPPO nắm <b>' + pcCh(pkU ? G.hangPK[iOppo] / pkU * 100 : 0) + '</b> khoảng này.'); }
+                        veTop(); veChot();
+                        grid.appendChild(kq);
+             })();
 
-      /* 8. Chi tiết shop 4 hãng */
-      (function () {
-        var kq = khoi({ stt: 8, ten: 'Chi tiết shop — OPPO · Samsung · Xiaomi · Apple', rong: true, dangXem: k.nhan + ' · xếp theo máy OPPO · lọc Sale / Size' });
-        var than = $('.bc-than', kq);
-        var rows = Object.keys(shopNay).map(function (s) { var a = shopNay[s], b = shopTruoc ? shopTruoc[s] : null; return { s: s, sale: a.sale, chuaGan: a.chuaGan, size: a.size, o: a.oppoU, oDt: a.oppoDt, ss: a.ssU, xm: a.xmU, ap: a.apU, tot: a.totU, totDt: a.totDt, oT: b ? b.oppoU : null }; }).sort(function (a, b) { return b.o - a.o; });
-        var loc = el('div', 'bc-loc'); var sales = SALES_MWG.slice();
-        loc.innerHTML = '<label>Sale <select data-k="sale"><option value="">Tất cả</option>' + sales.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('') + '</select></label><label>Size <select data-k="size"><option value="">Tất cả</option>' + SIZE.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('') + '</select></label><label>Tìm <input type="search" data-k="tim" placeholder="tên shop"></label><span class="bc-loc-dem"></span>';
-        var box = el('div', 'bc-cuon'), moRong = false, nut = el('button', 'bc-nut-them'); nut.type = 'button';
-        function ve() { var f = { sale: $('[data-k=sale]', loc).value, size: $('[data-k=size]', loc).value, tim: $('[data-k=tim]', loc).value.toLowerCase() };
-          var rs = rows.filter(function (r) { return (!f.sale || r.sale === f.sale) && (!f.size || r.size === f.size) && (!f.tim || r.s.toLowerCase().indexOf(f.tim) >= 0); }); $('.bc-loc-dem', loc).textContent = rs.length + ' shop';
-          var show = moRong ? rs : rs.slice(0, 10);
-          box.innerHTML = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Size</th><th>Sale</th><th>OPPO</th><th>so kỳ trước</th><th>Thị phần</th><th>Samsung</th><th>Xiaomi</th><th>Apple</th><th>Tổng chợ</th><th>DT OPPO</th></tr></thead><tbody>' + show.map(function (r, i) { return '<tr' + (!r.o ? ' class="bc-mo"' : '') + '><td>' + (i + 1) + '</td><td title="' + esc(r.s) + '">' + esc(r.s) + '</td><td>' + esc(r.size) + '</td><td>' + esc(r.sale.split(' ').slice(-2).join(' ')) + (r.chuaGan ? ' <span class="bc-co">chưa gán</span>' : '') + '</td><td><b>' + fInt(r.o) + '</b></td><td>' + chip(r.oT != null ? pct(r.o, r.oT) : null) + '</td><td>' + (r.tot ? (r.o / r.tot * 100).toFixed(0) + '%' : '-') + '</td><td>' + fInt(r.ss) + '</td><td>' + fInt(r.xm) + '</td><td>' + fInt(r.ap) + '</td><td>' + fInt(r.tot) + '</td><td>' + fTyNgan(r.oDt) + '</td></tr>'; }).join('') + '</tbody></table>';
-          nut.textContent = moRong ? 'Thu gọn' : 'Xem tất cả ' + rs.length + ' shop'; nut.hidden = rs.length <= 10; }
-        loc.addEventListener('change', ve); loc.addEventListener('input', ve); nut.addEventListener('click', function () { moRong = !moRong; ve(); });
-        than.appendChild(loc); than.appendChild(box); than.appendChild(nut); ve();
-        var so0 = rows.filter(function (r) { return r.o === 0 && r.tot > 0; }).length; if (so0) chot(kq, '<b>' + so0 + '</b> shop có bán máy hãng khác nhưng <b>0 máy OPPO</b> trong kỳ.');
-        grid.appendChild(kq);
-      })();
+             /* ================= 4. Hiệu suất theo Size shop ================= */
+             (function () {
+                        var mSel = '';
+                        var kq = khoi({ stt: 4, ten: 'Hiệu suất theo Size shop', rong: true,
+                                                 dangXem: 'PK 10-20M · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · bấm dòng Size để mở chi tiết shop trong nhóm' });
+                        $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; mo = {}; ve(); }));
+                        var box = el('div', 'bc-cuon'); $('.bc-than', kq).appendChild(box);
+                        var mo = {};
+                        function ve() {
+                                     var shops = mSel ? shopMWG(khoangThang(+mSel).tu, khoangThang(+mSel).denCo) : shopNay;
+                                     var g = gomTheo(shops, function (x) { return x.size; });
+                                     var ds = SIZE.filter(function (s) { return g[s]; }).concat(Object.keys(g).filter(function (s) { return SIZE.indexOf(s) < 0; }));
+                                     var h = '<table class="bc-bang"><thead><tr><th>Size</th><th>Shop</th><th>Có bán</th><th>Máy OPPO</th><th>Máy chợ</th>' + dauCotChinh + '<th>OPPO/shop</th></tr></thead><tbody>';
+                                     var tg = { shops: 0, shop0: 0 }; CONG.forEach(function (f) { tg[f] = 0; });
+                                     ds.forEach(function (sz) {
+                                                    var a = g[sz]; if (!a) return; CONG.forEach(function (f) { tg[f] += a[f]; }); tg.shops += a.shops; tg.shop0 += a.shop0;
+                                                    h += '<tr class="bc-size-dong" data-sz="' + esc(sz) + '" style="cursor:pointer"><td><b>' + (mo[sz] ? '▾ ' : '▸ ') + esc(sz) + '</b></td><td>' + a.shops + '</td><td>' + (a.shops - a.shop0) + '</td><td><b>' + fInt(a.oU) + '</b></td><td>' + fInt(a.tU) + '</td>' + oCotChinh(a) + '<td>' + (a.shops ? (a.oU / a.shops).toFixed(1) : '-') + '</td></tr>';
+                                                    if (mo[sz]) {
+                                                                     var rs = a.ten.map(function (s) { return { s: s, x: shops[s] }; }).sort(function (p, q) { return q.x.oU - p.x.oU; });
+                                                                     h += '<tr><td colspan="9"><div class="bc-cuon"><table class="bc-bang"><thead><tr><th>Shop</th><th>Sale</th><th>Máy OPPO</th><th>Máy chợ</th>' + dauCotChinh + '</tr></thead><tbody>'
+                                                                       + rs.map(function (r) { return '<tr' + (!r.x.oU ? ' class="bc-mo"' : '') + '><td title="' + esc(r.s) + '">' + esc(tenShopNgan(r.s)) + '</td><td>' + esc(String(r.x.sale).split(' ').slice(-2).join(' ')) + '</td><td><b>' + fInt(r.x.oU) + '</b></td><td>' + fInt(r.x.tU) + '</td>' + oCotChinh(r.x) + '</tr>'; }).join('')
+                                                                       + '</tbody></table></div></td></tr>';
+                                                    }
+                                     });
+                                     h += '<tr class="bc-tong"><td>Tổng</td><td>' + tg.shops + '</td><td>' + (tg.shops - tg.shop0) + '</td><td>' + fInt(tg.oU) + '</td><td>' + fInt(tg.tU) + '</td>' + oCotChinh(tg) + '<td>' + (tg.shops ? (tg.oU / tg.shops).toFixed(1) : '-') + '</td></tr></tbody></table>';
+                                     box.innerHTML = h;
+                        }
+                        box.addEventListener('click', function (e) { var tr = e.target.closest('.bc-size-dong'); if (!tr) return; var sz = tr.getAttribute('data-sz'); mo[sz] = !mo[sz]; ve(); });
+                        ve();
+                        grid.appendChild(kq);
+             })();
 
-      /* 10. DS | DT theo ngày */
-      (function () {
-        var kq = khoi({ stt: 10, ten: 'OPPO theo ngày', cls: 'bc-c12', dangXem: cd === 'tuan' ? '7 ngày của tuần chọn · trong ngoặc: tuần trước cùng thứ' : 'Các ngày trong tháng chọn' });
-        var ngay = []; for (var dd = k.tu; dd <= k.den; dd = congNgay(dd, 1)) ngay.push(dd);
-        var lay = function (g, dd, f) { var N = g.ngay[dd.slice(5)]; return N ? N[f] : 0; };
-        var lam = function (f, tien) { var ds = [{ label: 'OPPO ' + k.nhan, data: ngay.map(function (dd) { return dd > k.denCo ? 0 : lay(nay, dd, f); }), backgroundColor: mau('OPPO') }];
-          /* Không chồng cột tuần trước lên (shim luôn vẽ chồng -> tổng sai); ghi số tuần trước vào nhãn trục */
-          var c = cauCotChong(ngay.map(function (dd, i) { var thu = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][new Date(dd).getUTCDay() === 0 ? 6 : new Date(dd).getUTCDay() - 1]; var tr = (cd === 'tuan' && truoc) ? ' (' + (tien ? fTyNgan(lay(truoc, congNgay(kt.tu, i), f)) : fInt(lay(truoc, congNgay(kt.tu, i), f))) + ')' : ''; return (cd === 'tuan' ? thu + ' ' : '') + ngayVN(dd).slice(0, 2) + tr; }), ds, { fmt: tien ? fTyNgan : fInt, tien: tien }); c.plugins = []; return c; };
-        $('.bc-than', kq).appendChild(khungBieuDo({ cao: 340, tabs: [{ ten: 'Máy', cau: function () { return lam('oppoU'); } }, { ten: 'Doanh thu', cau: function () { return lam('oppoDt', true); } }] }));
-        grid.appendChild(kq);
-      })();
+             /* ================= 5. Hiệu suất Sale / ASM ================= */
+             (function () {
+                        var mSel = '';
+                        var kq = khoi({ stt: 5, ten: 'Hiệu suất Sale / ASM — OPPO so với thị trường', rong: true,
+                                                 dangXem: 'Thêm PK 10-20M · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · cờ đỏ: giảm >20% hoặc mất ≥3 điểm thị phần' });
+                        $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; ve(); }));
+                        var box = el('div', 'bc-cuon'); $('.bc-than', kq).appendChild(box);
+                        function ve() {
+                                     var A, Bt, nhanT;
+                                     if (!mSel) { A = saleNay; Bt = saleTruoc; nhanT = ctx.tenKyTruoc || 'kỳ trước'; }
+                                     else {
+                                                    var m = +mSel, kk = khoangThang(m); A = gomTheo(shopMWG(kk.tu, kk.denCo), function (x) { return x.sale; });
+                                                    var kp = m > 1 ? khoangThang(m - 1) : null;
+                                                    Bt = kp ? gomTheo(shopMWG(kp.tu, kp.denCo), function (x) { return x.sale; }) : null;
+                                                    nhanT = kp ? 'tháng ' + (m - 1) : 'kỳ trước';
+                                     }
+                                     var rows = Object.keys(A).map(function (s) {
+                                                    var a = A[s], b = Bt ? Bt[s] : null;
+                                                    var sh = shDs(a, a.oU), shT = b ? shDs(b, b.oU) : null, p = b ? pct(a.oU, b.oU) : null;
+                                                    var co = []; if (p != null && p < -20) co.push('giảm ' + Math.abs(p).toFixed(0) + '%');
+                                                    if (shT != null && sh - shT <= -3) co.push('mất ' + (shT - sh).toFixed(1) + ' điểm');
+                                                    if (a.shop0 >= 3) co.push(a.shop0 + ' shop 0 máy');
+                                                    return { s: s, a: a, sh: sh, shT: shT, p: p, co: co };
+                                     }).sort(function (x, y) { return (y.co.length - x.co.length) || ((x.p == null ? 0 : x.p) - (y.p == null ? 0 : y.p)); });
+                                     var h = '<table class="bc-bang"><thead><tr><th>Sale / ASM</th><th>Máy OPPO</th><th>so ' + esc(nhanT) + '</th><th>Máy chợ</th>' + dauCotChinh + '<th>± điểm</th><th>Shop</th><th>Shop 0 máy</th><th>DT OPPO</th><th>Cảnh báo</th></tr></thead><tbody>';
+                                     rows.forEach(function (r) {
+                                                    h += '<tr' + (r.co.length ? ' class="bc-canh"' : '') + '><td>' + esc(r.s) + '</td><td><b>' + fInt(r.a.oU) + '</b></td><td>' + chip(r.p) + '</td><td>' + fInt(r.a.tU) + '</td>' + oCotChinh(r.a)
+                                                      + '<td>' + (r.shT != null ? chipDiem(r.sh - r.shT) : '—') + '</td><td>' + r.a.shops + '</td><td>' + (r.a.shop0 ? '<span class="bc-giam-chu"><b>' + r.a.shop0 + '</b></span>' : '0') + '</td><td>' + fTyNgan(r.a.oDt) + '</td><td>' + (r.co.length ? '<span class="bc-co">' + r.co.map(esc).join(' · ') + '</span>' : '<span class="bc-len-chu">ổn</span>') + '</td></tr>';
+                                     });
+                                     box.innerHTML = h + '</tbody></table>';
+                                     var xau = rows.filter(function (r) { return r.co.length; });
+                                     chot(kq, xau.length ? '<b>' + xau.length + '</b> Sale có vấn đề: ' + xau.slice(0, 3).map(function (r) { return '<b>' + esc(r.s.split(' ').slice(-2).join(' ')) + '</b> (' + r.co.join(', ') + ')'; }).join(', ') + '.' : 'Không Sale nào chạm ngưỡng cảnh báo.');
+                        }
+                        ve();
+                        grid.appendChild(kq);
+             })();
 
-      /* 9. Cùng kỳ tháng trước (chỉ tháng) */
-      if (cd === 'thang' && truoc) (function () {
-        var kq = khoi({ stt: 9, ten: 'Luỹ kế theo ngày — so tháng trước', cls: 'bc-c6', dangXem: 'Máy OPPO cộng dồn từ ngày 1' });
-        var n = U.soNgayThang(k.so), lk = [], lkT = [], a = 0, b = 0; for (var i = 1; i <= n; i++) { var N = nay.ngay[pad2(k.so) + '-' + pad2(i)], NT = truoc.ngay[pad2(k.so - 1) + '-' + pad2(i)]; a += N ? N.oppoU : 0; b += NT ? NT.oppoU : 0; lk.push(('2026-' + pad2(k.so) + '-' + pad2(i)) > k.denCo ? null : a); lkT.push(b); }
-        $('.bc-than', kq).appendChild(khungBieuDo({ cao: 340, tabs: [{ ten: 'Luỹ kế', cau: function () { return { type: 'line', data: { labels: lk.map(function (_, i) { return i + 1; }), datasets: [{ label: k.nhan, data: lk, borderColor: mau('OPPO'), backgroundColor: mau('OPPO'), tension: .2, pointRadius: 0, borderWidth: 2.5 }, { label: kt.nhan, data: lkT, borderColor: mau('xam'), backgroundColor: mau('xam'), tension: .2, pointRadius: 0, borderWidth: 1.5, borderDash: [4, 4] }] }, options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, color: mau('chuPhu') } } }, scales: { x: { grid: { display: false }, ticks: { color: mau('chuPhu') } }, y: { grid: { color: mau('luoi') }, ticks: { color: mau('chuPhu') }, border: { display: false } } } } }; } }] }));
-        grid.appendChild(kq);
-      })();
+             /* ================= 6. Số bán ngày ================= */
+             (function () {
+                        var mSel = thangKy;
+                        var kq = khoi({ stt: 6, ten: 'Số bán ngày', rong: true,
+                                                 dangXem: 'Tháng mới nhất của DATA MWG · biểu đồ đường đủ hãng theo ngày · bảng mini bên dưới: OPPO theo từng Sale (15 ngày gần nhất)' });
+                        $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, mSel, false, function (v) { mSel = +v; nap(); bd.ve(); veBang(); }));
+                        var than = $('.bc-than', kq);
+                        var chon = 0, G = null, ngay = [], SH = null;
+                        var CS = [
+                           { ten: 'Doanh số', fmt: fInt, lay: function (N, i) { return N.h[i].u; }, f: 'oU' },
+                           { ten: 'Doanh thu', fmt: fTyNgan, tien: true, lay: function (N, i) { return N.h[i].dt; }, f: 'oDt' },
+                           { ten: 'PK 10-20M', fmt: fInt, lay: function (N, i) { return N.pk[i]; }, f: 'pkO' },
+                           { ten: 'Reno', fmt: fInt, reno: true, f: 'oU' }
+                                   ];
+                        function nap() {
+                                     var kk = khoangThang(mSel); G = gomMWG(kk.tu, kk.denCo); ngay = [];
+                                     for (var dd = kk.tu; dd <= kk.denCo; dd = congNgay(dd, 1)) ngay.push(dd);
+                                     SH = shopMWG(kk.tu, kk.denCo);
+                        }
+                        nap();
+                        than.appendChild(nutChon(CS.map(function (c) { return c.ten; }), 0, function (i) { chon = i; bd.ve(); veBang(); }));
+                        var bd = bdRieng(360, function () {
+                                     var cs = CS[chon];
+                                     var nhan = ngay.map(function (dd) { return ngayVN(dd).slice(0, 2); });
+                                     var lay = function (dd) { return G.ngay[dd.slice(5)] || null; };
+                                     var dsets;
+                                     if (cs.reno) dsets = [
+                                        { label: 'Reno', data: ngay.map(function (dd) { var N = lay(dd); return N ? N.reno : 0; }), borderColor: mau('RENO'), backgroundColor: mau('RENO') },
+                                        { label: 'Find', data: ngay.map(function (dd) { var N = lay(dd); return N ? N.find : 0; }), borderColor: mau('FIND'), backgroundColor: mau('FIND') }];
+                                     else {
+                                                    var t6 = HANG.map(function (h, i) { return { h: h, i: i, u: G.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 6);
+                                                    dsets = t6.map(function (x) { return { label: x.h, data: ngay.map(function (dd) { var N = lay(dd); return N ? cs.lay(N, x.i) : 0; }), borderColor: mauHang(x.h), backgroundColor: mauHang(x.h) }; });
+                                     }
+                                     return U.cauDuong(nhan, dsets, { fmt: cs.fmt, tien: !!cs.tien });
+                        });
+                        than.appendChild(bd.el);
+                        var hopBang = el('div', 'bc-mini-cuon'); than.appendChild(hopBang);
+                        function veBang() {
+                                     var f = CS[chon].f;
+                                     var cot = ngay.slice(-15);
+                                     var val = {};
+                                     Object.keys(SH).forEach(function (shop) {
+                                                    var sale = SH[shop].sale; if (!val[sale]) val[sale] = cot.map(function () { return 0; });
+                                                    var dm = (B.shop_day_data || {})[shop] || {};
+                                                    cot.forEach(function (dd, i) {
+                                                                     var v = dm[(+dd.slice(5, 7)) + '-' + (+dd.slice(8, 10))] || dm[dd.slice(5, 7) + '-' + dd.slice(8, 10)];
+                                                                     if (!v) return;
+                                                                     val[sale][i] += f === 'oDt' ? (v.oppo_rev || 0) : f === 'pkO' ? (v.pk1020_oppo_units || 0) : (v.oppo_units || 0);
+                                                    });
+                                     });
+                                     var fmt = f === 'oDt' ? fTyNgan : fInt;
+                                     var ss = Object.keys(val).sort();
+                                     var h = '<table class="bc-mini"><thead><tr><th>' + esc(CS[chon].reno ? 'Máy OPPO' : CS[chon].ten) + '</th>' + cot.map(function (dd, i) { return '<th' + (i === cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + ngayVN(dd).slice(0, 2) + '</th>'; }).join('') + '</tr></thead><tbody>';
+                                     var tong = cot.map(function () { return 0; });
+                                     ss.forEach(function (s) {
+                                                    var vs = val[s];
+                                                    h += '<tr><td><i class="bc-cham" style="background:' + mau('MWG') + '"></i>' + esc(s.split(' ').slice(-2).join(' ')) + '</td>' + vs.map(function (v, i) {
+                                                                     tong[i] += v; var cl = ''; if (i > 0 && vs[i - 1]) { var p = (v - vs[i - 1]) / vs[i - 1]; cl = p > .03 ? ' bc-len' : p < -.03 ? ' bc-giam' : ''; }
+                                                                     return '<td class="' + cl + (i === cot.length - 1 ? ' bc-cot-chon' : '') + '">' + (v ? fmt(v) : '-') + '</td>';
+                                                    }).join('') + '</tr>';
+                                     });
+                                     h += '<tr class="bc-tong"><td>Tổng</td>' + tong.map(function (v, i) { return '<td' + (i === cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + (v ? fmt(v) : '-') + '</td>'; }).join('') + '</tr></tbody></table>';
+                                     hopBang.innerHTML = h; hopBang.scrollLeft = hopBang.scrollWidth;
+                        }
+                        veBang();
+                        grid.appendChild(kq);
+             })();
 
-      /* 11. Thi đua tháng (mượn) */
-      if (cd === 'thang') muonKhoi(grid, 11, 'Chương trình thi đua tháng', 'Bonus Size S/A · % HT theo Sale/ASM — như DB TG cũ', timMuon(root, /thi đua/i));
+             /* ================= 7. Thi đua tháng (mượn) ================= */
+             if (cd === 'thang') muonKhoi(grid, 7, 'Chương trình thi đua tháng', 'Bonus Size S/A · % HT theo Sale/ASM — như DB TG cũ', timMuon(root, /thi đua/i));
     }
 
     /* ===================== KA ===================== */
