@@ -1,0 +1,44 @@
+name: Cap nhat review Mien Trung
+
+# Robot Mien Trung: moi gio 08:00-22:00 VN (01:00-15:00 UTC) doc Apps Script ?mode=shopdaily,
+# luu kho ma hoa data/mt-archive.json, dong goi data/mt-review.json cho review-mt.html. 0 token.
+on:
+  schedule:
+    - cron: '7 1-15 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cap-nhat-mt
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Dong goi Mien Trung
+        env:
+          SALE_CODES: ${{ secrets.SALE_CODES }}
+        run: node scripts/build-mt-review.mjs
+      - name: Commit
+        run: |
+          git config user.name "robot-mt"
+          git config user.email "robot-mt@users.noreply.github.com"
+          git add data/mt-review.json data/mt-archive.json data/mt-index.json
+          if git diff --cached --quiet; then echo "khong co gi moi"; exit 0; fi
+          git commit -m "robot MT: cap nhat $(TZ=Asia/Ho_Chi_Minh date '+%d/%m %H:%M')"
+          for i in 1 2 3 4 5; do
+            if git push; then exit 0; fi
+            echo "push that bai, thu lai $i"; sleep 10
+            git pull --rebase -X theirs || true
+          done
+          exit 1
