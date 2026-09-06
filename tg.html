@@ -454,7 +454,10 @@
   function duocPhepLui() {
     var ai = window.__aiDangXem;
     if (!ai) { try { ai = JSON.parse(localStorage.getItem(KHO_AI) || 'null'); } catch (e) {} }
-    return !ai || ai.r === 'admin';
+    /* Anh Thái 06/09: TRƯỚC ĐÂY `!ai` cũng được lui — chọn tên xong bấm "Bỏ qua" hoặc
+       không nhập mã là xem được số CẢ VÙNG. Nay chỉ ADMIN đã đăng nhập mới được lui;
+       ai khác không mở được gói thì gặp màn hình "Chưa mở được dữ liệu — Nhập lại mã". */
+    return !!ai && ai.r === 'admin';
   }
   window.__chanDuongLui = function () {
     if (document.getElementById('dbtg-chan')) return;
