@@ -124,6 +124,8 @@
   .rrow .rn{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .rrow .rv{text-align:center;font-weight:700;font-variant-numeric:tabular-nums;font-size:11.5px;}
   .rrow .rv.lo{color:var(--danger);} .rrow .rv.hi{color:var(--accent);}
+  .mx-v .rk{font-family:"Be Vietnam Pro",sans-serif;font-style:normal;font-weight:700;font-size:13px;color:var(--muted);margin-left:4px;letter-spacing:0;vertical-align:3px;}
+  .mx-v .rk.r1{color:var(--accent);}
   .rrow .rv .rk{font-style:normal;font-weight:600;font-size:10px;color:var(--muted);margin-left:2px;}
   .rrow .rv .rk.r1{color:var(--ink-2);}
   .rrow.rhd{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line-2);padding-bottom:3px;}
@@ -420,7 +422,7 @@
    C. tính số cho ngày đang xem từ gói (dnB / dk / dkp / pkD / dmN / gt)
    D. vẽ trang
    ================================================================ */
-var REVIEW_VER='2026-09-05.5';
+var REVIEW_VER='2026-09-05.6';
 var $=function(s){return document.querySelector(s)};
 var D=null;              // gói đã mở khoá (đúng cấu trúc app.html)
 var DAY=0;               // ngày đang xem (trong tháng hiện tại)
@@ -837,22 +839,23 @@ function tsBang(){
 function kpiCombo(){
   var K=kpi3(V.all.ng), P=V.all.tr?kpi3(V.all.tr):[null,null,null], L=kpi3(V.all.lk);
   var raw=[n0(V.all.ng[0])+' / '+n0(V.all.ng[8])+' máy', n0(V.all.ng[1])+' / '+n0(V.all.ng[9])+' tr', n0(V.all.ng[10])+' / '+n0(V.all.ng[12])+' máy'];
-  var lbl=['S.O','Doanh thu','PK 10–20M'];
+  var lbl=['S.O','Doanh thu','PK 10–20M'], HV=hangOppo(V.all.ng,V.pkNg);
   var strip=lbl.map(function(l,i){return '<div class="mx"><div class="mx-t"><span class="mx-l">'+l+'</span><span class="mx-m">LK T'+M+' <b>'+pc(L[i])+'</b></span></div>'+
-    '<div class="mx-b"><span class="mx-v">'+n1(K[i])+'<small>%</small></span>'+arrow(K[i],P[i])+'<span class="mx-r">'+esc(raw[i])+'</span></div></div>'}).join('');
+    '<div class="mx-b"><span class="mx-v">'+n1(K[i])+'<small>%</small>'+rkTag(HV[i])+'</span>'+arrow(K[i],P[i])+'<span class="mx-r">'+esc(raw[i])+'</span></div></div>'}).join('');
   function c(v,bm,h){var cl=(v+0.001<bm)?'lo':((v>bm+0.001)?'hi':'');return '<span class="rv '+cl+'">'+pc(v)+rkTag(h)+'</span>'}
   var rows=V.sales.slice().sort(function(a,b){return kpi3(b.ng)[0]-kpi3(a.ng)[0]}).map(function(s){var k=kpi3(s.ng), h=hangOppo(s.ng,(V.pkSale[s.full]||{}).ng);
     return '<div class="rrow"><span class="rn">'+esc(s.n)+'</span>'+c(k[0],K[0],h[0])+c(k[1],K[1],h[1])+c(k[2],K[2],h[2])+'</div>'}).join('');
   return '<div class="kpi"><div class="lbl">Thị phần ngày '+DAY+'</div><div class="mxs">'+strip+'</div>'+
     '<div class="ranks"><div class="rrow rhd"><span class="rn">Sale — ngày '+DAY+'</span><span>S.O</span><span>DT</span><span>PK</span></div>'+rows+'</div>'+
-    '<div class="fnote"><b class="lo-i">Đỏ</b> = dưới chuẩn vùng ngày '+DAY+' · <b class="hi-i">xanh</b> = trên chuẩn · <b>(n)</b> = hạng OPPO trong địa bàn sale (S.O/DT: 4 hãng chính · PK: 6 hãng). Mũi tên so ngày '+esc(V.prevLbl)+'.</div></div>';
+    '<div class="fnote"><b class="lo-i">Đỏ</b> = dưới chuẩn vùng ngày '+DAY+' · <b class="hi-i">xanh</b> = trên chuẩn · <b>(n)</b> = hạng OPPO trong thị trường: số lớn = toàn vùng, từng dòng = địa bàn sale (S.O/DT: 4 hãng chính · PK: 6 hãng). Mũi tên so ngày '+esc(V.prevLbl)+'.</div></div>';
 }
 function kpiLK(){
   var L=kpi3(V.all.lk), C=V.all.ck?kpi3(V.all.ck):[null,null,null];
   var lbl=['S.O','Doanh thu','PK 10–20M'];
   var raw=[n0(V.all.lk[0])+' / '+n0(V.all.lk[8])+' máy', money(V.all.lk[1])+' / '+money(V.all.lk[9]), n0(V.all.lk[10])+' / '+n0(V.all.lk[12])+' máy'];
+  var HV=hangOppo(V.all.lk,V.pkLk);
   var strip=lbl.map(function(l,i){return '<div class="mx"><div class="mx-t"><span class="mx-l">'+l+'</span><span class="mx-m">cùng kỳ T'+(PM||'—')+' <b>'+(C[i]===null?'—':pc(C[i]))+'</b></span></div>'+
-    '<div class="mx-b"><span class="mx-v">'+n1(L[i])+'<small>%</small></span>'+arrow(L[i],C[i])+'<span class="mx-r">'+esc(raw[i])+'</span></div></div>'}).join('');
+    '<div class="mx-b"><span class="mx-v">'+n1(L[i])+'<small>%</small>'+rkTag(HV[i])+'</span>'+arrow(L[i],C[i])+'<span class="mx-r">'+esc(raw[i])+'</span></div></div>'}).join('');
   function c(v,bm,h){var cl=(v+0.001<bm)?'lo':((v>bm+0.001)?'hi':'');return '<span class="rv '+cl+'">'+pc(v)+rkTag(h)+'</span>'}
   var rows=V.sales.slice().sort(function(a,b){return kpi3(b.lk)[0]-kpi3(a.lk)[0]}).map(function(s){var k=kpi3(s.lk), h=hangOppo(s.lk,(V.pkSale[s.full]||{}).lk);
     return '<div class="rrow"><span class="rn">'+esc(s.n)+'</span>'+c(k[0],L[0],h[0])+c(k[1],L[1],h[1])+c(k[2],L[2],h[2])+'</div>'}).join('');
