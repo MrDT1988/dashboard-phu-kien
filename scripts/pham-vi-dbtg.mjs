@@ -84,7 +84,14 @@ export function catPhamVi(A, B, ai) {
   C.crosstab = locMang(A.crosstab, (r) => shopC.has(r.store));
   C.series_detail_crosstab = locMang(A.series_detail_crosstab,
     (r) => saleCho.has(r.sales) && kenhCon.has(r.channel));
-  C.sell_in_rows = locMang(A.sell_in_rows, (r) => storeIds.has(String(r && r[0]).trim()));
+  /* Sell In la so cua CA KENH IND: ~1/5 so may ve tai khoan cong ty/PP, khong khop
+       store_id cua shop nao. Cat theo storeIds thi LEADER IND mat 20% Sell In.
+            Anh Thai 06/09: leader phai thay TOAN BO chi tiet kenh minh phu trach
+                 -> leader IND giu nguyen ca bang; leader MWG/KA khong dung Sell In -> de rong;
+                      sale van chi thay shop cua chinh minh. */
+    C.sell_in_rows = (ai.vaiTro === 'leader')
+      ? (ai.kenh === 'IND' ? (A.sell_in_rows || []).slice() : [])
+          : locMang(A.sell_in_rows, (r) => storeIds.has(String(r && r[0]).trim()));
   C.shop_sale_map = locDoiTuong(A.shop_sale_map, (k) => shopC.has(k));
   C.shop_level_map = locDoiTuong(A.shop_level_map, (k) => shopC.has(k));
   /* ==== them 04/09/2026 — shop_sale_by_id (tg.html them 03/09 cho tab MWG, bc-chitiet.js).
