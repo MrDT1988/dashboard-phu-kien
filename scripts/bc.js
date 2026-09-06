@@ -225,7 +225,8 @@
                                           }).join('') + '</tr>';
                   });
                   if (o.tong !== false && o.dong.length > 1 && !cs.khongTong) h += '<tr class="bc-tong"><td>Tổng</td>' + themTd + tong.map(function (v, i) { return '<td' + (i === o.cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + (v ? fmt(v) : '-') + '</td>'; }).join('') + '</tr>';body.innerHTML = h + '</tbody></table>';
-      body.scrollLeft = body.scrollWidth;
+      body.innerHTML = h + '</tbody></table>';
+            body.scrollLeft = body.scrollWidth;
     }
     if (o.chiSo.length > 1) wrap.appendChild(nutChon(o.chiSo.map(function (c) { return c.ten; }), 0, function (i) { chon = i; ve(); }));
     wrap.appendChild(body); ve();
