@@ -119,11 +119,13 @@
   .arw{font-size:14px;font-weight:700;white-space:nowrap;}
   .up{color:var(--accent);} .down{color:var(--danger);} .flat{color:var(--muted);}
   .ranks{border-top:1px solid var(--line);padding-top:9px;flex:1;}
-  .rrow{display:grid;grid-template-columns:1fr 46px 46px 46px;gap:5px;align-items:center;padding:2px 0;font-size:11px;border-bottom:1px solid var(--line);}
+  .rrow{display:grid;grid-template-columns:1fr 62px 62px 62px;gap:4px;align-items:center;padding:2px 0;font-size:11px;border-bottom:1px solid var(--line);}
   .rrow:last-child{border-bottom:none;}
   .rrow .rn{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .rrow .rv{text-align:center;font-weight:700;font-variant-numeric:tabular-nums;font-size:11.5px;}
   .rrow .rv.lo{color:var(--danger);} .rrow .rv.hi{color:var(--accent);}
+  .rrow .rv .rk{font-style:normal;font-weight:600;font-size:10px;color:var(--muted);margin-left:2px;}
+  .rrow .rv .rk.r1{color:var(--ink-2);}
   .rrow.rhd{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line-2);padding-bottom:3px;}
   .rrow.rhd span{text-align:center;} .rrow.rhd .rn{text-align:left;}
   .rrow.r2{grid-template-columns:1fr 70px 70px;}
@@ -684,6 +686,15 @@ function ngayMkt(){ // ngày cuối THỰC SỰ có số thị trường trong t
 function saleShort(s){return tenNgan2(s.n)}
 function allShops(){var out=[];(D.sales||[]).forEach(function(s){(s.s||[]).forEach(function(x){x.__sale=s.n;out.push(x)})});return out}
 function kpi3(r){return [shr(r[0],r[8]),shr(r[1],r[9]),shr(r[10],r[12])]}
+/* 05/09/2026 — anh Thái: thêm hạng của OPPO trong thị trường của từng sale, ghi trong ( ). 
+   S.O / DT: hạng trong 4 hãng chính (OPPO/Samsung/Xiaomi/Apple, "Khác" là nhóm gộp nên không xếp). PK: hạng trong 6 hãng (bỏ Khác). */
+function hangOppo(r,pk){ // r = vector 14 số; pk = mảng 7 cặp [máy,tiền] hoặc null -> [hạng S.O, hạng DT, hạng PK]
+  function rk(vals){ var me=vals[0]; if(!(me>0)) return null; var h=1; for(var i=1;i<vals.length;i++) if(vals[i]>me) h++; return h; }
+  var so=rk([r[0]||0,r[2]||0,r[4]||0,r[6]||0]), dt=rk([r[1]||0,r[3]||0,r[5]||0,r[7]||0]);
+  var pkh=null; if(pk){ var v=[]; for(var i=0;i<6;i++) v.push((pk[i]||[0,0])[0]||0); pkh=rk(v); }
+  return [so,dt,pkh];
+}
+function rkTag(h){ return h?'<i class="rk'+(h===1?' r1':'')+'">('+h+')</i>':'' }
 // 4 mốc cho một mảng dnB: ngày d, ngày liền trước, luỹ kế 1..d, cùng kỳ tháng trước 1..d
 function moc(a,d){
   var doy=A0+d-1;
@@ -835,12 +846,12 @@ function kpiCombo(){
   var lbl=['S.O','Doanh thu','PK 10–20M'];
   var strip=lbl.map(function(l,i){return '<div class="mx"><div class="mx-t"><span class="mx-l">'+l+'</span><span class="mx-m">LK T'+M+' <b>'+pc(L[i])+'</b></span></div>'+
     '<div class="mx-b"><span class="mx-v">'+n1(K[i])+'<small>%</small></span>'+arrow(K[i],P[i])+'<span class="mx-r">'+esc(raw[i])+'</span></div></div>'}).join('');
-  function c(v,bm){var cl=(v+0.001<bm)?'lo':((v>bm+0.001)?'hi':'');return '<span class="rv '+cl+'">'+pc(v)+'</span>'}
-  var rows=V.sales.slice().sort(function(a,b){return kpi3(b.ng)[0]-kpi3(a.ng)[0]}).map(function(s){var k=kpi3(s.ng);
-    return '<div class="rrow"><span class="rn">'+esc(s.n)+'</span>'+c(k[0],K[0])+c(k[1],K[1])+c(k[2],K[2])+'</div>'}).join('');
+  function c(v,bm,h){var cl=(v+0.001<bm)?'lo':((v>bm+0.001)?'hi':'');return '<span class="rv '+cl+'">'+pc(v)+rkTag(h)+'</span>'}
+  var rows=V.sales.slice().sort(function(a,b){return kpi3(b.ng)[0]-kpi3(a.ng)[0]}).map(function(s){var k=kpi3(s.ng), h=hangOppo(s.ng,(V.pkSale[s.full]||{}).ng);
+    return '<div class="rrow"><span class="rn">'+esc(s.n)+'</span>'+c(k[0],K[0],h[0])+c(k[1],K[1],h[1])+c(k[2],K[2],h[2])+'</div>'}).join('');
   return '<div class="kpi"><div class="lbl">Thị phần ngày '+DAY+'</div><div class="mxs">'+strip+'</div>'+
     '<div class="ranks"><div class="rrow rhd"><span class="rn">Khu vực — ngày '+DAY+'</span><span>S.O</span><span>DT</span><span>PK</span></div>'+rows+'</div>'+
-    '<div class="fnote"><b class="lo-i">Đỏ</b> = dưới chuẩn miền ngày '+DAY+' · <b class="hi-i">xanh</b> = trên chuẩn. Mũi tên so ngày '+esc(V.prevLbl)+'.</div></div>';
+    '<div class="fnote"><b class="lo-i">Đỏ</b> = dưới chuẩn miền ngày '+DAY+' · <b class="hi-i">xanh</b> = trên chuẩn · <b>(n)</b> = hạng OPPO trong khu vực (S.O/DT: 4 hãng chính · PK: 6 hãng). Mũi tên so ngày '+esc(V.prevLbl)+'.</div></div>';
 }
 function kpiLK(){
   var L=kpi3(V.all.lk), C=V.all.ck?kpi3(V.all.ck):[null,null,null];
@@ -848,12 +859,12 @@ function kpiLK(){
   var raw=[n0(V.all.lk[0])+' / '+n0(V.all.lk[8])+' máy', money(V.all.lk[1])+' / '+money(V.all.lk[9]), n0(V.all.lk[10])+' / '+n0(V.all.lk[12])+' máy'];
   var strip=lbl.map(function(l,i){return '<div class="mx"><div class="mx-t"><span class="mx-l">'+l+'</span><span class="mx-m">cùng kỳ T'+(PM||'—')+' <b>'+(C[i]===null?'—':pc(C[i]))+'</b></span></div>'+
     '<div class="mx-b"><span class="mx-v">'+n1(L[i])+'<small>%</small></span>'+arrow(L[i],C[i])+'<span class="mx-r">'+esc(raw[i])+'</span></div></div>'}).join('');
-  function c(v,bm){var cl=(v+0.001<bm)?'lo':((v>bm+0.001)?'hi':'');return '<span class="rv '+cl+'">'+pc(v)+'</span>'}
-  var rows=V.sales.slice().sort(function(a,b){return kpi3(b.lk)[0]-kpi3(a.lk)[0]}).map(function(s){var k=kpi3(s.lk);
-    return '<div class="rrow"><span class="rn">'+esc(s.n)+'</span>'+c(k[0],L[0])+c(k[1],L[1])+c(k[2],L[2])+'</div>'}).join('');
+  function c(v,bm,h){var cl=(v+0.001<bm)?'lo':((v>bm+0.001)?'hi':'');return '<span class="rv '+cl+'">'+pc(v)+rkTag(h)+'</span>'}
+  var rows=V.sales.slice().sort(function(a,b){return kpi3(b.lk)[0]-kpi3(a.lk)[0]}).map(function(s){var k=kpi3(s.lk), h=hangOppo(s.lk,(V.pkSale[s.full]||{}).lk);
+    return '<div class="rrow"><span class="rn">'+esc(s.n)+'</span>'+c(k[0],L[0],h[0])+c(k[1],L[1],h[1])+c(k[2],L[2],h[2])+'</div>'}).join('');
   return '<div class="kpi"><div class="lbl">Luỹ kế tháng '+M+' — ngày 1–'+DAY+'</div><div class="mxs">'+strip+'</div>'+
     '<div class="ranks"><div class="rrow rhd"><span class="rn">Khu vực — LK T'+M+'</span><span>S.O</span><span>DT</span><span>PK</span></div>'+rows+'</div>'+
-    '<div class="fnote">Mũi tên so <b>cùng kỳ tháng '+(PM||'—')+'</b> (cũng ngày 1–'+Math.min(DAY,DIMP||DAY)+'). Màu so chuẩn vùng luỹ kế.</div></div>';
+    '<div class="fnote">Mũi tên so <b>cùng kỳ tháng '+(PM||'—')+'</b> (cũng ngày 1–'+Math.min(DAY,DIMP||DAY)+'). Màu so chuẩn miền luỹ kế · <b>(n)</b> = hạng OPPO trong khu vực.</div></div>';
 }
 /* ---- 3. đối thủ theo dõi ---- */
 function compTbl(k){ // k: 0 máy, 1 doanh thu
