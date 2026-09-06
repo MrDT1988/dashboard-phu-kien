@@ -559,7 +559,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-09-06.1';
+var APP_VER='2026-09-06.2';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -6301,7 +6301,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
   //   10-15M -> 80.000d/may · tu 15M tro len -> 120.000d/may · duoi 10M -> 0
   var TU=['LỘC','KHẢI'];
   var TL=1.2, G1=80000, G2=120000;
-  var HS_DT=0.8; // 06/09/2026 anh Thai: chiet khau 1,2% tinh tren DOANH THU TINH THUONG = 80% doanh thu OPPO ban le
+  var HS_DT=1; // 06/09/2026 anh Thai kiem lai van ban: 1,2% tinh tren 100% doanh thu OPPO (da thu 0.8 roi tra ve 1)
 
   function el(i){ return document.getElementById(i) }
   function esc(s){ return (typeof safe==='function')?safe(s):String(s==null?'':s) }
@@ -6355,10 +6355,10 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
 
     var coBM=K.ds.some(function(x){return x.coBM});
     var h='<h2>💰 Chương trình riêng — Sale Lộc &amp; Sale Khải</h2>'+
-      '<div class="stamp">Chiết khấu <b>1,2% × 80% doanh thu OPPO</b> (doanh thu tính thưởng) + <b>Bonus Model</b> theo phân khúc. '+
+      '<div class="stamp">Chiết khấu <b>1,2% doanh thu OPPO</b> + <b>Bonus Model</b> theo phân khúc. '+
       'Tháng '+K.thang+'.</div>';
     h+='<div class="tvwrap"><table class="tv"><tr>'+
-       ['SALE','SHOP','DOANH THU OPPO','CHIẾT KHẤU 1,2% × 80%','BONUS MODEL','TỔNG NHẬN']
+       ['SALE','SHOP','DOANH THU OPPO','CHIẾT KHẤU 1,2%','BONUS MODEL','TỔNG NHẬN']
          .map(function(x){return '<th>'+esc(x)+'</th>'}).join('')+'</tr>';
     var tDt=0,tCk=0,tBm=0;
     K.ds.forEach(function(x){
@@ -6383,7 +6383,7 @@ font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
     }
     h+='</table></div>';
     h+='<div class="stamp" style="margin-top:9px;line-height:1.55">'+
-       '<b>Chiết khấu</b> = 1,2% × <b>doanh thu tính thưởng</b> (= 80% doanh thu OPPO bán lẻ) của tất cả shop MWG mình phụ trách trong tháng. '+
+       '<b>Chiết khấu</b> = 1,2% doanh thu OPPO (100%) của tất cả shop MWG mình phụ trách trong tháng. '+
        '<b>Bonus Model</b> = máy OPPO phân khúc <b>10–15M × 80.000đ</b> + <b>từ 15M trở lên × 120.000đ</b>; '+
        'máy dưới 10M không tính. Hai phần này <b>độc lập</b> với chương trình Bonus Shop trọng điểm ở trên.'+
        (coBM
