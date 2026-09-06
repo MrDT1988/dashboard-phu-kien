@@ -216,3 +216,12 @@ html.bc-dt .bc-3bd { grid-template-columns: 1fr; }
 .bc-hang-bd { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 14px; align-items: start; }
 @media (max-width: 1100px) { .bc-hang-bd { grid-template-columns: 1fr; } }
 html.bc-dt .bc-hang-bd { grid-template-columns: 1fr; }
+
+/* Khối "Mục tiêu tháng" của IND (Anh Thái 06/09) */
+.bc-muc-tieu { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.bc-mt-o { background: rgba(139,152,169,.08); border: 1px solid var(--border-color, rgba(255,255,255,.08)); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.bc-mt-nhan { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+.bc-mt-so { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.bc-mt-rong { grid-column: span 4; }
+@media (max-width: 720px) { .bc-muc-tieu { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bc-mt-rong { grid-column: span 2; } }
+html.bc-dt .bc-muc-tieu { grid-template-columns: repeat(2, minmax(0, 1fr)); } html.bc-dt .bc-mt-rong { grid-column: span 2; }
