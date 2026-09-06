@@ -176,6 +176,10 @@ ghi('sell_in cat dung theo Store ID', kq.center.sell_in_rows.length === 2,
 ghi('Sale khong thay bien che nhan su',
   Object.keys(kq.center.channel_month_headcount).length === 0);
 
+/* Sell In cua tai khoan cong ty/PP: khong khop store_id cua shop nao.
+   Thuc te ~1/5 so may Sell In nam o day. */
+A.sell_in_rows.push(['CTY-PP-999', 'RT', 'TG', 1, 'P', 'OPPO', 40, '']);
+
 // --- 8. Leader: chi kenh cua minh
 {
   const L = catPhamVi(A, B, { vaiTro: 'leader', kenh: 'IND' });
@@ -187,6 +191,17 @@ ghi('Sale khong thay bien che nhan su',
     'kenh IND khong lien quan bang thi truong MWG');
   ghi('Leader IND: co bien che kenh minh',
     !!(L.center.channel_month_headcount && L.center.channel_month_headcount.IND));
+  /* Anh Thai 06/09: leader phai thay TOAN BO chi tiet kenh minh phu trach */
+  ghi('Leader IND: thay TOAN BO Sell In cua kenh (ca tai khoan cong ty/PP)',
+      L.center.sell_in_rows.length === A.sell_in_rows.length,
+      'con ' + L.center.sell_in_rows.length + '/' + A.sell_in_rows.length + ' dong');
+  const LM = catPhamVi(A, B, { vaiTro: 'leader', kenh: 'MWG' });
+  ghi('Leader MWG: khong nhan dong Sell In nao (khong lien quan kenh MWG)',
+      LM.center.sell_in_rows.length === 0);
+  const S2 = catPhamVi(A, B, { vaiTro: 'sale', sales: ['SALE-A'] });
+  ghi('Sale: Sell In van chi cat theo shop cua chinh minh',
+      S2.center.sell_in_rows.length === 2 && !S2.center.sell_in_rows.some((r) => r[0] === 'CTY-PP-999'),
+      'con ' + S2.center.sell_in_rows.length + ' dong, khong co dong cong ty/PP');
 }
 
 // --- 9. Admin: tra nguyen ban
