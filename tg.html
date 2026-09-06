@@ -2494,8 +2494,8 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                 </table>
             </div>
 
-            <h4 style="margin:0 0 4px; font-size:14px;">2. Bonus Sale Lộc &amp; Sale Khải — 1,2% Doanh thu OPPO</h4>
-            <div class="chart-sub" style="margin-bottom:10px;">Bấm vào tên Sale để xem chi tiết doanh thu &amp; Bonus Model từng shop phụ trách. Cột "Bonus Model" tính riêng theo phân khúc giá sản phẩm OPPO bán ra: PK 10-15M thưởng 80.000đ/máy, PK &gt;15M thưởng 120.000đ/máy, PK dưới 10M không thưởng (trừ các model được ép giá riêng — đánh dấu "⚙️ Ép tay" trong bảng chi tiết). Các biến thể chỉ khác màu của cùng 1 model/cấu hình được gộp chung 1 dòng.</div>
+            <h4 style="margin:0 0 4px; font-size:14px;">2. Bonus Sale Lộc &amp; Sale Khải — 1,2% × Doanh thu tính thưởng (80% DT OPPO)</h4>
+            <div class="chart-sub" style="margin-bottom:10px;"><b>Tiền thưởng = 1,2% × Doanh thu tính thưởng</b>, trong đó doanh thu tính thưởng = <b>80%</b> doanh thu OPPO bán lẻ (đã sửa 06/09/2026, trước tính 100%). Bấm vào tên Sale để xem chi tiết doanh thu &amp; Bonus Model từng shop phụ trách. Cột "Bonus Model" tính riêng theo phân khúc giá sản phẩm OPPO bán ra: PK 10-15M thưởng 80.000đ/máy, PK &gt;15M thưởng 120.000đ/máy, PK dưới 10M không thưởng (trừ các model được ép giá riêng — đánh dấu "⚙️ Ép tay" trong bảng chi tiết). Các biến thể chỉ khác màu của cùng 1 model/cấu hình được gộp chung 1 dòng.</div>
             <div id="thidua-sale-alert" style="display:none; background:rgba(255,92,114,0.12); border:1px solid rgba(255,92,114,0.35); border-radius:8px; padding:10px 14px; margin-bottom:10px; font-size:12.5px; color:#ff8fa3;"></div>
             <div class="table-scroll" style="max-height:none;">
                 <table class="data-table" id="thidua-sale-table">
@@ -2505,9 +2505,9 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                             <th data-field="oppo_rev" class="num">Doanh thu OPPO</th>
                             <th data-field="retail_rev" class="num">DT bán lẻ (trừ Apple)</th>
                             <th data-field="oppo_share" class="num">% OPPO/DT bán lẻ</th>
-                            <th data-field="bonus_amount" class="num">Tiền thưởng (1,2%)</th>
+                            <th data-field="bonus_amount" class="num" title="= Doanh thu OPPO × 80% × 1,2% (doanh thu tính thưởng = 80% doanh thu bán lẻ)">Tiền thưởng (1,2% × 80% DT)</th>
                             <th data-field="bonus_model" class="num" title="PK 10-15M: 80.000đ/máy · PK >15M: 120.000đ/máy · PK dưới 10M: không thưởng">Bonus Model</th>
-                            <th data-field="bonus_pct" class="num" title="(Tiền thưởng 1,2% + Bonus Model) ÷ Doanh thu OPPO">Bonus / DT</th>
+                            <th data-field="bonus_pct" class="num" title="(Tiền thưởng 1,2%×80% + Bonus Model) ÷ Doanh thu OPPO bán lẻ">Bonus / DT</th>
                         </tr>
                     </thead>
                     <tbody id="thidua-sale-table-body"></tbody>
@@ -2525,7 +2525,7 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
                             <th data-field="shops_with_target" rowspan="2" class="num">SL shop có Target</th>
                             <th class="num khung-actual" colspan="3" style="text-align:center;">Kết quả hiện tại</th>
                             <th class="num khung-proj" colspan="2" style="text-align:center;">Dự kiến cuối tháng</th>
-                            <th data-field="projected_bonus" rowspan="2" class="num khung-bonus khung-divider" title="Tổng tiền thưởng dự kiến của Sale này: mốc TT 10%/15%/20% (mục 1, các shop Size S/A/B) + riêng Sale Lộc/Khải cộng thêm 1,2% Doanh thu OPPO + Bonus Model (mục 2, tính trên mọi shop)">Dự kiến Bonus</th>
+                            <th data-field="projected_bonus" rowspan="2" class="num khung-bonus khung-divider" title="Tổng tiền thưởng dự kiến của Sale này: mốc TT 10%/15%/20% (mục 1, các shop Size S/A/B) + riêng Sale Lộc/Khải cộng thêm 1,2% × 80% Doanh thu OPPO + Bonus Model (mục 2, tính trên mọi shop)">Dự kiến Bonus</th>
                         </tr>
                         <tr>
                             <th data-field="actual_rev" class="num khung-actual khung-divider">DT thực tế</th>
@@ -13271,6 +13271,8 @@ function renderThiDuaSaleCards() {
 renderThiDuaSaleCards();
 buildMultiselect('ms-thidua-size-size', ['S','A','B'].map(sz => ({ value: sz, text: sz })), thiDuaSizeFilters, 'sizes', 'Tất cả Size', () => renderThiDuaSizeTable());
 
+// 06/09/2026 — anh Thái: chương trình Lộc/Khải tính 1,2% trên DOANH THU TÍNH THƯỞNG = 80% doanh thu OPPO bán lẻ (trước đây tính 100% — sai).
+const LOCKHAI_DT_TINH_THUONG = 0.8;
 const THIDUA_SALE_GROUPS = [
     { label: 'Sale Lộc', keyword: 'LỘC' },
     { label: 'Sale Khải', keyword: 'KHẢI' },
@@ -13365,7 +13367,7 @@ function computeMwgLocKhaiBonusTotal(month) {
             bonusModelTotal += bonusModelByShop[shop.shop] || 0;
         });
         totalRev += oppoRev;
-        totalBonus += oppoRev * 1.2 / 100 + bonusModelTotal;
+        totalBonus += oppoRev * LOCKHAI_DT_TINH_THUONG * 1.2 / 100 + bonusModelTotal;
     });
     return { totalRev, totalBonus };
 }
@@ -13669,7 +13671,7 @@ function computeThiDuaSaleGroup(keyword) {
     }).filter(d => d.oppoRev > 0 || d.retailRev > 0 || d.bonusModel > 0);
     shopDetails.sort((a,b) => b.oppoRev - a.oppoRev);
     const oppoShare = retailRev > 0 ? (oppoRev/retailRev*100) : 0;
-    const bonusAmount = oppoRev * 1.2 / 100;
+    const bonusAmount = oppoRev * LOCKHAI_DT_TINH_THUONG * 1.2 / 100;
     const modelBreakdown = computeBonusModelByModel(keyword, idxList);
     // Bonus / DT = (Tiền thưởng 1,2% + Bonus Model) ÷ Doanh thu OPPO — tỉ lệ tổng thưởng trên doanh thu OPPO của cả nhóm Sale.
     const bonusPct = oppoRev > 0 ? (bonusAmount + bonusModelTotal) / oppoRev * 100 : 0;
@@ -13681,7 +13683,7 @@ function thiDuaSaleDetailRowHtml(groupLabel, shopDetails, modelBreakdown, colspa
         return `<tr class="product-detail-row"><td colspan="${colspan}" style="background:#101a15; padding:12px 16px; color:var(--text-secondary);">Không có dữ liệu shop cho ${escapeHtml(groupLabel)} trong tháng đã chọn.</td></tr>`;
     }
     const rowsHtml = shopDetails.map(d => {
-        const shopBonus = d.oppoRev * 1.2 / 100;
+        const shopBonus = d.oppoRev * LOCKHAI_DT_TINH_THUONG * 1.2 / 100;
         return `
         <div style="display:flex; justify-content:space-between; gap:12px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.10); font-size:12.5px;">
             <span style="${shareColorStyle(d.oppoShare)}">${escapeHtml(d.shop)}</span>
@@ -13710,7 +13712,7 @@ function thiDuaSaleDetailRowHtml(groupLabel, shopDetails, modelBreakdown, colspa
             <tbody>${modelRowsHtml}</tbody>
             ${modelBreakdown.length ? `<tfoot><tr class="total-row"><td colspan="5">TỔNG (đối chiếu — tính theo Sale ghi trên từng đơn, có thể lệch nhẹ so với cột Bonus Model)</td><td class="num"><b>${fmtVND(modelTotal)}</b></td></tr></tfoot>` : ''}
         </table>
-        <div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;">Chi tiết shop — ${escapeHtml(groupLabel)} (Thưởng DT = Doanh thu shop × 1,2% · Bonus Model = theo bảng model ở trên)</div>
+        <div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;">Chi tiết shop — ${escapeHtml(groupLabel)} (Thưởng DT = Doanh thu shop × 80% × 1,2% · Bonus Model = theo bảng model ở trên)</div>
         ${rowsHtml}
     </td></tr>`;
 }
@@ -13810,7 +13812,7 @@ function computeThiDuaBonusBySale() {
             oppoRev += sumShopMonths(shop, idxList).oppoRev;
             bonusModelTotal += bonusModelByShop[shop.shop] || 0;
         });
-        const bonusAmount = oppoRev * 1.2 / 100;
+        const bonusAmount = oppoRev * LOCKHAI_DT_TINH_THUONG * 1.2 / 100;
         bySale[saleName] = (bySale[saleName] || 0) + bonusAmount + bonusModelTotal;
     });
     return bySale;
