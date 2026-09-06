@@ -307,6 +307,11 @@
   .gcard.watch .gc-l b{color:var(--warn);} .gcard.ok .gc-l b{color:var(--accent);}
   .gc-l span{color:var(--ink-2);}
   .gc-st{font-size:10.5px;margin-top:6px;color:var(--accent);font-weight:600;}
+  .gtold{margin-top:12px;border-top:1px dashed var(--line);padding-top:8px;}
+  .gtold summary{cursor:pointer;font-size:12.5px;color:var(--muted);padding:6px 0;list-style:none;}
+  .gtold summary::before{content:'▸ ';}
+  .gtold[open] summary::before{content:'▾ ';}
+  .gtold summary b{color:var(--ink-2);}
   .gc-grp{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--ink-2);margin:10px 0 6px;}
   .gc-grp:first-child{margin-top:0;}
   .gc-grp span{color:var(--muted);font-weight:600;letter-spacing:0;text-transform:none;margin-left:4px;}
@@ -413,7 +418,7 @@
    C. tính số cho ngày đang xem từ gói (dnB / dk / dkp / pkD / dmN / gt)
    D. vẽ trang
    ================================================================ */
-var REVIEW_VER='2026-09-04.3';
+var REVIEW_VER='2026-09-05.4';
 var $=function(s){return document.querySelector(s)};
 var D=null;              // gói đã mở khoá (đúng cấu trúc app.html)
 var DAY=0;               // ngày đang xem (trong tháng hiện tại)
@@ -959,18 +964,48 @@ function gtCard(s){
     '<div class="gc-ly">'+s.ly.map(function(l){return '<div class="gc-l"><b>'+esc(l[1])+'</b><span>'+esc(l[2])+'</span></div>'}).join('')+'</div>'+
     (e?'<div class="gc-st">✓ Đã giải trình · '+esc(e.at||'')+'</div>':'')+'</div>';
 }
-function gtGroup(rows){
+/* 05/09/2026 — anh Thái: shop ĐÃ giải trình chỉ hiện khi giải trình trong 2 ngày gần nhất (hôm nay, hôm qua, hôm kia —
+   cuốn chiếu theo ngày), cũ hơn thì gấp lại cho gọn, muốn xem thì bấm bung. Chưa giải trình thì luôn hiện. */
+var NGAY_GT_MOI=2;
+function ngayGT(at){ // "05/09/2026 08:21:33" · "9/5/2026 8:21" · "2026-09-05T…" -> Date (0h) hoặc null
+  if(!at) return null; var t=String(at).trim(), m;
+  if((m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return new Date(+m[1],+m[2]-1,+m[3]);
+  if((m=t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/))){
+    var a=+m[1], b=+m[2], y=+m[3]; if(y<100) y+=2000;
+    if(a>12) return new Date(y,b-1,a);           // 25/09/2026 -> VN
+    if(b>12) return new Date(y,a-1,b);           // 9/25/2026  -> Mỹ
+    var vn=new Date(y,b-1,a), us=new Date(y,a-1,b), nay=new Date(); // mơ hồ: chọn mốc gần hôm nay nhất mà không ở tương lai
+    var dv=(nay-vn)/864e5, du=(nay-us)/864e5;
+    if(dv<-1&&du>=-1) return us; if(du<-1&&dv>=-1) return vn;
+    return Math.abs(dv)<=Math.abs(du)?vn:us;
+  }
+  if((m=t.match(/^(\d{1,2})[\/\-.](\d{1,2})(?![\/\-.\d])/))) return new Date(Y,+m[2]-1,+m[1]); // "03/09 08:21" không có năm
+  return null;
+}
+function gtCu(r){ // đã giải trình nhưng lâu rồi? (mốc = hôm nay nếu đang xem ngày mới nhất, còn lại = ngày đang xem)
+  if(!r.gt) return false;
+  var ng=ngayGT(r.gt.at); if(!ng) return false;
+  var moc=(DAY===DMAX)?new Date():new Date(Y,M-1,DAY);
+  moc=new Date(moc.getFullYear(),moc.getMonth(),moc.getDate());
+  return Math.round((moc-ng)/864e5)>NGAY_GT_MOI;
+}
+function gtGroup(rows,gap){
   if(!rows.length) return '<div class="empty">🎉 Không có shop nào</div>';
-  var by={}, ord=[]; rows.forEach(function(r){if(!by[r.sale]){by[r.sale]=[];ord.push(r.sale)}by[r.sale].push(r)});
-  return ord.map(function(n){return '<div class="gc-grp">'+esc(n)+' <span>'+by[n].length+' shop</span></div><div class="gclist">'+by[n].map(gtCard).join('')+'</div>'}).join('');
+  var moi=rows, cu=[];
+  if(gap){ moi=[]; rows.forEach(function(r){ (gtCu(r)?cu:moi).push(r) }); }
+  var ve=function(list){ var by={}, ord=[]; list.forEach(function(r){if(!by[r.sale]){by[r.sale]=[];ord.push(r.sale)}by[r.sale].push(r)});
+    return ord.map(function(n){return '<div class="gc-grp">'+esc(n)+' <span>'+by[n].length+' shop</span></div><div class="gclist">'+by[n].map(gtCard).join('')+'</div>'}).join('') };
+  var h=moi.length?ve(moi):'<div class="empty">Không còn shop nào chưa giải trình hoặc mới giải trình.</div>';
+  if(cu.length) h+='<details class="gtold"><summary>Đã giải trình trước đó — <b>'+cu.length+' shop</b> (gấp lại cho gọn, bấm để xem)</summary>'+ve(cu)+'</details>';
+  return h;
 }
 function gtSec(){
   var G=V.gt, bat=G.rows.filter(function(x){return x.bat}), theo=G.rows.filter(function(x){return !x.bat});
   var nNo=0; G.noDk.forEach(function(x){nNo+=x[1].length});
   return '<section class="gt-sec"><div class="sec-head"><h2>Yêu cầu giải trình — ngày '+DAY+'/'+M+'</h2>'+
     '<div class="sec-note">Đúng rule <b>App Sale</b> · chạy hàm <i>ruleShop / topNang</i> chép nguyên từ app trên gói robot · '+(D.gt?'đã nối bảng câu trả lời':'<b>chưa nối bảng câu trả lời</b>')+'</div></div>'+gtSumBox()+
-    '<div class="duo"><div class="panel"><h3>Phải giải trình — <em>'+bat.length+' shop</em></h3><div class="body"><div>'+gtGroup(bat)+'</div>'+
-    '<div class="foot">Đúng danh sách tab <b>Cảnh báo → Phải giải trình</b> trên app của từng sale. Shop đứt sell out đi thẳng, không bị trần '+N+' shop.</div></div></div>'+
+    '<div class="duo"><div class="panel"><h3>Phải giải trình — <em>'+bat.length+' shop</em></h3><div class="body"><div>'+gtGroup(bat,true)+'</div>'+
+    '<div class="foot">Đúng danh sách tab <b>Cảnh báo → Phải giải trình</b> trên app của từng sale. Shop đứt sell out đi thẳng, không bị trần '+N+' shop. Shop đã giải trình chỉ hiện trong '+NGAY_GT_MOI+' ngày gần nhất, cũ hơn gấp lại ở cuối cột.</div></div></div>'+
     '<div class="panel" style="background:var(--surface)"><h3 style="color:var(--warn)">Theo dõi — <em style="color:var(--warn)">dính rule, chưa tới mức nặng</em></h3><div class="body"><div>'+gtGroup(theo)+'</div>'+
     '<div class="foot">Shop dính rule ngày nhưng chưa vượt ngưỡng nặng (app xếp "cần theo dõi") <b>+ shop đối thủ bán tốt mà mình không bán</b> (rule ⑥ riêng của review). Không bắt giải trình.</div></div></div></div>'+
     '<div class="panel solo" style="margin-top:14px"><h3>Rule đang chạy — <em>hằng số chép từ app</em></h3><div class="rules">'+
