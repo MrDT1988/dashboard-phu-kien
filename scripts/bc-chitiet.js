@@ -38,7 +38,11 @@
          /* ===================== dữ liệu dùng chung ===================== */
     /* Anh Thái 06/09: bọc số vào span đỏ khi chỉ số xấu — dùng chung cả 3 tab */
          var do_ = function (kem, s) { return kem ? '<span class="bc-giam-chu">' + s + '</span>' : s; };
-     /* Anh Thái 06/09: khoá gộp shop O.C trùng tên (Nokia Phong / Nokia Phong 2 / Nokia Phong cty = 1 shop;
+     /* Anh Thái 06/09: khối MƯỢN của DB TG cũ chỉ có SỐ THEO THÁNG (thị phần, chương trình,
+       thi đua, thưởng). Trước đây chế độ TUẦN giấu luôn các khối này -> nhìn như bị cắt quyền.
+       Nay hiện ở CẢ HAI chế độ; ở chế độ tuần ghi rõ số là của tháng. */
+    var nhanThang = function (cd, t) { return (cd === 'tuan' ? '⚠ SỐ THEO THÁNG — không đổi theo tuần · ' : '') + (t || 'Nội dung như DB TG cũ'); };
+    /* Anh Thái 06/09: khoá gộp shop O.C trùng tên (Nokia Phong / Nokia Phong 2 / Nokia Phong cty = 1 shop;
         Mỹ Hạnh / Mỹ Hạnh Cty = 1; Hồng Ngọc / Hồng Ngọc TG = 1). Riêng Long Hưng và Long Hưng 2 là 2 shop độc lập. */
      var khoaOC = function (ten) {
           var g = String(ten || '').split(/[-–(,]/)[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -520,7 +524,7 @@
              })();
 
              /* ================= 7. Thi đua tháng (mượn) ================= */
-             if (cd === 'thang') muonKhoi(grid, 7, 'Chương trình thi đua tháng', 'Bonus Size S/A · % HT theo Sale/ASM — như DB TG cũ', timMuon(root, /thi đua/i));
+             muonKhoi(grid, 7, 'Chương trình thi đua tháng', nhanThang(cd, 'Bonus Size S/A · % HT theo Sale/ASM — như DB TG cũ'), timMuon(root, /thi đua/i));
     }
 
     /* ===================== KA ===================== */
@@ -562,7 +566,7 @@
              })();
        
              /* 3. Thị phần FPT & Viettel (mượn, chỉ tháng) */
-             if (cd === 'thang') muonKhoi(grid, 4, 'Thị phần theo tháng — FPT & Viettel', 'Nguồn Share KA (theo tháng) — như DB TG cũ', timMuon(root, /Thị phần/i));
+             muonKhoi(grid, 4, 'Thị phần theo tháng — FPT & Viettel', nhanThang(cd, 'Nguồn Share KA (theo tháng) — như DB TG cũ'), timMuon(root, /Thị phần/i));
        
              /* 4. Chi tiết shop × kênh phụ — cột = kỳ, thêm cột PG */
              (function () {
@@ -611,7 +615,7 @@
              })();
 
       /* 6. Chương trình shop chưa PG (mượn, chỉ tháng) */
-      if (cd === 'thang') muonKhoi(grid, 6, 'Chương trình shop chưa có PG — ngân sách & KPI Sale', null, timMuon(root, /chưa có PG/i));
+      muonKhoi(grid, 6, 'Chương trình shop chưa có PG — ngân sách & KPI Sale', nhanThang(cd, null), timMuon(root, /chưa có PG/i));
     }
 
     /* ===================== IND ===================== */
@@ -861,7 +865,7 @@
              })();
 
       /* 7. Thưởng Sale IND (mượn, chỉ tháng) · 8. Tồn kho (mượn, 2 chế độ) */
-          if (cd === 'thang') muonKhoi(grid, 7, 'Chương trình tháng — Thưởng Sale IND', null, timMuon(root, /Thưởng Sale/i));
+          muonKhoi(grid, 7, 'Chương trình tháng — Thưởng Sale IND', nhanThang(cd, null), timMuon(root, /Thưởng Sale/i));
           muonKhoi(grid, 8, 'Tồn kho ước tính — theo đại lý & model', 'Ảnh chụp hiện tại (Sell In − Sell Out luỹ kế) — giống nhau ở 2 chế độ', timMuon(root, /Tồn kho ước tính/i));}
 
     function chipDiem(d) { var cls = d > 0.3 ? 'bc-chip-len' : d < -0.3 ? 'bc-chip-giam' : 'bc-chip-0'; return '<span class="bc-chip ' + cls + '">' + (d > 0 ? '▲ +' : d < 0 ? '▼ ' : '• ') + d.toFixed(1) + '</span>'; }
