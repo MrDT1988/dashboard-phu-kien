@@ -1,6 +1,6 @@
 {
- "tong": 64,
- "khongDat": 0,
+ "tong": 63,
+ "khongDat": 5,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
@@ -35,13 +35,8 @@
   },
   {
    "ten": "Trang co that su goi Apps Script luc nap",
-   "dat": true,
-   "chiTiet": "6 loi goi"
-  },
-  {
-   "ten": "MOI loi goi Apps Script deu kem chia khoa",
-   "dat": true,
-   "chiTiet": "du 6 loi goi"
+   "dat": false,
+   "chiTiet": "0 loi goi"
   },
   {
    "ten": "KHONG dinh chia khoa vao dia chi ngoai Apps Script",
@@ -50,13 +45,13 @@
   },
   {
    "ten": "Chia khoa sai: bat duoc va hoi lai",
-   "dat": true,
+   "dat": false,
    "chiTiet": "Apps Script tra \"Tu choi\" -> phai mo lai o nhap"
   },
   {
    "ten": "Chia khoa sai: xoa chia khoa cu di, khong giu lai cai hong",
-   "dat": true,
-   "chiTiet": "con lai: null"
+   "dat": false,
+   "chiTiet": "con lai: \"KHOA-SAI\""
   },
   {
    "ten": "Bat dung cau tu choi cua Apps Script",
@@ -310,8 +305,8 @@
   },
   {
    "ten": "Robot: bo qua goi, di thang duong cu",
-   "dat": true,
-   "chiTiet": "6 loi goi Apps Script"
+   "dat": false,
+   "chiTiet": "0 loi goi Apps Script"
   },
   {
    "ten": "Robot: KHONG dung lai o man hinh chon nguoi / nhap ma",
@@ -320,8 +315,8 @@
   },
   {
    "ten": "Khong co goi: tu quay ve duong cu",
-   "dat": true,
-   "chiTiet": "6 loi goi"
+   "dat": false,
+   "chiTiet": "0 loi goi"
   }
  ]
 }
