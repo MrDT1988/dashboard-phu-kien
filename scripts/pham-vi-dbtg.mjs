@@ -156,6 +156,20 @@ export function catPhamVi(A, B, ai) {
   C.week_channel_units = tuanU;
   C.week_revenue = tuanR;
   C.week_channel_models = tuanM;
+  /* week_channel_models CHI tinh lai duoc cho IND (ind_daily_by_date la nguon duy nhat
+  co model theo ngay theo shop). MWG/KA khong co nguon nao -> tuanM rong -> o che do
+  BAO CAO TUAN, modelKy() doc week_channel_models nen Reno & Find cua MWG va KA ra 0.
+  Anh Thai 06/09: leader phai thay TOAN BO chi tiet kenh minh phu trach -> lay thang
+  so CUA KENH DO tu ban goc (so tong theo kenh, khong theo shop nen khong lo cua ai). */
+  if (ai.vaiTro === 'leader') {
+    const gocWM = A.week_channel_models || {};
+    Object.keys(gocWM).forEach((t) => {
+      const v = gocWM[t] && gocWM[t][ai.kenh];
+      if (!v) return;
+      C.week_channel_models[t] = C.week_channel_models[t] || {};
+      C.week_channel_models[t][ai.kenh] = v;
+    });
+  }
 
   /* ---------- 2b. TI TRONG TARGET — phai tinh voi MAU SO TOAN VUNG
      Loi da mac, lo ra 28/08 khi soi tai khoan CAO CHI BAO:
