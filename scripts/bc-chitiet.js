@@ -16,11 +16,36 @@
                   var b = { sang: { oppo: '#006B33', samsung: '#1428A0', xiaomi: '#E85D00', apple: '#1A1A1A', vivo: '#6C7CFF', realme: '#D9A400', 'khác': '#8A8A8A' }, toi: { oppo: '#2AD998', samsung: '#6E8CF0', xiaomi: '#FF9147', apple: '#EDEFF2', vivo: '#A9B6FF', realme: '#F0C64A', 'khác': '#8B98A9' } }[sang() ? 'sang' : 'toi'];
                   return b[String(h == null ? '' : h).toLowerCase()] || b['khác'];
          };
-     var mauSub = function (s) { var m = (ext().kaMau || {})[s]; return m || mau('KA'); };
-    var mauOC = function (g) { return g === 'O.C' ? (sang() ? '#006B33' : '#2AD998') : (sang() ? '#8FBFA6' : '#1E6B4E'); };
-
-    /* ===================== dữ liệu dùng chung ===================== */
-    function du() { return BC.du(); }
+    /* Anh Thái 06/09: cột PG của shop KA — đọc từ bảng cũ #ka-shop-revenue-table trong tg.html
+           (✓ = shop ĐÃ có PG, tức KHÔNG nằm trong chương trình "shop chưa có PG"). */
+         var pgKA = function () {
+                  if (window.__bcPG) return window.__bcPG;
+                  var m = {}, chuan = {};
+                  var gonTen = function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ''); };
+                  var tb = document.getElementById('ka-shop-revenue-table');
+                  if (tb) [].slice.call(tb.querySelectorAll('tbody tr')).forEach(function (tr) {
+                             if (tr.children.length < 3) return;
+                             var ten = (tr.children[0].textContent || '').trim();
+                             if (!ten) return;
+                             var co = /✓/.test(tr.children[1].textContent || '');
+                             m[ten] = co; chuan[gonTen(ten)] = co;
+                  });
+                  return (window.__bcPG = function (s) { var v = m[s]; if (v === undefined) v = chuan[gonTen(s)]; return v; });
+         };
+         var mauSub = function (s) { var m = (ext().kaMau || {})[s]; return m || mau('KA'); };
+         var mauOC = function (g) { return g === 'O.C' ? (sang() ? '#006B33' : '#2AD998') : (sang() ? '#8FBFA6' : '#1E6B4E'); };
+     
+         /* ===================== dữ liệu dùng chung ===================== */
+         /* Anh Thái 06/09: bộ lọc Tháng dùng chung cho cả 3 tab MWG / KA / IND */
+         var selThangCT = function (ds, chon, coKy, onChon) {
+                  var l = el('label', 'bc-loc-thang', 'Tháng ');
+                  var s = el('select');
+                  if (coKy) { var o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Kỳ đang chọn'; s.appendChild(o0); }
+                  ds.forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = 'Tháng ' + m; s.appendChild(o); });
+                  s.value = chon == null ? '' : chon;
+                  s.addEventListener('change', function () { onChon(s.value); });
+                  l.appendChild(s); return l;
+         };function du() { return BC.du(); }
     /* danh sách kỳ (12 gần nhất) -> [{nhan, tu, den}] theo chế độ */
     function dsKy12(ctx) {
       var d = du(), out = [];
@@ -154,15 +179,6 @@
              
           };
              var dauCotChinh = '<th>PK 10-20M</th><th>Share D.S <small>O/S/X</small></th><th>Share D.T <small>O/S/X</small></th>';
-             var selThangCT = function (ds, chon, coKy, onChon) {
-                        var l = el('label', 'bc-loc-thang', 'Tháng ');
-                        var s = el('select');
-                        if (coKy) { var o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Kỳ đang chọn'; s.appendChild(o0); }
-                        ds.forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = 'Tháng ' + m; s.appendChild(o); });
-                        s.value = chon == null ? '' : chon;
-                        s.addEventListener('change', function () { onChon(s.value); });
-                        l.appendChild(s); return l;
-             };
 
              var k = ctx.k, kt = ctx.kt, cd = ctx.cd;
              /* Anh Thái 05/09: tab MWG lấy THÁNG MỚI NHẤT của DATA MWG (CENTER về chậm hơn).
@@ -521,43 +537,60 @@
         grid.appendChild(kq);
       })();
 
-      /* 2. DS theo tuần cả năm (KA) */
-      (function () {
-        var kq = khoi({ stt: 2, ten: 'Doanh số theo tuần — cả năm (KA)', cls: 'bc-c7', dangXem: 'Cột chồng 4 kênh phụ · tuần thuộc kỳ chọn tô đậm' });
-        var ws = d.TUAN.filter(function (t) { return t.coSo; }); var gs = ws.map(function (t) { return gomKA(t.tu, t.den); });
-        var trongKy = function (t) { return cd === 'tuan' ? t.iso === k.tu : (t.tu <= k.den && t.den >= k.tu); };
-        $('.bc-than', kq).appendChild(khungBieuDo({ cao: 320, tabs: [{ ten: 'Máy', cau: function () { var c = cauCotChong(ws.map(function (t) { return 'W' + t.so; }), subCo.map(function (s) { return { label: tenSub(s), data: gs.map(function (g) { return g.sub[s].ds; }), backgroundColor: ws.map(function (t) { return trongKy(t) ? mauSub(s) : hexMo(mauSub(s), 0.38); }) }; })); c.data.datasets.forEach(function (x) { x.maxBarThickness = 28; }); c.options.scales.x.ticks.font = { size: 10 }; c.options.scales.x.ticks.autoSkip = false; c.options.scales.x.ticks.maxRotation = 0; return c; } }] }));
-        $('.bc-than', kq).appendChild(bangMini({ cot: ws.slice(-12).map(function (t) { return 'W' + t.so; }), dong: subCo.map(function (s) { return { ten: tenSub(s), mau: mauSub(s), s: s }; }), chiSo: [{ ten: 'Máy', lay: function (r, i) { return gs.slice(-12)[i].sub[r.s].ds; } }, { ten: 'DT', fmt: fTyNgan, lay: function (r, i) { return gs.slice(-12)[i].sub[r.s].dt; } }] }));
-        grid.appendChild(kq);
-      })();
-
-      /* 3. Sell out Tất cả | Reno */
-      (function () {
-        var kq = khoi({ stt: 3, ten: 'Sell Out KA — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), cls: 'bc-c5', dangXem: 'Tất cả theo kênh phụ · Reno & Find so còn lại' });
-        var labels = ky12.map(function (q) { return q.nhan; });
-        var seri = ky12.map(function (q) { var mk = BC.modelKy(cd, cd === 'tuan' ? BC.khoangKy('tuan', q.id) : BC.khoangKy('thang', q.id)); return BC.gomSeries({ KA: mk.KA || {} }).tong; });
-        $('.bc-than', kq).appendChild(khungBieuDo({ cao: 360, tabs: [
-          { ten: 'Tất cả', cau: function () { return cauCotChong(labels, subCo.map(function (s) { return { label: tenSub(s), data: chuoi.map(function (g) { return g.sub[s].ds; }), backgroundColor: mauSub(s) }; })); } },
-          { ten: 'Reno', cau: function () { return cauCotChong(labels, [{ label: 'Reno', data: seri.map(function (x) { return x.RENO; }), backgroundColor: mau('RENO') }, { label: 'Find', data: seri.map(function (x) { return x.FIND; }), backgroundColor: mau('FIND') }, { label: 'Còn lại', data: seri.map(function (x) { return x.CONLAI; }), backgroundColor: mau('CONLAI') }]); } },
-          { ten: 'Doanh thu', cau: function () { return cauCotChong(labels, subCo.map(function (s) { return { label: tenSub(s), data: chuoi.map(function (g) { return g.sub[s].dt; }), backgroundColor: mauSub(s) }; }), { fmt: fTyNgan, tien: true }); } }
-        ] }));
-        grid.appendChild(kq);
-      })();
-
-      /* 4. Thị phần FPT & Viettel (mượn, chỉ tháng) */
-      if (cd === 'thang') muonKhoi(grid, 4, 'Thị phần theo tháng — FPT & Viettel', 'Nguồn Share KA (theo tháng) — như DB TG cũ', timMuon(root, /Thị phần/i));
-
-      /* 5. Chi tiết shop × kênh phụ — cột = kỳ */
-      (function () {
-        var kq = khoi({ stt: 5, ten: 'Chi tiết theo Shop × kênh phụ — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true, dangXem: 'Nhóm theo kênh phụ · nút DT / DS · cột cuối = kỳ đang chọn · màu ô so cột trước' });
-        var shops = {}; chuoi.forEach(function (g) { Object.keys(g.shop).forEach(function (s) { shops[s] = 1; }); });
-        var dong = []; THU_TU.forEach(function (sb) { var ds = Object.keys(shops).filter(function (s) { return subCua(s) === sb; }).sort(function (a, b) { return (nay.shop[b] ? nay.shop[b].ds : 0) - (nay.shop[a] ? nay.shop[a].ds : 0); }); if (!ds.length) return; dong.push({ ten: tenSub(sb) + ' (' + ds.length + ')', nhom: true, mau: mauSub(sb), s: null, sb: sb }); ds.forEach(function (s) { dong.push({ ten: '   ' + tenShopNgan(s.replace(/^(FPT|Viettel|VTS|Cellphone[sS]?|CPS|ĐMCL|Điện Máy Chợ Lớn)\s*-\s*/i, '')), s: s }); }); });
-        var lay = function (r, i, f) { var g = chuoi[i]; if (r.nhom) return g.sub[r.sb][f]; var x = g.shop[r.s]; return x ? x[f] : 0; };
-        var w = bangMini({ cot: ky12.map(function (q) { return q.nhan; }), dong: dong, tong: false, chiSo: [{ ten: 'DT', fmt: fTyNgan, lay: function (r, i) { return lay(r, i, 'dt'); } }, { ten: 'DS', lay: function (r, i) { return lay(r, i, 'ds'); } }] });
-        w.classList.add('bc-mini-shop');
-        $('.bc-than', kq).appendChild(w);
-        var so0 = Object.keys(shops).filter(function (s) { return nay.shop[s] ? nay.shop[s].ds === 0 : true; }).length; chot(kq, '<b>' + Object.keys(shops).length + '</b> shop KA có số trong 12 kỳ; <b>' + so0 + '</b> shop 0 máy ' + k.nhan.toLowerCase() + '.');
-        grid.appendChild(kq);
+      /* 2. DS theo tuần cả năm (KA) — Anh Thái 06/09: bảng to hết màn hình, bỏ bản đồ nhiệt */
+             (function () {
+                        var kq = khoi({ stt: 2, ten: 'Doanh số theo tuần — cả năm (KA)', rong: true, dangXem: 'Cột chồng 4 kênh phụ · tuần thuộc kỳ chọn tô đậm · ô ĐỎ = giảm so với tuần liền trước' });
+                        var ws = d.TUAN.filter(function (t) { return t.coSo; }); var gs = ws.map(function (t) { return gomKA(t.tu, t.den); });
+                        var trongKy = function (t) { return cd === 'tuan' ? t.iso === k.tu : (t.tu <= k.den && t.den >= k.tu); };
+                        $('.bc-than', kq).appendChild(khungBieuDo({ cao: 320, tabs: [{ ten: 'Máy', cau: function () { var c = cauCotChong(ws.map(function (t) { return 'W' + t.so; }), subCo.map(function (s) { return { label: tenSub(s), data: gs.map(function (g) { return g.sub[s].ds; }), backgroundColor: ws.map(function (t) { return trongKy(t) ? mauSub(s) : hexMo(mauSub(s), 0.38); }) }; })); c.data.datasets.forEach(function (x) { x.maxBarThickness = 28; }); c.options.scales.x.ticks.font = { size: 10 }; c.options.scales.x.ticks.autoSkip = false; c.options.scales.x.ticks.maxRotation = 0; return c; } }] }));
+                        $('.bc-than', kq).appendChild(bangMini({ nhiet: false, cot: ws.slice(-12).map(function (t) { return 'W' + t.so; }), dong: subCo.map(function (s) { return { ten: tenSub(s), mau: mauSub(s), s: s }; }), chiSo: [{ ten: 'Máy', lay: function (r, i) { return gs.slice(-12)[i].sub[r.s].ds; } }, { ten: 'DT', fmt: fTyNgan, lay: function (r, i) { return gs.slice(-12)[i].sub[r.s].dt; } }] }));
+                        grid.appendChild(kq);
+             })();
+       
+             /* 3. Thị phần FPT & Viettel (mượn, chỉ tháng) */
+             if (cd === 'thang') muonKhoi(grid, 3, 'Thị phần theo tháng — FPT & Viettel', 'Nguồn Share KA (theo tháng) — như DB TG cũ', timMuon(root, /Thị phần/i));
+       
+             /* 4. Chi tiết shop × kênh phụ — cột = kỳ, thêm cột PG */
+             (function () {
+                        var kq = khoi({ stt: 4, ten: 'Chi tiết theo Shop × kênh phụ — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true,
+                                                 dangXem: 'Nhóm theo kênh phụ · nút DT / DS · cột PG: ✓ là shop ĐÃ có PG (không tính chương trình bên dưới) · ô ĐỎ = giảm so với kỳ liền trước' });
+                        var PG = pgKA();
+                        var shops = {}; chuoi.forEach(function (g) { Object.keys(g.shop).forEach(function (s) { shops[s] = 1; }); });
+                        var dong = []; THU_TU.forEach(function (sb) { var ds = Object.keys(shops).filter(function (s) { return subCua(s) === sb; }).sort(function (a, b) { return (nay.shop[b] ? nay.shop[b].ds : 0) - (nay.shop[a] ? nay.shop[a].ds : 0); }); if (!ds.length) return; dong.push({ ten: tenSub(sb) + ' (' + ds.length + ')', nhom: true, mau: mauSub(sb), s: null, sb: sb }); ds.forEach(function (s) { dong.push({ ten: '   ' + tenShopNgan(s.replace(/^(FPT|Viettel|VTS|Cellphone[sS]?|CPS|ĐMCL|Điện Máy Chợ Lớn)\s*-\s*/i, '')), s: s }); }); });
+                        var lay = function (r, i, f) { var g = chuoi[i]; if (r.nhom) return g.sub[r.sb][f]; var x = g.shop[r.s]; return x ? x[f] : 0; };
+                        var w = bangMini({ nhiet: false, cot: ky12.map(function (q) { return q.nhan; }), dong: dong, tong: false,
+                                                    cotThem: { ten: 'PG', lay: function (r) { if (r.nhom) return ''; var v = PG(r.s); return v === true ? '<b class="bc-len-chu">✓</b>' : v === false ? '<span class="bc-giam-chu">✗</span>' : '<span class="bc-mo-chu">—</span>'; } },
+                                                    chiSo: [{ ten: 'DT', fmt: fTyNgan, lay: function (r, i) { return lay(r, i, 'dt'); } }, { ten: 'DS', lay: function (r, i) { return lay(r, i, 'ds'); } }] });
+                        w.classList.add('bc-mini-shop');
+                        $('.bc-than', kq).appendChild(w);
+                        var soPG = Object.keys(shops).filter(function (s) { return PG(s) === true; }).length;
+                        var so0 = Object.keys(shops).filter(function (s) { return nay.shop[s] ? nay.shop[s].ds === 0 : true; }).length;
+                        chot(kq, '<b>' + Object.keys(shops).length + '</b> shop KA có số trong 12 kỳ; <b>' + soPG + '</b> shop đã có PG (không tính chương trình); <b>' + so0 + '</b> shop 0 máy ' + k.nhan.toLowerCase() + '.');
+                        grid.appendChild(kq);
+             })();
+       
+             /* 5. Sell out — 12 kỳ + biểu đồ tròn tỉ lệ đóng góp (Anh Thái 06/09: đưa xuống dưới) */
+             (function () {
+                        var kq = khoi({ stt: 5, ten: 'Sell Out KA — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true, dangXem: 'Tất cả theo kênh phụ · Reno & Find so còn lại · vòng bên phải: tỉ lệ đóng góp của 4 kênh phụ trong 12 kỳ' });
+                        var labels = ky12.map(function (q) { return q.nhan; });
+                        var seri = ky12.map(function (q) { var mk = BC.modelKy(cd, cd === 'tuan' ? BC.khoangKy('tuan', q.id) : BC.khoangKy('thang', q.id)); return BC.gomSeries({ KA: mk.KA || {} }).tong; });
+                        var hang = el('div', 'bc-hang-bd'); var trai = el('div'), phai = el('div');
+                        trai.appendChild(khungBieuDo({ cao: 360, tabs: [
+                           { ten: 'Tất cả', cau: function () { return cauCotChong(labels, subCo.map(function (s) { return { label: tenSub(s), data: chuoi.map(function (g) { return g.sub[s].ds; }), backgroundColor: mauSub(s) }; })); } },
+                           { ten: 'Reno', cau: function () { return cauCotChong(labels, [{ label: 'Reno', data: seri.map(function (x) { return x.RENO; }), backgroundColor: mau('RENO') }, { label: 'Find', data: seri.map(function (x) { return x.FIND; }), backgroundColor: mau('FIND') }, { label: 'Còn lại', data: seri.map(function (x) { return x.CONLAI; }), backgroundColor: mau('CONLAI') }]); } },
+                           { ten: 'Doanh thu', cau: function () { return cauCotChong(labels, subCo.map(function (s) { return { label: tenSub(s), data: chuoi.map(function (g) { return g.sub[s].dt; }), backgroundColor: mauSub(s) }; }), { fmt: fTyNgan, tien: true }); } }
+                                   ] }));
+                        var congSub = function (f) { return subCo.map(function (s) { return chuoi.reduce(function (z, g) { return z + g.sub[s][f]; }, 0); }); };
+                        phai.appendChild(el('div', 'bc-bd-ten', 'TỈ LỆ ĐÓNG GÓP THEO KÊNH'));
+                        phai.appendChild(khungBieuDo({ cao: 320, tabs: [
+                           { ten: 'Máy', cau: function () { return cauVong(subCo.map(tenSub), congSub('ds'), subCo.map(mauSub)); } },
+                           { ten: 'Doanh thu', cau: function () { return cauVong(subCo.map(tenSub), congSub('dt'), subCo.map(mauSub), fTyNgan); } }
+                                   ] }));
+                        hang.appendChild(trai); hang.appendChild(phai);
+                        $('.bc-than', kq).appendChild(hang);
+                        var tds = congSub('ds'), tt = tds.reduce(function (a, b) { return a + b; }, 0);
+                        var xep = subCo.map(function (s, i) { return { s: s, v: tds[i] }; }).sort(function (a, b) { return b.v - a.v; });
+                        if (tt) chot(kq, 'Trong 12 kỳ, ' + xep.map(function (x) { return '<b>' + esc(tenSub(x.s)) + '</b> ' + (x.v / tt * 100).toFixed(1) + '%'; }).join(' · ') + '.');grid.appendChild(kq);
       })();
 
       /* 6. Chương trình shop chưa PG (mượn, chỉ tháng) */
