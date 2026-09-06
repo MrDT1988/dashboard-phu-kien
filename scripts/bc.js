@@ -203,19 +203,28 @@
     var wrap = el('div', 'bc-mini-wrap');
     var body = el('div', 'bc-mini-cuon');
     var chon = 0;
-    function ve() {
-      var cs = o.chiSo[chon], fmt = cs.fmt || fInt;
-      var h = '<table class="bc-mini"><thead><tr><th>' + esc(cs.donVi || '') + '</th>' + o.cot.map(function (c, i) { return '<th' + (i === o.cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
-      var tong = o.cot.map(function () { return 0; });
-      o.dong.forEach(function (d) {
-        var vs = o.cot.map(function (_, i) { return cs.lay(d, i) || 0; });
-        h += '<tr><td>' + (d.mau ? '<i class="bc-cham" style="background:' + d.mau + '"></i>' : '') + esc(d.ten) + '</td>' + vs.map(function (v, i) {
-          tong[i] += v; var cls = ''; if (i > 0 && vs[i - 1]) { var p = (v - vs[i - 1]) / vs[i - 1]; cls = p > 0.03 ? ' bc-len' : p < -0.03 ? ' bc-giam' : ''; }
-          return '<td class="' + cls + (i === o.cot.length - 1 ? ' bc-cot-chon' : '') + '">' + (v ? fmt(v) : '-') + '</td>';
-        }).join('') + '</tr>';
-      });
-      if (o.tong !== false && o.dong.length > 1 && !cs.khongTong) h += '<tr class="bc-tong"><td>Tổng</td>' + tong.map(function (v, i) { return '<td' + (i === o.cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + (v ? fmt(v) : '-') + '</td>'; }).join('') + '</tr>';
-      body.innerHTML = h + '</tbody></table>';
+    /* Anh Thái 06/09: nhiet:false -> bỏ bản đồ nhiệt, chỉ tô ĐỎ ô nào xấu đi so với cột liền trước
+           (chỉ số có cs.nguoc = tăng mới là xấu, ví dụ tồn kho). cotThem = 1 cột phụ ngay sau tên dòng. */
+         function ve() {
+                  var cs = o.chiSo[chon], fmt = cs.fmt || fInt;
+                  var themTh = o.cotThem ? '<th>' + esc(o.cotThem.ten) + '</th>' : '';
+                  var themTd = o.cotThem ? '<td></td>' : '';
+                  var h = '<table class="bc-mini"><thead><tr><th>' + esc(cs.donVi || '') + '</th>' + themTh + o.cot.map(function (c, i) { return '<th' + (i === o.cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
+                  var tong = o.cot.map(function () { return 0; });
+                  o.dong.forEach(function (d) {
+                             var vs = o.cot.map(function (_, i) { return cs.lay(d, i) || 0; });
+                             h += '<tr><td>' + (d.mau ? '<i class="bc-cham" style="background:' + d.mau + '"></i>' : '') + esc(d.ten) + '</td>'
+                                          + (o.cotThem ? '<td>' + o.cotThem.lay(d) + '</td>' : '') + vs.map(function (v, i) {
+                                                       tong[i] += v; var cls = '';
+                                                       if (i > 0) {
+                                                                      var tr = vs[i - 1];
+                                                                      if (o.nhiet === false) { if (v !== tr && (cs.nguoc ? v > tr : v < tr)) cls = ' bc-giam-so'; }
+                                                                      else if (tr) { var p = (v - tr) / tr; cls = p > 0.03 ? ' bc-len' : p < -0.03 ? ' bc-giam' : ''; }
+                                                       }
+                                                       return '<td class="' + cls + (i === o.cot.length - 1 ? ' bc-cot-chon' : '') + '">' + (v ? fmt(v) : '-') + '</td>';
+                                          }).join('') + '</tr>';
+                  });
+                  if (o.tong !== false && o.dong.length > 1 && !cs.khongTong) h += '<tr class="bc-tong"><td>Tổng</td>' + themTd + tong.map(function (v, i) { return '<td' + (i === o.cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + (v ? fmt(v) : '-') + '</td>'; }).join('') + '</tr>';body.innerHTML = h + '</tbody></table>';
       body.scrollLeft = body.scrollWidth;
     }
     if (o.chiSo.length > 1) wrap.appendChild(nutChon(o.chiSo.map(function (c) { return c.ten; }), 0, function (i) { chon = i; ve(); }));
