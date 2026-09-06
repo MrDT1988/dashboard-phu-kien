@@ -806,6 +806,14 @@
                         var THANG_CO = (function () { var mC = d.NGAY.length ? U.thangCua(d.NGAY[d.NGAY.length - 1]) : 12; var a = []; for (var i = 1; i <= mC; i++) a.push(i); return a; })();
                         var mSel = cd === 'tuan' ? U.thangCua(k.denCo) : k.so;
                         var MOC_OC = 200e6;
+                        /* Anh Thái 06/09: cột "Đạt LV" — doanh thu tháng chạm mốc DT của gói nào thì ghi gói đó
+                           (Platinum 600M · Titan 400M · Gold 200M, lấy từ __bcTarget().ocTarget). Xét theo DOANH THU,
+                           cùng thước đo với cột "O.C ≥200M". OC_TT xếp cao→thấp nên chỉ số nhỏ = gói cao hơn. */
+                        var datLV = function (dt) {
+                                     var ten = null, mocCao = 0;
+                                     OC_TT.forEach(function (l) { var m = (OC_T[l] || {}).dt || 0; if (m && dt >= m && m > mocCao) { mocCao = m; ten = l; } });
+                                     return ten;
+                        };
                         var kq = khoi({ stt: 6, ten: 'Mục tiêu shop O.C', rong: true, dangXem: 'Trên: gộp theo level (theo mã shop) · Dưới: từng shop O.C ĐÃ GỘP mã trùng tên · Target DT lấy theo level · cột O.C: ✓ khi doanh thu tháng ≥ 200M' });var than = $('.bc-than', kq);
                 $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_CO, mSel, false, function (v) { mSel = +v; ve(); }));
                         var hopTren = el('div', 'bc-cuon'), tenDuoi = el('div', 'bc-bd-ten'), hopDuoi = el('div', 'bc-cuon');
@@ -846,19 +854,24 @@
                                                                                                                        if (r.dt > a.max) { a.max = r.dt; a.s = r.s; a.l = r.l; a.sale = r.sale; }
                                                                    });
                                                                 nhomCT.sort(function (a, b) { return (a.t ? a.ds / a.t : 0) - (b.t ? b.ds / b.t : 0); });
-                                                                var h2 = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Level</th><th>Sale</th><th>Máy</th><th>Target máy</th><th>% HT máy</th><th>Doanh thu</th><th>Target DT</th><th>% HT DT</th><th>Gộp</th><th>O.C ≥200M</th>' + (ngayCon ? '<th>Cần/tuần</th>' : '') + '</tr></thead><tbody>'
+                                                                var h2 = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Level</th><th>Sale</th><th>Máy</th><th>Target máy</th><th>% HT máy</th><th>Doanh thu</th><th>Target DT</th><th>% HT DT</th><th>Gộp</th><th>O.C ≥200M</th><th>Đạt LV</th>' + (ngayCon ? '<th>Cần/tuần</th>' : '') + '</tr></thead><tbody>'
                                                                                                           + nhomCT.map(function (r, i) {var p = r.t ? r.ds / r.t * 100 : null, pd = r.tdt ? r.dt / r.tdt * 100 : null;
-                                                        var ok = r.dt >= MOC_OC;
+                                                        var ok = r.dt >= MOC_OC, lv = datLV(r.dt);
                                                         return '<tr' + (!r.ds ? ' class="bc-mo"' : '') + '><td>' + (i + 1) + '</td><td title="' + esc(r.s) + '">' + esc(tenShopNgan(r.s)) + '</td><td>' + esc(r.l) + '</td><td>' + esc(tenNgan(r.sale)) + '</td><td><b>' + fInt(r.ds) + '</b></td><td>' + fInt(r.t) + '</td><td>' + thanhNho(p) + '</td><td><b>' + fTyNgan(r.dt) + '</b></td><td>' + fTyNgan(r.tdt) + '</td><td>' + thanhNho(pd) + '</td>'
                                                           + '<td>' + (r.n > 1 ? '<b>' + r.n + ' mã</b>' : '<span class="bc-mo-chu">—</span>') + '</td>'
                                                            + '<td>' + (ok ? '<b class="bc-len-chu">✓</b>' : '<span class="bc-giam-chu">✗</span>') + '</td>'
+                                                           + '<td>' + (lv ? '<b class="' + (OC_TT.indexOf(lv) <= OC_TT.indexOf(r.l) ? 'bc-len-chu' : 'bc-giam-chu') + '">' + esc(lv) + '</b>' : '<span class="bc-mo-chu">—</span>') + '</td>'
                                                           + (ngayCon ? '<td>' + fInt(Math.max(0, r.t - r.ds) / (ngayCon / 7)) + '</td>' : '') + '</tr>';
                                        }).join('') + '</tbody></table>';
                                      hopDuoi.innerHTML = h2;
                                      var datDs = nhomCT.filter(function (r) { return r.t && r.ds >= r.t; }).length;
                                                              var dat200 = nhomCT.filter(function (r) { return r.dt >= MOC_OC; }).length;
                                                              tenDuoi.textContent = 'TIẾN ĐỘ TỪNG SHOP O.C — ' + nhomCT.length + ' shop (đã gộp mã trùng tên)';
-                                                             chot(kq, 'Tháng ' + mSel + ' (luỹ kế ' + ngayDa + '/' + ngayThang + ' ngày): <b>' + datDs + '/' + nhomCT.length + '</b> shop O.C đạt target máy · <b>' + dat200 + '/' + nhomCT.length + '</b> shop có doanh thu ≥ 200M' + (ngayCon ? ' · còn ' + ngayCon + ' ngày' : '') + '.');
+                                     /* Anh Thái 06/09: đếm số shop chạm mốc DT của từng gói */
+                                     var demLV = {}; OC_TT.forEach(function (l) { demLV[l] = 0; });
+                                     nhomCT.forEach(function (r) { var l = datLV(r.dt); if (l) demLV[l]++; });
+                                     var chuoiLV = OC_TT.filter(function (l) { return demLV[l]; }).map(function (l) { return '<b>' + esc(l) + '</b> ' + demLV[l]; }).join(' · ');
+                                                             chot(kq, 'Tháng ' + mSel + ' (luỹ kế ' + ngayDa + '/' + ngayThang + ' ngày): <b>' + datDs + '/' + nhomCT.length + '</b> shop O.C đạt target máy · <b>' + dat200 + '/' + nhomCT.length + '</b> shop có doanh thu ≥ 200M' + (chuoiLV ? ' · đạt gói theo doanh thu: ' + chuoiLV : '') + (ngayCon ? ' · còn ' + ngayCon + ' ngày' : '') + '.');
                         }
                         ve();
                         grid.appendChild(kq);
