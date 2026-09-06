@@ -38,6 +38,15 @@
          /* ===================== dữ liệu dùng chung ===================== */
     /* Anh Thái 06/09: bọc số vào span đỏ khi chỉ số xấu — dùng chung cả 3 tab */
          var do_ = function (kem, s) { return kem ? '<span class="bc-giam-chu">' + s + '</span>' : s; };
+     /* Anh Thái 06/09: khoá gộp shop O.C trùng tên (Nokia Phong / Nokia Phong 2 / Nokia Phong cty = 1 shop;
+        Mỹ Hạnh / Mỹ Hạnh Cty = 1; Hồng Ngọc / Hồng Ngọc TG = 1). Riêng Long Hưng và Long Hưng 2 là 2 shop độc lập. */
+     var khoaOC = function (ten) {
+          var g = String(ten || '').split(/[-–(,]/)[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, ' ').trim();
+          g = g.replace(/^(cua hang|ch)\s+/, '').replace(/^dtdd\s+/, '').replace(/^va laptop\s+/, '');
+          g = g.replace(/\b(cong ty|cty|pp|mobile|tg|bt|tien giang|ben tre|vinh long|long an)\b/g, ' ').replace(/\s+/g, ' ').trim();
+          if (/^long hung/.test(g)) return g.replace(/\s+/g, '');
+          return g.replace(/\s*\d+$/, '').replace(/\s+/g, '');
+     };
      /* Anh Thái 06/09: bộ lọc Tháng dùng chung cho cả 3 tab MWG / KA / IND */
          var selThangCT = function (ds, chon, coKy, onChon) {
                   var l = el('label', 'bc-loc-thang', 'Tháng ');
@@ -544,6 +553,7 @@
       /* 2. DS theo tuần cả năm (KA) — Anh Thái 06/09: bảng to hết màn hình, bỏ bản đồ nhiệt */
              (function () {
                         var kq = khoi({ stt: 2, ten: 'Doanh số theo tuần — cả năm (KA)', rong: true, dangXem: 'Cột chồng 4 kênh phụ · tuần thuộc kỳ chọn tô đậm · ô ĐỎ = giảm so với tuần liền trước' });
+                kq.classList.add('bc-ka-k2');
                         var ws = d.TUAN.filter(function (t) { return t.coSo; }); var gs = ws.map(function (t) { return gomKA(t.tu, t.den); });
                         var trongKy = function (t) { return cd === 'tuan' ? t.iso === k.tu : (t.tu <= k.den && t.den >= k.tu); };
                         $('.bc-than', kq).appendChild(khungBieuDo({ cao: 320, tabs: [{ ten: 'Máy', cau: function () { var c = cauCotChong(ws.map(function (t) { return 'W' + t.so; }), subCo.map(function (s) { return { label: tenSub(s), data: gs.map(function (g) { return g.sub[s].ds; }), backgroundColor: ws.map(function (t) { return trongKy(t) ? mauSub(s) : hexMo(mauSub(s), 0.38); }) }; })); c.data.datasets.forEach(function (x) { x.maxBarThickness = 28; }); c.options.scales.x.ticks.font = { size: 10 }; c.options.scales.x.ticks.autoSkip = false; c.options.scales.x.ticks.maxRotation = 0; return c; } }] }));
@@ -552,11 +562,11 @@
              })();
        
              /* 3. Thị phần FPT & Viettel (mượn, chỉ tháng) */
-             if (cd === 'thang') muonKhoi(grid, 3, 'Thị phần theo tháng — FPT & Viettel', 'Nguồn Share KA (theo tháng) — như DB TG cũ', timMuon(root, /Thị phần/i));
+             if (cd === 'thang') muonKhoi(grid, 4, 'Thị phần theo tháng — FPT & Viettel', 'Nguồn Share KA (theo tháng) — như DB TG cũ', timMuon(root, /Thị phần/i));
        
              /* 4. Chi tiết shop × kênh phụ — cột = kỳ, thêm cột PG */
              (function () {
-                        var kq = khoi({ stt: 4, ten: 'Chi tiết theo Shop × kênh phụ — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true,
+                        var kq = khoi({ stt: 5, ten: 'Chi tiết theo Shop × kênh phụ — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true,
                                                  dangXem: 'Nhóm theo kênh phụ · nút DT / DS · cột PG: ✓ là shop ĐÃ có PG (không tính chương trình bên dưới) · ô ĐỎ = giảm so với kỳ liền trước' });
                         var PG = pgKA();
                         var shops = {}; chuoi.forEach(function (g) { Object.keys(g.shop).forEach(function (s) { shops[s] = 1; }); });
@@ -575,7 +585,7 @@
        
              /* 5. Sell out — 12 kỳ + biểu đồ tròn tỉ lệ đóng góp (Anh Thái 06/09: đưa xuống dưới) */
              (function () {
-                        var kq = khoi({ stt: 5, ten: 'Sell Out KA — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true, dangXem: 'Tất cả theo kênh phụ · Reno & Find so còn lại · vòng bên phải: tỉ lệ đóng góp của 4 kênh phụ trong 12 kỳ' });
+                        var kq = khoi({ stt: 3, ten: 'Sell Out KA — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true, dangXem: 'Tất cả theo kênh phụ · Reno & Find so còn lại · vòng bên phải: tỉ lệ đóng góp của 4 kênh phụ trong 12 kỳ' });
                         var labels = ky12.map(function (q) { return q.nhan; });
                         var seri = ky12.map(function (q) { var mk = BC.modelKy(cd, cd === 'tuan' ? BC.khoangKy('tuan', q.id) : BC.khoangKy('thang', q.id)); return BC.gomSeries({ KA: mk.KA || {} }).tong; });
                         var hang = el('div', 'bc-hang-bd'); var trai = el('div'), phai = el('div');
@@ -594,8 +604,11 @@
                         $('.bc-than', kq).appendChild(hang);
                         var tds = congSub('ds'), tt = tds.reduce(function (a, b) { return a + b; }, 0);
                         var xep = subCo.map(function (s, i) { return { s: s, v: tds[i] }; }).sort(function (a, b) { return b.v - a.v; });
-                        if (tt) chot(kq, 'Trong 12 kỳ, ' + xep.map(function (x) { return '<b>' + esc(tenSub(x.s)) + '</b> ' + (x.v / tt * 100).toFixed(1) + '%'; }).join(' · ') + '.');grid.appendChild(kq);
-      })();
+                        if (tt) chot(kq, 'Trong 12 kỳ, ' + xep.map(function (x) { return '<b>' + esc(tenSub(x.s)) + '</b> ' + (x.v / tt * 100).toFixed(1) + '%'; }).join(' · ') + '.');
+                                     /* Anh Thái 06/09: khối này nằm ngay DƯỚI khối 2 (mã vẫn viết ở đây cho gọn) */
+                                     var k2 = grid.querySelector('.bc-ka-k2');
+                                     grid.insertBefore(kq, k2 ? k2.nextSibling : null);
+             })();
 
       /* 6. Chương trình shop chưa PG (mượn, chỉ tháng) */
       if (cd === 'thang') muonKhoi(grid, 6, 'Chương trình shop chưa có PG — ngân sách & KPI Sale', null, timMuon(root, /chưa có PG/i));
@@ -711,15 +724,6 @@
                            { ten: 'Shop O.C đạt gói', tg: 25, fmt: fInt, donVi: ' shop' },
                            { ten: 'Shop có S.O 5 máy', tg: 60, fmt: fInt, donVi: ' shop' }
                                    ];
-                        /* khoá gộp shop O.C trùng tên */
-                        var khoaOC = function (ten) {
-                                     var s = String(ten || '').split(/\s[-–]\s|\(|,|–/)[0];
-                                     s = s.replace(/^\s*(c[ửu]a\s*h[àa]ng|ch)\s*(đtdđ|dtdd)?\s*(v[àa]\s*laptop)?\s*/i, '');
-                                     s = s.replace(/\b(c[ôo]ng\s*ty|cty|cong\s*ty|pp|mobile)\b/gi, ' ').replace(/[-–]+\s*$/, '');
-                                     var g = s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, ' ').trim();
-                                     if (/^long hung/.test(g)) return g.replace(/\s+/g, '');            /* Long Hưng & Long Hưng 2 tách riêng */
-                                     return g.replace(/\s*\d+\s*$/, '').replace(/\s+/g, '');
-                        };
                         var THANG_CO2 = (function () { var mC = d.NGAY.length ? U.thangCua(d.NGAY[d.NGAY.length - 1]) : 12; var a = []; for (var i = 1; i <= mC; i++) a.push(i); return a; })();
                         var mSel = cd === 'tuan' ? U.thangCua(k.denCo) : k.so;
                         if (THANG_CO2.indexOf(mSel) < 0) mSel = THANG_CO2[THANG_CO2.length - 1] || mSel;
@@ -798,8 +802,8 @@
                         var THANG_CO = (function () { var mC = d.NGAY.length ? U.thangCua(d.NGAY[d.NGAY.length - 1]) : 12; var a = []; for (var i = 1; i <= mC; i++) a.push(i); return a; })();
                         var mSel = cd === 'tuan' ? U.thangCua(k.denCo) : k.so;
                         var MOC_OC = 200e6;
-                        var kq = khoi({ stt: 6, ten: 'Mục tiêu shop O.C', rong: true, dangXem: 'Trên: gộp theo level · Dưới: đầy đủ từng shop O.C · Target DT lấy theo level · cột O.C: ✓ khi doanh thu tháng ≥ 200M' });var than = $('.bc-than', kq);
-                        $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_CO, mSel, false, function (v) { mSel = +v; ve(); }));
+                        var kq = khoi({ stt: 6, ten: 'Mục tiêu shop O.C', rong: true, dangXem: 'Trên: gộp theo level (theo mã shop) · Dưới: từng shop O.C ĐÃ GỘP mã trùng tên · Target DT lấy theo level · cột O.C: ✓ khi doanh thu tháng ≥ 200M' });var than = $('.bc-than', kq);
+                $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_CO, mSel, false, function (v) { mSel = +v; ve(); }));
                         var hopTren = el('div', 'bc-cuon'), tenDuoi = el('div', 'bc-bd-ten'), hopDuoi = el('div', 'bc-cuon');
                         tenDuoi.style.textAlign = 'left'; tenDuoi.textContent = 'TIẾN ĐỘ TỪNG SHOP O.C';
                         than.appendChild(hopTren); than.appendChild(tenDuoi); than.appendChild(hopDuoi);
@@ -829,19 +833,28 @@
                                      });
                                      h += '<tr class="bc-tong"><td>Tổng</td><td>' + tg.shop + '</td><td>' + tg.ban + '</td><td>' + fInt(tg.ds) + '</td><td>' + fInt(tg.tds) + '</td><td>' + thanhNho(tg.tds ? tg.ds / tg.tds * 100 : null) + '</td><td>' + fTyNgan(tg.dt) + '</td><td>' + fTyNgan(tg.tdt) + '</td><td>' + thanhNho(tg.tdt ? tg.dt / tg.tdt * 100 : null) + '</td><td>' + tg.dat + '/' + tg.shop + '</td>' + (ngayCon ? '<td></td>' : '') + '</tr></tbody></table>';
                                      hopTren.innerHTML = h;
-                                     chiTiet.sort(function (a, b) { return (a.t ? a.ds / a.t : 0) - (b.t ? b.ds / b.t : 0); });
-                                     var h2 = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Level</th><th>Sale</th><th>Máy</th><th>Target máy</th><th>% HT máy</th><th>Doanh thu</th><th>Target DT</th><th>% HT DT</th><th>O.C ≥200M</th>' + (ngayCon ? '<th>Cần/tuần</th>' : '') + '</tr></thead><tbody>'
-                                       + chiTiet.map(function (r, i) {
-                                                        var p = r.t ? r.ds / r.t * 100 : null, pd = r.tdt ? r.dt / r.tdt * 100 : null;
+                                     /* Anh Thái 06/09: gộp các mã shop O.C trùng tên trước khi liệt kê (Long Hưng & Long Hưng 2 vẫn tách) */
+                                                                var mapOC = {}, nhomCT = [];
+                                                                chiTiet.forEach(function (r) {
+                                                                                                                       var kk = khoaOC(r.s), a = mapOC[kk];
+                                                                                                                       if (!a) { a = mapOC[kk] = { s: r.s, l: r.l, sale: r.sale, ds: 0, dt: 0, t: 0, tdt: 0, n: 0, max: -1 }; nhomCT.push(a); }
+                                                                                                                       a.ds += r.ds; a.dt += r.dt; a.t += r.t; a.tdt += r.tdt; a.n++;
+                                                                                                                       if (r.dt > a.max) { a.max = r.dt; a.s = r.s; a.l = r.l; a.sale = r.sale; }
+                                                                   });
+                                                                nhomCT.sort(function (a, b) { return (a.t ? a.ds / a.t : 0) - (b.t ? b.ds / b.t : 0); });
+                                                                var h2 = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Level</th><th>Sale</th><th>Máy</th><th>Target máy</th><th>% HT máy</th><th>Doanh thu</th><th>Target DT</th><th>% HT DT</th><th>Gộp</th><th>O.C ≥200M</th>' + (ngayCon ? '<th>Cần/tuần</th>' : '') + '</tr></thead><tbody>'
+                                                                                                          + nhomCT.map(function (r, i) {var p = r.t ? r.ds / r.t * 100 : null, pd = r.tdt ? r.dt / r.tdt * 100 : null;
                                                         var ok = r.dt >= MOC_OC;
                                                         return '<tr' + (!r.ds ? ' class="bc-mo"' : '') + '><td>' + (i + 1) + '</td><td title="' + esc(r.s) + '">' + esc(tenShopNgan(r.s)) + '</td><td>' + esc(r.l) + '</td><td>' + esc(tenNgan(r.sale)) + '</td><td><b>' + fInt(r.ds) + '</b></td><td>' + fInt(r.t) + '</td><td>' + thanhNho(p) + '</td><td><b>' + fTyNgan(r.dt) + '</b></td><td>' + fTyNgan(r.tdt) + '</td><td>' + thanhNho(pd) + '</td>'
-                                                          + '<td>' + (ok ? '<b class="bc-len-chu">✓</b>' : '<span class="bc-giam-chu">✗</span>') + '</td>'
+                                                          + '<td>' + (r.n > 1 ? '<b>' + r.n + ' mã</b>' : '<span class="bc-mo-chu">—</span>') + '</td>'
+                                                           + '<td>' + (ok ? '<b class="bc-len-chu">✓</b>' : '<span class="bc-giam-chu">✗</span>') + '</td>'
                                                           + (ngayCon ? '<td>' + fInt(Math.max(0, r.t - r.ds) / (ngayCon / 7)) + '</td>' : '') + '</tr>';
                                        }).join('') + '</tbody></table>';
                                      hopDuoi.innerHTML = h2;
-                                     var datDs = chiTiet.filter(function (r) { return r.t && r.ds >= r.t; }).length;
-                                     var dat200 = chiTiet.filter(function (r) { return r.dt >= MOC_OC; }).length;
-                                     chot(kq, 'Tháng ' + mSel + ' (luỹ kế ' + ngayDa + '/' + ngayThang + ' ngày): <b>' + datDs + '/' + chiTiet.length + '</b> shop O.C đạt target máy · <b>' + dat200 + '/' + chiTiet.length + '</b> shop có doanh thu ≥ 200M' + (ngayCon ? ' · còn ' + ngayCon + ' ngày' : '') + '.');
+                                     var datDs = nhomCT.filter(function (r) { return r.t && r.ds >= r.t; }).length;
+                                                             var dat200 = nhomCT.filter(function (r) { return r.dt >= MOC_OC; }).length;
+                                                             tenDuoi.textContent = 'TIẾN ĐỘ TỪNG SHOP O.C — ' + nhomCT.length + ' shop (đã gộp mã trùng tên)';
+                                                             chot(kq, 'Tháng ' + mSel + ' (luỹ kế ' + ngayDa + '/' + ngayThang + ' ngày): <b>' + datDs + '/' + nhomCT.length + '</b> shop O.C đạt target máy · <b>' + dat200 + '/' + nhomCT.length + '</b> shop có doanh thu ≥ 200M' + (ngayCon ? ' · còn ' + ngayCon + ' ngày' : '') + '.');
                         }
                         ve();
                         grid.appendChild(kq);
