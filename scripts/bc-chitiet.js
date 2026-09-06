@@ -63,9 +63,16 @@
           /* ---- chỉ số phụ dùng chung ---- */
              var iSS = HANG.findIndex(function (h) { return /samsung/i.test(h); });
              var iXM = HANG.findIndex(function (h) { return /xiaomi/i.test(h); });
+      var iAP = HANG.findIndex(function (h) { return /apple|iphone/i.test(h); });
              var PKI = SEG.map(function (s, i) { return /^(10-15M|15-20M)$/.test(s) ? i : -1; }).filter(function (i) { return i >= 0; });
              var laPK = function (s) { return PKI.indexOf(s) >= 0; };
-             var THANG_MWG = (function () { var z = {}; for (var i = 0; i < R.length; i++) z[R[i][0]] = 1; return Object.keys(z).map(Number).sort(function (a, b) { return a - b; }); })();
+             /* Anh Thái 05-09 tối: phân khúc phải xếp thấp → cao (data trả về theo bảng chữ cái) */
+             var THU_TU_SEG = ['<3M', '3-5M', '5-7M', '7-10M', '10-15M', '15-20M', '20-30M', '>20M', '>30M'];
+             var canDuoi = function (s) { var m = String(s).match(/(\d+(?:[.,]\d+)?)/); return m ? parseFloat(m[1].replace(',', '.')) : 0; };
+             var hangSeg = function (s) { var i = THU_TU_SEG.indexOf(String(s)); return i >= 0 ? i : 100 + canDuoi(s); };
+             var xepSeg = function (ds) { return ds.slice().sort(function (a, b) { return hangSeg(a.s) - hangSeg(b.s); }); };
+             var duoi10M = function (s) { return /^</.test(String(s)) || canDuoi(s) < 10; };
+       var THANG_MWG = (function () { var z = {}; for (var i = 0; i < R.length; i++) z[R[i][0]] = 1; return Object.keys(z).map(Number).sort(function (a, b) { return a - b; }); })();
              var M_MOI = THANG_MWG[THANG_MWG.length - 1] || 0;
              var khoangThang = function (m) { return BC.khoangKy('thang', m, 'mwg'); };
 
@@ -132,11 +139,20 @@
              var shDs = function (a, u) { return a.tU ? (u / a.tU * 100) : 0; };
              var shDt = function (a, dt) { var md = a.tDt - a.aDt; return md ? (dt / md * 100) : 0; };
              var pcCh = function (v) { return v.toFixed(1) + '%'; };
-             var oCotChinh = function (a) {
-                        return '<td><b>' + fInt(a.pkO) + '</b>' + (a.pkT ? ' <small>' + pcCh(a.pkO / a.pkT * 100) + '</small>' : '') + '</td>' +
-                                     '<td>' + pcCh(shDs(a, a.oU)) + ' <small>/ ' + pcCh(shDs(a, a.sU)) + ' / ' + pcCh(shDs(a, a.xU)) + '</small></td>' +
-                                     '<td>' + pcCh(shDt(a, a.oDt)) + ' <small>/ ' + pcCh(shDt(a, a.sDt)) + ' / ' + pcCh(shDt(a, a.xDt)) + '</small></td>';
-             };
+      /* Anh Thái 05-09 tối: chỉ số OPPO thấp hơn TRUNG BÌNH của nhóm thì tô đỏ ngay ô đó.
+               nhom = số gộp của cả nhóm (Size / toàn chợ); không truyền thì không so. */
+          var do_ = function (kem, s) { return kem ? '<span class="bc-giam-chu">' + s + '</span>' : s; };
+          var oCotChinh = function (a, nhom) {
+                     var tbPk = nhom && nhom.shops ? nhom.pkO / nhom.shops : null;
+                     var shO = shDs(a, a.oU), shDtO = shDt(a, a.oDt);
+                     var kPk = tbPk != null && a.pkO < tbPk;
+                     var kDs = nhom ? shO < shDs(nhom, nhom.oU) : false;
+                     var kDt = nhom ? shDtO < shDt(nhom, nhom.oDt) : false;
+                     return '<td>' + do_(kPk, '<b>' + fInt(a.pkO) + '</b>') + (a.pkT ? ' <small>' + pcCh(a.pkO / a.pkT * 100) + '</small>' : '') + '</td>' +
+                                  '<td>' + do_(kDs, pcCh(shO)) + ' <small>/ ' + pcCh(shDs(a, a.sU)) + ' / ' + pcCh(shDs(a, a.xU)) + '</small></td>' +
+                                  '<td>' + do_(kDt, pcCh(shDtO)) + ' <small>/ ' + pcCh(shDt(a, a.sDt)) + ' / ' + pcCh(shDt(a, a.xDt)) + '</small></td>';
+             
+          };
              var dauCotChinh = '<th>PK 10-20M</th><th>Share D.S <small>O/S/X</small></th><th>Share D.T <small>O/S/X</small></th>';
              var selThangCT = function (ds, chon, coKy, onChon) {
                         var l = el('label', 'bc-loc-thang', 'Tháng ');
@@ -176,8 +192,8 @@
                Anh Thái 05-09: giữ 4 thẻ như cũ (Doanh số / Doanh thu / PK 10-20M / Đơn giá),
                         phần dưới mỗi thẻ là số của từng Sale + chip so kỳ trước. */
              (function () {
-                        var kq = khoi({ stt: 1, ten: 'Kết quả MWG ' + k.nhan.toLowerCase(), rong: true, cls: 'bc-kpi-khoi',
-                                                 dangXem: '4 chỉ số OPPO tại chợ MWG · dưới mỗi thẻ là chi tiết từng Sale, chip so ' + esc(ctx.tenKyTruoc || 'kỳ trước') });
+                  var kq = khoi({ stt: 1, ten: 'Kết quả MWG ' + k.nhan.toLowerCase(), rong: true, cls: 'bc-kpi-khoi bc-mwg-kq',
+                                 dangXem: '4 chỉ số OPPO tại chợ MWG · dưới mỗi thẻ là chi tiết từng Sale, chip so ' + esc(ctx.tenKyTruoc || 'kỳ trước') });
                         var tatCa = function (sh) { return gomTheo(sh, function () { return 'ALL'; })['ALL'] || null; };
                         var TG = tatCa(shopNay), TT = shopTruoc ? tatCa(shopTruoc) : null;
                         var dgia = function (a) { return a && a.oU ? a.oDt / a.oU : 0; };
@@ -195,8 +211,9 @@
                         var the = el('div', 'bc-kpi-row');
                         the.innerHTML = TG ? CHI.map(function (c) {
                                      var rows = SALES_MWG.map(function (s) {
-                                                    var a = saleNay[s], b = saleTruoc ? saleTruoc[s] : null;
-                                                    return dongKenh(tenSale(s), mau('MWG'), c.lay(a), b ? c.lay(b) : null, c.fmt);
+                      var a = saleNay[s], b = saleTruoc ? saleTruoc[s] : null, vt = b ? c.lay(b) : null;
+                                                    /* Anh Thái 05-09 tối: tên Sale để nguyên 2 chữ cuối, chữ nhỏ, gọn 1 hàng */
+                                                    return '<div><i class="bc-cham" style="background:' + mau('MWG') + '"></i><b title="' + esc(s) + '">' + esc(tenSale(s)) + '</b><span>' + c.fmt(c.lay(a)) + '</span>' + chip(vt != null ? pct(c.lay(a), vt) : null) + '</div>';
                                      }).join('');
                                      return theKpi(esc(c.nhan), c.gt(TG), chip(TT ? pct(c.lay(TG), c.lay(TT)) : null), c.sub(TG), rows);
                         }).join('') : '<p class="bc-trong">Chưa có dữ liệu shop MWG cho kỳ này.</p>';
@@ -204,12 +221,12 @@
                         if (truoc) { var dS = share(nay) - share(truoc); chot(kq, 'Toàn MWG: thị phần máy OPPO ' + (dS >= 0 ? 'tăng' : 'giảm') + ' <b>' + Math.abs(dS).toFixed(1) + ' điểm</b> (' + pcCh(share(truoc)) + ' → ' + pcCh(share(nay)) + ') · máy OPPO ' + (nay.oppo.u >= truoc.oppo.u ? '+' : '') + fInt(nay.oppo.u - truoc.oppo.u) + ', toàn ngành ' + (nay.tong.u >= truoc.tong.u ? '+' : '') + fInt(nay.tong.u - truoc.tong.u) + ' máy.'); }
                         grid.appendChild(kq);
              })();
-
+       
              /* ================= 2. Doanh số theo hãng — 12 kỳ + bảng mini theo Sale ================= */
              (function () {
                         var kq = khoi({ stt: 2, ten: 'Doanh số theo hãng — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true,
-                                                 dangXem: 'Biểu đồ: top 6 hãng, còn lại gộp "Khác" · Bảng mini bên dưới: chi tiết từng Sale, lọc riêng theo tháng (mặc định cả năm)' });
-                        var top6 = HANG.map(function (h, i) { return { h: h, i: i, u: nay.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 6);
+                                                 dangXem: 'Biểu đồ: top 6 hãng, còn lại gộp "Khác" · Bảng mini: chi tiết từng Sale, đủ hãng cả ở tab PK 10-20M, có Share OPPO / SS / XM · lọc riêng theo tháng (mặc định cả năm)' });
+                var top6 = HANG.map(function (h, i) { return { h: h, i: i, u: nay.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 6);
                         var labels = ky12.map(function (q) { return q.nhan; });
                         var cotHang = function (lay, tien) {
                                      var khac = chuoi.map(function (g) { var t = lay(g.tong); top6.forEach(function (x) { t -= lay(g.hang[x.i]); }); return Math.max(0, t); });
@@ -223,36 +240,60 @@
                            { ten: 'Doanh thu', cau: function () { return cotHang(function (x) { return x.dt; }, true); } }
                                    ] }));
 
-                        var mSel = '', chon = 0;
-                        var CS = [
-                           { ten: 'Doanh số', fmt: fInt, lay: function (a, f) { return a[f + 'U']; }, tong: function (a) { return a.tU; } },
-                           { ten: 'Doanh thu', fmt: fTyNgan, lay: function (a, f) { return a[f + 'Dt']; }, tong: function (a) { return a.tDt; } },
-                           { ten: 'PK 10-20M', fmt: fInt, lay: function (a, f) { return f === 'o' ? a.pkO : null; }, tong: function (a) { return a.pkT; } }
-                                   ];
-                        var HNHOM = [['o', 'OPPO'], ['s', 'Samsung'], ['x', 'Xiaomi'], ['a', 'Apple']];
-                        var loc = el('div', 'bc-loc');
-                        loc.appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; veBang(); }));
-                        $('.bc-loc-thang select', loc).options[0].textContent = 'Cả năm';
-                        var hopNut = el('div'); hopNut.appendChild(nutChon(CS.map(function (c) { return c.ten; }), 0, function (i) { chon = i; veBang(); }));
-                        var box = el('div', 'bc-cuon');
+                        /* Anh Thái 05-09 tối: cả 3 tab đều có Share OPPO / SS / XM; tab PK 10-20M có đủ hãng.
+                                   PK theo hãng chỉ có ở daily.rows (shop_day_data chỉ có PK OPPO + PK tổng) — đã đối chiếu:
+                                              danh sách Sale của DATA MWG trùng đúng 6 người với sheet SHOP THEO SALE nên gộp được. */
+                     var mSel = '', chon = 0;
+                     var CS = [{ ten: 'Doanh số', fmt: fInt }, { ten: 'Doanh thu', fmt: fTyNgan }, { ten: 'PK 10-20M', fmt: fInt }];
+                     var HNHOM = ['OPPO', 'Samsung', 'Xiaomi', 'Apple'];
+                     var loc = el('div', 'bc-loc');
+                     loc.appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; veBang(); }));
+                     $('.bc-loc-thang select', loc).options[0].textContent = 'Cả năm';
+                     var hopNut = el('div'); hopNut.appendChild(nutChon(CS.map(function (c) { return c.ten; }), 0, function (i) { chon = i; veBang(); }));
+                     var box = el('div', 'bc-cuon');
+                     function pkTheoSale(tu, den) {   /* PK 10-20M theo Sale × hãng, lấy từ daily.rows */
+                               var f = trongKhoang(tu, den), r = {};
+                               for (var i = 0; i < R.length; i++) {
+                                              var x = R[i]; if (!f(x) || !laPK(x[3])) continue;
+                                              var s = SALE[x[2]] || '(chưa gán)';
+                                              var a = r[s] || (r[s] = { h: HANG.map(function () { return 0; }), tong: 0 });
+                                              a.h[x[4]] += x[6] || 0; a.tong += x[6] || 0;
+                               }
+                                  return r;
+                     }
                         function veBang() {
-                                     var g = mSel ? gomTheo(shopMWG(khoangThang(+mSel).tu, khoangThang(+mSel).denCo), function (x) { return x.sale; })
-                                                               : gomTheo(shopMWG('2026-01-01', '2026-12-31'), function (x) { return x.sale; });
+                                     var kk = mSel ? khoangThang(+mSel) : { tu: '2026-01-01', denCo: '2026-12-31' };
+                                     var g = gomTheo(shopMWG(kk.tu, kk.denCo), function (x) { return x.sale; });
+                                     var dong = [];
+                                     if (chon === 2) {
+                                                    var pk = pkTheoSale(kk.tu, kk.denCo);
+                                                    Object.keys(pk).forEach(function (s) {
+                                                                     var a = pk[s];
+                                                                     dong.push({ ten: s, v: [a.h[iOppo] || 0, iSS >= 0 ? a.h[iSS] : 0, iXM >= 0 ? a.h[iXM] : 0, iAP >= 0 ? a.h[iAP] : 0], tong: a.tong });
+                                                    });
+                                     } else {
+                                                    var hau = chon === 1 ? 'Dt' : 'U';
+                                                    Object.keys(g).forEach(function (s) {
+                                                                     var a = g[s];
+                                                                     dong.push({ ten: s, v: [a['o' + hau], a['s' + hau], a['x' + hau], a['a' + hau]], tong: a['t' + hau] });
+                                                    });
+                                     }
+                                     dong.sort(function (a, b) { return b.v[0] - a.v[0]; });
                                      var cs = CS[chon];
-                                     var ss = Object.keys(g).sort(function (a, b) { return g[b].oU - g[a].oU; });
-                                     var h = '<table class="bc-bang"><thead><tr><th>Sale</th>' + HNHOM.map(function (x) { return '<th>' + x[1] + '</th>'; }).join('') + '<th>Khác</th><th>Tổng chợ</th><th>Share OPPO</th></tr></thead><tbody>';
-                                     var tg = {}; CONG.forEach(function (f) { tg[f] = 0; });
-                                     ss.forEach(function (s) {
-                                                    var a = g[s]; CONG.forEach(function (f) { tg[f] += a[f]; });
-                                                    var tong = cs.tong(a), biet = HNHOM.reduce(function (z, x) { return z + (cs.lay(a, x[0]) || 0); }, 0);
-                                                    h += '<tr><td>' + esc(s.split(' ').slice(-2).join(' ')) + '</td>' + HNHOM.map(function (x) { var v = cs.lay(a, x[0]); return '<td>' + (v == null ? '—' : cs.fmt(v)) + '</td>'; }).join('')
-                                                      + '<td>' + (chon === 2 ? '—' : cs.fmt(Math.max(0, tong - biet))) + '</td><td>' + cs.fmt(tong) + '</td><td><b>' + pcCh(tong ? (cs.lay(a, 'o') || 0) / tong * 100 : 0) + '</b></td></tr>';
-                                     });
-                                     var tT = cs.tong(tg), bT = HNHOM.reduce(function (z, x) { return z + (cs.lay(tg, x[0]) || 0); }, 0);
-                                     h += '<tr class="bc-tong"><td>Tổng</td>' + HNHOM.map(function (x) { var v = cs.lay(tg, x[0]); return '<td>' + (v == null ? '—' : cs.fmt(v)) + '</td>'; }).join('')
-                                       + '<td>' + (chon === 2 ? '—' : cs.fmt(Math.max(0, tT - bT))) + '</td><td>' + cs.fmt(tT) + '</td><td><b>' + pcCh(tT ? (cs.lay(tg, 'o') || 0) / tT * 100 : 0) + '</b></td></tr>';
-                                     box.innerHTML = h + '</tbody></table>';
-                        }
+                                     var oDong = function (r, cls) {
+                                                    var biet = r.v.reduce(function (z, v) { return z + v; }, 0);
+                                                    var sh = function (i) { return pcCh(r.tong ? r.v[i] / r.tong * 100 : 0); };
+                                                    return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td title="' + esc(r.ten) + '">' + esc(String(r.ten).split(' ').slice(-2).join(' ')) + '</td>'
+                                                      + r.v.map(function (v) { return '<td>' + cs.fmt(v) + '</td>'; }).join('')
+                                                      + '<td>' + cs.fmt(Math.max(0, r.tong - biet)) + '</td><td>' + cs.fmt(r.tong) + '</td>'
+                                                      + '<td><b>' + sh(0) + '</b></td><td>' + sh(1) + '</td><td>' + sh(2) + '</td></tr>';
+                                     };
+                                     var tong = { ten: 'Tổng', v: [0, 0, 0, 0], tong: 0 };
+                                     dong.forEach(function (r) { r.v.forEach(function (v, i) { tong.v[i] += v; }); tong.tong += r.tong; });
+                                     box.innerHTML = '<table class="bc-bang"><thead><tr><th>Sale</th>' + HNHOM.map(function (x) { return '<th>' + x + '</th>'; }).join('')
+                                       + '<th>Khác</th><th>Tổng chợ</th><th>Share OPPO</th><th>Share SS</th><th>Share XM</th></tr></thead><tbody>'
+                                       + dong.map(function (r) { return oDong(r); }).join('') + oDong(tong, 'bc-tong') + '</tbody></table>';
+                               }
                         than.appendChild(loc); than.appendChild(hopNut); than.appendChild(box); veBang();
                         grid.appendChild(kq);
              })();
@@ -267,14 +308,24 @@
                         var G = null;
                         function nap() { var kk = khoangThang(mSel); G = gomMWG(kk.tu, kk.denCo); }
                         nap();
-                        var pkMau = function () { return U.PK[sang() ? 'sang' : 'toi']; };
-                        var segCo = function () { return SEG.map(function (s, i) { return { s: s, i: i, u: G.seg[i].u }; }).filter(function (x) { return x.u > 0; }); };
+        /* Anh Thái 05-09 tối: phân khúc xếp THẤP → CAO; dưới 10M màu xám đậm dần, từ 10M màu xanh lá đậm dần */
+                        var XAM = { sang: ['#DDE2E8', '#C3CBD4', '#A6B1BD', '#8794A2'], toi: ['#414C58', '#4F5C6A', '#5F6E7D', '#71818F'] };
+                        var XANH = { sang: ['#CFEBD8', '#A6DCB7', '#77C895', '#48AE72', '#218F55'], toi: ['#1B6349', '#27825E', '#33A175', '#4BC090', '#77DCAE'] };
+                        var mauSeg = function (ten, thuTuXam, thuTuXanh, soXam, soXanh) {
+                                     var s = sang() ? 'sang' : 'toi';
+                                     if (duoi10M(ten)) { var a = XAM[s]; return a[Math.min(Math.round(thuTuXam * (a.length - 1) / Math.max(1, soXam - 1)), a.length - 1)]; }
+                                     var b = XANH[s]; return b[Math.min(Math.round(thuTuXanh * (b.length - 1) / Math.max(1, soXanh - 1)), b.length - 1)];
+                        };
+                        var mauDs = function (sc) {
+                                     var nX = sc.filter(function (x) { return duoi10M(x.s); }).length, nG = sc.length - nX, iX = 0, iG = 0;
+                                     return sc.map(function (x) { return duoi10M(x.s) ? mauSeg(x.s, iX++, 0, nX, nG) : mauSeg(x.s, 0, iG++, nX, nG); });
+                        };
+                        var segCo = function () { return xepSeg(SEG.map(function (s, i) { return { s: s, i: i, u: G.seg[i].u }; }).filter(function (x) { return x.u > 0; })); };
                         var top5 = function () { return HANG.map(function (h, i) { return { h: h, i: i, u: G.hang[i].u }; }).sort(function (a, b) { return b.u - a.u; }).slice(0, 5); };
                         var hang3 = el('div', 'bc-3bd'); than.appendChild(hang3);
                         function o3(ten, cau) { var w = el('div', 'bc-3bd-o'); w.appendChild(el('div', 'bc-bd-ten', esc(ten))); var b = bdRieng(300, cau); w.appendChild(b.el); hang3.appendChild(w); return b; }
-                        var b1 = o3('Thị trường theo phân khúc', function () { var sc = segCo(), p = pkMau(); return cauVong(sc.map(function (x) { return x.s; }), sc.map(function (x) { return x.u; }), sc.map(function (x, j) { return p[Math.min(j, p.length - 1)]; })); });
-                        var b2 = o3('Hãng → phân khúc (%)', function () { var sc = segCo(), t5 = top5(), p = pkMau(); var c = cauCotChong(t5.map(function (x) { return x.h; }), sc.map(function (x, j) { return { label: x.s, data: t5.map(function (hh) { var t = G.hang[hh.i].u; return t ? +(G.segHang[x.i][hh.i] / t * 100).toFixed(1) : 0; }), backgroundColor: p[Math.min(j, p.length - 1)] }; }), { fmt: function (v) { return v.toFixed(0) + '%'; } }); c.plugins = []; return c; });
-                        var b3 = o3('Phân khúc → hãng (máy)', function () { var sc = segCo(), t5 = top5(); return cauCotChong(sc.map(function (x) { return x.s; }), t5.map(function (hh) { return { label: hh.h, data: sc.map(function (x) { return G.segHang[x.i][hh.i]; }), backgroundColor: mauHang(hh.h) }; })); });
+                        var b1 = o3('Thị trường theo phân khúc', function () { var sc = segCo(), p = mauDs(sc); return cauVong(sc.map(function (x) { return x.s; }), sc.map(function (x) { return x.u; }), p); });
+                        var b2 = o3('Hãng → phân khúc (%)', function () { var sc = segCo(), t5 = top5(), p = mauDs(sc); var c = cauCotChong(t5.map(function (x) { return x.h; }), sc.map(function (x, j) { return { label: x.s, data: t5.map(function (hh) { var t = G.hang[hh.i].u; return t ? +(G.segHang[x.i][hh.i] / t * 100).toFixed(1) : 0; }), backgroundColor: p[j] }; }), { fmt: function (v) { return v.toFixed(0) + '%'; } }); c.plugins = []; return c; });var b3 = o3('Phân khúc → hãng (máy)', function () { var sc = segCo(), t5 = top5(); return cauCotChong(sc.map(function (x) { return x.s; }), t5.map(function (hh) { return { label: hh.h, data: sc.map(function (x) { return G.segHang[x.i][hh.i]; }), backgroundColor: mauHang(hh.h) }; })); });
                         var tenTop = el('div', 'bc-bd-ten'); tenTop.style.textAlign = 'left'; tenTop.textContent = 'TOP 10 SẢN PHẨM BÁN CHẠY';
                         var hopNut = el('div'), box = el('div', 'bc-cuon'), chonH = 0;
                         than.appendChild(tenTop); than.appendChild(hopNut); than.appendChild(box);
@@ -296,8 +347,8 @@
              (function () {
                         var mSel = '';
                         var kq = khoi({ stt: 4, ten: 'Hiệu suất theo Size shop', rong: true,
-                                                 dangXem: 'PK 10-20M · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · bấm dòng Size để mở chi tiết shop trong nhóm' });
-                        $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; mo = {}; ve(); }));
+          dangXem: 'PK 10-20M · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · bấm dòng Size để mở chi tiết shop — chỉ số OPPO dưới trung bình nhóm được tô đỏ' });
+                $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; mo = {}; ve(); }));
                         var box = el('div', 'bc-cuon'); $('.bc-than', kq).appendChild(box);
                         var mo = {};
                         function ve() {
@@ -311,9 +362,11 @@
                                                     h += '<tr class="bc-size-dong" data-sz="' + esc(sz) + '" style="cursor:pointer"><td><b>' + (mo[sz] ? '▾ ' : '▸ ') + esc(sz) + '</b></td><td>' + a.shops + '</td><td>' + (a.shops - a.shop0) + '</td><td><b>' + fInt(a.oU) + '</b></td><td>' + fInt(a.tU) + '</td>' + oCotChinh(a) + '<td>' + (a.shops ? (a.oU / a.shops).toFixed(1) : '-') + '</td></tr>';
                                                     if (mo[sz]) {
                                                                      var rs = a.ten.map(function (s) { return { s: s, x: shops[s] }; }).sort(function (p, q) { return q.x.oU - p.x.oU; });
+                             var tbO = a.shops ? a.oU / a.shops : 0;
                                                                      h += '<tr><td colspan="9"><div class="bc-cuon"><table class="bc-bang"><thead><tr><th>Shop</th><th>Sale</th><th>Máy OPPO</th><th>Máy chợ</th>' + dauCotChinh + '</tr></thead><tbody>'
-                                                                       + rs.map(function (r) { return '<tr' + (!r.x.oU ? ' class="bc-mo"' : '') + '><td title="' + esc(r.s) + '">' + esc(tenShopNgan(r.s)) + '</td><td>' + esc(String(r.x.sale).split(' ').slice(-2).join(' ')) + '</td><td><b>' + fInt(r.x.oU) + '</b></td><td>' + fInt(r.x.tU) + '</td>' + oCotChinh(r.x) + '</tr>'; }).join('')
-                                                                       + '</tbody></table></div></td></tr>';
+                                                                                        + '<tr class="bc-tb-nhom"><td colspan="8">Trung bình nhóm Size ' + esc(sz) + ': <b>' + tbO.toFixed(1) + '</b> máy OPPO/shop · PK <b>' + (a.shops ? (a.pkO / a.shops).toFixed(1) : '0') + '</b>/shop · Share D.S <b>' + pcCh(shDs(a, a.oU)) + '</b> · Share D.T <b>' + pcCh(shDt(a, a.oDt)) + '</b> — số nào <span class="bc-giam-chu">đỏ</span> là dưới trung bình</td></tr>'
+                                                                                        + rs.map(function (r) { return '<tr' + (!r.x.oU ? ' class="bc-mo"' : '') + '><td title="' + esc(r.s) + '">' + esc(tenShopNgan(r.s)) + '</td><td>' + esc(String(r.x.sale).split(' ').slice(-2).join(' ')) + '</td><td>' + do_(r.x.oU < tbO, '<b>' + fInt(r.x.oU) + '</b>') + '</td><td>' + fInt(r.x.tU) + '</td>' + oCotChinh(r.x, a) + '</tr>'; }).join('')
+                                                                        + '</tbody></table></div></td></tr>';
                                                     }
                                      });
                                      h += '<tr class="bc-tong"><td>Tổng</td><td>' + tg.shops + '</td><td>' + (tg.shops - tg.shop0) + '</td><td>' + fInt(tg.oU) + '</td><td>' + fInt(tg.tU) + '</td>' + oCotChinh(tg) + '<td>' + (tg.shops ? (tg.oU / tg.shops).toFixed(1) : '-') + '</td></tr></tbody></table>';
@@ -365,8 +418,8 @@
              (function () {
                         var mSel = thangKy;
                         var kq = khoi({ stt: 6, ten: 'Số bán ngày', rong: true,
-                                                 dangXem: 'Tháng mới nhất của DATA MWG · biểu đồ đường đủ hãng theo ngày · bảng mini bên dưới: OPPO theo từng Sale (15 ngày gần nhất)' });
-                        $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, mSel, false, function (v) { mSel = +v; nap(); bd.ve(); veBang(); }));
+          dangXem: 'Tháng mới nhất của DATA MWG · biểu đồ đường đủ hãng theo ngày · bảng mini: % thị phần OPPO của từng Sale theo ngày (15 ngày gần nhất), ô đỏ là thấp hơn cả team' });
+                $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, mSel, false, function (v) { mSel = +v; nap(); bd.ve(); veBang(); }));
                         var than = $('.bc-than', kq);
                         var chon = 0, G = null, ngay = [], SH = null;
                         var CS = [
@@ -398,32 +451,40 @@
                         });
                         than.appendChild(bd.el);
                         var hopBang = el('div', 'bc-mini-cuon'); than.appendChild(hopBang);
+                       /* Anh Thái 05-09 tối: bảng mini bỏ tô nhiệt, hiện % thị phần OPPO của Sale theo ngày;
+                                  ngày nào Sale thấp hơn % của cả team thì tô ĐỎ đúng ô đó. */
                         function veBang() {
                                      var f = CS[chon].f;
                                      var cot = ngay.slice(-15);
-                                     var val = {};
+                                     var layTM = function (v) {
+                                                    if (f === 'oDt') return [v.oppo_rev || 0, Math.max(0, (v.total_rev || 0) - (v.apple_rev || 0))];
+                                                    if (f === 'pkO') return [v.pk1020_oppo_units || 0, v.pk1020_total_units || 0];
+                                                    return [v.oppo_units || 0, v.total_units || 0];
+                                     };
+                                     var val = {}, tuT = cot.map(function () { return 0; }), mauT = cot.map(function () { return 0; });
                                      Object.keys(SH).forEach(function (shop) {
-                                                    var sale = SH[shop].sale; if (!val[sale]) val[sale] = cot.map(function () { return 0; });
+                                                    var sale = SH[shop].sale;
+                                                    var a = val[sale] || (val[sale] = { tu: cot.map(function () { return 0; }), mau: cot.map(function () { return 0; }) });
                                                     var dm = (B.shop_day_data || {})[shop] || {};
                                                     cot.forEach(function (dd, i) {
                                                                      var v = dm[(+dd.slice(5, 7)) + '-' + (+dd.slice(8, 10))] || dm[dd.slice(5, 7) + '-' + dd.slice(8, 10)];
                                                                      if (!v) return;
-                                                                     val[sale][i] += f === 'oDt' ? (v.oppo_rev || 0) : f === 'pkO' ? (v.pk1020_oppo_units || 0) : (v.oppo_units || 0);
+                                                                     var p = layTM(v); a.tu[i] += p[0]; a.mau[i] += p[1]; tuT[i] += p[0]; mauT[i] += p[1];
                                                     });
                                      });
-                                     var fmt = f === 'oDt' ? fTyNgan : fInt;
+                                     var pcO = function (t, m) { return m ? t / m * 100 : null; };
+                                     var nhanCs = CS[chon].reno ? 'Share máy' : 'Share ' + CS[chon].ten;
                                      var ss = Object.keys(val).sort();
-                                     var h = '<table class="bc-mini"><thead><tr><th>' + esc(CS[chon].reno ? 'Máy OPPO' : CS[chon].ten) + '</th>' + cot.map(function (dd, i) { return '<th' + (i === cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + ngayVN(dd).slice(0, 2) + '</th>'; }).join('') + '</tr></thead><tbody>';
-                                     var tong = cot.map(function () { return 0; });
+                                     var h = '<table class="bc-mini"><thead><tr><th>' + esc(nhanCs) + '</th>' + cot.map(function (dd, i) { return '<th' + (i === cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + ngayVN(dd).slice(0, 2) + '</th>'; }).join('') + '</tr></thead><tbody>';
                                      ss.forEach(function (s) {
-                                                    var vs = val[s];
-                                                    h += '<tr><td><i class="bc-cham" style="background:' + mau('MWG') + '"></i>' + esc(s.split(' ').slice(-2).join(' ')) + '</td>' + vs.map(function (v, i) {
-                                                                     tong[i] += v; var cl = ''; if (i > 0 && vs[i - 1]) { var p = (v - vs[i - 1]) / vs[i - 1]; cl = p > .03 ? ' bc-len' : p < -.03 ? ' bc-giam' : ''; }
-                                                                     return '<td class="' + cl + (i === cot.length - 1 ? ' bc-cot-chon' : '') + '">' + (v ? fmt(v) : '-') + '</td>';
+                                                    var a = val[s];
+                                                    h += '<tr><td><i class="bc-cham" style="background:' + mau('MWG') + '"></i>' + esc(s.split(' ').slice(-2).join(' ')) + '</td>' + cot.map(function (dd, i) {
+                                                                     var v = pcO(a.tu[i], a.mau[i]), tb = pcO(tuT[i], mauT[i]);
+                                                                     var cl = (v != null && tb != null && v < tb) ? 'bc-duoi-tb' : '';
+                                                                     return '<td class="' + cl + (i === cot.length - 1 ? ' bc-cot-chon' : '') + '">' + (v == null ? '-' : pcCh(v)) + '</td>';
                                                     }).join('') + '</tr>';
                                      });
-                                     h += '<tr class="bc-tong"><td>Tổng</td>' + tong.map(function (v, i) { return '<td' + (i === cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + (v ? fmt(v) : '-') + '</td>'; }).join('') + '</tr></tbody></table>';
-                                     hopBang.innerHTML = h; hopBang.scrollLeft = hopBang.scrollWidth;
+                                     h += '<tr class="bc-tong"><td>Toàn team</td>' + cot.map(function (dd, i) { var v = pcO(tuT[i], mauT[i]); return '<td' + (i === cot.length - 1 ? ' class="bc-cot-chon"' : '') + '>' + (v == null ? '-' : pcCh(v)) + '</td>'; }).join('') + '</tr></tbody></table>';hopBang.innerHTML = h; hopBang.scrollLeft = hopBang.scrollWidth;
                         }
                         veBang();
                         grid.appendChild(kq);
