@@ -94,4 +94,18 @@ if (!cu || !cu.sheets) ra(true, 'chua co moc cu (da ghi moc cho lan sau)');
 for (const s of SHEETS) {
   if (moi.sheets[s] !== cu.sheets[s]) ra(true, `sheet "${s}" doi so dong`);
 }
-ra(false, 'ca hai sheet giu nguyen so dong');
+
+/* 07/09/2026 — LUOI AN TOAN: so dong "DATA MWG" KHONG doi khi co ngay moi
+   (152.585 dong tu 25/08 den 05/09 trong khi so ngay van ve deu) — sheet nay la
+   IMPORTRANGE/luoi co dinh nen getLastRow() dung yen. Buoc do vi the MU voi DATA MWG:
+   robot chi chay khi bam tay. Anh Thai sang 07/09 khong thay ngay 6/9 la vi vay.
+   Nay: goi cu hon GIO_TOI_DA gio (trong khung 08-22h) thi cu chay, mac ke so dong.
+   Chi phi: toi da ~4-5 lan dung goi/ngay, chap nhan duoc. */
+const GIO_TOI_DA = Number(process.env.GIO_TOI_DA || 3);
+try {
+  const idx = JSON.parse(fs.readFileSync(path.join('data', 'index.json'), 'utf8'));
+  const tuoi = (Date.now() - new Date(idx.updated).getTime()) / 36e5;
+  log(`goi hien tai dong luc ${idx.updated} (${tuoi.toFixed(1)} gio truoc), ngay cuoi ${idx.maxDay}`);
+  if (tuoi >= GIO_TOI_DA) ra(true, `goi da cu hon ${GIO_TOI_DA} gio — so dong DATA MWG khong tin duoc, chay de chac`);
+} catch (e) { ra(true, 'khong doc duoc data/index.json: ' + e.message); }
+ra(false, 'ca hai sheet giu nguyen so dong va goi con moi');
