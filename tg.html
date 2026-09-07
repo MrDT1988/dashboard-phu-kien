@@ -457,6 +457,11 @@
     /* Anh Thái 06/09: TRƯỚC ĐÂY `!ai` cũng được lui — chọn tên xong bấm "Bỏ qua" hoặc
        không nhập mã là xem được số CẢ VÙNG. Nay chỉ ADMIN đã đăng nhập mới được lui;
        ai khác không mở được gói thì gặp màn hình "Chưa mở được dữ liệu — Nhập lại mã". */
+    /* 07/09: ROBOT GitHub (refresh-app-data.mjs) mo trang voi window.__BO_QUA_GOI = true va bom
+       __AS_KEY — no KHONG co danh tinh trong localStorage nen bi chan o day tu 06/09 -> doi 40 phut
+       roi chet (run #205), App Sale + review TG dung o ngay 5. Cho robot di duong lui: khong lo ro,
+       vi khong co chia khoa Apps Script thi duong lui cung khong tra so. */
+    if (window.__BO_QUA_GOI && window.__AS_KEY) return true;
     return !!ai && ai.r === 'admin';
   }
   window.__chanDuongLui = function () {
