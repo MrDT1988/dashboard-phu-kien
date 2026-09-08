@@ -7149,7 +7149,15 @@ function parseTheoThangSheet(rows){
   for(let i = 0; i < rows.length; i++){
     if(rows[i][1] === 'GLASS'){ glassRow = i; break; }
   }
-  const glassDataStart = glassRow + 3;
+  // Dữ liệu khối GLASS bắt đầu NGAY SAU dòng tiêu đề "AREA" — dò thay vì cộng cứng.
+  // Cách cũ (glassRow + 3) bỏ sót đúng một dòng khu vực đầu tiên (AN GIANG),
+  // làm mất doanh thu cường lực của khu vực đó khỏi mọi tháng. Sửa 08/09/2026.
+  let glassDataStart = glassRow + 1;
+  while (glassDataStart < rows.length) {
+    const ten = String((rows[glassDataStart] && rows[glassDataStart][1]) || '').trim();
+    if (ten !== '' && ten.toUpperCase() !== 'AREA') break;
+    glassDataStart++;
+  }
   const glassMonths = ['T12.25','T01.26','T02.26','T03.26','T04.26','T05.26','T06.26','T07.26','T08.26'];
   const glass = {};
   for(let i = glassDataStart; i < rows.length; i++){
