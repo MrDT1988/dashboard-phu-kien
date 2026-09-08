@@ -84,6 +84,9 @@ tr.mien td{font-weight:700;background:#EFF3FF;}
 .note{font-size:11.5px;color:var(--text2);margin-top:8px;line-height:1.5;}
 .loading{padding:60px 0;text-align:center;color:var(--text2);}
 .err{background:#FBEAEA;color:var(--red);border:1px solid #F0C8C8;border-radius:10px;padding:14px;margin-top:20px;}
+.partial{margin-top:12px;padding:10px 13px;border-radius:9px;font-size:12.5px;line-height:1.5;
+  background:#FDF3E0;color:#8A5E00;border:1px solid #F0DCB4;}
+.partial b{letter-spacing:.2px;}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text2);margin-top:8px;}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
@@ -122,6 +125,7 @@ tr.mien td{font-weight:700;background:#EFF3FF;}
     <!-- 1 -->
     <div class="sec-title"><div class="no">1</div><h2>KẾT QUẢ THÁNG</h2><span class="hint" id="t1hint"></span></div>
     <div class="grid g6" id="kpiRow"></div>
+    <div id="partialFlag" class="partial" style="display:none"></div>
     <div class="grid g2" style="margin-top:14px">
       <div class="card">
         <h3>Sản lượng theo tháng <span class="cap">cái — PK và Cường lực</span></h3>
@@ -554,7 +558,16 @@ function render(){
   const kvCo=md.regions.filter(r=>r.cur.tong>0).length;
   const nowM='T'+String(M).padStart(2,'0')+'.26';
 
-  document.getElementById('t1hint').textContent='kỳ '+nowM+' · so với tháng liền trước';
+  const hnay=new Date();
+  const dangChay = (M===hnay.getMonth()+1 && hnay.getFullYear()===2026);
+  document.getElementById('t1hint').textContent='kỳ '+nowM+(dangChay?' — tháng đang chạy':'')+' · so với tháng liền trước';
+  const pf=document.getElementById('partialFlag');
+  if(dangChay){
+    pf.style.display='';
+    pf.innerHTML='<b>THÁNG ĐANG CHẠY — số chưa đủ tháng.</b> '+nowM+' mới có số tới thời điểm sheet cập nhật gần nhất, '
+      +'nên mọi so sánh với tháng trước, %HT target và các mốc thưởng ở dưới đều <b>chưa phải kết quả cuối tháng</b>. '
+      +'Muốn xem một tháng đã chốt, chọn tháng khác ở ô “Kỳ báo cáo” góc trên.';
+  } else pf.style.display='none';
   document.getElementById('t3hint').textContent=md.regions.length+' khu vực · '+kvDat+' khu vực đạt 100% target tháng';
   document.getElementById('t5hint').textContent=md.skuRows.filter(r=>r.qty>0).length+'/'+md.skuRows.length+' mã có bán trong '+nowM;
 
@@ -819,7 +832,8 @@ function fillMonths(){
   sel.innerHTML='';
   for(let m=1;m<=D.latest;m++){
     const o=document.createElement('option');
-    o.value=m; o.textContent='Tháng '+m+'/2026'+(m===D.latest?' (mới nhất)':'');
+    const hn=new Date(), chay=(m===hn.getMonth()+1&&hn.getFullYear()===2026);
+    o.value=m; o.textContent='Tháng '+m+'/2026'+(chay?' (đang chạy)':(m===D.latest?' (mới nhất)':''));
     sel.appendChild(o);
   }
   sel.value=String(D.latest);
