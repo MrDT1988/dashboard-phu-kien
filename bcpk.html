@@ -122,6 +122,24 @@ tr.mien td{font-weight:700;background:#EFF3FF;}
 .prog-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;
   padding:9px 12px;background:var(--ice-bg);border-radius:9px;margin-bottom:10px;font-size:12.5px;}
 .prog-head b{color:var(--navy);font-size:13px;}
+
+/* bảng chương trình — tách màu hai chương trình và ba miền */
+/* tô bằng background-image để không xoá nền sẵn có của dòng miền / dòng tổng */
+#tbProg th.si,#tbProg td.si{background-image:linear-gradient(rgba(46,124,184,.10),rgba(46,124,184,.10));}
+#tbProg th.tg,#tbProg td.tg{background-image:linear-gradient(rgba(255,107,53,.10),rgba(255,107,53,.10));}
+#tbProg th.tot,#tbProg td.tot{background-image:linear-gradient(rgba(30,142,90,.12),rgba(30,142,90,.12));}
+#tbProg th.grp{text-align:center;font-size:11.5px;letter-spacing:.4px;padding:6px 9px;
+  border-bottom:1px solid var(--ice);white-space:normal;}
+#tbProg th.grp.si{color:#1F5F92;} #tbProg th.grp.tg{color:#C24E1D;} #tbProg th.grp.tot{color:#146B44;}
+#tbProg td.si,#tbProg th.si{border-left:1px solid rgba(46,124,184,.3);}
+#tbProg td.tg,#tbProg th.tg{border-left:1px solid rgba(255,107,53,.3);}
+#tbProg td.tot,#tbProg th.tot{border-left:1px solid rgba(30,142,90,.35);}
+#tbProg thead tr:first-child th{top:0;}
+#tbProg thead tr:nth-child(2) th{top:30px;}
+#tbProg td.mb{border-left:4px solid #1E2761;}
+#tbProg td.mt{border-left:4px solid #E0A200;}
+#tbProg td.mn{border-left:4px solid #FF6B35;}
+#tbProg tr.mien td:first-child{font-weight:700;}
 </style>
 </head>
 <body>
@@ -730,37 +748,44 @@ function render(){
   ].map(k=>'<div class="kpi"><div class="lb">'+k[0]+'</div><div class="vl">'+k[1]+'</div><div class="ft">'+k[2]+'</div></div>').join('');
   document.getElementById('progSum').innerHTML='<b>'+fInt(tot1+tot2)+'đ</b> tổng thưởng tháng';
 
-  let hp='<thead><tr><th>Miền</th><th>Khu vực</th><th class="n">Doanh thu tháng</th><th class="n">Target tháng</th><th class="c">%HT</th>'
-    +'<th class="c">Mốc Sell-in</th><th class="n">Thưởng Sell-in</th><th class="n">Còn thiếu → mốc S.I kế</th>'
-    +'<th class="c">Mốc Target</th><th class="n">Thưởng Target</th><th class="n">Còn thiếu → mốc T.G kế</th>'
-    +'<th class="n">Tổng thưởng</th></tr></thead><tbody>';
+  const MC={'Miền Bắc':'mb','Miền Trung':'mt','Miền Nam':'mn'};
+  let hp='<thead>'
+    +'<tr><th class="grp" colspan="5">KẾT QUẢ THÁNG</th>'
+    +'<th class="grp si" colspan="3">① THƯỞNG SELL-IN — ≥50tr: 3% · ≥100tr: 5%</th>'
+    +'<th class="grp tg" colspan="3">② THƯỞNG HOÀN THÀNH TARGET — ≥80%: 2tr · ≥100%: 4tr</th>'
+    +'<th class="grp tot">CỘNG</th></tr>'
+    +'<tr><th>Miền</th><th>Khu vực</th><th class="n">Doanh thu tháng</th><th class="n">Target tháng</th><th class="c">%HT</th>'
+    +'<th class="c si">Mốc đạt</th><th class="n si">Tiền thưởng</th><th class="n si">Còn thiếu → mốc kế</th>'
+    +'<th class="c tg">Mốc đạt</th><th class="n tg">Tiền thưởng</th><th class="n tg">Còn thiếu → mốc kế</th>'
+    +'<th class="n tot">Tổng thưởng</th></tr></thead><tbody>';
   const dongKV=r=>{
     const m1=r.rate===0.05?['p-g','5%']:(r.rate===0.03?['p-a','3%']:['p-n','Chưa đạt']);
     const t1=r.cur.tong>=100e6?'—':(r.cur.tong>=50e6?fTien(100e6-r.cur.tong)+' → 5%':fTien(50e6-r.cur.tong)+' → 3%');
     const m2=r.pct>=100?['p-g','100%']:(r.pct>=80?['p-a','80%']:['p-n','Chưa đạt']);
     const t2=r.pct>=100?'—':(r.pct>=80?fTien(r.target_thang-r.cur.tong)+' → 100%':fTien(r.target_thang*0.8-r.cur.tong)+' → 80%');
-    return '<tr><td></td><td><b>'+r.name+'</b></td><td class="n">'+fTien(r.cur.tong)+'</td><td class="n">'+fTien(r.target_thang)+'</td>'
+    return '<tr><td class="'+(MC[r.mien]||'')+'"></td><td><b>'+r.name+'</b></td><td class="n">'+fTien(r.cur.tong)+'</td><td class="n">'+fTien(r.target_thang)+'</td>'
       +'<td class="c">'+pctPill(r.pct)+'</td>'
-      +'<td class="c"><span class="pill '+m1[0]+'">'+m1[1]+'</span></td><td class="n">'+(r.bonusSI?fInt(r.bonusSI)+'đ':'—')+'</td><td class="n">'+t1+'</td>'
-      +'<td class="c"><span class="pill '+m2[0]+'">'+m2[1]+'</span></td><td class="n">'+(r.bonusTG?fInt(r.bonusTG)+'đ':'—')+'</td><td class="n">'+t2+'</td>'
-      +'<td class="n"><b>'+(r.bonus?fInt(r.bonus)+'đ':'—')+'</b></td></tr>';
+      +'<td class="c si"><span class="pill '+m1[0]+'">'+m1[1]+'</span></td><td class="n si">'+(r.bonusSI?fInt(r.bonusSI)+'đ':'—')+'</td><td class="n si">'+t1+'</td>'
+      +'<td class="c tg"><span class="pill '+m2[0]+'">'+m2[1]+'</span></td><td class="n tg">'+(r.bonusTG?fInt(r.bonusTG)+'đ':'—')+'</td><td class="n tg">'+t2+'</td>'
+      +'<td class="n tot"><b>'+(r.bonus?fInt(r.bonus)+'đ':'—')+'</b></td></tr>';
   };
   md.miens.forEach(mn=>{
     const rs=mn.regions.slice().sort((a,b)=>b.cur.tong-a.cur.tong);
     const b1=rs.reduce((s,r)=>s+r.bonusSI,0), b2=rs.reduce((s,r)=>s+r.bonusTG,0);
     const tg=rs.reduce((s,r)=>s+r.target_thang,0);
-    hp+='<tr class="mien"><td>'+mn.name+'</td><td>('+rs.length+' khu vực · '+rs.filter(r=>r.bonus>0).length+' KV có thưởng)</td>'
+    hp+='<tr class="mien"><td class="'+(MC[mn.name]||'')+'">'+mn.name+'</td>'
+      +'<td>('+rs.length+' khu vực · '+rs.filter(r=>r.bonus>0).length+' KV có thưởng)</td>'
       +'<td class="n">'+fTien(mn.rev)+'</td><td class="n">'+fTien(tg)+'</td><td class="c">'+pctPill(mn.pct)+'</td>'
-      +'<td class="c"></td><td class="n">'+fInt(b1)+'đ</td><td class="n"></td>'
-      +'<td class="c"></td><td class="n">'+fInt(b2)+'đ</td><td class="n"></td>'
-      +'<td class="n">'+fInt(b1+b2)+'đ</td></tr>';
+      +'<td class="c si"></td><td class="n si">'+fInt(b1)+'đ</td><td class="n si"></td>'
+      +'<td class="c tg"></td><td class="n tg">'+fInt(b2)+'đ</td><td class="n tg"></td>'
+      +'<td class="n tot">'+fInt(b1+b2)+'đ</td></tr>';
     rs.forEach(r=>{ hp+=dongKV(r); });
   });
   const tgAll=md.regions.reduce((s,r)=>s+r.target_thang,0);
   hp+='<tr class="tot"><td>TOÀN QUỐC</td><td>'+md.regions.length+' khu vực</td><td class="n">'+fTien(totRev)+'</td><td class="n">'+fTien(tgAll)+'</td>'
-    +'<td class="c">'+pctPill(tgAll?totRev/tgAll*100:0)+'</td><td></td><td class="n">'+fInt(tot1)+'đ</td><td></td>'
-    +'<td></td><td class="n">'+fInt(tot2)+'đ</td><td class="n">'+fPct(totRev?(tot1+tot2)/totRev*100:0)+' / DT</td>'
-    +'<td class="n">'+fInt(tot1+tot2)+'đ</td></tr></tbody>';
+    +'<td class="c">'+pctPill(tgAll?totRev/tgAll*100:0)+'</td><td class="si"></td><td class="n si">'+fInt(tot1)+'đ</td><td class="si"></td>'
+    +'<td class="tg"></td><td class="n tg">'+fInt(tot2)+'đ</td><td class="n tg">'+fPct(totRev?(tot1+tot2)/totRev*100:0)+' / DT</td>'
+    +'<td class="n tot">'+fInt(tot1+tot2)+'đ</td></tr></tbody>';
   document.getElementById('tbProg').innerHTML=hp;
 
   /* ---- 6. TỒN KHO ---- */
