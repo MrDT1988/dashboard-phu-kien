@@ -7084,8 +7084,8 @@ function parseNhapXuatSheet(rows, fobMap){
     // profit for T1.26-T7.26 uses that exact month's FOB; T8.26 has no FOB yet on the
     // sheet, so we estimate using the latest known FOB (T07.26) — flagged as an estimate.
     let profitCum = 0;
-    const profitMonths8 = [];
-    for(let m=0;m<8;m++){
+    const profitMonths8 = [];   // giu ten cu, nay chua 12 thang
+    for(let m=0;m<12;m++){
       const qty = banMonths12[m] || 0;
       const fob = m < 7 ? (fobMonths7[m] || 0) : fobLatest;
       const p = qty * (hubSI - fob);
@@ -7111,7 +7111,7 @@ function parseNhapXuatSheet(rows, fobMap){
       banTong: numFloat(r[23]),
       ban2025T11: ban2025T11,
       ban2025T12: ban2025T12,
-      months8: banMonths12.slice(0,8),
+      months8: banMonths12.slice(),        // giu ten cu, nay la du 12 thang
       months12: banMonths12,
       profitCum: profitCum,
       profitMonths8: profitMonths8,
@@ -7129,7 +7129,15 @@ function parseTheoThangSheet(rows){
     if(rows[i][1] === 'AREA'){ pkAreaRow = i; break; }
   }
   const pkDataStart = pkAreaRow + 2;
-  const pkMonths = ['T11.25','T12.25','T01.26','T02.26','T03.26','T04.26','T05.26','T06.26','T07.26','T08.26'];
+  // Nhan thang doc DONG tu dong tieu de (cap cot: "<thang> SL" | "Tong"), dung lai
+  // khi gap cot TONG hoac o trong. Them thang moi trong sheet la tu chay.
+  const pkHeadRow = rows[pkAreaRow >= 0 ? pkAreaRow : 0] || [];
+  const pkMonths = [];
+  for(let c = 2; c < pkHeadRow.length; c += 2){
+    const lb = String(pkHeadRow[c] || '').trim();
+    if(lb === '' || /TỔNG/i.test(lb)) break;
+    pkMonths.push(lb.replace(/\s*SL$/i, '').trim());
+  }
   const pk = {};
   for(let i = pkDataStart; i < rows.length; i++){
     const r = rows[i];
@@ -7158,7 +7166,29 @@ function parseTheoThangSheet(rows){
     if (ten !== '' && ten.toUpperCase() !== 'AREA') break;
     glassDataStart++;
   }
-  const glassMonths = ['T12.25','T01.26','T02.26','T03.26','T04.26','T05.26','T06.26','T07.26','T08.26'];
+  // Khoi GLASS KHONG co dong nhan thang. Dem so cap cot co so o dong VN cua khoi
+  // (cap cuoi la cot TONG) roi canh PHAI theo nhan cua khoi PK — thang moi nhat cua
+  // hai khoi luon nam sat cot TONG.
+  let glassVnRow = -1;
+  for(let i = glassRow + 1; i < rows.length; i++){
+    if(String(rows[i][1] || '').trim() === 'VN'){ glassVnRow = i; break; }
+  }
+  const glassVn = glassVnRow >= 0 ? rows[glassVnRow] : [];
+  let glassPairs = 0;
+  for(let c = 2; c < glassVn.length; c += 2){
+    if(String(glassVn[c] || '').trim() === '') break;
+    glassPairs++;
+  }
+  // Cap CUOI thuong la cot TONG, nhung khong chac sheet nao cung co. Tu nhan biet:
+  // neu gia tri cap cuoi ~= tong cac cap truoc do thi day la cot TONG -> bo di.
+  const glassSl = [];
+  for(let j = 0; j < glassPairs; j++) glassSl.push(numFloat(glassVn[2 + j*2]));
+  if(glassSl.length > 1){
+    const cuoi = glassSl[glassSl.length - 1];
+    const congTruoc = glassSl.slice(0, -1).reduce((a,b) => a + b, 0);
+    if(congTruoc > 0 && Math.abs(cuoi - congTruoc) <= Math.max(1, congTruoc * 0.005)) glassPairs--;
+  }
+  const glassMonths = pkMonths.slice(Math.max(pkMonths.length - glassPairs, 0));
   const glass = {};
   for(let i = glassDataStart; i < rows.length; i++){
     const r = rows[i];
@@ -7227,7 +7257,16 @@ function skuLabel(d){
 function buildDashboardData(skus, regionsRaw, theoThang){
   const GROUP_ORDER = ["Cable","Adapter","Tai nghe","Powerbank (SDP)","Cường lực (Dán MH)"];
   const CL_NAME = "Cường lực (Dán MH)";
-  const MONTHS8_LABELS = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26*'];
+  const MONTHS8_LABELS = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26*']; // CHI dung cho Bang gia PK (FOB co 8 cot)
+  // Nhan 12 thang cho moi phan con lai. Dau * = thang chua co FOB rieng, loi nhuan la uoc tinh.
+  const MONTH_LABELS = [];
+  const MONTH_LABELS_PLAIN = [];
+  const MONTH_KEYS = [];
+  for(let i = 1; i <= 12; i++){
+    MONTH_LABELS.push('T' + i + '.26' + (i >= 8 ? '*' : ''));
+    MONTH_LABELS_PLAIN.push('T' + i + '.26');
+    MONTH_KEYS.push('T' + String(i).padStart(2, '0') + '.26');
+  }
 
   // Disambiguate SKUs that share the same "group|mã|màu" key (e.g. two color-less
   // variants of the same mã sản phẩm) by appending a short tag pulled from "Tên hệ thống".
@@ -7291,17 +7330,17 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     };
   });
 
-  const monthlyPk = new Array(8).fill(0), monthlyCl = new Array(8).fill(0);
-  const groupMonthlyVol = {}; GROUP_ORDER.forEach(g => groupMonthlyVol[g] = new Array(10).fill(0));
-  const monthlyRevPk = new Array(8).fill(0), monthlyRevCl = new Array(8).fill(0);
-  const monthlyProfitPk7 = new Array(8).fill(0), monthlyProfitCl7 = new Array(8).fill(0);
+  const monthlyPk = new Array(12).fill(0), monthlyCl = new Array(12).fill(0);
+  const groupMonthlyVol = {}; GROUP_ORDER.forEach(g => groupMonthlyVol[g] = new Array(14).fill(0));
+  const monthlyRevPk = new Array(12).fill(0), monthlyRevCl = new Array(12).fill(0);
+  const monthlyProfitPk7 = new Array(12).fill(0), monthlyProfitCl7 = new Array(12).fill(0);
   let profit2025PkT11=0, profit2025PkT12=0, profit2025ClT11=0, profit2025ClT12=0;
   const skuMonthlyPk = [], skuMonthlyAll = [];
   const skuMonthlyRevPk = [], skuMonthlyRevCl = [];
 
   skus.forEach(d => {
     const isCl = d.group === CL_NAME;
-    for(let i=0;i<8;i++){
+    for(let i=0;i<12;i++){
       const v = d.months8[i] || 0;
       const rev = v * d.hubSI;
       if(isCl){ monthlyCl[i] += v; monthlyRevCl[i] += rev; }
@@ -7312,7 +7351,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
       groupMonthlyVol[d.group][0] += d.ban2025T11 || 0;
       groupMonthlyVol[d.group][1] += d.ban2025T12 || 0;
     }
-    for(let i=0;i<8;i++){
+    for(let i=0;i<12;i++){
       const p = d.profitMonths8[i] || 0;
       if(isCl) monthlyProfitCl7[i] += p; else monthlyProfitPk7[i] += p;
     }
@@ -7395,8 +7434,8 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   }));
 
   const regionMonthly = {}, region2025 = {};
-  const monthsT1T8 = ['T01.26','T02.26','T03.26','T04.26','T05.26','T06.26','T07.26','T08.26'];
-  regions.forEach(r => { regionMonthly[r.name] = new Array(8).fill(0); region2025[r.name] = 0; });
+  const monthsT1T8 = MONTH_KEYS;   // giu ten cu, nay la du 12 thang
+  regions.forEach(r => { regionMonthly[r.name] = new Array(12).fill(0); region2025[r.name] = 0; });
   const mergeMap = { 'LONG AN':'TIEN GIANG', 'HAI DUONG':'THANH HOA', 'BINH DUONG':'HO CHI MINH' };
   function addSheet3ToRegion(rawName, pkVals, glassVals){
     const target = mergeMap[rawName] || rawName;
@@ -7424,17 +7463,17 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     if(v['T12.25']){ nat1225Cl += v['T12.25'].tong; nat1225ClVol += v['T12.25'].sl; }
   });
 
-  const monthlyLabels9 = ['T11.25','T12.25','T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26*'];
+  const monthlyLabels9 = ['T11.25','T12.25'].concat(MONTH_LABELS);
   const monthlyPk9 = [nat1125PkVol, nat1225PkVol].concat(monthlyPk);
   const monthlyCl9 = [null, nat1225ClVol].concat(monthlyCl);
 
-  const revMonthLabels14 = ['T11.25','T12.25','T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26*','T9.26','T10.26','T11.26','T12.26'];
-  const monthlyRevPk14 = [nat1125Pk, nat1225Pk].concat(monthlyRevPk).concat([null,null,null,null]);
-  const monthlyRevCl14 = [null, nat1225Cl].concat(monthlyRevCl).concat([null,null,null,null]);
+  const revMonthLabels14 = ['T11.25','T12.25'].concat(MONTH_LABELS);
+  const monthlyRevPk14 = [nat1125Pk, nat1225Pk].concat(monthlyRevPk);
+  const monthlyRevCl14 = [null, nat1225Cl].concat(monthlyRevCl);
 
   const profitMonthLabels12 = revMonthLabels14;
-  const monthlyProfitPk12 = [profit2025PkT11, profit2025PkT12].concat(monthlyProfitPk7).concat([null,null,null,null]);
-  const monthlyProfitCl12 = [profit2025ClT11, profit2025ClT12].concat(monthlyProfitCl7).concat([null,null,null,null]);
+  const monthlyProfitPk12 = [profit2025PkT11, profit2025PkT12].concat(monthlyProfitPk7);
+  const monthlyProfitCl12 = [profit2025ClT11, profit2025ClT12].concat(monthlyProfitCl7);
 
   function getRate(rev){
     if(rev >= 100000000) return 0.05;
@@ -7443,15 +7482,13 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   }
   const bonusMatrix = [];
   regions.forEach(r => {
-    const monthly = regionMonthly[r.name] || new Array(8).fill(0);
+    const monthly = regionMonthly[r.name] || new Array(12).fill(0);
     const monthBonuses = [];
     let total = 0;
     for(let i=0;i<12;i++){
-      if(i < 8){
-        const rate = getRate(monthly[i]);
-        if(rate){ const b = Math.round(monthly[i]*rate); monthBonuses.push(b); total += b; }
-        else monthBonuses.push(0);
-      } else monthBonuses.push(null);
+      const rate = getRate(monthly[i]);
+      if(rate){ const b = Math.round(monthly[i]*rate); monthBonuses.push(b); total += b; }
+      else monthBonuses.push(0);
     }
     if(total > 0) bonusMatrix.push({ region: r.name, mien: r.mien, months: monthBonuses, total });
   });
@@ -7461,13 +7498,13 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   // Mốc: >=80% HT thưởng 2.000.000/miền · >=100% thưởng 4.000.000/miền
   // (chỉ tính mức cao nhất đạt được trong tháng đó, không cộng dồn 3 mốc)
   const MIEN_ORDER = ['Miền Bắc','Miền Trung','Miền Nam'];
-  const targetProgressMonths = ['T1.26','T2.26','T3.26','T4.26','T5.26','T6.26','T7.26','T8.26'];
+  const targetProgressMonths = MONTH_LABELS_PLAIN;
   const mienMonthlyRevenue = {};
-  MIEN_ORDER.forEach(m => mienMonthlyRevenue[m] = new Array(8).fill(0));
+  MIEN_ORDER.forEach(m => mienMonthlyRevenue[m] = new Array(12).fill(0));
   regions.forEach(r => {
-    const monthly = regionMonthly[r.name] || new Array(8).fill(0);
+    const monthly = regionMonthly[r.name] || new Array(12).fill(0);
     if(!mienMonthlyRevenue[r.mien]) return;
-    for(let i=0;i<8;i++) mienMonthlyRevenue[r.mien][i] += monthly[i] || 0;
+    for(let i=0;i<12;i++) mienMonthlyRevenue[r.mien][i] += monthly[i] || 0;
   });
   function targetTierBonus(pct){
     if(pct >= 1.0) return 4000000;
@@ -7485,7 +7522,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     return {
       name: r.name, mien: r.mien,
       targetThang, t80: targetThang*0.8, t100: targetThang,
-      monthly: buildMonthlyDetail(targetThang, regionMonthly[r.name] || new Array(8).fill(0)),
+      monthly: buildMonthlyDetail(targetThang, regionMonthly[r.name] || new Array(12).fill(0)),
     };
   });
   const targetProgressMien = MIEN_ORDER.map(mName => {
@@ -7508,10 +7545,10 @@ function buildDashboardData(skus, regionsRaw, theoThang){
 
   // ===== Bảng tổng hợp chi phí chương trình tháng (Sell in + HT Target) =====
   const programCostRegions = regions.map(r => {
-    const monthly = regionMonthly[r.name] || new Array(8).fill(0);
+    const monthly = regionMonthly[r.name] || new Array(12).fill(0);
     const rtd = regionTargetDetail.find(x => x.name === r.name);
     const monthsData = [];
-    for(let i=0;i<8;i++){
+    for(let i=0;i<12;i++){
       const revenue = monthly[i] || 0;
       const rate = getRate(revenue);
       const sellInBonus = rate ? Math.round(revenue * rate) : 0;
@@ -7525,7 +7562,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
   const programCostMien = MIEN_ORDER.map(mName => {
     const regionsInMien = programCostRegions.filter(r => r.mien === mName);
     const monthly = [];
-    for(let i=0;i<8;i++){
+    for(let i=0;i<12;i++){
       const revenue = regionsInMien.reduce((s,r)=>s+r.monthly[i].revenue,0);
       const sellInBonus = regionsInMien.reduce((s,r)=>s+r.monthly[i].sellInBonus,0);
       const targetBonus = regionsInMien.reduce((s,r)=>s+r.monthly[i].targetBonus,0);
@@ -7551,7 +7588,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
       pctTarget: targetNam ? Math.round((doanhThuSI/targetNam)*1000)/10 : 0,
     },
     groups,
-    monthlyLabels: MONTHS8_LABELS,
+    monthlyLabels: MONTH_LABELS,
     monthlySales: monthlyPk.map((v,i)=>v+monthlyCl[i]),
     skus: skus.map(d => ({
       group: d.group, sku: skuLabel(d), fob: d.fobLatest, profitUnit: d.hubSI - d.fobLatest,
@@ -7561,7 +7598,7 @@ function buildDashboardData(skus, regionsRaw, theoThang){
     regions: regions.sort((a,b)=>b.tien_do-a.tien_do),
     mien,
     monthlyPk, monthlyCl,
-    monthLabels7: MONTHS8_LABELS,
+    monthLabels7: MONTH_LABELS,
     monthlyRevPk, monthlyRevCl,
     monthlyRevTotal: monthlyRevPk.map((v,i)=>v+monthlyRevCl[i]),
     groupMonthlyRev: {},
@@ -8166,7 +8203,7 @@ function renderChartRevMonth(){
             afterLabel: c => {
               if(c.raw==null) return [];
               const skuMonthIdx = c.dataIndex - 2; // T1.26 starts at index 2 (after T11.25, T12.25)
-              if(skuMonthIdx < 0 || skuMonthIdx > 6) return [];
+              if(skuMonthIdx < 0 || skuMonthIdx > 11) return [];
               const isPk = c.datasetIndex === 0;
               const list = isPk ? DATA.skuMonthlyRevPk : DATA.skuMonthlyRevCl;
               const withVal = list.map(s => ({ sku:s.sku, val:s.months[skuMonthIdx] })).filter(s=>s.val>0);
@@ -8265,7 +8302,7 @@ function renderChartGroupMonthly(){
             afterLabel: c => {
               if(c.raw==null) return [];
               const skuMonthIdx = c.dataIndex - 2; // T1.26 starts at index 2 (after T11.25, T12.25)
-              if(skuMonthIdx < 0 || skuMonthIdx > 7) return [];
+              if(skuMonthIdx < 0 || skuMonthIdx > 11) return [];
               const scope = groupMonthlyState === '__ALL__' ? DATA.skuMonthlyPk : DATA.skuMonthlyPk.filter(s=>s.group===groupMonthlyState);
               const withVal = scope.map(s => ({ sku:s.sku, group:s.group, val:s.months[skuMonthIdx] })).filter(s=>s.val>0);
               withVal.sort((a,b)=>b.val-a.val);

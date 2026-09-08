@@ -384,7 +384,14 @@ function parseKvMonthly(rows){
     const vnRow=gVn>=0?rows[gVn]:[];
     let pairs=0;
     for(let c=2;c<vnRow.length;c+=2){ if(String(vnRow[c]||'').trim()==='') break; pairs++; }
-    const gPairs=Math.max(pairs-1,0);
+    /* cặp cuối thường là cột TỔNG — tự nhận biết: nếu nó xấp xỉ tổng các cặp
+       trước đó thì bỏ đi, sheet nào không có cột TỔNG cũng đọc đúng */
+    let gPairs=pairs;
+    const gSl=[]; for(let j=0;j<pairs;j++) gSl.push(num(vnRow[2+j*2]));
+    if(gSl.length>1){
+      const cuoi=gSl[gSl.length-1], truoc=gSl.slice(0,-1).reduce((a,b)=>a+b,0);
+      if(truoc>0 && Math.abs(cuoi-truoc)<=Math.max(1,truoc*0.005)) gPairs--;
+    }
     const gLabels=pkLabels.slice(Math.max(pkLabels.length-gPairs,0));
     let gStart=glassRow+1;
     while(gStart<rows.length&&/^(AREA|)$/i.test(String(rows[gStart][1]||'').trim())) gStart++;
