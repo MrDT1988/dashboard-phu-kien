@@ -182,12 +182,19 @@
       /* Anh Thái 05-09 tối: chỉ số OPPO thấp hơn TRUNG BÌNH của nhóm thì tô đỏ ngay ô đó.
                nhom = số gộp của cả nhóm (Size / toàn chợ); không truyền thì không so. */
           var oCotChinh = function (a, nhom) {
+                     /* 09/09 anh Thai: so PK theo MOI SHOP o ca hai ve, nho vay dung duoc cho ca
+                        dong gop (Size / Sale — a.shops la so shop) lan dong 1 shop (khong co a.shops -> 1).
+                        Truoc day so a.pkO (tong ca nhom) voi trung binh/shop nen dong gop khong bao gio do. */
+                     var nA = a.shops || 1;
                      var tbPk = nhom && nhom.shops ? nhom.pkO / nhom.shops : null;
                      var shO = shDs(a, a.oU), shDtO = shDt(a, a.oDt);
-                     var kPk = tbPk != null && a.pkO < tbPk;
+                     var kPk = tbPk != null && (a.pkO / nA) < tbPk;
+                     /* share PK 10-20M cua OPPO: dat trong ngoac, thap hon nhom thi cung to do */
+                     var shPk = a.pkT ? a.pkO / a.pkT * 100 : null;
+                     var kShPk = shPk != null && nhom && nhom.pkT ? shPk < (nhom.pkO / nhom.pkT * 100) : false;
                      var kDs = nhom ? shO < shDs(nhom, nhom.oU) : false;
                      var kDt = nhom ? shDtO < shDt(nhom, nhom.oDt) : false;
-                     return '<td>' + do_(kPk, '<b>' + fInt(a.pkO) + '</b>') + (a.pkT ? ' <small>' + pcCh(a.pkO / a.pkT * 100) + '</small>' : '') + '</td>' +
+                     return '<td>' + do_(kPk, '<b>' + fInt(a.pkO) + '</b>') + (shPk != null ? ' <small>(' + do_(kShPk, pcCh(shPk)) + ')</small>' : '') + '</td>' +
                                   '<td>' + do_(kDs, pcCh(shO)) + ' <small>/ ' + pcCh(shDs(a, a.sU)) + ' / ' + pcCh(shDs(a, a.xU)) + '</small></td>' +
                                   '<td>' + do_(kDt, pcCh(shDtO)) + ' <small>/ ' + pcCh(shDt(a, a.sDt)) + ' / ' + pcCh(shDt(a, a.xDt)) + '</small></td>';
              
@@ -380,7 +387,7 @@
              (function () {
                         var mSel = '';
                         var kq = khoi({ stt: 4, ten: 'Hiệu suất theo Size shop', rong: true,
-          dangXem: 'PK 10-20M · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · bấm dòng Size để mở chi tiết shop — chỉ số OPPO dưới trung bình nhóm được tô đỏ' });
+          dangXem: 'PK 10-20M (trong ngoặc là share OPPO của phân khúc) · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · bấm dòng Size để mở chi tiết shop — chỉ số OPPO thấp hơn mặt bằng chung được tô đỏ' });
                 $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; mo = {}; ve(); }));
                         var box = el('div', 'bc-cuon'); $('.bc-than', kq).appendChild(box);
                         var mo = {};
@@ -390,9 +397,14 @@
                                      var ds = SIZE.filter(function (s) { return g[s]; }).concat(Object.keys(g).filter(function (s) { return SIZE.indexOf(s) < 0; }));
                                      var h = '<table class="bc-bang"><thead><tr><th>Size</th><th>Shop</th><th>Có bán</th><th>Máy OPPO</th><th>Máy chợ</th>' + dauCotChinh + '<th>OPPO/shop</th></tr></thead><tbody>';
                                      var tg = { shops: 0, shop0: 0 }; CONG.forEach(function (f) { tg[f] = 0; });
+                                     /* 09/09 anh Thai: cong TONG TRUOC de moi dong Size co moc so sanh -> chi so OPPO te thi to do.
+                                        Truoc day cong dan trong luc ve nen dong Size khong co moc, khong bao gio do. */
+                                     ds.forEach(function (sz) { var a = g[sz]; if (!a) return; CONG.forEach(function (f) { tg[f] += a[f]; }); tg.shops += a.shops; tg.shop0 += a.shop0; });
+                                     var tbOShop = tg.shops ? tg.oU / tg.shops : null;
                                      ds.forEach(function (sz) {
-                                                    var a = g[sz]; if (!a) return; CONG.forEach(function (f) { tg[f] += a[f]; }); tg.shops += a.shops; tg.shop0 += a.shop0;
-                                                    h += '<tr class="bc-size-dong" data-sz="' + esc(sz) + '" style="cursor:pointer"><td><b>' + (mo[sz] ? '▾ ' : '▸ ') + esc(sz) + '</b></td><td>' + a.shops + '</td><td>' + (a.shops - a.shop0) + '</td><td><b>' + fInt(a.oU) + '</b></td><td>' + fInt(a.tU) + '</td>' + oCotChinh(a) + '<td>' + (a.shops ? (a.oU / a.shops).toFixed(1) : '-') + '</td></tr>';
+                                                    var a = g[sz]; if (!a) return;
+                                                    var oShop = a.shops ? a.oU / a.shops : null;
+                                                    h += '<tr class="bc-size-dong" data-sz="' + esc(sz) + '" style="cursor:pointer"><td><b>' + (mo[sz] ? '▾ ' : '▸ ') + esc(sz) + '</b></td><td>' + a.shops + '</td><td>' + (a.shops - a.shop0) + '</td><td><b>' + fInt(a.oU) + '</b></td><td>' + fInt(a.tU) + '</td>' + oCotChinh(a, tg) + '<td>' + (oShop == null ? '-' : do_(tbOShop != null && oShop < tbOShop, oShop.toFixed(1))) + '</td></tr>';
                                                     if (mo[sz]) {
                                                                      var rs = a.ten.map(function (s) { return { s: s, x: shops[s] }; }).sort(function (p, q) { return q.x.oU - p.x.oU; });
                              var tbO = a.shops ? a.oU / a.shops : 0;
@@ -414,7 +426,7 @@
              (function () {
                         var mSel = '';
                         var kq = khoi({ stt: 5, ten: 'Hiệu suất Sale / ASM — OPPO so với thị trường', rong: true,
-                                                 dangXem: 'Thêm PK 10-20M · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · cờ đỏ: giảm >20% hoặc mất ≥3 điểm thị phần' });
+                                                 dangXem: 'PK 10-20M (trong ngoặc là share OPPO của phân khúc) · Share D.S · Share D.T của OPPO / Samsung / Xiaomi — chỉ số OPPO thấp hơn mặt bằng toàn team được tô đỏ · cờ đỏ: giảm >20% hoặc mất ≥3 điểm thị phần · bấm dòng Sale để mở chi tiết shop' });
                         $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; mo = {}; ve(); }));
                         var box = el('div', 'bc-cuon'); $('.bc-than', kq).appendChild(box);
                         /* 09/09 anh Thai: bam vao Sale thi bung chi tiet shop cua Sale do */
@@ -433,6 +445,9 @@
                                                     Bt = kp ? gomTheo(shopMWG(kp.tu, kp.denCo), function (x) { return x.sale; }) : null;
                                                     nhanT = kp ? 'tháng ' + (m - 1) : 'kỳ trước';
                                      }
+                                     /* 09/09 anh Thai: moc so sanh cho dong Sale = TONG toan team (cong het cac Sale). */
+                                     var TT5 = { shops: 0, shop0: 0 }; CONG.forEach(function (f) { TT5[f] = 0; });
+                                     Object.keys(A).forEach(function (s) { var a = A[s]; CONG.forEach(function (f) { TT5[f] += a[f]; }); TT5.shops += a.shops; TT5.shop0 += a.shop0; });
                                      var rows = Object.keys(A).map(function (s) {
                                                     var a = A[s], b = Bt ? Bt[s] : null;
                                                     var sh = shDs(a, a.oU), shT = b ? shDs(b, b.oU) : null, p = b ? pct(a.oU, b.oU) : null;
@@ -443,7 +458,7 @@
                                      }).sort(function (x, y) { return (y.co.length - x.co.length) || ((x.p == null ? 0 : x.p) - (y.p == null ? 0 : y.p)); });
                                      var h = '<table class="bc-bang"><thead><tr><th>Sale / ASM</th><th>Máy OPPO</th><th>so ' + esc(nhanT) + '</th><th>Máy chợ</th>' + dauCotChinh + '<th>± điểm</th><th>Shop</th><th>Shop 0 máy</th><th>DT OPPO</th><th>Cảnh báo</th></tr></thead><tbody>';
                                      rows.forEach(function (r) {
-                                                    h += '<tr class="bc-sale-dong' + (r.co.length ? ' bc-canh' : '') + '" data-sale="' + esc(r.s) + '" style="cursor:pointer"><td><b>' + (mo[r.s] ? '▾ ' : '▸ ') + esc(r.s) + '</b></td><td><b>' + fInt(r.a.oU) + '</b></td><td>' + chip(r.p) + '</td><td>' + fInt(r.a.tU) + '</td>' + oCotChinh(r.a)
+                                                    h += '<tr class="bc-sale-dong' + (r.co.length ? ' bc-canh' : '') + '" data-sale="' + esc(r.s) + '" style="cursor:pointer"><td><b>' + (mo[r.s] ? '▾ ' : '▸ ') + esc(r.s) + '</b></td><td><b>' + fInt(r.a.oU) + '</b></td><td>' + chip(r.p) + '</td><td>' + fInt(r.a.tU) + '</td>' + oCotChinh(r.a, TT5)
                                                       + '<td>' + (r.shT != null ? chipDiem(r.sh - r.shT) : '—') + '</td><td>' + r.a.shops + '</td><td>' + (r.a.shop0 ? '<span class="bc-giam-chu"><b>' + r.a.shop0 + '</b></span>' : '0') + '</td><td>' + fTyNgan(r.a.oDt) + '</td><td>' + (r.co.length ? '<span class="bc-co">' + r.co.map(esc).join(' · ') + '</span>' : '<span class="bc-len-chu">ổn</span>') + '</td></tr>';
                                                     /* 09/09: bam vao Sale -> lie^t ke^ shop cua Sale do, xep theo may OPPO giam dan.
                                                        To DO shop nao duoi trung binh cua chinh Sale do. */
@@ -455,7 +470,7 @@
                                                                    h += '<tr><td colspan="20"><div class="bc-cuon"><table class="bc-bang"><thead><tr><th>Shop</th><th>Size</th><th>Máy OPPO</th><th>Máy chợ</th>' + dauCotChinh + '</tr></thead><tbody>'
                                                                       + '<tr class="bc-tb-nhom"><td colspan="20">Trung bình của <b>' + esc(r.s) + '</b>: <b>' + tbS.toFixed(1) + '</b> máy OPPO/shop · ' + r.a.shops + ' shop · ' + (r.a.shop0 || 0) + ' shop 0 máy — shop dưới mức này tô đỏ</td></tr>'
                                                                       + rsS.map(function (z) {
-                                                                                     return '<tr' + (!z.x.oU ? ' class="bc-mo"' : '') + '><td title="' + esc(z.n) + '">' + esc(tenShopNgan(z.n)) + '</td><td>' + esc(z.x.size || '') + '</td><td>' + do_(z.x.oU < tbS, '<b>' + fInt(z.x.oU) + '</b>') + '</td><td>' + fInt(z.x.tU) + '</td>' + oCotChinh(z.x) + '</tr>';
+                                                                                     return '<tr' + (!z.x.oU ? ' class="bc-mo"' : '') + '><td title="' + esc(z.n) + '">' + esc(tenShopNgan(z.n)) + '</td><td>' + esc(z.x.size || '') + '</td><td>' + do_(z.x.oU < tbS, '<b>' + fInt(z.x.oU) + '</b>') + '</td><td>' + fInt(z.x.tU) + '</td>' + oCotChinh(z.x, r.a) + '</tr>';
                                                                       }).join('')
                                                                       + '</tbody></table></div></td></tr>';
                                                     }

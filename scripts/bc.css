@@ -206,7 +206,8 @@ html.bc-dt .bc-3bd { grid-template-columns: 1fr; }
 /* Dòng ghi chú trung bình nhóm Size */
 .bc-bang tr.bc-tb-nhom td { font-size: 11.5px; color: var(--text-secondary); background: rgba(139,152,169,.08); }
 /* Ô dưới trung bình team trong bảng mini Số bán ngày */
-.bc-mini td.bc-duoi-tb { color: var(--bc-giam); font-weight: 800; background: var(--bc-giam-nen); }
+/* 09/09 anh Thai: khoi 6 "So ban ngay" — chi TO DO con so, bo nen do ca o cho do roi mat. */
+.bc-mini td.bc-duoi-tb { color: var(--bc-giam); font-weight: 800; }
 
 /* ---- Anh Thái 06/09: KA & IND ---- */
 /* Ô giảm/xấu đi trong bảng mini (thay bản đồ nhiệt) */
