@@ -230,6 +230,36 @@
     return '';
   }
 
+  /* model OPPO noi bo, loc theo THANG + kenh / phan khuc / dong may (Reno · khac).
+     Chi lam duoc o che do THANG vi crosstab chi co cot thang, khong co ngay. */
+  function modelCenterLoc(thang, loc) {
+    var D = null;
+    try { D = (BCC().du() || {}).D || window.__exportDataMwg; } catch (e) { D = window.__exportDataMwg; }
+    if (!D || !D.crosstab) return null;
+    var kenh = loc.kenh && loc.kenh.length ? loc.kenh.map(function (x) { return String(x).toUpperCase(); }) : null;
+    var vung = null;
+    if (loc.seg && loc.seg.length) {
+      vung = [];
+      loc.seg.forEach(function (s) { var b = bien(s); if (b) vung.push(b); });
+      if (!vung.length) return null;
+    }
+    var g = {};
+    D.crosstab.forEach(function (r) {
+      if (r.m !== thang) return;
+      if (kenh && kenh.indexOf(String(r.channel).toUpperCase()) < 0) return;
+      if (vung) {
+        var c = bien(r.segment); if (!c) return;
+        var trong = vung.some(function (b) { return c[0] >= b[0] && c[1] <= b[1]; });
+        if (!trong) return;
+      }
+      if (loc.reno === true && !/reno/i.test(String(r.series))) return;
+      if (loc.reno === false && /reno/i.test(String(r.series))) return;
+      var u = r.sellout || 0; if (!u) return;
+      g[r.model] = (g[r.model] || 0) + u;
+    });
+    return g;
+  }
+
   /* ky dang chon cua tab MWG (dung khi bieu do khong co truc thoi gian) */
   function kyHienTai() {
     var B = BCC(); if (!B || !B.boiCanh) return null;
@@ -270,6 +300,32 @@
     if (ky && laKenh) {
       var g = modelKenh(ky, tens.map(function (t) { return String(t).trim().toUpperCase(); }));
       return dongModel(g, 'Model OPPO ' + (tens.length > 1 ? '(cả 3 kênh)' : tens[0]) + ' bán trong kỳ');
+    }
+
+    /* (a2) truc la KENH (MWG/IND/KA/TỔNG) + duong so la PHAN KHUC hoac Reno/Khac
+            -> so OPPO noi bo cua thang dang chon. Che do TUAN thi bo qua vi crosstab
+               chi co cot thang, khong ep duoc theo tuan — tha khong hien con hon hien sai. */
+    var laNhanKenh = /^(MWG|IND|KA|TỔNG|TONG)$/i.test(String(nhan).trim());
+    if (!ky && laNhanKenh) {
+      var kHT = kyHienTai(), B0 = BCC(), cdHT = '';
+      try { cdHT = (B0.boiCanh() || {}).cd || ''; } catch (e) {}
+      if (kHT && cdHT === 'thang' && kHT.so) {
+        var kenhLoc = /^(TỔNG|TONG)$/i.test(String(nhan).trim()) ? null : [String(nhan).trim()];
+        var loc = { kenh: kenhLoc }, nhanLoc = [String(nhan).trim()];
+        var hopLe = true;
+        tens.forEach(function (t) {
+          var s = String(t).trim();
+          if (/^reno$/i.test(s)) { loc.reno = true; nhanLoc.push('Reno'); }
+          else if (/^kh[áa]c$/i.test(s)) { loc.reno = false; nhanLoc.push('ngoài Reno'); }
+          else if (bien(s)) { (loc.seg = loc.seg || []).push(s); nhanLoc.push(s); }
+          else hopLe = false;
+        });
+        if (hopLe && nhanLoc.length > 1) {
+          var gC = modelCenterLoc(kHT.so, loc);
+          if (gC) return dongModel(gC, 'Model OPPO — ' + nhanLoc.join(' · '));
+        }
+      }
+      return [];
     }
 
     /* (b) tab Chi tiet MWG: truc va duong so co the la KY / HANG / PHAN KHUC — gom lai
