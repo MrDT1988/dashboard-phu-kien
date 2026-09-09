@@ -114,8 +114,149 @@
           ds.backgroundColor = mau;
         });
       } catch (e) { /* co loi thi de bieu do ve nhu cu, khong lam chet trang */ }
+      try { ganTooltipModel(ch); } catch (e) {}
     }
   });
+
+  /* ============================================================
+     09/09 viec 2 (anh Thai): RE CHUOT VAO COT -> HIEN MODEL BAN TRONG DO
+     ------------------------------------------------------------
+     Cot cua DB TG khong phai cot nao cung co model dang sau. Nen o day chi hien
+     khi TINH DUNG duoc, con lai de nguyen — tha khong hien con hon hien so sai:
+       (a) Cot la KY (T1..T12 / W1..W53) + duong so la KENH (MWG/IND/KA)
+           -> model OPPO ban trong ky do, lay bang ham modelKy() san co cua bc.js
+              (thang thi doc crosstab, tuan thi doc week_channel_models).
+       (b) Cot la KY + dang o tab "Chi tiet MWG", duong so la TEN HANG
+           -> model cua hang do ban tai cho MWG, quet daily.rows theo dung khoang ngay.
+     Cot khong phai ky (truc la ten kenh / ten hang / ten shop) thi khong co khai niem
+     "ban trong cot nay" theo thoi gian -> khong hien them gi.
+     Co bo nho tam theo (khoang ngay + hang) de re chuot nhieu lan khong quet lai. */
+
+  var BOTAM = {};                        /* bo nho tam ket qua quet */
+  function BCC() { return window.__bc || null; }
+  function p2(n) { return String(n).padStart(2, '0'); }
+
+  /* "T5" -> khoang thang 5 · "W36" -> khoang tuan 36 · khac -> null */
+  function kyTuNhan(nhan) {
+    var B = BCC(); if (!B) return null;
+    var s = String(nhan == null ? '' : nhan).trim();
+    var m = /^T(\d{1,2})/i.exec(s);
+    if (m) { try { var k = B.khoangKy('thang', +m[1]); return k ? { cd: 'thang', k: k } : null; } catch (e) { return null; } }
+    m = /^W(\d{1,2})/i.exec(s);
+    if (m) {
+      try {
+        var ds = (B.du() || {}).TUAN || [];
+        for (var i = 0; i < ds.length; i++) if (ds[i].so === +m[1]) return { cd: 'tuan', k: ds[i] };
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  /* model OPPO theo kenh — dung ham san co cua bc.js nen so trung voi bao cao */
+  function modelKenh(ky, kenhs) {
+    var B = BCC(); if (!B || !B.modelKy) return null;
+    var mk; try { mk = B.modelKy(ky.cd, ky.k); } catch (e) { return null; }
+    if (!mk) return null;
+    var g = {};
+    kenhs.forEach(function (c) {
+      var o = mk[c] || {};
+      Object.keys(o).forEach(function (t) { g[t] = (g[t] || 0) + (o[t] || 0); });
+    });
+    return g;
+  }
+
+  /* model cua 1 hoac nhieu HANG tai cho MWG trong khoang ngay */
+  function modelChoMWG(tu, den, hangs) {
+    var B = BCC(); if (!B || !B.du) return null;
+    var d; try { d = B.du(); } catch (e) { return null; }
+    var DL = d && d.B && d.B.daily; if (!DL || !DL.rows) return null;
+    var TEN = (DL.brands || []).map(function (x) { return String(x).toLowerCase(); });
+    var MODEL = DL.models || [];
+    var chi = [];
+    hangs.forEach(function (h) { var i = TEN.indexOf(String(h).toLowerCase()); if (i >= 0) chi.push(i); });
+    if (!chi.length) return null;
+    var khoa = tu + '|' + den + '|' + chi.join(',');
+    if (BOTAM[khoa]) return BOTAM[khoa];
+    var R = DL.rows, g = {};
+    for (var i = 0; i < R.length; i++) {
+      var x = R[i];
+      if (chi.indexOf(x[4]) < 0) continue;
+      var ng = '2026-' + p2(x[0]) + '-' + p2(x[1]);
+      if (ng < tu || ng > den) continue;
+      var u = x[6] || 0; if (!u) continue;
+      var t = MODEL[x[8]] || '(không rõ)';
+      g[t] = (g[t] || 0) + u;
+    }
+    BOTAM[khoa] = g;
+    return g;
+  }
+
+  function dongModel(g, tieu) {
+    if (!g) return [];
+    var ds = Object.keys(g).map(function (t) { return { t: t, u: g[t] }; })
+                .filter(function (z) { return z.u > 0; })
+                .sort(function (a, b) { return b.u - a.u; });
+    if (!ds.length) return [];
+    var tong = ds.reduce(function (s, z) { return s + z.u; }, 0);
+    var r = ['', tieu + ':'];
+    ds.slice(0, 5).forEach(function (z, i) {
+      var ten = String(z.t).replace(/^Điện thoại\s*/i, '');
+      if (ten.length > 34) ten = ten.slice(0, 32) + '…';
+      r.push('  ' + (i + 1) + '. ' + ten + '  ' + z.u.toLocaleString('vi-VN')
+             + '  (' + (z.u / tong * 100).toFixed(0) + '%)');
+    });
+    if (ds.length > 5) r.push('  … và ' + (ds.length - 5) + ' model khác');
+    return r;
+  }
+
+  function chiTietCot(ch, items) {
+    if (!items || !items.length) return [];
+    var nhan = (ch.data.labels || [])[items[0].dataIndex];
+    var ky = kyTuNhan(nhan); if (!ky) return [];
+    var den = ky.k.denCo || ky.k.den;
+    var tens = [];
+    items.forEach(function (it) {
+      var l = ((ch.data.datasets || [])[it.datasetIndex] || {}).label;
+      if (l && tens.indexOf(l) < 0) tens.push(l);
+    });
+    if (!tens.length) return [];
+
+    /* (a) duong so la kenh */
+    var laKenh = tens.every(function (t) { return /^(MWG|IND|KA)$/i.test(String(t).trim()); });
+    if (laKenh) {
+      var g = modelKenh(ky, tens.map(function (t) { return String(t).trim().toUpperCase(); }));
+      return dongModel(g, 'Model OPPO ' + (tens.length > 1 ? '(cả 3 kênh)' : tens[0]) + ' bán trong kỳ');
+    }
+    /* (b) tab Chi tiet MWG, duong so la ten hang */
+    try {
+      var pan = ch.canvas && ch.canvas.closest ? ch.canvas.closest('[id^="panel-"]') : null;
+      if (pan && pan.id === 'panel-mwg') {
+        var g2 = modelChoMWG(ky.k.tu, den, tens);
+        if (g2) return dongModel(g2, 'Model bán tại chợ MWG — ' + (tens.length > 1 ? tens.length + ' hãng' : tens[0]));
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  function ganTooltipModel(ch) {
+    if (!ch || !ch.config || ch.config.type !== 'bar') return;
+    var o = ch.options || (ch.options = {});
+    var pl = o.plugins || (o.plugins = {});
+    var tt = pl.tooltip || (pl.tooltip = {});
+    var cb = tt.callbacks || (tt.callbacks = {});
+    if (cb.__bcModel) return;                       /* da gan roi */
+    var cu = cb.afterBody;                          /* giu lai cai cu neu co */
+    cb.afterBody = function (items) {
+      var truoc = [];
+      try { if (typeof cu === 'function') { var v = cu.apply(this, arguments); truoc = Array.isArray(v) ? v : (v ? [v] : []); } } catch (e) {}
+      var them = [];
+      try { them = chiTietCot(ch, items) || []; } catch (e) { them = []; }
+      return truoc.concat(them);
+    };
+    cb.__bcModel = 1;
+    /* tooltip dai hon thi cho phep rong ra mot chut */
+    if (tt.boxPadding == null) tt.boxPadding = 4;
+  }
 
   /* Ty le vang cho hang hai bieu do (cai chinh 1.618 — cai phu 1) */
   try {
