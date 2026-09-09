@@ -20,7 +20,7 @@
  *
  * CACH LAM — AN TOAN VOI ROBOT
  * ----------------------------
- * Dang ky mot plugin Chart.js toan cuc, doi mau ngay TRUOC KHI VE (beforeDatasetsDraw),
+ * Dang ky mot plugin Chart.js toan cuc, doi mau ngay TRUOC KHI VE (hook beforeUpdate),
  * khong sua cau hinh bieu do, khong goi update trong luc ve (khong gay vong lap).
  * Khong dong vao bc.js / bc-chitiet.js / cach tinh so. Robot doc bien JS chu khong doc
  * mau nen khong bi anh huong.
@@ -93,21 +93,25 @@
     return L.length - 1;
   }
 
+  /* BAY DA MAC 09/09: khong duoc gan mau vao tung element (el.options).
+     Chart.js cho MOI COT dung CHUNG mot object options khi cau hinh giong nhau —
+     gan cho cot 8 xong cot 9 ghi de len chinh object do, ket qua ca 12 cot mot mau.
+     Cach dung: dat dataset.backgroundColor thanh MANG o hook beforeUpdate, de
+     Chart.js tu resolve mau rieng cho tung cot. */
   Chart.register({
     id: 'bcNhanKy',
-    beforeDatasetsDraw: function (ch) {
+    beforeUpdate: function (ch) {
       try {
         if (!ch || !ch.config || ch.config.type !== 'bar') return;
         var idx = viTriNhan(ch);
-        if (idx < 0) return;
-        (ch.data.datasets || []).forEach(function (ds, di) {
-          var meta = ch.getDatasetMeta(di);
-          if (!meta || meta.hidden || !meta.data) return;
-          meta.data.forEach(function (el, i) {
-            if (!el || !el.options) return;
-            if (el.__mauGoc === undefined) el.__mauGoc = el.options.backgroundColor;
-            el.options.backgroundColor = (i === idx) ? el.__mauGoc : mo(el.__mauGoc);
-          });
+        var n = (ch.data.labels || []).length;
+        (ch.data.datasets || []).forEach(function (ds) {
+          if (ds.__mauGoc === undefined) ds.__mauGoc = ds.backgroundColor;   /* chi luu 1 lan */
+          var goc = ds.__mauGoc;
+          if (idx < 0 || typeof goc !== 'string') { ds.backgroundColor = goc; return; }
+          var mau = [];
+          for (var i = 0; i < n; i++) mau.push(i === idx ? goc : mo(goc));
+          ds.backgroundColor = mau;
         });
       } catch (e) { /* co loi thi de bieu do ve nhu cu, khong lam chet trang */ }
     }
@@ -117,7 +121,7 @@
   try {
     var st = document.createElement('style');
     st.id = 'bc-nhan-ky-css';
-    st.textContent = '.bc-hang-bd{grid-template-columns:minmax(0,1.618fr) minmax(0,1fr)}';
+    st.textContent = '.bc-hang-bd{grid-template-columns:minmax(0,1.618fr) minmax(0,1fr) !important}';
     document.head.appendChild(st);
   } catch (e) {}
 
