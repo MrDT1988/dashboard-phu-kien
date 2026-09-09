@@ -148,9 +148,106 @@
       '.dashboard-header-main>p:first-of-type{display:none !important}',
       '.bc-bar{padding-top:4px !important;padding-bottom:4px !important;margin:6px 0 4px !important}',
       '.db-tg-tabnav button{padding-top:6px !important;padding-bottom:6px !important}',
-      '.bc-ky-bar{padding:6px 12px !important;margin-bottom:-6px !important}'
+      '.bc-ky-bar{padding:6px 12px !important;margin-bottom:-6px !important}',
+      /* 09/09 (viec 1 dot D) — CO DINH DAU TRANG.
+         Anh Thai: cuon xuong cuoi bang van doi tab / doi ky duoc ngay, khong phai keo len.
+         Thanh "Bao cao thang / tuan + Ky" va 4 the tab duoc gom vao mot khoi #bc-dinh
+         dan ngay duoi dau trang, position:sticky top:0 nen no bam dinh khi cuon. */
+      '#bc-dinh{position:sticky;top:0;z-index:900;padding:6px 20px 8px;margin:0 0 10px;' +
+        'background:linear-gradient(135deg,#00431F 0%,#00622F 55%,#0A7A45 100%);' +
+        'border-radius:0 0 10px 10px;box-shadow:0 6px 18px rgba(0,0,0,.20)}',
+      '#bc-dinh .bc-bar{margin:0 0 6px !important;padding:0 !important}',
+      '#bc-dinh .db-tg-tabnav{margin:0 !important}',
+      '.dashboard-header{position:relative !important;margin-bottom:0 !important;border-radius:10px 10px 0 0 !important}',
+      /* the "Duy Thai / Dang xuat": truoc ghim goc duoi trai, DE MAT dau dong cua bang so
+         (da phai lam mo di khi cuon cho do vuong). Nay dua len goc phai dau trang, doi dien
+         tieu de "Report Tien Giang" — het che so, khong can lam mo nua. */
+      '#dbtg-the-ai.bc-ai-tren{position:absolute !important;right:20px !important;top:10px !important;' +
+        'left:auto !important;bottom:auto !important;z-index:5;opacity:1 !important;' +
+        'display:flex;align-items:center;gap:10px;background:transparent !important;' +
+        'border:0 !important;box-shadow:none !important;padding:0 !important}',
+      'html.dm-dang-cuon #dbtg-the-ai.bc-ai-tren{opacity:1 !important}',
+      /* Sang/Toi ve dung mot hang ngang voi May tinh/Dien thoai, o cuoi thanh chon ky */
+      '.bc-hang-nut{margin-left:auto;display:inline-flex;align-items:center;gap:8px}',
+      '.bc-hang-nut .bc-tb{margin-left:0 !important}',
+      '#dm-sang-nut.bc-sang-hang{position:static !important;right:auto !important;bottom:auto !important;' +
+        'opacity:1 !important;box-shadow:none !important;z-index:auto !important}',
+      'html.dm-dang-cuon #dm-sang-nut.bc-sang-hang{opacity:1 !important}',
+      '@media (max-width:720px){#bc-dinh{padding:4px 12px 6px}#dbtg-the-ai.bc-ai-tren{position:static !important;margin-top:6px}}'
     ].join('\n');
     document.head.appendChild(st);
+  } catch (e) {}
+
+  /* ===== 09/09 viec 1: gom dau trang lai =====
+     Ba viec: (a) thanh ky + 4 tab vao khoi dinh #bc-dinh, (b) the "Duy Thai / Dang xuat"
+     len goc phai dau trang, (c) Sang/Toi dung cung hang voi May tinh/Dien thoai.
+     Hai cai (b)(c) do script khac tao SAU nen phai thu lai vai lan roi moi thoi.
+     DUONG LUI: van nam trong dung file nay — xoa dong <script> la ve nhu cu. */
+  function gomDauTrang() {
+    var header = document.querySelector('.dashboard-header');
+    var bar = document.querySelector('.bc-bar');
+    var tabs = document.querySelector('.db-tg-tabnav');
+    if (!header || !bar || !tabs) return false;
+
+    var dinh = document.getElementById('bc-dinh');
+    if (!dinh) {
+      dinh = document.createElement('div');
+      dinh.id = 'bc-dinh';
+      header.parentNode.insertBefore(dinh, header.nextSibling);
+    }
+    if (bar.parentNode !== dinh) dinh.appendChild(bar);
+    if (tabs.parentNode !== dinh) dinh.appendChild(tabs);
+
+    /* hang nut ben phai: Sang/Toi + May tinh/Dien thoai */
+    var tb = bar.querySelector('.bc-tb');
+    var hang = bar.querySelector('.bc-hang-nut');
+    if (tb && !hang) {
+      hang = document.createElement('div');
+      hang.className = 'bc-hang-nut';
+      tb.parentNode.insertBefore(hang, tb);
+      hang.appendChild(tb);
+    }
+    var sang = document.getElementById('dm-sang-nut');
+    if (sang && hang && sang.parentNode !== hang) {
+      hang.insertBefore(sang, hang.firstChild);
+      sang.classList.add('bc-sang-hang');
+    }
+
+    /* the nguoi dung len goc phai dau trang */
+    var ai = document.getElementById('dbtg-the-ai');
+    if (ai && ai.parentNode !== header) {
+      header.appendChild(ai); ai.classList.add('bc-ai-tren');
+      /* The nay duoc script khac dat style THANG VAO THE (inline) va con mot luat !important
+         khac de nen trang, nen CSS thuong khong an. Phai dat inline kem 'important' moi thang. */
+      var q = function (el, k, v) { try { el.style.setProperty(k, v, 'important'); } catch (e) {} };
+      q(ai, 'background', 'transparent'); q(ai, 'background-color', 'transparent');
+      q(ai, 'border', '0'); q(ai, 'box-shadow', 'none'); q(ai, 'padding', '0'); q(ai, 'max-width', 'none');
+      q(ai, 'color', '#EAF6EE');
+      Array.prototype.forEach.call(ai.querySelectorAll('div'), function (d) { q(d, 'color', '#EAF6EE'); });
+      var vai = ai.querySelectorAll('div>div>div')[1];
+      if (vai) q(vai, 'color', 'rgba(234,246,238,.72)');
+      var nutThoat = document.getElementById('dbtg-thoat');
+      if (nutThoat) {
+        q(nutThoat, 'color', '#EAF6EE'); q(nutThoat, 'background', 'transparent');
+        q(nutThoat, 'border', '1px solid rgba(255,255,255,.35)'); q(nutThoat, 'border-radius', '8px');
+        q(nutThoat, 'padding', '4px 10px'); q(nutThoat, 'cursor', 'pointer');
+      }
+    }
+
+    return !!(ai && sang);
+  }
+
+  try {
+    var lan = 0;
+    var nhip = setInterval(function () {
+      lan++;
+      var xong = false;
+      try { xong = gomDauTrang(); } catch (e) {}
+      if (xong || lan > 40) clearInterval(nhip);   /* thu toi ~16 giay roi thoi */
+    }, 400);
+    document.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('.db-tg-tabnav')) setTimeout(gomDauTrang, 120);
+    }, true);
   } catch (e) {}
 
   /* doi ky / doi che do -> ve lai de diem nhan nhay theo */

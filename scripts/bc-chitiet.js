@@ -387,12 +387,112 @@
              (function () {
                         var mSel = '';
                         var kq = khoi({ stt: 4, ten: 'Hiệu suất theo Size shop', rong: true,
-          dangXem: 'PK 10-20M (trong ngoặc là share OPPO của phân khúc) · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · bấm dòng Size để mở chi tiết shop — chỉ số OPPO thấp hơn mặt bằng chung được tô đỏ' });
-                $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; mo = {}; ve(); }));
+          dangXem: 'PK 10-20M (trong ngoặc là share OPPO của phân khúc) · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · bấm dòng Size để mở chi tiết shop, bấm tiếp vào SHOP để xem khung giờ bán tốt nhất + TOP nhân viên + TOP sản phẩm PK 10-20M — chỉ số OPPO thấp hơn mặt bằng chung được tô đỏ' });
+                $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; mo = {}; moShop = {}; ve(); }));
                         var box = el('div', 'bc-cuon'); $('.bc-than', kq).appendChild(box);
-                        var mo = {};
+                        var mo = {}, moShop = {};
+
+                        /* ===== 09/09 anh Thai: bam vao SHOP thi bung chi tiet cua rieng shop do =====
+                           Ba muc, lay tu 3 nguon co san trong goi du lieu MWG:
+                             1) shop_hour_all_brand — so may theo tung khung 2 tieng.
+                                LUU Y THAT THA: nguon nay la TOAN BO may cua shop (moi hang, moi phan khuc),
+                                KHONG tach rieng PK 10-20M. Da doi chieu: tong theo gio = tong theo model.
+                                Nen o day ghi ro "toan bo may cua shop" chu khong ghi la PK 10-20M.
+                             2) shop_staff_pk1020 — da la PK 10-20M ANDROID san (doi chieu 6 shop:
+                                tong theo nhan vien = so may 10-20M sau khi tru Apple, khop tuyet doi).
+                             3) shop_model_data — loc model co don gia 10-20M (doi chieu: bang dung
+                                so cua phan khuc 10-15M + 15-20M, khop tuyet doi) roi tach 3 hang. */
+                        function chiTietShop(shop, thang) {
+                                     var th = String(thang);
+                                     var hg = (((B.shop_hour_all_brand || {})[shop]) || {})[th] || {};
+                                     var nv = (((B.shop_staff_pk1020 || {})[shop]) || {})[th] || {};
+                                     var md = (((B.shop_model_data || {})[shop]) || {})[th] || {};
+
+                                     /* 1. khung gio — chi xet 8h-22h nhu anh Thai chot, lay 4 khung nhieu may nhat */
+                                     var KHUNG = ['8h-10h', '10h-12h', '12h-14h', '14h-16h', '16h-18h', '18h-20h', '20h-22h'];
+                                     var dsG = KHUNG.map(function (k) { var o = hg[k] || {}; return { k: k, u: o.units || 0, dt: o.rev || 0 }; });
+                                     var tongG = dsG.reduce(function (s, x) { return s + x.u; }, 0);
+                                     var top4 = dsG.slice().sort(function (a, b) { return b.u - a.u; }).slice(0, 4).filter(function (x) { return x.u > 0; });
+                                     var maxG = top4.length ? top4[0].u : 0;
+
+                                     /* 2. TOP 5 nhan vien PK 10-20M Android */
+                                     var dsNV = Object.keys(nv).map(function (k) {
+                                                    return { ten: k.replace(/^\s*\d+\s*[-–]\s*/, ''), u: nv[k].units || 0, dt: nv[k].rev || 0 };
+                                     }).filter(function (z) { return z.u > 0; })
+                                       .sort(function (a, b) { return (b.u - a.u) || (b.dt - a.dt); });
+                                     var tongNV = dsNV.reduce(function (s, x) { return s + x.u; }, 0);
+                                     var top5NV = dsNV.slice(0, 5);
+
+                                     /* 3. TOP san pham PK 10-20M theo 3 hang */
+                                     var HANG3 = [{ ten: 'OPPO', re: /oppo/i }, { ten: 'Samsung', re: /samsung/i }, { ten: 'Xiaomi', re: /xiaomi/i }];
+                                     var dsMD = Object.keys(md).map(function (x) {
+                                                    var o = md[x] || {}, u = o.units || 0, dt = o.rev || 0;
+                                                    return { ten: x, u: u, dt: dt, gia: u ? dt / u : 0, hang: o.brand || '' };
+                                     }).filter(function (z) { return z.u > 0 && z.gia >= 10e6 && z.gia < 20e6; });
+                                     var theoHang = HANG3.map(function (h) {
+                                                    var ds = dsMD.filter(function (z) { return h.re.test(z.hang); })
+                                                                 .sort(function (a, b) { return (b.u - a.u) || (b.dt - a.dt); });
+                                                    return { ten: h.ten, ds: ds.slice(0, 5), tong: ds.reduce(function (s, x) { return s + x.u; }, 0) };
+                                     });
+                                     var tongPK3 = theoHang.reduce(function (s, x) { return s + x.tong; }, 0);
+
+                                     if (!tongG && !tongNV && !tongPK3) {
+                                                    return '<div class="bc-sct"><div class="bc-sct-trong">Tháng ' + esc(th) + ': shop này chưa có số chi tiết (giờ bán / nhân viên / model).</div></div>';
+                                     }
+
+                                     var h = '<div class="bc-sct">';
+                                     h += '<div class="bc-sct-dau"><b>' + esc(tenShopNgan(shop)) + '</b> · tháng ' + esc(th)
+                                        + ' · <b>' + fInt(tongG) + '</b> máy toàn shop · <b>' + fInt(tongPK3) + '</b> máy PK 10-20M của 3 hãng</div>';
+                                     h += '<div class="bc-sct-luoi">';
+
+                                     /* --- o 1: khung gio --- */
+                                     h += '<div class="bc-sct-o"><div class="bc-sct-ten">4 khung giờ bán tốt nhất <small>8h–22h · toàn bộ máy của shop</small></div>';
+                                     if (!top4.length) h += '<div class="bc-sct-trong">Chưa có số theo giờ.</div>';
+                                     else h += '<table class="bc-sct-bang">' + top4.map(function (x, i) {
+                                                    var p = maxG ? Math.round(x.u / maxG * 100) : 0;
+                                                    var pc = tongG ? (x.u / tongG * 100) : 0;
+                                                    return '<tr><td class="bc-sct-hang">' + (i + 1) + '</td><td class="bc-sct-gio"><b>' + esc(x.k) + '</b></td>'
+                                                       + '<td class="bc-sct-thanh"><i style="width:' + p + '%;background:' + mau('MWG') + '"></i></td>'
+                                                       + '<td class="bc-sct-so"><b>' + fInt(x.u) + '</b> máy</td>'
+                                                       + '<td class="bc-sct-pc">' + pc.toFixed(0) + '%</td></tr>';
+                                     }).join('') + '</table>';
+                                     h += '</div>';
+
+                                     /* --- o 2: top 5 nhan vien --- */
+                                     h += '<div class="bc-sct-o"><div class="bc-sct-ten">TOP 5 nhân viên <small>PK 10-20M Android · ' + fInt(tongNV) + ' máy / ' + dsNV.length + ' người</small></div>';
+                                     if (!top5NV.length) h += '<div class="bc-sct-trong">Tháng này shop chưa bán máy PK 10-20M Android.</div>';
+                                     else {
+                                                    var maxNV = top5NV[0].u || 1;
+                                                    h += '<table class="bc-sct-bang">' + top5NV.map(function (x, i) {
+                                                       return '<tr><td class="bc-sct-hang">' + (i + 1) + '</td><td class="bc-sct-nv" title="' + esc(x.ten) + '">' + esc(x.ten) + '</td>'
+                                                          + '<td class="bc-sct-thanh"><i style="width:' + Math.round(x.u / maxNV * 100) + '%;background:' + mauHang('oppo') + '"></i></td>'
+                                                          + '<td class="bc-sct-so"><b>' + fInt(x.u) + '</b> máy</td>'
+                                                          + '<td class="bc-sct-pc">' + fTyNgan(x.dt) + '</td></tr>';
+                                                    }).join('') + '</table>';
+                                     }
+                                     h += '</div></div>';
+
+                                     /* --- o 3: top san pham 3 hang --- */
+                                     h += '<div class="bc-sct-o bc-sct-rong"><div class="bc-sct-ten">TOP sản phẩm PK 10-20M <small>đơn giá 10–20 triệu · mỗi hãng 5 model bán nhiều nhất</small></div><div class="bc-sct-3">';
+                                     h += theoHang.map(function (H) {
+                                                    var mh = mauHang(H.ten.toLowerCase());
+                                                    var s = '<div class="bc-sct-cot"><div class="bc-sct-hang-ten"><i style="background:' + mh + '"></i>' + esc(H.ten)
+                                                       + ' <b>' + fInt(H.tong) + '</b> máy</div>';
+                                                    if (!H.ds.length) s += '<div class="bc-sct-trong">Không có máy 10-20M.</div>';
+                                                    else s += '<table class="bc-sct-bang">' + H.ds.map(function (x) {
+                                                       return '<tr><td class="bc-sct-md" title="' + esc(x.ten) + '">' + esc(x.ten) + '</td>'
+                                                          + '<td class="bc-sct-so"><b>' + fInt(x.u) + '</b></td>'
+                                                          + '<td class="bc-sct-pc">' + fTyNgan(x.dt) + '</td></tr>';
+                                                    }).join('') + '</table>';
+                                                    return s + '</div>';
+                                     }).join('');
+                                     h += '</div></div></div>';
+                                     return h;
+                        }
+
                         function ve() {
                                      var shops = mSel ? shopMWG(khoangThang(+mSel).tu, khoangThang(+mSel).denCo) : shopNay;
+                                     var thangCT = mSel ? +mSel : thangKy;
                                      var g = gomTheo(shops, function (x) { return x.size; });
                                      var ds = SIZE.filter(function (s) { return g[s]; }).concat(Object.keys(g).filter(function (s) { return SIZE.indexOf(s) < 0; }));
                                      var h = '<table class="bc-bang"><thead><tr><th>Size</th><th>Shop</th><th>Có bán</th><th>Máy OPPO</th><th>Máy chợ</th>' + dauCotChinh + '<th>OPPO/shop</th></tr></thead><tbody>';
@@ -410,14 +510,24 @@
                              var tbO = a.shops ? a.oU / a.shops : 0;
                                                                      h += '<tr><td colspan="9"><div class="bc-cuon"><table class="bc-bang"><thead><tr><th>Shop</th><th>Sale</th><th>Máy OPPO</th><th>Máy chợ</th>' + dauCotChinh + '</tr></thead><tbody>'
                                                                                         + '<tr class="bc-tb-nhom"><td colspan="8">Trung bình nhóm Size ' + esc(sz) + ': <b>' + tbO.toFixed(1) + '</b> máy OPPO/shop · PK <b>' + (a.shops ? (a.pkO / a.shops).toFixed(1) : '0') + '</b>/shop · Share D.S <b>' + pcCh(shDs(a, a.oU)) + '</b> · Share D.T <b>' + pcCh(shDt(a, a.oDt)) + '</b> — số nào <span class="bc-giam-chu">đỏ</span> là dưới trung bình</td></tr>'
-                                                                                        + rs.map(function (r) { return '<tr' + (!r.x.oU ? ' class="bc-mo"' : '') + '><td title="' + esc(r.s) + '">' + esc(tenShopNgan(r.s)) + '</td><td>' + esc(String(r.x.sale).split(' ').slice(-2).join(' ')) + '</td><td>' + do_(r.x.oU < tbO, '<b>' + fInt(r.x.oU) + '</b>') + '</td><td>' + fInt(r.x.tU) + '</td>' + oCotChinh(r.x, a) + '</tr>'; }).join('')
+                                                                                        + rs.map(function (r) {
+                                                                                                       var moS = !!moShop[r.s];
+                                                                                                       return '<tr class="bc-shop-dong' + (!r.x.oU ? ' bc-mo' : '') + (moS ? ' bc-shop-dang-mo' : '') + '" data-shop="' + esc(r.s) + '" style="cursor:pointer"><td title="' + esc(r.s) + '">' + (moS ? '▾ ' : '▸ ') + esc(tenShopNgan(r.s)) + '</td><td>' + esc(String(r.x.sale).split(' ').slice(-2).join(' ')) + '</td><td>' + do_(r.x.oU < tbO, '<b>' + fInt(r.x.oU) + '</b>') + '</td><td>' + fInt(r.x.tU) + '</td>' + oCotChinh(r.x, a) + '</tr>'
+                                                                                                          + (moS ? '<tr class="bc-shop-ct"><td colspan="9">' + chiTietShop(r.s, thangCT) + '</td></tr>' : '');
+                                                                                        }).join('')
                                                                         + '</tbody></table></div></td></tr>';
                                                     }
                                      });
                                      h += '<tr class="bc-tong"><td>Tổng</td><td>' + tg.shops + '</td><td>' + (tg.shops - tg.shop0) + '</td><td>' + fInt(tg.oU) + '</td><td>' + fInt(tg.tU) + '</td>' + oCotChinh(tg) + '<td>' + (tg.shops ? (tg.oU / tg.shops).toFixed(1) : '-') + '</td></tr></tbody></table>';
                                      box.innerHTML = h;
                         }
-                        box.addEventListener('click', function (e) { var tr = e.target.closest('.bc-size-dong'); if (!tr) return; var sz = tr.getAttribute('data-sz'); mo[sz] = !mo[sz]; ve(); });
+                        box.addEventListener('click', function (e) {
+                                     /* bam SHOP thi bung chi tiet shop — bat truoc vi dong shop nam trong bang con */
+                                     var trS = e.target.closest('.bc-shop-dong');
+                                     if (trS) { var sp = trS.getAttribute('data-shop'); moShop[sp] = !moShop[sp]; ve(); return; }
+                                     var tr = e.target.closest('.bc-size-dong'); if (!tr) return;
+                                     var sz = tr.getAttribute('data-sz'); mo[sz] = !mo[sz]; ve();
+                        });
                         ve();
                         grid.appendChild(kq);
              })();

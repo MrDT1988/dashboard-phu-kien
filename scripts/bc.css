@@ -209,6 +209,33 @@ html.bc-dt .bc-3bd { grid-template-columns: 1fr; }
 /* 09/09 anh Thai: khoi 6 "So ban ngay" — chi TO DO con so, bo nen do ca o cho do roi mat. */
 .bc-mini td.bc-duoi-tb { color: var(--bc-giam); font-weight: 800; }
 
+/* ===== 09/09 anh Thai: CHI TIET SHOP (bam vao shop trong khoi 4 Size shop) ===== */
+.bc-bang tr.bc-shop-dang-mo > td { background: color-mix(in srgb, currentColor 5%, transparent); }
+.bc-bang tr.bc-shop-ct > td { padding: 0 !important; background: transparent; }
+.bc-sct { padding: 12px 14px 14px; border-radius: 10px; background: color-mix(in srgb, currentColor 4%, transparent); margin: 2px 0 8px; }
+.bc-sct-dau { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+.bc-sct-luoi { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; }
+.bc-sct-o { min-width: 0; }
+.bc-sct-rong { margin-top: 14px; }
+.bc-sct-ten { font-size: 11.5px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; margin-bottom: 6px; }
+.bc-sct-ten small { font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--text-secondary); margin-left: 6px; }
+.bc-sct-trong { font-size: 12px; color: var(--text-secondary); padding: 6px 0; }
+.bc-sct-bang { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.bc-sct-bang td { padding: 5px 6px; border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent); vertical-align: middle; }
+.bc-sct-bang tr:last-child td { border-bottom: 0; }
+.bc-sct-hang { width: 18px; color: var(--text-secondary); font-size: 11px; }
+.bc-sct-gio { width: 68px; white-space: nowrap; }
+.bc-sct-nv, .bc-sct-md { max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-sct-thanh { width: 34%; }
+.bc-sct-thanh i { display: block; height: 8px; border-radius: 4px; min-width: 3px; }
+.bc-sct-so { width: 62px; text-align: right; white-space: nowrap; }
+.bc-sct-pc { width: 60px; text-align: right; white-space: nowrap; color: var(--text-secondary); font-size: 11.5px; }
+.bc-sct-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+.bc-sct-cot { min-width: 0; }
+.bc-sct-hang-ten { font-size: 12px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.bc-sct-hang-ten i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+@media (max-width: 820px) { .bc-sct-luoi, .bc-sct-3 { grid-template-columns: minmax(0,1fr); } }
+
 /* ---- Anh Thái 06/09: KA & IND ---- */
 /* Ô giảm/xấu đi trong bảng mini (thay bản đồ nhiệt) */
 .bc-mini td.bc-giam-so { color: var(--bc-giam); font-weight: 800; }
