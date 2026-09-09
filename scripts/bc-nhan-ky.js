@@ -121,7 +121,22 @@
   try {
     var st = document.createElement('style');
     st.id = 'bc-nhan-ky-css';
-    st.textContent = '.bc-hang-bd{grid-template-columns:minmax(0,1.618fr) minmax(0,1fr) !important}';
+    st.textContent = [
+      /* Ty le vang cho hang hai bieu do (cai chinh 1.618 — cai phu 1) */
+      '.bc-hang-bd{grid-template-columns:minmax(0,1.618fr) minmax(0,1fr) !important}',
+      /* 09/09 — KHOANG TRANG & DUONG KE (quy tac trinh bay anh Thai gui):
+         bang so dai doc de moi mat vi ke ngang lien tuc va dong qua sat. Gian dong ra,
+         ha duong ke xuong con rat mo, giu dam moi 5 dong mot vach de mat con bam duoc hang. */
+      '.bc-bang th,.bc-bang td{padding:9px 10px !important}',
+      '.bc-bang td{border-bottom-color:color-mix(in srgb,currentColor 8%,transparent) !important}',
+      '.bc-bang tbody tr:nth-child(5n) td{border-bottom-color:color-mix(in srgb,currentColor 20%,transparent) !important}',
+      '.bc-bang tbody tr:hover td{background:color-mix(in srgb,currentColor 4%,transparent)}',
+      '.bc-mini th,.bc-mini td{padding:7px 5px !important}',
+      '.bc-mini td{border-bottom-color:color-mix(in srgb,currentColor 8%,transparent) !important}',
+      /* khoi tho hon mot chut */
+      '.bc-khoi{padding:18px 20px 16px !important}',
+      '.bc-luoi{gap:22px !important}'
+    ].join('\n');
     document.head.appendChild(st);
   } catch (e) {}
 

@@ -436,8 +436,22 @@
                                      }).sort(function (x, y) { return (y.co.length - x.co.length) || ((x.p == null ? 0 : x.p) - (y.p == null ? 0 : y.p)); });
                                      var h = '<table class="bc-bang"><thead><tr><th>Sale / ASM</th><th>Máy OPPO</th><th>so ' + esc(nhanT) + '</th><th>Máy chợ</th>' + dauCotChinh + '<th>± điểm</th><th>Shop</th><th>Shop 0 máy</th><th>DT OPPO</th><th>Cảnh báo</th></tr></thead><tbody>';
                                      rows.forEach(function (r) {
-                                                    h += '<tr' + (r.co.length ? ' class="bc-canh"' : '') + '><td>' + esc(r.s) + '</td><td><b>' + fInt(r.a.oU) + '</b></td><td>' + chip(r.p) + '</td><td>' + fInt(r.a.tU) + '</td>' + oCotChinh(r.a)
+                                                    h += '<tr class="bc-sale-dong' + (r.co.length ? ' bc-canh' : '') + '" data-sale="' + esc(r.s) + '" style="cursor:pointer"><td><b>' + (mo[r.s] ? '▾ ' : '▸ ') + esc(r.s) + '</b></td><td><b>' + fInt(r.a.oU) + '</b></td><td>' + chip(r.p) + '</td><td>' + fInt(r.a.tU) + '</td>' + oCotChinh(r.a)
                                                       + '<td>' + (r.shT != null ? chipDiem(r.sh - r.shT) : '—') + '</td><td>' + r.a.shops + '</td><td>' + (r.a.shop0 ? '<span class="bc-giam-chu"><b>' + r.a.shop0 + '</b></span>' : '0') + '</td><td>' + fTyNgan(r.a.oDt) + '</td><td>' + (r.co.length ? '<span class="bc-co">' + r.co.map(esc).join(' · ') + '</span>' : '<span class="bc-len-chu">ổn</span>') + '</td></tr>';
+                                                    /* 09/09: bam vao Sale -> lie^t ke^ shop cua Sale do, xep theo may OPPO giam dan.
+                                                       To DO shop nao duoi trung binh cua chinh Sale do. */
+                                                    if (mo[r.s]) {
+                                                                   var rsS = (r.a.ten || []).map(function (n) { return { n: n, x: shopsHT ? shopsHT[n] : null }; })
+                                                                                  .filter(function (z) { return z.x; })
+                                                                                  .sort(function (p, q) { return q.x.oU - p.x.oU; });
+                                                                   var tbS = r.a.shops ? r.a.oU / r.a.shops : 0;
+                                                                   h += '<tr><td colspan="20"><div class="bc-cuon"><table class="bc-bang"><thead><tr><th>Shop</th><th>Size</th><th>Máy OPPO</th><th>Máy chợ</th>' + dauCotChinh + '</tr></thead><tbody>'
+                                                                      + '<tr class="bc-tb-nhom"><td colspan="20">Trung bình của <b>' + esc(r.s) + '</b>: <b>' + tbS.toFixed(1) + '</b> máy OPPO/shop · ' + r.a.shops + ' shop · ' + (r.a.shop0 || 0) + ' shop 0 máy — shop dưới mức này tô đỏ</td></tr>'
+                                                                      + rsS.map(function (z) {
+                                                                                     return '<tr' + (!z.x.oU ? ' class="bc-mo"' : '') + '><td title="' + esc(z.n) + '">' + esc(tenShopNgan(z.n)) + '</td><td>' + esc(z.x.size || '') + '</td><td>' + do_(z.x.oU < tbS, '<b>' + fInt(z.x.oU) + '</b>') + '</td><td>' + fInt(z.x.tU) + '</td>' + oCotChinh(z.x) + '</tr>';
+                                                                      }).join('')
+                                                                      + '</tbody></table></div></td></tr>';
+                                                    }
                                      });
                                      box.innerHTML = h + '</tbody></table>';
                                      var xau = rows.filter(function (r) { return r.co.length; });
