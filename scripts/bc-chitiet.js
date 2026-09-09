@@ -415,13 +415,20 @@
                         var mSel = '';
                         var kq = khoi({ stt: 5, ten: 'Hiệu suất Sale / ASM — OPPO so với thị trường', rong: true,
                                                  dangXem: 'Thêm PK 10-20M · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · cờ đỏ: giảm >20% hoặc mất ≥3 điểm thị phần' });
-                        $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; ve(); }));
+                        $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; mo = {}; ve(); }));
                         var box = el('div', 'bc-cuon'); $('.bc-than', kq).appendChild(box);
+                        /* 09/09 anh Thai: bam vao Sale thi bung chi tiet shop cua Sale do */
+                        var mo = {};
+                        box.addEventListener('click', function (e) {
+                                     var tr = e.target.closest('.bc-sale-dong'); if (!tr) return;
+                                     var s = tr.getAttribute('data-sale'); mo[s] = !mo[s]; ve();
+                        });
                         function ve() {
-                                     var A, Bt, nhanT;
-                                     if (!mSel) { A = saleNay; Bt = saleTruoc; nhanT = ctx.tenKyTruoc || 'kỳ trước'; }
+                                     var A, Bt, nhanT, shopsHT;
+                                     if (!mSel) { A = saleNay; Bt = saleTruoc; nhanT = ctx.tenKyTruoc || 'kỳ trước'; shopsHT = shopNay; }
                                      else {
-                                                    var m = +mSel, kk = khoangThang(m); A = gomTheo(shopMWG(kk.tu, kk.denCo), function (x) { return x.sale; });
+                                                    var m = +mSel, kk = khoangThang(m), spHT = shopMWG(kk.tu, kk.denCo);
+                                                    shopsHT = spHT; A = gomTheo(spHT, function (x) { return x.sale; });
                                                     var kp = m > 1 ? khoangThang(m - 1) : null;
                                                     Bt = kp ? gomTheo(shopMWG(kp.tu, kp.denCo), function (x) { return x.sale; }) : null;
                                                     nhanT = kp ? 'tháng ' + (m - 1) : 'kỳ trước';
