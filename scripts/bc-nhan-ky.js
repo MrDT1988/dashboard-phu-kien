@@ -277,14 +277,19 @@
     var pan = null;
     try { pan = ch.canvas && ch.canvas.closest ? ch.canvas.closest('[id^="panel-"]') : null; } catch (e) {}
     if (pan && pan.id === 'panel-mwg') {
-      var hangs = [], segs = [], kKy = ky ? ky.k : null, nhanPhu = [];
-      var xet = function (s, la) {
-        var l = la || loaiNhan(s);
+      var hangs = [], segs = [], kKy = ky ? ky.k : null, nhanPhu = [], lac = false;
+      /* MOI nhan deu phai doc duoc la ky / hang / phan khuc. Chi can MOT nhan khong doc duoc
+         ("Khác", "TỔNG", "2026"…) la BO LUON — vi neu bo qua no thi so trong tooltip se
+         khong con la so cua dung cai cot dang re chuot. Tha khong hien con hon hien sai. */
+      var xet = function (s) {
+        var l = loaiNhan(s);
         if (l === 'hang') { hangs.push(s); nhanPhu.push(s); }
         else if (l === 'seg') { segs.push(s); nhanPhu.push(s); }
+        else if (l !== 'ky') lac = true;
       };
       if (!ky) xet(nhan);
       tens.forEach(function (t) { xet(t); });
+      if (lac) return [];
       if (!kKy) kKy = kyHienTai();
       if (kKy && (hangs.length || segs.length)) {
         var g2 = modelChoMWG(kKy.tu, kKy.denCo || kKy.den, hangs, segs);
