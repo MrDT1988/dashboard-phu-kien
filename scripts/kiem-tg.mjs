@@ -562,7 +562,9 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
 
     // --- F4b. ROBOT: co goi san van phai di duong cu, khong duoc dung lai hoi ma
     {
-      const { w, daGoi } = moTrang({ khoaSan: 'K', laRobot: true, dapTraLoi: phucVu });
+      /* 09/09: robot chi di duoc duong lui khi co CA __BO_QUA_GOI VA __AS_KEY —
+         thieu chia khoa thi duong lui cung khong tra so, nen tg.html chan lai. */
+      const { w, daGoi } = moTrang({ khoaSan: 'K', laRobot: true, chiaKhoaBom: 'K', dapTraLoi: phucVu });
       await cho(3000);
       const goiAS = daGoi.filter((u) => u.indexOf('script.google.com') >= 0);
       ghi('Robot: bo qua goi, di thang duong cu', goiAS.length > 0,
@@ -575,7 +577,10 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
 
     // --- F5. Khong co goi -> admin ve duong cu duoc
     {
-      const { w, daGoi } = moTrang({ khoaSan: 'K', dapTraLoi: (u) => (u.indexOf('dbtg-') >= 0 ? false : null) });
+      /* 09/09: tu 06/09 duocPhepLui() chi cho ADMIN DA DANG NHAP di duong lui.
+         Khong co danh tinh thi khong lui — do la dung thiet ke. Nen kich ban nay
+         phai dang nhap san bang tai khoan admin thi phep kiem moi con y nghia. */
+      const { w, daGoi } = moTrang({ khoaSan: 'K', maSan: MA_AD, aiSan: uAd, dapTraLoi: (u) => (u.indexOf('dbtg-') >= 0 ? false : null) });
       await cho(3000);
       const goiAS = daGoi.filter((u) => u.indexOf('script.google.com') >= 0);
       ghi('Khong co goi: tu quay ve duong cu', goiAS.length > 0, goiAS.length + ' loi goi');
