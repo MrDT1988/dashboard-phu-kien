@@ -387,7 +387,7 @@
              (function () {
                         var mSel = '';
                         var kq = khoi({ stt: 4, ten: 'Hiệu suất theo Size shop', rong: true,
-          dangXem: 'PK 10-20M (trong ngoặc là share OPPO của phân khúc) · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · bấm dòng Size để mở chi tiết shop, bấm tiếp vào SHOP để xem khung giờ bán tốt nhất + TOP nhân viên + TOP sản phẩm PK 10-20M — chỉ số OPPO thấp hơn mặt bằng chung được tô đỏ' });
+          dangXem: 'PK 10-20M (trong ngoặc là share OPPO của phân khúc) · Share D.S · Share D.T của OPPO / Samsung / Xiaomi · bấm dòng Size để mở chi tiết shop, bấm tiếp vào SHOP để xem 4 khung giờ bán tốt nhất và TOP 5 nhân viên (họ bán gì · tỉ lệ OPPO) — chỉ số OPPO thấp hơn mặt bằng chung được tô đỏ' });
                 $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_MWG, null, true, function (v) { mSel = v; mo = {}; moShop = {}; ve(); }));
                         var box = el('div', 'bc-cuon'); $('.bc-than', kq).appendChild(box);
                         var mo = {}, moShop = {};
