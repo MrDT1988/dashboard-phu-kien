@@ -1,6 +1,6 @@
 {
- "tong": 63,
- "khongDat": 5,
+ "tong": 64,
+ "khongDat": 2,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
@@ -34,24 +34,29 @@
    "chiTiet": ""
   },
   {
-   "ten": "Trang co that su goi Apps Script luc nap",
-   "dat": false,
-   "chiTiet": "0 loi goi"
+   "ten": "Duong lui co that su goi Apps Script (de con canh lop boc fetch)",
+   "dat": true,
+   "chiTiet": "6 loi goi"
+  },
+  {
+   "ten": "MOI loi goi Apps Script deu kem chia khoa",
+   "dat": true,
+   "chiTiet": "du 6 loi goi"
   },
   {
    "ten": "KHONG dinh chia khoa vao dia chi ngoai Apps Script",
    "dat": true,
-   "chiTiet": "da kiem 1 loi goi khac"
+   "chiTiet": "da kiem 0 loi goi khac"
   },
   {
    "ten": "Chia khoa sai: bat duoc va hoi lai",
-   "dat": false,
+   "dat": true,
    "chiTiet": "Apps Script tra \"Tu choi\" -> phai mo lai o nhap"
   },
   {
    "ten": "Chia khoa sai: xoa chia khoa cu di, khong giu lai cai hong",
-   "dat": false,
-   "chiTiet": "con lai: \"KHOA-SAI\""
+   "dat": true,
+   "chiTiet": "con lai: null"
   },
   {
    "ten": "Bat dung cau tu choi cua Apps Script",
