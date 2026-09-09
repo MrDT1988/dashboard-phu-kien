@@ -1,6 +1,6 @@
 {
  "tong": 64,
- "khongDat": 2,
+ "khongDat": 0,
  "ghiChu": "So tu 3 chu so tro len da duoc bit (###) vi repo la public.",
  "pheps": [
   {
@@ -310,8 +310,8 @@
   },
   {
    "ten": "Robot: bo qua goi, di thang duong cu",
-   "dat": false,
-   "chiTiet": "0 loi goi Apps Script"
+   "dat": true,
+   "chiTiet": "6 loi goi Apps Script"
   },
   {
    "ten": "Robot: KHONG dung lai o man hinh chon nguoi / nhap ma",
@@ -320,8 +320,8 @@
   },
   {
    "ten": "Khong co goi: tu quay ve duong cu",
-   "dat": false,
-   "chiTiet": "0 loi goi"
+   "dat": true,
+   "chiTiet": "6 loi goi"
   }
  ]
 }
