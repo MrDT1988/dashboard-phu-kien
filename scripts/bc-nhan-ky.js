@@ -135,7 +135,20 @@
       '.bc-mini td{border-bottom-color:color-mix(in srgb,currentColor 8%,transparent) !important}',
       /* khoi tho hon mot chut */
       '.bc-khoi{padding:18px 20px 16px !important}',
-      '.bc-luoi{gap:22px !important}'
+      '.bc-luoi{gap:22px !important}',
+      /* 09/09 — SIET MAN HINH DAU MOI TAB (viec 4).
+         Truoc: dau trang cao 352px tren man 885px, nen khoi "Ket qua" bi cat doi —
+         mo dashboard len la phai cuon moi thay du so. Gio ep dau trang con ~261px de
+         MAN HINH DAU CHI CON: chon ky + the ket qua. Chi cat phan trang tri, KHONG cat so:
+         giu nguyen dong "So lieu toi ngay…", nut Lam moi, the Sellout, Cai dat nang cao.
+         Chi an dong mo ta tinh ("Tong quan + Chi tiet MWG / KA / IND — …") vi no khong
+         bao gio doi, doc mot lan la biet. Ap chung cho ca 4 tab vi dau trang dung chung. */
+      '.dashboard-header{padding:10px 20px !important;margin-bottom:8px !important}',
+      '.dashboard-header-main h1{font-size:17px !important;margin:0 0 2px !important;line-height:1.25 !important}',
+      '.dashboard-header-main>p:first-of-type{display:none !important}',
+      '.bc-bar{padding-top:4px !important;padding-bottom:4px !important;margin:6px 0 4px !important}',
+      '.db-tg-tabnav button{padding-top:6px !important;padding-bottom:6px !important}',
+      '.bc-ky-bar{padding:6px 12px !important;margin-bottom:-6px !important}'
     ].join('\n');
     document.head.appendChild(st);
   } catch (e) {}
