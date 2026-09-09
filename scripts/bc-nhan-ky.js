@@ -31,7 +31,7 @@
   'use strict';
   if (typeof Chart === 'undefined' || !Chart.register) return;
 
-  var ALPHA = 0.68;               /* anh Thai chot 09/09: mo nhe, chu trong long cot van doc duoc */
+  var ALPHA = 0.50;   /* 09/09 lan 2: anh Thai bao "khong thay thay doi gi nhieu" -> nhan manh hon, tu 0.68 xuong 0.50 */               /* anh Thai chot 09/09: mo nhe, chu trong long cot van doc duoc */
   var O_KY  = 'bc-ky';            /* id o chon ky tren dau trang */
 
   /* ha do dam, giu nguyen sac mau */

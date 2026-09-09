@@ -36,7 +36,7 @@ const cho = (ms) => new Promise((r) => setTimeout(r, ms));
 // ---------------------------------------------------------------- dung trang gia
 // tg.html nap Chart.js / papaparse tu CDN. jsdom khong tai script ngoai, nen
 // phai dat san vai bien gia, neu khong trang vo vi ly do khong lien quan.
-function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, dapTraLoi = null } = {}) {
+function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, chiaKhoaBom = null, dapTraLoi = null } = {}) {
   const html = fs.readFileSync(FILE, 'utf8');
   const daGoi = [];
   const dom = new JSDOM(html, {
@@ -64,6 +64,10 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
       if (maSan) w.localStorage.setItem('dbtg_ma', maSan);
       if (aiSan) w.localStorage.setItem('dbtg_ai', JSON.stringify(aiSan));
       if (laRobot) w.__BO_QUA_GOI = true;
+      /* duocPhepLui() trong tg.html (sua 07/09) chi mo duong lui khi CO CA HAI:
+         __BO_QUA_GOI va __AS_KEY. Thieu mot cai la trang khong goi Apps Script,
+         va 3 phep kiem lop boc fetch se truot oan. */
+      if (chiaKhoaBom) w.__AS_KEY = chiaKhoaBom;
       // Moi loi goi ra ngoai deu bi chan lai va ghi so
       w.fetch = (u, o) => {
         daGoi.push(String(u));
@@ -109,14 +113,22 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
 
   // ============ B. DA CO CHIA KHOA -> KHONG HOI NUA ============
   {
-    const { w, daGoi } = moTrang({ khoaSan: 'KHOA-CU-DA-LUU' });
+    /* Sua 09/09/2026 — VI SAO THEM laRobot:
+       Tu PHUONG AN B (05/09) admin doc goi robot, va tu 06/09 duocPhepLui() chi cho
+       admin DA DANG NHAP di duong lui -> trang binh thuong KHONG con goi Apps Script
+       luc nap. Do la DUNG THIET KE, nhung 3 phep kiem duoi day sinh ra de canh lop boc
+       fetch (dinh chia khoa dung cho, khong dinh nham noi khac, chia khoa sai thi hoi lai)
+       — muon canh duoc thi phai dat trang vao dung tinh huong CO goi Apps Script.
+       __BO_QUA_GOI = true la co robot dung: bo qua goi ma hoa, di duong Apps Script.
+       Khong ha tieu chuan, chi dat lai kich ban cho khop cach he thong chay hom nay. */
+    const { w, daGoi } = moTrang({ khoaSan: 'KHOA-CU-DA-LUU', laRobot: true, chiaKhoaBom: 'KHOA-CU-DA-LUU' });
     await cho(1500);
     ghi('Da co chia khoa: khong hien man hinh nhap nua',
       !w.document.getElementById('as-key-lop'));
 
     // Lop boc fetch phai dinh chia khoa vao MOI loi goi Apps Script
     const goiAS = daGoi.filter((u) => u.indexOf('script.google.com') >= 0);
-    ghi('Trang co that su goi Apps Script luc nap', goiAS.length > 0,
+    ghi('Duong lui co that su goi Apps Script (de con canh lop boc fetch)', goiAS.length > 0,
       goiAS.length + ' loi goi');
     if (goiAS.length) {
       const thieu = goiAS.filter((u) => u.indexOf('key=') < 0);
@@ -135,8 +147,10 @@ function moTrang({ khoaSan = null, maSan = null, aiSan = null, laRobot = false, 
 
   // ============ C. CHIA KHOA SAI -> PHAI DUOC HOI LAI ============
   {
+    /* Sua 09/09/2026: cung ly do khoi B — phai di duong lui thi luong
+       "chia khoa sai -> hoi lai -> xoa chia khoa hong" moi thuc su chay. */
     const { w } = moTrang({
-      khoaSan: 'KHOA-SAI',
+      khoaSan: 'KHOA-SAI', laRobot: true, chiaKhoaBom: 'KHOA-SAI',
       dapTraLoi: (u) => (u.indexOf('script.google.com') >= 0
         ? JSON.stringify({ error: 'Tu choi: thieu hoac sai chia khoa.' }) : '[]'),
     });

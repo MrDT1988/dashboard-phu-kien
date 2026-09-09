@@ -430,7 +430,7 @@
                                 kenhCoSo.forEach(function (c) {
                                              var vs = w12.map(function (t) { return cs.lay(t, c) || 0; });
                                              h += '<tr><td><i class="bc-cham" style="background:' + mau(c) + '"></i>' + c + '</td>' + vs.map(function (v, i) {
-                                                            tong[i] += v; var cl = ''; if (i > 0 && vs[i - 1]) { var p = (v - vs[i - 1]) / vs[i - 1]; cl = p > .03 ? ' bc-len' : p < -.03 ? ' bc-giam' : ''; }
+                                                            tong[i] += v; var cl = ''; /* 09/09 anh Thai: BO ban do nhiet — chi to DO o nao giam so voi cot lien truoc */ if (i > 0 && vs[i - 1] != null && v < vs[i - 1]) cl = ' bc-giam-so';
                                                             return '<td class="' + cl + (i === w12.length - 1 ? ' bc-cot-chon' : '') + '">' + (v ? cs.fmt(v) : '-') + '</td>';
                                              }).join('') + '</tr>';
                                 });
@@ -467,7 +467,7 @@
                                 kenhCoSo.forEach(function (c) {
                                              var vs = labels.map(function (_, i) { return cs.lay(i, c) || 0; });
                                              h += '<tr><td><i class="bc-cham" style="background:' + mau(c) + '"></i>' + c + '</td>' + vs.map(function (v, i) {
-                                                            tong[i] += v; var cl = ''; if (i > 0 && vs[i - 1]) { var p = (v - vs[i - 1]) / vs[i - 1]; cl = p > .03 ? ' bc-len' : p < -.03 ? ' bc-giam' : ''; }
+                                                            tong[i] += v; var cl = ''; /* 09/09 anh Thai: BO ban do nhiet — chi to DO o nao giam so voi cot lien truoc */ if (i > 0 && vs[i - 1] != null && v < vs[i - 1]) cl = ' bc-giam-so';
                                                             return '<td class="' + cl + (i === labels.length - 1 ? ' bc-cot-chon' : '') + '">' + (v ? cs.fmt(v) : '-') + '</td>';
                                              }).join('') + '</tr>';
                                 });
