@@ -165,22 +165,49 @@
     return g;
   }
 
-  /* model cua 1 hoac nhieu HANG tai cho MWG trong khoang ngay */
-  function modelChoMWG(tu, den, hangs) {
+  /* "<5M" -> [0,5] · "5-10M" -> [5,10] · ">30M" -> [30,999] · khac -> null.
+     Bieu do gop phan khuc lai ("<5M" = <3M + 3-5M) nen phai so theo khoang gia. */
+  function bien(s) {
+    var t = String(s == null ? '' : s).replace(/\s/g, '');
+    var m = /^<(\d+)M$/i.exec(t); if (m) return [0, +m[1]];
+    m = /^>(\d+)M$/i.exec(t); if (m) return [+m[1], 9999];
+    m = /^(\d+)-(\d+)M$/i.exec(t); if (m) return [+m[1], +m[2]];
+    return null;
+  }
+
+  /* model tai cho MWG — loc theo khoang ngay + (tuy chon) hang + (tuy chon) phan khuc */
+  function modelChoMWG(tu, den, hangs, segs) {
     var B = BCC(); if (!B || !B.du) return null;
     var d; try { d = B.du(); } catch (e) { return null; }
     var DL = d && d.B && d.B.daily; if (!DL || !DL.rows) return null;
     var TEN = (DL.brands || []).map(function (x) { return String(x).toLowerCase(); });
-    var MODEL = DL.models || [];
-    var chi = [];
-    hangs.forEach(function (h) { var i = TEN.indexOf(String(h).toLowerCase()); if (i >= 0) chi.push(i); });
-    if (!chi.length) return null;
-    var khoa = tu + '|' + den + '|' + chi.join(',');
+    var SEG = DL.segments || [], MODEL = DL.models || [];
+
+    var chiH = null;
+    if (hangs && hangs.length) {
+      chiH = [];
+      hangs.forEach(function (h) { var i = TEN.indexOf(String(h).toLowerCase()); if (i >= 0) chiH.push(i); });
+      if (!chiH.length) return null;                 /* co doi hang ma khong khop -> khong doan bua */
+    }
+    var chiS = null;
+    if (segs && segs.length) {
+      chiS = [];
+      segs.forEach(function (s) {
+        var b = bien(s); if (!b) return;
+        SEG.forEach(function (ten, i) {
+          var c = bien(ten); if (!c) return;
+          if (c[0] >= b[0] && c[1] <= b[1] && chiS.indexOf(i) < 0) chiS.push(i);
+        });
+      });
+      if (!chiS.length) return null;
+    }
+    var khoa = tu + '|' + den + '|' + (chiH ? chiH.join(',') : '*') + '|' + (chiS ? chiS.join(',') : '*');
     if (BOTAM[khoa]) return BOTAM[khoa];
     var R = DL.rows, g = {};
     for (var i = 0; i < R.length; i++) {
       var x = R[i];
-      if (chi.indexOf(x[4]) < 0) continue;
+      if (chiH && chiH.indexOf(x[4]) < 0) continue;
+      if (chiS && chiS.indexOf(x[3]) < 0) continue;
       var ng = '2026-' + p2(x[0]) + '-' + p2(x[1]);
       if (ng < tu || ng > den) continue;
       var u = x[6] || 0; if (!u) continue;
@@ -189,6 +216,24 @@
     }
     BOTAM[khoa] = g;
     return g;
+  }
+
+  /* mot nhan la gi: ky / ten hang / phan khuc / khong ro */
+  function loaiNhan(s) {
+    if (kyTuNhan(s)) return 'ky';
+    var B = BCC();
+    try {
+      var DL = B.du().B.daily, TEN = (DL.brands || []).map(function (x) { return String(x).toLowerCase(); });
+      if (TEN.indexOf(String(s).toLowerCase()) >= 0) return 'hang';
+    } catch (e) {}
+    if (bien(s)) return 'seg';
+    return '';
+  }
+
+  /* ky dang chon cua tab MWG (dung khi bieu do khong co truc thoi gian) */
+  function kyHienTai() {
+    var B = BCC(); if (!B || !B.boiCanh) return null;
+    try { var c = B.boiCanh(); return (c && c.mwg && c.mwg.k) || (c && c.k) || null; } catch (e) { return null; }
   }
 
   function dongModel(g, tieu) {
@@ -212,8 +257,6 @@
   function chiTietCot(ch, items) {
     if (!items || !items.length) return [];
     var nhan = (ch.data.labels || [])[items[0].dataIndex];
-    var ky = kyTuNhan(nhan); if (!ky) return [];
-    var den = ky.k.denCo || ky.k.den;
     var tens = [];
     items.forEach(function (it) {
       var l = ((ch.data.datasets || [])[it.datasetIndex] || {}).label;
@@ -221,20 +264,36 @@
     });
     if (!tens.length) return [];
 
-    /* (a) duong so la kenh */
+    /* (a) truc la KY + duong so la KENH -> so OPPO noi bo, dung ham modelKy cua bc.js */
+    var ky = kyTuNhan(nhan);
     var laKenh = tens.every(function (t) { return /^(MWG|IND|KA)$/i.test(String(t).trim()); });
-    if (laKenh) {
+    if (ky && laKenh) {
       var g = modelKenh(ky, tens.map(function (t) { return String(t).trim().toUpperCase(); }));
       return dongModel(g, 'Model OPPO ' + (tens.length > 1 ? '(cả 3 kênh)' : tens[0]) + ' bán trong kỳ');
     }
-    /* (b) tab Chi tiet MWG, duong so la ten hang */
-    try {
-      var pan = ch.canvas && ch.canvas.closest ? ch.canvas.closest('[id^="panel-"]') : null;
-      if (pan && pan.id === 'panel-mwg') {
-        var g2 = modelChoMWG(ky.k.tu, den, tens);
-        if (g2) return dongModel(g2, 'Model bán tại chợ MWG — ' + (tens.length > 1 ? tens.length + ' hãng' : tens[0]));
+
+    /* (b) tab Chi tiet MWG: truc va duong so co the la KY / HANG / PHAN KHUC — gom lai
+           thanh bo loc roi quet daily.rows. Thieu truc thoi gian thi lay ky dang chon. */
+    var pan = null;
+    try { pan = ch.canvas && ch.canvas.closest ? ch.canvas.closest('[id^="panel-"]') : null; } catch (e) {}
+    if (pan && pan.id === 'panel-mwg') {
+      var hangs = [], segs = [], kKy = ky ? ky.k : null, nhanPhu = [];
+      var xet = function (s, la) {
+        var l = la || loaiNhan(s);
+        if (l === 'hang') { hangs.push(s); nhanPhu.push(s); }
+        else if (l === 'seg') { segs.push(s); nhanPhu.push(s); }
+      };
+      if (!ky) xet(nhan);
+      tens.forEach(function (t) { xet(t); });
+      if (!kKy) kKy = kyHienTai();
+      if (kKy && (hangs.length || segs.length)) {
+        var g2 = modelChoMWG(kKy.tu, kKy.denCo || kKy.den, hangs, segs);
+        if (g2) {
+          var mo_ = nhanPhu.length > 3 ? nhanPhu.slice(0, 3).join(' · ') + '…' : nhanPhu.join(' · ');
+          return dongModel(g2, 'Model bán tại chợ MWG — ' + mo_);
+        }
       }
-    } catch (e) {}
+    }
     return [];
   }
 
