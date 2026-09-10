@@ -232,6 +232,29 @@
 
   /* model OPPO noi bo, loc theo THANG + kenh / phan khuc / dong may (Reno · khac).
      Chi lam duoc o che do THANG vi crosstab chi co cot thang, khong co ngay. */
+  /* ban do shop -> kenh phu KA, va shop IND -> nhom O.C / Normal.
+     Lay dung ham ma bc-chitiet.js dang dung (window.__bcTarget) nen so khop tuyet doi,
+     khong tu doan theo tien to ten shop (ten shop KA rat lung tung). */
+  var BD = null;
+  function banDo() {
+    if (BD) return BD;
+    BD = { ka: {}, lv: {}, oc: null };
+    try {
+      var E = window.__bcTarget ? window.__bcTarget() : null;
+      if (E && E.kaSub) BD.ka = E.kaSub() || {};
+      if (E && E.ocLevel) BD.oc = E.ocLevel;
+    } catch (e) {}
+    try {
+      var D = window.__exportDataMwg;
+      (D.store_rows || []).forEach(function (r) { if (r.channel === 'IND') BD.lv[r.store] = r.level; });
+    } catch (e) {}
+    return BD;
+  }
+  function nhomOC(store) {
+    var b = banDo(); if (!b.oc) return null;
+    try { var n = b.oc(b.lv[store]); return n && n.group ? n.group : 'Normal'; } catch (e) { return null; }
+  }
+
   function modelCenterLoc(thang, loc) {
     var D = null;
     try { D = (BCC().du() || {}).D || window.__exportDataMwg; } catch (e) { D = window.__exportDataMwg; }
@@ -254,6 +277,8 @@
       }
       if (loc.reno === true && !/reno/i.test(String(r.series))) return;
       if (loc.reno === false && /reno/i.test(String(r.series))) return;
+      if (loc.kaSub && loc.kaSub.indexOf(banDo().ka[r.store]) < 0) return;
+      if (loc.oc && loc.oc.indexOf(nhomOC(r.store)) < 0) return;
       var u = r.sellout || 0; if (!u) return;
       g[r.model] = (g[r.model] || 0) + u;
     });
@@ -300,6 +325,34 @@
     if (ky && laKenh) {
       var g = modelKenh(ky, tens.map(function (t) { return String(t).trim().toUpperCase(); }));
       return dongModel(g, 'Model OPPO ' + (tens.length > 1 ? '(cả 3 kênh)' : tens[0]) + ' bán trong kỳ');
+    }
+
+    /* (a1) truc la KY + duong so la KENH PHU CUA KA (FPT / Viettel / ĐMCL / CellphoneS)
+            hoac NHOM CUA IND (O.C / Normal / Tổng). Crosstab chi co cot thang nen CHI o
+            che do THANG; che do tuan thi bo qua (thà không hiện còn hơn hiện sai). */
+    if (ky && ky.cd === 'thang' && ky.k.so) {
+      var TEN_KA = { 'FPT': 'FPT', 'VIETTEL': 'VIETTEL', 'VIETTEL STORE': 'VIETTEL',
+                     'ĐMCL': 'ĐIỆN MÁY CHỢ LỚN', 'ĐIỆN MÁY CHỢ LỚN': 'ĐIỆN MÁY CHỢ LỚN',
+                     'CELLPHONES': 'CELLPHONES', 'CELLPHONE S': 'CELLPHONES' };
+      var ka = [], duKA = tens.every(function (t) {
+        var k = TEN_KA[String(t).trim().toUpperCase()];
+        if (!k) return false; if (ka.indexOf(k) < 0) ka.push(k); return true;
+      });
+      if (duKA && ka.length) {
+        var gK = modelCenterLoc(ky.k.so, { kenh: ['KA'], kaSub: ka });
+        return dongModel(gK, 'Model OPPO — KA ' + tens.join(' · ') + ' bán trong kỳ');
+      }
+      var oc = [], duOC = tens.every(function (t) {
+        var s = String(t).trim();
+        if (/^O\.?C$/i.test(s)) { if (oc.indexOf('O.C') < 0) oc.push('O.C'); return true; }
+        if (/^normal$/i.test(s)) { if (oc.indexOf('Normal') < 0) oc.push('Normal'); return true; }
+        if (/^t[ổo]ng/i.test(s)) { ['O.C', 'Normal'].forEach(function (x) { if (oc.indexOf(x) < 0) oc.push(x); }); return true; }
+        return false;
+      });
+      if (duOC && oc.length) {
+        var gO = modelCenterLoc(ky.k.so, { kenh: ['IND'], oc: oc });
+        return dongModel(gO, 'Model OPPO — IND ' + oc.join(' + ') + ' bán trong kỳ');
+      }
     }
 
     /* (a2) truc la KENH (MWG/IND/KA/TỔNG) + duong so la PHAN KHUC hoac Reno/Khac
