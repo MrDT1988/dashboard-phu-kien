@@ -291,21 +291,31 @@
     try { var c = B.boiCanh(); return (c && c.mwg && c.mwg.k) || (c && c.k) || null; } catch (e) { return null; }
   }
 
+  /* Man dien thoai thi hop tooltip rat nho — 5 dong model se tran ra ngoai khung bieu do
+     va bi cat. Nen o man hep chi lay 3 dong va cat ten ngan hon. */
+  function manHep() {
+    try {
+      if (document.documentElement.classList.contains('bc-dt')) return true;
+      return window.innerWidth < 820;
+    } catch (e) { return false; }
+  }
+
   function dongModel(g, tieu) {
     if (!g) return [];
     var ds = Object.keys(g).map(function (t) { return { t: t, u: g[t] }; })
                 .filter(function (z) { return z.u > 0; })
                 .sort(function (a, b) { return b.u - a.u; });
     if (!ds.length) return [];
+    var hep = manHep(), soDong = hep ? 3 : 5, catTen = hep ? 24 : 34;
     var tong = ds.reduce(function (s, z) { return s + z.u; }, 0);
     var r = ['', tieu + ':'];
-    ds.slice(0, 5).forEach(function (z, i) {
+    ds.slice(0, soDong).forEach(function (z, i) {
       var ten = String(z.t).replace(/^Điện thoại\s*/i, '');
-      if (ten.length > 34) ten = ten.slice(0, 32) + '…';
+      if (ten.length > catTen) ten = ten.slice(0, catTen - 2) + '…';
       r.push('  ' + (i + 1) + '. ' + ten + '  ' + z.u.toLocaleString('vi-VN')
              + '  (' + (z.u / tong * 100).toFixed(0) + '%)');
     });
-    if (ds.length > 5) r.push('  … và ' + (ds.length - 5) + ' model khác');
+    if (ds.length > soDong) r.push('  … và ' + (ds.length - soDong) + ' model khác');
     return r;
   }
 
