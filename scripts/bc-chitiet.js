@@ -448,17 +448,32 @@
                                      /* 3. TOP 3 model PK 10-20M ban tot nhat cua CA SHOP — anh Thai 10/09.
                                           Cong tu chinh models cua tung nhan vien, khong lay nguon khac, de con so
                                           nam trong CUNG MOT RO voi cot ben phai (tong = tongNV, % cung mau so). */
+                                     /* GOP THEO DONG MAY, khong theo tung mau. Ten model trong data co mau o cuoi
+                                        ("… 8+128GB Tím đen"), neu de nguyen thi top 3 ra 3 mau cua cung mot may,
+                                        nhin vao tuong shop toan OPPO. Cat ten tai cho cuoi cung co dung luong
+                                        ( ")" hoac "GB" hoac "8+128" ) — bo phan mau phia sau. */
+                                     var gocMD = function (s) {
+                                                    var m = String(s).match(/^.*(?:\)|GB|\d+\s*\+\s*\d+)/);
+                                                    return (m ? m[0] : String(s)).trim();
+                                     };
                                      var mdPK = {};
                                      Object.keys(nv).forEach(function (k) {
                                                     var mo = (nv[k] || {}).models || {};
                                                     Object.keys(mo).forEach(function (m) {
                                                                    var z = mo[m] || {}, u = z.units || 0; if (!u) return;
-                                                                   var e = mdPK[m] || (mdPK[m] = { u: 0, dt: 0, hang: z.brand || '' });
+                                                                   var t = gocMD(m);
+                                                                   var e = mdPK[t] || (mdPK[t] = { u: 0, dt: 0, hang: z.brand || '', mau: {} });
                                                                    e.u += u; e.dt += (z.rev || 0);
+                                                                   var mv = String(m).slice(t.length).trim() || '(không rõ màu)';
+                                                                   e.mau[mv] = (e.mau[mv] || 0) + u;
                                                     });
                                      });
-                                     var top3PK = Object.keys(mdPK).map(function (m) { return { ten: m, u: mdPK[m].u, dt: mdPK[m].dt, hang: mdPK[m].hang }; })
-                                                    .sort(function (a, b) { return (b.u - a.u) || (b.dt - a.dt); }).slice(0, 3);
+                                     var top3PK = Object.keys(mdPK).map(function (m) {
+                                                    var e = mdPK[m];
+                                                    var mau = Object.keys(e.mau).map(function (c) { return { c: c, u: e.mau[c] }; })
+                                                                   .sort(function (a, b) { return b.u - a.u; });
+                                                    return { ten: m, u: e.u, dt: e.dt, hang: e.hang, mau: mau };
+                                     }).sort(function (a, b) { return (b.u - a.u) || (b.dt - a.dt); }).slice(0, 3);
                                      var maxPK = top3PK.length ? top3PK[0].u : 0;
 
                                      if (!tongG && !tongNV) {
@@ -488,14 +503,14 @@
                                      h += '</div>';
 
                                      /* --- o 1b: TOP 3 PK 10-20M ban tot nhat cua shop --- */
-                                     h += '<div class="bc-sct-o"><div class="bc-sct-ten">TOP 3 PK 10-20M bán tốt nhất <small>của cả shop · ' + fInt(tongNV) + ' máy</small></div>';
+                                     h += '<div class="bc-sct-o"><div class="bc-sct-ten">TOP 3 PK 10-20M bán tốt nhất <small>của cả shop · gộp theo dòng máy · ' + fInt(tongNV) + ' máy</small></div>';
                                      if (!top3PK.length) h += '<div class="bc-sct-trong">Tháng này shop chưa bán máy PK 10-20M.</div>';
                                      else h += '<table class="bc-sct-bang">' + top3PK.map(function (x, i) {
                                                     var mh = mauHang(String(x.hang).toLowerCase());
                                                     var p = maxPK ? Math.round(x.u / maxPK * 100) : 0;
                                                     var pc = tongNV ? (x.u / tongNV * 100) : 0;
                                                     return '<tr><td class="bc-sct-hang">' + (i + 1) + '</td>'
-                                                       + '<td class="bc-sct-md" title="' + esc(x.ten) + '"><i class="bc-sct-cham" style="background:' + mh + '"></i>' + esc(gonMD(x.ten)) + '</td>'
+                                                       + '<td class="bc-sct-md" title="' + esc(x.ten + ' — ' + x.mau.map(function (c) { return c.c + ' ' + c.u; }).join(' · ')) + '"><i class="bc-sct-cham" style="background:' + mh + '"></i>' + esc(gonMD(x.ten)) + '</td>'
                                                        + '<td class="bc-sct-thanh"><i style="width:' + p + '%;background:' + mh + '"></i></td>'
                                                        + '<td class="bc-sct-so"><b>' + fInt(x.u) + '</b> máy</td>'
                                                        + '<td class="bc-sct-pc">' + pc.toFixed(0) + '%</td></tr>';
