@@ -115,6 +115,7 @@
         });
       } catch (e) { /* co loi thi de bieu do ve nhu cu, khong lam chet trang */ }
       try { ganTooltipModel(ch); } catch (e) {}
+      try { batChon(ch); } catch (e) {}
     }
   });
 
@@ -319,22 +320,24 @@
     return r;
   }
 
-  function chiTietCot(ch, items) {
-    if (!items || !items.length) return [];
+  /* tra ve DU LIEU tho: {g: {model: soMay}, tieu: 'tieu de'} — de dung lai duoc cho
+     ca tooltip (dong chu) lan hop chi tiet duoi bieu do (bang HTML). */
+  function duLieuCot(ch, items) {
+    if (!items || !items.length) return null;
     var nhan = (ch.data.labels || [])[items[0].dataIndex];
     var tens = [];
     items.forEach(function (it) {
       var l = ((ch.data.datasets || [])[it.datasetIndex] || {}).label;
       if (l && tens.indexOf(l) < 0) tens.push(l);
     });
-    if (!tens.length) return [];
+    if (!tens.length) return null;
 
     /* (a) truc la KY + duong so la KENH -> so OPPO noi bo, dung ham modelKy cua bc.js */
     var ky = kyTuNhan(nhan);
     var laKenh = tens.every(function (t) { return /^(MWG|IND|KA)$/i.test(String(t).trim()); });
     if (ky && laKenh) {
       var g = modelKenh(ky, tens.map(function (t) { return String(t).trim().toUpperCase(); }));
-      return dongModel(g, 'Model OPPO ' + (tens.length > 1 ? '(cả 3 kênh)' : tens[0]) + ' bán trong kỳ');
+      return { g: g, tieu: 'Model OPPO ' + (tens.length > 1 ? '(cả 3 kênh)' : tens[0]) + ' bán trong kỳ' };
     }
 
     /* (a1) truc la KY + duong so la KENH PHU CUA KA (FPT / Viettel / ĐMCL / CellphoneS)
@@ -350,7 +353,7 @@
       });
       if (duKA && ka.length) {
         var gK = modelCenterLoc(ky.k.so, { kenh: ['KA'], kaSub: ka });
-        return dongModel(gK, 'Model OPPO — KA ' + tens.join(' · ') + ' bán trong kỳ');
+        return { g: gK, tieu: 'Model OPPO — KA ' + tens.join(' · ') + ' bán trong kỳ' };
       }
       var oc = [], duOC = tens.every(function (t) {
         var s = String(t).trim();
@@ -361,7 +364,7 @@
       });
       if (duOC && oc.length) {
         var gO = modelCenterLoc(ky.k.so, { kenh: ['IND'], oc: oc });
-        return dongModel(gO, 'Model OPPO — IND ' + oc.join(' + ') + ' bán trong kỳ');
+        return { g: gO, tieu: 'Model OPPO — IND ' + oc.join(' + ') + ' bán trong kỳ' };
       }
     }
 
@@ -385,10 +388,10 @@
         });
         if (hopLe && nhanLoc.length > 1) {
           var gC = modelCenterLoc(kHT.so, loc);
-          if (gC) return dongModel(gC, 'Model OPPO — ' + nhanLoc.join(' · '));
+          if (gC) return { g: gC, tieu: 'Model OPPO — ' + nhanLoc.join(' · ') };
         }
       }
-      return [];
+      return null;
     }
 
     /* (b) tab Chi tiet MWG: truc va duong so co the la KY / HANG / PHAN KHUC — gom lai
@@ -408,17 +411,82 @@
       };
       if (!ky) xet(nhan);
       tens.forEach(function (t) { xet(t); });
-      if (lac) return [];
+      if (lac) return null;
       if (!kKy) kKy = kyHienTai();
       if (kKy && (hangs.length || segs.length)) {
         var g2 = modelChoMWG(kKy.tu, kKy.denCo || kKy.den, hangs, segs);
         if (g2) {
           var mo_ = nhanPhu.length > 3 ? nhanPhu.slice(0, 3).join(' · ') + '…' : nhanPhu.join(' · ');
-          return dongModel(g2, 'Model bán tại chợ MWG — ' + mo_);
+          return { g: g2, tieu: 'Model bán tại chợ MWG — ' + mo_ };
         }
       }
     }
-    return [];
+    return null;
+  }
+
+  /* dong chu cho tooltip (may tinh) */
+  function chiTietCot(ch, items) {
+    var r = null; try { r = duLieuCot(ch, items); } catch (e) {}
+    return r ? dongModel(r.g, r.tieu) : [];
+  }
+
+  /* ===== 10/09 — HOP CHI TIET DUOI BIEU DO (thay cho tooltip tren dien thoai) =====
+     Anh Thai xem tren dien thoai: cham vao cot chi ra hop tooltip nho cua Chart.js,
+     ve TREN CANVAS nen rat de bi cat va kho doc. Nay cham (hoac re chuot) vao cot thi
+     ngoai tooltip con hien mot BANG HTML ngay duoi bieu do — khong bi cat, doc duoc
+     tren moi may, va bam ra la con do chu khong bien mat khi nhac tay. */
+  function hopCua(ch) {
+    if (ch.__bcHop && ch.__bcHop.parentNode) return ch.__bcHop;
+    var boc = null;
+    try { boc = ch.canvas.closest('.bc-bd') || ch.canvas.parentElement; } catch (e) {}
+    if (!boc || !boc.parentNode) return null;
+    var d = document.createElement('div');
+    d.className = 'bc-md-hop';
+    d.hidden = true;
+    boc.parentNode.insertBefore(d, boc.nextSibling);
+    ch.__bcHop = d;
+    return d;
+  }
+
+  function veHop(ch, items) {
+    var hop = hopCua(ch); if (!hop) return;
+    var r = null; try { r = duLieuCot(ch, items); } catch (e) {}
+    if (!r || !r.g) { hop.hidden = true; hop.innerHTML = ''; return; }
+    var ds = Object.keys(r.g).map(function (t) { return { t: t, u: r.g[t] }; })
+                 .filter(function (z) { return z.u > 0; })
+                 .sort(function (a, b) { return b.u - a.u; });
+    if (!ds.length) { hop.hidden = true; hop.innerHTML = ''; return; }
+    var tong = ds.reduce(function (s2, z) { return s2 + z.u; }, 0);
+    var max = ds[0].u || 1;
+    var esc = function (x) { return String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+    var h = '<div class="bc-md-dau">' + esc(r.tieu) + '<span>' + tong.toLocaleString('vi-VN') + ' máy</span></div><table class="bc-md-bang">';
+    ds.slice(0, 5).forEach(function (z, i) {
+      var ten = String(z.t).replace(/^Điện thoại\s*/i, '');
+      h += '<tr><td class="bc-md-stt">' + (i + 1) + '</td>'
+         + '<td class="bc-md-ten" title="' + esc(z.t) + '">' + esc(ten) + '</td>'
+         + '<td class="bc-md-thanh"><i style="width:' + Math.round(z.u / max * 100) + '%"></i></td>'
+         + '<td class="bc-md-so"><b>' + z.u.toLocaleString('vi-VN') + '</b></td>'
+         + '<td class="bc-md-pc">' + (z.u / tong * 100).toFixed(0) + '%</td></tr>';
+    });
+    h += '</table>';
+    if (ds.length > 5) h += '<div class="bc-md-them">… và ' + (ds.length - 5) + ' model khác</div>';
+    hop.innerHTML = h;
+    hop.hidden = false;
+  }
+
+  function batChon(ch) {
+    if (ch.__bcBat) return; ch.__bcBat = 1;
+    var f = function (e) {
+      try {
+        var els = ch.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+        if (!els || !els.length) return;
+        veHop(ch, els.map(function (x) { return { dataIndex: x.index, datasetIndex: x.datasetIndex }; }));
+      } catch (er) {}
+    };
+    try {
+      ch.canvas.addEventListener('click', f);
+      ch.canvas.addEventListener('mousemove', f);
+    } catch (e) {}
   }
 
   function ganTooltipModel(ch) {
@@ -497,7 +565,22 @@
       '#dm-sang-nut.bc-sang-hang{position:static !important;right:auto !important;bottom:auto !important;' +
         'opacity:1 !important;box-shadow:none !important;z-index:auto !important}',
       'html.dm-dang-cuon #dm-sang-nut.bc-sang-hang{opacity:1 !important}',
-      '@media (max-width:720px){#bc-dinh{padding:4px 12px 6px}#dbtg-the-ai.bc-ai-tren{position:static !important;margin-top:6px}}'
+      '@media (max-width:720px){#bc-dinh{padding:4px 12px 6px}#dbtg-the-ai.bc-ai-tren{position:static !important;margin-top:6px}}',
+      /* 10/09 — hop chi tiet model duoi bieu do (chay tot tren dien thoai) */
+      '.bc-md-hop{margin:8px 0 2px;padding:10px 12px;border-radius:10px;font-size:12.5px;' +
+        'background:color-mix(in srgb,currentColor 5%,transparent)}',
+      '.bc-md-dau{font-size:11.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;margin-bottom:6px}',
+      '.bc-md-dau span{font-weight:600;letter-spacing:0;text-transform:none;color:var(--text-secondary);margin-left:8px}',
+      '.bc-md-bang{width:100%;border-collapse:collapse}',
+      '.bc-md-bang td{padding:4px 6px;border-bottom:1px solid color-mix(in srgb,currentColor 8%,transparent)}',
+      '.bc-md-bang tr:last-child td{border-bottom:0}',
+      '.bc-md-stt{width:16px;color:var(--text-secondary);font-size:11px}',
+      '.bc-md-ten{max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.bc-md-thanh{width:26%}',
+      '.bc-md-thanh i{display:block;height:8px;border-radius:4px;min-width:3px;background:var(--bc-nhan)}',
+      '.bc-md-so{width:58px;text-align:right;white-space:nowrap}',
+      '.bc-md-pc{width:44px;text-align:right;color:var(--text-secondary);font-size:11.5px}',
+      '.bc-md-them{font-size:11px;color:var(--text-secondary);margin-top:5px}'
     ].join('\n');
     document.head.appendChild(st);
   } catch (e) {}
