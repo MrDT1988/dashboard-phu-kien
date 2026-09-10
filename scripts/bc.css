@@ -240,6 +240,10 @@ html.bc-dt .bc-3bd { grid-template-columns: 1fr; }
 .bc-sct-nv-dong td { border-bottom: 0 !important; padding-bottom: 2px !important; }
 .bc-sct-nv-ct td { font-size: 11px; color: var(--text-secondary); padding-top: 0 !important; padding-bottom: 7px !important; }
 .bc-sct-ghi { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+/* 10/09 anh Thai: cot trai (khung gio + TOP 3 PK) gian deu cho cao bang cot phai (TOP 5 NV) */
+.bc-sct-luoi { align-items: stretch; }
+.bc-sct-trai { display: flex; flex-direction: column; justify-content: space-between; gap: 16px; min-width: 0; }
+.bc-sct-cham { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
 .bc-sct-cot { min-width: 0; }
 .bc-sct-hang-ten { font-size: 12px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
 .bc-sct-hang-ten i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }

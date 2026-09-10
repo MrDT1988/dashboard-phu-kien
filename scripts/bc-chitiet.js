@@ -445,6 +445,22 @@
                                                     return t.length > 30 ? t.slice(0, 28) + '…' : t;
                                      };
 
+                                     /* 3. TOP 3 model PK 10-20M ban tot nhat cua CA SHOP — anh Thai 10/09.
+                                          Cong tu chinh models cua tung nhan vien, khong lay nguon khac, de con so
+                                          nam trong CUNG MOT RO voi cot ben phai (tong = tongNV, % cung mau so). */
+                                     var mdPK = {};
+                                     Object.keys(nv).forEach(function (k) {
+                                                    var mo = (nv[k] || {}).models || {};
+                                                    Object.keys(mo).forEach(function (m) {
+                                                                   var z = mo[m] || {}, u = z.units || 0; if (!u) return;
+                                                                   var e = mdPK[m] || (mdPK[m] = { u: 0, dt: 0, hang: z.brand || '' });
+                                                                   e.u += u; e.dt += (z.rev || 0);
+                                                    });
+                                     });
+                                     var top3PK = Object.keys(mdPK).map(function (m) { return { ten: m, u: mdPK[m].u, dt: mdPK[m].dt, hang: mdPK[m].hang }; })
+                                                    .sort(function (a, b) { return (b.u - a.u) || (b.dt - a.dt); }).slice(0, 3);
+                                     var maxPK = top3PK.length ? top3PK[0].u : 0;
+
                                      if (!tongG && !tongNV) {
                                                     return '<div class="bc-sct"><div class="bc-sct-trong">Tháng ' + esc(th) + ': shop này chưa có số chi tiết (giờ bán / nhân viên / model).</div></div>';
                                      }
@@ -454,6 +470,9 @@
                                         + ' · <b>' + fInt(tongG) + '</b> máy toàn shop · PK 10-20M Android <b>' + fInt(tongNV) + '</b> máy · '
                                         + 'OPPO <b>' + fInt(oppoNV) + '</b> (<b>' + pcOShop.toFixed(0) + '%</b>)</div>';
                                      h += '<div class="bc-sct-luoi">';
+
+                                     /* --- cot trai: khung gio + TOP 3 PK, gian deu cho cao bang cot phai --- */
+                                     h += '<div class="bc-sct-trai">';
 
                                      /* --- o 1: khung gio --- */
                                      h += '<div class="bc-sct-o"><div class="bc-sct-ten">4 khung giờ bán tốt nhất <small>8h–22h · toàn bộ máy của shop</small></div>';
@@ -466,6 +485,23 @@
                                                        + '<td class="bc-sct-so"><b>' + fInt(x.u) + '</b> máy</td>'
                                                        + '<td class="bc-sct-pc">' + pc.toFixed(0) + '%</td></tr>';
                                      }).join('') + '</table>';
+                                     h += '</div>';
+
+                                     /* --- o 1b: TOP 3 PK 10-20M ban tot nhat cua shop --- */
+                                     h += '<div class="bc-sct-o"><div class="bc-sct-ten">TOP 3 PK 10-20M bán tốt nhất <small>của cả shop · ' + fInt(tongNV) + ' máy</small></div>';
+                                     if (!top3PK.length) h += '<div class="bc-sct-trong">Tháng này shop chưa bán máy PK 10-20M.</div>';
+                                     else h += '<table class="bc-sct-bang">' + top3PK.map(function (x, i) {
+                                                    var mh = mauHang(String(x.hang).toLowerCase());
+                                                    var p = maxPK ? Math.round(x.u / maxPK * 100) : 0;
+                                                    var pc = tongNV ? (x.u / tongNV * 100) : 0;
+                                                    return '<tr><td class="bc-sct-hang">' + (i + 1) + '</td>'
+                                                       + '<td class="bc-sct-md" title="' + esc(x.ten) + '"><i class="bc-sct-cham" style="background:' + mh + '"></i>' + esc(gonMD(x.ten)) + '</td>'
+                                                       + '<td class="bc-sct-thanh"><i style="width:' + p + '%;background:' + mh + '"></i></td>'
+                                                       + '<td class="bc-sct-so"><b>' + fInt(x.u) + '</b> máy</td>'
+                                                       + '<td class="bc-sct-pc">' + pc.toFixed(0) + '%</td></tr>';
+                                     }).join('') + '</table>';
+                                     h += '</div>';
+
                                      h += '</div>';
 
                                      /* --- o 2: TOP 5 nhan vien — ho ban gi, OPPO chiem bao nhieu --- */
