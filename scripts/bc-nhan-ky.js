@@ -657,6 +657,62 @@
     }, true);
   } catch (e) {}
 
+  /* ==== them 10/09 — o chon Thang dat ngay tren bang "Chuong trinh thang - Thuong Sale IND" ====
+     Bang nay nam duoi bang Target O.C cao 640px nen bo loc Thang chung o dau "Phan 2" bi khuat.
+     O nay chi la GUONG: doi o nay -> ghi vao o goc roi ban 'change', tg.html tu ve lai ca 3 khoi.
+     Khong tu tinh lai so, khong sua tg.html -> go script nay ra la moi thu ve nhu cu. */
+  function guongThangXe() {
+    var goc = document.getElementById('ind-review-month-select');
+    var bang = document.getElementById('ind-commission-table');
+    if (!goc || !bang || !goc.options || goc.options.length < 2) return false;
+    var muc = bang.closest ? bang.closest('section') : null;
+    if (!muc) return false;
+    if (muc.querySelector('.bc-guong-thang')) return true;
+    var dau = muc.querySelector('.table-section-header');
+    if (!dau) return false;
+
+    var boc = document.createElement('div');
+    boc.className = 'filter-bar bc-guong-thang';
+    boc.style.marginBottom = '0';
+
+    var nhan = document.createElement('label');
+    nhan.textContent = 'Tháng';
+
+    var sel = document.createElement('select');
+    sel.style.cursor = 'pointer';
+    for (var i = 0; i < goc.options.length; i++) {
+      var o = document.createElement('option');
+      o.value = goc.options[i].value;
+      o.textContent = goc.options[i].textContent;
+      sel.appendChild(o);
+    }
+    sel.value = goc.value;
+
+    /* guong -> goc */
+    sel.addEventListener('change', function () {
+      if (goc.value === sel.value) return;
+      goc.value = sel.value;
+      goc.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    /* goc -> guong (de hai cho luon cung mot thang) */
+    goc.addEventListener('change', function () { sel.value = goc.value; });
+
+    boc.appendChild(nhan);
+    boc.appendChild(sel);
+    dau.appendChild(boc);
+    return true;
+  }
+
+  try {
+    var lanX = 0;
+    var nhipX = setInterval(function () {
+      lanX++;
+      var xong = false;
+      try { xong = guongThangXe(); } catch (e) {}
+      if (xong || lanX > 40) clearInterval(nhipX);   /* thu toi ~16 giay roi thoi */
+    }, 400);
+  } catch (e) {}
+
   /* doi ky / doi che do -> ve lai de diem nhan nhay theo */
   function veLai() {
     try {
