@@ -171,6 +171,27 @@ export function catPhamVi(A, B, ai) {
     });
   }
 
+  /* Anh Thai 12/09: SALE kenh MWG/KA khong co nguon model theo NGAY -> tuanM rong -> 2 the
+     Reno/Find o Bao cao TUAN ra 0 may (doc nham thanh ban duoc 0). week_store_series (them o
+     TinhTG.gs 12/09) da gop san 3 ro RENO/FIND/CONLAI theo TUAN theo SHOP; o day chi cong lai
+     CAC SHOP CUA NGUOI XEM roi gui di theo KENH. KHONG gui week_store_series xuong goi vi no
+     chua so cua toan vung. Neu Apps Script chua cap nhat thi gocWS rong -> khong doi gi. */
+  const kenhCuaShop = {};
+  rowsC.forEach((r) => { if (shopC.has(r.store)) kenhCuaShop[r.store] = r.channel; });
+  const gocWS = A.week_store_series || {};
+  const tuanS = {};
+  Object.keys(gocWS).forEach((t) => {
+    Object.keys(gocWS[t] || {}).forEach((sp) => {
+      const ch = kenhCuaShop[sp]; if (!ch) return;
+      const v = gocWS[t][sp] || {};
+      tuanS[t] = tuanS[t] || {};
+      const o = tuanS[t][ch] || (tuanS[t][ch] = { RENO: 0, FIND: 0, CONLAI: 0 });
+      o.RENO += v.RENO || 0; o.FIND += v.FIND || 0; o.CONLAI += v.CONLAI || 0;
+    });
+  });
+  C.week_channel_series = tuanS;
+  delete C.week_store_series;
+
   /* ---------- 2b. TI TRONG TARGET — phai tinh voi MAU SO TOAN VUNG
      Loi da mac, lo ra 28/08 khi soi tai khoan CAO CHI BAO:
        tg.html chia target kenh theo ti trong cua sale trong chinh DATA.crosstab:
@@ -280,7 +301,9 @@ export function catPhamVi(A, B, ai) {
      (1,5 ngay 03-04/09 app khong co so moi). Nay: truong la duoc dua vao goi o dang RONG cung kieu
      ({} / [] / 0 / '') -> khong lo so cua ai, DB TG khong vo, robot van phat hanh; ten truong ghi
      vao thongKe.truongChuaCat de bo kiem in ra cho nguoi sua pham-vi-dbtg.mjs sau. */
-  const BO_CO_Y = new Set(['debug_target']);
+  /* week_store_series: CO Y khong gui xuong goi — no la so theo shop CUA CA VUNG.
+     Da quy doi thanh C.week_channel_series (chi shop cua nguoi xem) o muc 2a. */
+  const BO_CO_Y = new Set(['debug_target', 'week_store_series']);
   const truongChuaCat = [];
   const rongCungKieu = (v) => (Array.isArray(v) ? [] : (v && typeof v === 'object') ? {} : (typeof v === 'number') ? 0 : (typeof v === 'string') ? '' : null);
   [[A, C], [B, M]].forEach(([goc, cat]) => {

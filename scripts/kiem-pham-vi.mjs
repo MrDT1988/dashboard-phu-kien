@@ -52,9 +52,13 @@ const A = {
   week_channel_units: { '2026-01-05': { MWG: 999999, IND: 999999, KA: 999999 } },
   week_revenue: { '2026-01-05': 777777 },
   week_channel_models: { '2026-01-05': { IND: { 'MODEL-CUA-NGUOI-KHAC': 50 } } },
+  week_store_series: {},
   debug_target: { bimat: 'KHONG-DUOC-BUNG' },
 };
 A.store_rows.forEach((r) => {
+  /* week_store_series: moi shop 1 so RENO rieng de biet co lan sang shop nguoi khac khong */
+  A.week_store_series['2026-01-05'] = A.week_store_series['2026-01-05'] || {};
+  A.week_store_series['2026-01-05'][r.store] = { RENO: 10, FIND: 1, CONLAI: 2 };
   A.crosstab.push({ m: 1, channel: r.channel, store: r.store, model: 'M1', series: 'A',
     segment: '<3M', sales: r.sale, sellout: r.sellout, activated: r.activated, rev: r.revenue });
   A.shop_sale_map[r.store] = r.sale;
@@ -157,7 +161,9 @@ ghi('So theo tuan duoc tinh lai',
 }
 
 // --- 4. Cau truc phai con nguyen, neu khong DB TG se vo khi ve
-const thieuC = Object.keys(A).filter((k) => k !== 'debug_target' && kq.center[k] === undefined);
+/* week_store_series bi bo CO Y (so theo shop ca vung) — da quy doi thanh week_channel_series */
+const BO_CO_Y_KIEM = new Set(['debug_target', 'week_store_series']);
+const thieuC = Object.keys(A).filter((k) => !BO_CO_Y_KIEM.has(k) && kq.center[k] === undefined);
 ghi('CENTER: khong thieu truong nao (tru debug)', thieuC.length === 0,
   thieuC.length ? ('thieu: ' + thieuC.join(', ')) : 'du ' + Object.keys(kq.center).length + ' truong');
 const thieuM = Object.keys(B).filter((k) => kq.dataMwg[k] === undefined);
@@ -198,6 +204,21 @@ A.sell_in_rows.push(['CTY-PP-999', 'RT', 'TG', 1, 'P', 'OPPO', 40, '']);
   const LM = catPhamVi(A, B, { vaiTro: 'leader', kenh: 'MWG' });
   ghi('Leader MWG: khong nhan dong Sell In nao (khong lien quan kenh MWG)',
       LM.center.sell_in_rows.length === 0);
+  /* week_channel_series: cong tu week_store_series, CHI shop cua nguoi xem */
+  const csS = catPhamVi(A, B, { vaiTro: 'sale', sales: ['SALE-A'] }).center.week_channel_series || {};
+  const tS = csS['2026-01-05'] || {};
+  ghi('Sale: co week_channel_series de Reno/Find che do tuan khong ra 0',
+    !!(tS.MWG && tS.MWG.RENO), JSON.stringify(tS));
+  ghi('Sale: week_channel_series CHI cong shop cua chinh minh (khong lan sang nguoi khac)',
+    tS.MWG && tS.MWG.RENO === 10 && tS.IND && tS.IND.RENO === 10 && !tS.KA,
+    'SALE-A co 1 shop MWG + 1 shop IND, khong co KA');
+  ghi('Goi KHONG mang theo week_store_series (so toan vung)',
+    catPhamVi(A, B, { vaiTro: 'sale', sales: ['SALE-A'] }).center.week_store_series === undefined,
+    'bo co y — da quy doi thanh week_channel_series');
+  const csL = catPhamVi(A, B, { vaiTro: 'leader', kenh: 'MWG' }).center.week_channel_series || {};
+  const tL = csL['2026-01-05'] || {};
+  ghi('Leader MWG: week_channel_series cong het shop MWG trong kenh, khong co kenh khac',
+    tL.MWG && tL.MWG.RENO === 20 && !tL.IND && !tL.KA, JSON.stringify(tL));
   const S2 = catPhamVi(A, B, { vaiTro: 'sale', sales: ['SALE-A'] });
   ghi('Sale: Sell In van chi cat theo shop cua chinh minh',
       S2.center.sell_in_rows.length === 2 && !S2.center.sell_in_rows.some((r) => r[0] === 'CTY-PP-999'),
