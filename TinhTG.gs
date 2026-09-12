@@ -86,6 +86,11 @@ var TG_CENTER = (function () {
     const weekChannelUnitsMap = new Map(); // key = Thứ 2 đầu tuần (ISO yyyy-mm-dd) -> {MWG,IND,KA} doanh số (số máy)
     const weekRevMap = new Map(); // key = Thứ 2 đầu tuần (ISO yyyy-mm-dd) -> tổng doanh thu cả 3 kênh (dùng cho hàng DT ở bảng mini)
     const weekChannelModelsMap = new Map(); // key = Thứ 2 đầu tuần -> { MWG:{model:qty}, IND:{...}, KA:{...} } - breakdown
+    const weekStoreSeriesMap = new Map(); // key = Thứ 2 đầu tuần -> { [store]: {RENO,FIND,CONLAI} } - Anh Thái
+    // 12/09: gói của SALE kênh MWG/KA bị cắt thì week_channel_models rỗng (nguồn duy nhất có model theo
+    // NGÀY theo SHOP là ind_daily_by_date, chỉ có IND) -> 2 thẻ Reno/Find ở Báo cáo TUẦN ra 0 máy.
+    // Map này gộp sẵn về 3 rổ nên rất nhẹ (36 tuần x ~300 shop x 3 số), đủ để scripts/pham-vi-dbtg.mjs
+    // cộng lại theo đúng phạm vi từng người mà không lộ số của shop người khác.
     // sản phẩm cho tooltip biểu đồ "Doanh số theo tuần — Cả năm 2026" (giống biểu đồ tuần IND).
     const indDailyMap = new Map(); // key = ngày ISO yyyy-mm-dd -> { [store]: {ds,dt} } - CHỈ kênh IND, dùng cho so
     // sánh "cùng kỳ ngày" ở bảng nhiệt Chi tiết IND khi tháng gần nhất chưa đủ dữ liệu cả tháng. Gộp theo
@@ -148,6 +153,11 @@ var TG_CENTER = (function () {
             if (!wmBucket[channel]) wmBucket[channel] = {};
             const wmModelName = model || '(Không rõ)';
             wmBucket[channel][wmModelName] = (wmBucket[channel][wmModelName] || 0) + sellout;
+            if (!weekStoreSeriesMap.has(weekStart)) weekStoreSeriesMap.set(weekStart, {});
+            const wsBucket = weekStoreSeriesMap.get(weekStart);
+            if (!wsBucket[store]) wsBucket[store] = { RENO: 0, FIND: 0, CONLAI: 0 };
+            const roSeri = /reno/i.test(series) ? 'RENO' : /find/i.test(series) ? 'FIND' : 'CONLAI';
+            wsBucket[store][roSeri] += sellout;
         }
         // Gộp riêng theo NGÀY (cùng 1 lần parse ngày cho cả 2 map bên dưới - tránh gọi parseDateCell 2 lần).
         // - indDailyMap: CHỈ kênh IND, phục vụ bảng nhiệt Chi tiết IND so sánh "cùng kỳ ngày".
@@ -302,6 +312,7 @@ var TG_CENTER = (function () {
         week_channel_units: Object.fromEntries(weekChannelUnitsMap),
         week_revenue: Object.fromEntries(weekRevMap),
         week_channel_models: Object.fromEntries(weekChannelModelsMap),
+        week_store_series: Object.fromEntries(weekStoreSeriesMap),
         ind_daily_by_date: Object.fromEntries(indDailyMap),
         overview_daily_by_date: Object.fromEntries(overviewDailyMap),
         store_rows: storeRows,
