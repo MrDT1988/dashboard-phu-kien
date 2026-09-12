@@ -3129,6 +3129,10 @@ function computeData(rows) {
     const channelMonthPgs = new Map(); // key channel|month -> Set(pg) — đếm số lượng PG hoạt động
     const weekChannelUnitsMap = new Map(); // key = Thứ 2 đầu tuần (ISO yyyy-mm-dd) -> {MWG,IND,KA} doanh số (số máy)
     const weekRevMap = new Map(); // key = Thứ 2 đầu tuần (ISO yyyy-mm-dd) -> tổng doanh thu cả 3 kênh (dùng cho hàng DT ở bảng mini)
+    const weekStoreSeriesMap = new Map(); // Anh Thái 12/09: tuần -> { [shop]: {RENO,FIND,CONLAI} } — gói
+    // của SALE kênh MWG/KA bị cắt thì week_channel_models rỗng (nguồn duy nhất có model theo NGÀY theo
+    // SHOP là ind_daily_by_date, chỉ IND) -> 2 thẻ Reno/Find ở Báo cáo TUẦN ra 0 máy. Map này gộp sẵn
+    // 3 rổ nên rất nhẹ, đủ để scripts/pham-vi-dbtg.mjs cộng lại theo đúng phạm vi từng người.
     const weekChannelModelsMap = new Map(); // key = Thứ 2 đầu tuần -> { MWG:{model:qty}, IND:{...}, KA:{...} } - breakdown
     // sản phẩm cho tooltip biểu đồ "Doanh số theo tuần — Cả năm 2026" (giống biểu đồ tuần IND).
     const indDailyMap = new Map(); // key = ngày ISO yyyy-mm-dd -> { [store]: {ds,dt} } - CHỈ kênh IND, dùng cho so
@@ -3204,6 +3208,11 @@ function computeData(rows) {
             if (!wmBucket[channel]) wmBucket[channel] = {};
             const wmModelName = model || '(Không rõ)';
             wmBucket[channel][wmModelName] = (wmBucket[channel][wmModelName] || 0) + sellout;
+            if (!weekStoreSeriesMap.has(weekStart)) weekStoreSeriesMap.set(weekStart, {});
+            const wsBucket = weekStoreSeriesMap.get(weekStart);
+            if (!wsBucket[store]) wsBucket[store] = { RENO: 0, FIND: 0, CONLAI: 0 };
+            const roSeri = /reno/i.test(series) ? 'RENO' : /find/i.test(series) ? 'FIND' : 'CONLAI';
+            wsBucket[store][roSeri] += sellout;
         }
         // Gộp riêng theo NGÀY (cùng 1 lần parse ngày cho cả 2 map bên dưới - tránh gọi parseDateCell 2 lần).
         // - indDailyMap: CHỈ kênh IND, phục vụ bảng nhiệt Chi tiết IND so sánh "cùng kỳ ngày".
@@ -3363,6 +3372,7 @@ function computeData(rows) {
         week_channel_units: Object.fromEntries(weekChannelUnitsMap),
         week_revenue: Object.fromEntries(weekRevMap),
         week_channel_models: Object.fromEntries(weekChannelModelsMap),
+        week_store_series: Object.fromEntries(weekStoreSeriesMap),
         ind_daily_by_date: Object.fromEntries(indDailyMap),
         overview_daily_by_date: Object.fromEntries(overviewDailyMap),
         store_rows: storeRows,
@@ -3707,6 +3717,20 @@ function mergeFinalData(a, b) {
     ingestWeekModels(a);
     ingestWeekModels(b);
 
+    // --- week_store_series (thêm 12/09): tuần -> shop -> {RENO,FIND,CONLAI}, fallback {} cho checkpoint cũ ---
+    const week_store_series = {};
+    function ingestWeekStoreSeries(src) {
+        Object.entries(src.week_store_series || {}).forEach(([wk, byStore]) => {
+            if (!week_store_series[wk]) week_store_series[wk] = {};
+            Object.entries(byStore).forEach(([st, ro]) => {
+                const o = week_store_series[wk][st] || (week_store_series[wk][st] = { RENO: 0, FIND: 0, CONLAI: 0 });
+                o.RENO += ro.RENO || 0; o.FIND += ro.FIND || 0; o.CONLAI += ro.CONLAI || 0;
+            });
+        });
+    }
+    ingestWeekStoreSeries(a);
+    ingestWeekStoreSeries(b);
+
     // --- week_revenue: gộp theo tuần (tổng cả 3 kênh), fallback {} cho checkpoint cũ chưa có field này ---
     const week_revenue = {};
     function ingestWeekRevenue(src) {
@@ -3781,7 +3805,7 @@ function mergeFinalData(a, b) {
         channels_list, series_list, segments_list, models_list, sales_list,
         crosstab, series_detail_crosstab,
         store_rows, store_month_lookup, channel_month_headcount,
-        week_channel_units, week_revenue, week_channel_models, ind_daily_by_date, overview_daily_by_date,
+        week_channel_units, week_revenue, week_channel_models, week_store_series, ind_daily_by_date, overview_daily_by_date,
     };
 }
 
