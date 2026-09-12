@@ -421,7 +421,8 @@
                Anh Thái 12/09: học theo màn "Phân tích Sell-out" của app OPPO. Chọn khoảng ngày bất kỳ,
                mỗi dòng có % so CÙNG KỲ (cùng số ngày, liền ngay trước), bấm để bung 3 cấp.
                DB TG chỉ 1 vùng nên cấp 1 là KÊNH (app OPPO cấp 1 là Khu vực).
-               12/09 bổ sung BỘ LỌC SẢN PHẨM (Dòng SP / Phân khúc / Model). LƯU Ý NGUỒN: số theo NGÀY
+               12/09 bổ sung BỘ LỌC SẢN PHẨM: Dòng SP / Phân khúc (ô chọn) + Model (THANH TÌM, chọn
+               NHIỀU model một lúc — anh Thái yêu cầu). LƯU Ý NGUỒN: số theo NGÀY
                (overview_daily_by_date) KHÔNG có cột sản phẩm; chỉ crosstab mới có, mà crosstab là THEO THÁNG.
                Nên khi bật lọc sản phẩm, khối tự chuyển sang tính THEO THÁNG và ghi rõ ở dòng chốt.
                KHÔNG có DOS / Hàng tồn / so Năm trước: Sell In chỉ có kênh IND và dữ liệu chỉ từ 01/01/2026. */
@@ -429,14 +430,15 @@
                      if (!NGAY.length) return;
                      var CT = D.crosstab || [];
                      var kq = khoi({ stt: 2, ten: 'Phân tích Sell-out — theo cây', rong: true,
-                                dangXem: 'Chọn khoảng ngày bất kỳ · lọc Dòng SP / Phân khúc / Model · bấm ▸ để bung Kênh → Sale → Shop · bấm tiêu đề cột để đổi cách xếp' });
+                                dangXem: 'Chọn khoảng ngày bất kỳ · lọc Dòng SP / Phân khúc / gõ tìm & chọn NHIỀU model · bấm ▸ để bung Kênh → Sale → Shop · bấm tiêu đề cột để đổi cách xếp' });
                      var than = $('.bc-than', kq);
                      var dMin = NGAY[0], dMax = NGAY[NGAY.length - 1];
                      var tu = k.tu < dMin ? dMin : k.tu, den = k.denCo > dMax ? dMax : k.denCo;
                      var sapTheo = 'ds', mo = {};
-                     var lSer = '', lSeg = '', lMod = '';
-                     var coLoc = function () { return !!(lSer || lSeg || lMod); };
+                     var lSer = '', lSeg = '', lMods = [];
+                     var coLoc = function () { return !!(lSer || lSeg || lMods.length); };
                      var demNgay = function (a, b) { return Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 86400000) + 1; };
+                     var khongDau = function (s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
 
                      var dsSer = [], dsSeg = [];
                      (function () {
@@ -446,16 +448,17 @@
                                 dsSeg = (D.segments_list || []).filter(function (s) { return b[s]; });
                                 if (!dsSeg.length) dsSeg = Object.keys(b).sort();
                      })();
+                     /* Model CÓ BÁN trong khoảng đang chọn, đã lọc theo Dòng SP + Phân khúc, xếp bán nhiều trước */
                      function dsModel() {
                                 var a = {}, m1 = thangCua(tu), m2 = thangCua(den);
                                 CT.forEach(function (x) {
-                                             if (x.m < m1 || x.m > m2) return;   // chi model CO BAN trong khoang dang chon
+                                             if (x.m < m1 || x.m > m2) return;
                                              if (lSer && x.series !== lSer) return;
                                              if (lSeg && x.segment !== lSeg) return;
                                              if (!x.model || !(x.sellout || 0)) return;
-                                             a[x.model] = (a[x.model] || 0) + (x.sellout || 0);
+                                             a[x.model] = (a[x.model] || 0) + x.sellout;
                                 });
-                                return Object.keys(a).sort(function (p, q) { return a[q] - a[p]; });
+                                return Object.keys(a).sort(function (p, q) { return a[q] - a[p]; }).map(function (m) { return { m: m, n: a[m] }; });
                      }
 
                      var loc = el('div', 'bc-loc');
@@ -466,15 +469,40 @@
                                              return '<option value="' + esc(x) + '"' + (x === val ? ' selected' : '') + '>' + esc(x) + '</option>';
                                 }).join('');
                      }
-                     function veLoc() {
-                                loc.innerHTML = '<label>Từ <input type="date" data-k="tu" min="' + dMin + '" max="' + dMax + '" value="' + tu + '"></label>' +
-                                             '<label>Đến <input type="date" data-k="den" min="' + dMin + '" max="' + dMax + '" value="' + den + '"></label>' +
-                                             '<button type="button" class="bc-nut bc-nut-ap">Áp dụng</button>' +
-                                             '<label>Dòng SP <select data-k="ser">' + opt(dsSer, lSer, 'Tất cả') + '</select></label>' +
-                                             '<label>Phân khúc <select data-k="seg">' + opt(dsSeg, lSeg, 'Tất cả') + '</select></label>' +
-                                             '<label>Model <select data-k="mod">' + opt(dsModel(), lMod, 'Tất cả') + '</select></label>' +
-                                             (coLoc() ? '<button type="button" class="bc-nut bc-nut-xoa">Xoá lọc</button>' : '') +
-                                             '<span class="bc-loc-dem"></span>';
+                     loc.innerHTML = '<label>Từ <input type="date" data-k="tu" min="' + dMin + '" max="' + dMax + '" value="' + tu + '"></label>' +
+                                '<label>Đến <input type="date" data-k="den" min="' + dMin + '" max="' + dMax + '" value="' + den + '"></label>' +
+                                '<button type="button" class="bc-nut bc-nut-ap">Áp dụng</button>' +
+                                '<label>Dòng SP <select data-k="ser"></select></label>' +
+                                '<label>Phân khúc <select data-k="seg"></select></label>' +
+                                '<div class="bc-tim"><input type="text" data-k="tim" placeholder="Gõ tìm model — chọn được nhiều" autocomplete="off">' +
+                                '<div class="bc-goi" hidden></div></div>' +
+                                '<button type="button" class="bc-nut bc-nut-xoa" hidden>Xoá lọc</button>' +
+                                '<span class="bc-loc-dem"></span><div class="bc-the"></div>';
+                     var oSer = $('[data-k=ser]', loc), oSeg = $('[data-k=seg]', loc);
+                     var oTim = $('[data-k=tim]', loc), oGoi = $('.bc-goi', loc), oThe = $('.bc-the', loc), oXoa = $('.bc-nut-xoa', loc);
+                     oSer.innerHTML = opt(dsSer, lSer, 'Tất cả');
+                     oSeg.innerHTML = opt(dsSeg, lSeg, 'Tất cả');
+
+                     function veThe() {
+                                oThe.innerHTML = lMods.length
+                                             ? '<b>Model đang lọc (' + lMods.length + '):</b> ' + lMods.map(function (m) {
+                                                          return '<span class="bc-the-1">' + esc(m) + '<button type="button" data-bo="' + esc(m) + '" aria-label="Bỏ">×</button></span>';
+                                             }).join('')
+                                             : '';
+                                oXoa.hidden = !coLoc();
+                     }
+                     function veGoi(q) {
+                                var t = khongDau(q).trim();
+                                var ds = dsModel().filter(function (x) { return lMods.indexOf(x.m) < 0 && (!t || khongDau(x.m).indexOf(t) >= 0); });
+                                if (!ds.length) { oGoi.innerHTML = '<div class="bc-goi-0">Không có model nào khớp trong khoảng đang xem</div>'; oGoi.hidden = false; return; }
+                                oGoi.innerHTML = ds.slice(0, 12).map(function (x, i) {
+                                             return '<button type="button" class="bc-goi-1' + (i === 0 ? ' bc-goi-dau' : '') + '" data-them="' + esc(x.m) + '">' + esc(x.m) + ' <i>' + fInt(x.n) + ' máy</i></button>';
+                                }).join('') + (ds.length > 12 ? '<div class="bc-goi-0">… còn ' + (ds.length - 12) + ' model nữa, gõ thêm để thu hẹp</div>' : '');
+                                oGoi.hidden = false;
+                     }
+                     function themModel(m) {
+                                if (!m || lMods.indexOf(m) >= 0) return;
+                                lMods.push(m); oTim.value = ''; oGoi.hidden = true; veThe(); ve();
                      }
 
                      function themVao(t, ch, sl, sp, ds, dt) {
@@ -496,7 +524,7 @@
                                              if (x.m < m1 || x.m > m2) return;
                                              if (lSer && x.series !== lSer) return;
                                              if (lSeg && x.segment !== lSeg) return;
-                                             if (lMod && x.model !== lMod) return;
+                                             if (lMods.length && lMods.indexOf(x.model) < 0) return;
                                              var ds = x.sellout || 0, dt = x.rev || 0; if (!ds && !dt) return;
                                              var sp = x.store || '(Không rõ)';
                                              var sl = (D.shop_sale_map && D.shop_sale_map[sp]) || x.sales || '(Không rõ)';
@@ -518,7 +546,7 @@
                                              var sm = m2 - m1 + 1, m2b = m1 - 1, m1b = m2b - sm + 1;
                                              A = cayThang(m1, m2); B = (m1b >= mMin) ? cayThang(m1b, m2b) : null;
                                              dem = sm + ' tháng';
-                                             var ten = [lSer, lSeg, lMod].filter(Boolean).map(esc).join(' · ');
+                                             var ten = [lSer, lSeg].filter(Boolean).concat(lMods.length ? [lMods.length + ' model: ' + lMods.join(', ')] : []).map(esc).join(' · ');
                                              var doDo = (thangCua(dMax) === m2 && +dMax.slice(8, 10) < soNgayThang(m2));
                                              ghi = '<b>⚠ Đang lọc sản phẩm → số tính THEO THÁNG</b> (số theo ngày không có cột sản phẩm). ' +
                                                           'Đang xem <b>T' + m1 + (sm > 1 ? ' → T' + m2 : '') + '</b>' +
@@ -570,26 +598,46 @@
                      });
                      loc.addEventListener('change', function (e) {
                                 var t = e.target, kk = t.getAttribute && t.getAttribute('data-k');
-                                if (kk === 'ser') { lSer = t.value; lMod = ''; }
-                                else if (kk === 'seg') { lSeg = t.value; lMod = ''; }
-                                else if (kk === 'mod') { lMod = t.value; }
-                                else return;
-                                veLoc(); ve();
+                                if (kk !== 'ser' && kk !== 'seg') return;
+                                if (kk === 'ser') lSer = t.value; else lSeg = t.value;
+                                /* model đã chọn mà không còn thuộc Dòng SP / Phân khúc mới thì bỏ ra cho khỏi lọc rỗng */
+                                var conLai = {}; dsModel().forEach(function (x) { conLai[x.m] = 1; });
+                                lMods = lMods.filter(function (m) { return conLai[m]; });
+                                oTim.value = ''; oGoi.hidden = true; veThe(); ve();
+                     });
+                     oTim.addEventListener('input', function () { veGoi(oTim.value); });
+                     oTim.addEventListener('focus', function () { veGoi(oTim.value); });
+                     oTim.addEventListener('keydown', function (e) {
+                                if (e.key === 'Escape') { oGoi.hidden = true; return; }
+                                if (e.key !== 'Enter') return;
+                                e.preventDefault();
+                                var d1 = $('.bc-goi-dau', oGoi); if (d1) themModel(d1.getAttribute('data-them'));
                      });
                      loc.addEventListener('click', function (e) {
                                 var t = e.target;
+                                var g = t.closest && t.closest('[data-them]');
+                                if (g) { themModel(g.getAttribute('data-them')); return; }
+                                var b = t.closest && t.closest('[data-bo]');
+                                if (b) { var m = b.getAttribute('data-bo'); lMods = lMods.filter(function (x) { return x !== m; }); veThe(); ve(); return; }
                                 if (!t.classList) return;
                                 if (t.classList.contains('bc-nut-ap')) {
-                                             var a = $('[data-k=tu]', loc).value, b = $('[data-k=den]', loc).value;
-                                             if (!a || !b) return;
-                                             if (a > b) { var z = a; a = b; b = z; }
-                                             tu = a < dMin ? dMin : a; den = b > dMax ? dMax : b;
-                                             veLoc(); ve();
+                                             var a = $('[data-k=tu]', loc).value, b2 = $('[data-k=den]', loc).value;
+                                             if (!a || !b2) return;
+                                             if (a > b2) { var z = a; a = b2; b2 = z; }
+                                             tu = a < dMin ? dMin : a; den = b2 > dMax ? dMax : b2;
+                                             $('[data-k=tu]', loc).value = tu; $('[data-k=den]', loc).value = den;
+                                             var conLai2 = {}; dsModel().forEach(function (x) { conLai2[x.m] = 1; });
+                                             lMods = lMods.filter(function (m2) { return conLai2[m2]; });
+                                             oGoi.hidden = true; veThe(); ve();
                                 } else if (t.classList.contains('bc-nut-xoa')) {
-                                             lSer = ''; lSeg = ''; lMod = ''; veLoc(); ve();
+                                             lSer = ''; lSeg = ''; lMods = []; oSer.value = ''; oSeg.value = '';
+                                             oTim.value = ''; oGoi.hidden = true; veThe(); ve();
                                 }
                      });
-                     veLoc(); ve();
+                     document.addEventListener('click', function (e) {
+                                if (!oGoi.hidden && !$('.bc-tim', loc).contains(e.target)) oGoi.hidden = true;
+                     });
+                     veThe(); ve();
                      var b1 = grid.querySelector('.bc-khoi');
                      if (b1) grid.insertBefore(kq, b1.nextSibling); else grid.appendChild(kq);
             })();

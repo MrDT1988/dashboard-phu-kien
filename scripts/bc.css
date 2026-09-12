@@ -112,6 +112,19 @@ html.bc-dt .bc-bd-hop { height: 300px !important; }
 .bc-loc label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 .bc-loc select, .bc-loc input { font: inherit; font-size: 12.5px; padding: 6px 9px; border-radius: 7px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); max-width: 190px; }
 .bc-loc-dem { margin-left: auto; font-weight: 700; }
+/* Anh Thái 12/09: thanh TÌM MODEL (chọn nhiều) ở khối 2 Tổng quan */
+.bc-tim { position: relative; }
+.bc-tim > input { min-width: 240px; }
+.bc-goi { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; min-width: 260px; max-width: 340px; max-height: 300px; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 9px; box-shadow: 0 8px 22px rgba(0,0,0,.22); padding: 4px; }
+.bc-goi-1 { display: flex; justify-content: space-between; gap: 10px; width: 100%; text-align: left; font: inherit; font-size: 12.5px; padding: 7px 9px; border: 0; border-radius: 7px; background: transparent; color: var(--text-primary); cursor: pointer; }
+.bc-goi-1 i { font-style: normal; color: var(--text-secondary); white-space: nowrap; }
+.bc-goi-1:hover, .bc-goi-dau { background: var(--bg-hover, rgba(127,127,127,.14)); }
+.bc-goi-0 { padding: 7px 9px; font-size: 12px; color: var(--text-secondary); }
+.bc-the { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
+.bc-the:empty { display: none; }
+.bc-the-1 { display: inline-flex; align-items: center; gap: 5px; padding: 3px 4px 3px 9px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-card); font-weight: 600; }
+.bc-the-1 button { border: 0; background: transparent; color: var(--text-secondary); font: inherit; font-size: 14px; line-height: 1; cursor: pointer; padding: 0 4px; }
+.bc-the-1 button:hover { color: var(--bc-giam, #c43d3d); }
 .bc-thanh-nho { display: inline-block; width: 54px; height: 6px; border-radius: 3px; background: rgba(139,152,169,.2); vertical-align: middle; overflow: hidden; margin-right: 4px; }
 .bc-thanh-nho i { display: block; height: 100%; border-radius: 3px; }
 
