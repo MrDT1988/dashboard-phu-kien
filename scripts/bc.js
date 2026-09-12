@@ -430,7 +430,7 @@
                      if (!NGAY.length) return;
                      var CT = D.crosstab || [];
                      var kq = khoi({ stt: 2, ten: 'Phân tích Sell-out — theo cây', rong: true,
-                                dangXem: 'Chọn khoảng ngày bất kỳ · lọc Dòng SP / Phân khúc / gõ tìm & chọn NHIỀU model · bấm ▸ để bung Kênh → Sale → Shop · bấm tiêu đề cột để đổi cách xếp' });
+                                dangXem: 'Chọn khoảng ngày bất kỳ · lọc Dòng SP / Phân khúc / gõ tìm rồi TÍCH NHIỀU MODEL một lượt (danh sách không đóng) · bấm ▸ để bung Kênh → Sale → Shop · bấm tiêu đề cột để đổi cách xếp' });
                      var than = $('.bc-than', kq);
                      var dMin = NGAY[0], dMax = NGAY[NGAY.length - 1];
                      var tu = k.tu < dMin ? dMin : k.tu, den = k.denCo > dMax ? dMax : k.denCo;
@@ -474,7 +474,7 @@
                                 '<button type="button" class="bc-nut bc-nut-ap">Áp dụng</button>' +
                                 '<label>Dòng SP <select data-k="ser"></select></label>' +
                                 '<label>Phân khúc <select data-k="seg"></select></label>' +
-                                '<div class="bc-tim"><input type="text" data-k="tim" placeholder="Gõ tìm model — chọn được nhiều" autocomplete="off">' +
+                                '<div class="bc-tim"><input type="text" data-k="tim" placeholder="Gõ tìm model — tích chọn nhiều cái" autocomplete="off">' +
                                 '<div class="bc-goi" hidden></div></div>' +
                                 '<button type="button" class="bc-nut bc-nut-xoa" hidden>Xoá lọc</button>' +
                                 '<span class="bc-loc-dem"></span><div class="bc-the"></div>';
@@ -491,18 +491,28 @@
                                              : '';
                                 oXoa.hidden = !coLoc();
                      }
+                     /* Anh Thái 12/09 (lần 2): danh sách KHÔNG đóng sau mỗi lần chọn — tích bao nhiêu
+                        model cũng được trong MỘT lần mở, khỏi phải gõ tìm lại từng cái. Model đã tích vẫn
+                        nằm trong danh sách (có dấu ✓) để bấm lần nữa là bỏ tích. */
                      function veGoi(q) {
                                 var t = khongDau(q).trim();
-                                var ds = dsModel().filter(function (x) { return lMods.indexOf(x.m) < 0 && (!t || khongDau(x.m).indexOf(t) >= 0); });
-                                if (!ds.length) { oGoi.innerHTML = '<div class="bc-goi-0">Không có model nào khớp trong khoảng đang xem</div>'; oGoi.hidden = false; return; }
-                                oGoi.innerHTML = ds.slice(0, 12).map(function (x, i) {
-                                             return '<button type="button" class="bc-goi-1' + (i === 0 ? ' bc-goi-dau' : '') + '" data-them="' + esc(x.m) + '">' + esc(x.m) + ' <i>' + fInt(x.n) + ' máy</i></button>';
-                                }).join('') + (ds.length > 12 ? '<div class="bc-goi-0">… còn ' + (ds.length - 12) + ' model nữa, gõ thêm để thu hẹp</div>' : '');
+                                var ds = dsModel().filter(function (x) { return !t || khongDau(x.m).indexOf(t) >= 0; });
+                                var chan = '<div class="bc-goi-chan"><span>Đã chọn <b>' + lMods.length + '</b> model</span><button type="button" class="bc-goi-xong">Xong</button></div>';
+                                if (!ds.length) { oGoi.innerHTML = '<div class="bc-goi-0">Không có model nào khớp trong khoảng đang xem</div>' + chan; oGoi.hidden = false; return; }
+                                var chuaChon = 0;
+                                oGoi.innerHTML = ds.slice(0, 30).map(function (x) {
+                                             var co = lMods.indexOf(x.m) >= 0, dau = '';
+                                             if (!co && !chuaChon) { chuaChon = 1; dau = ' bc-goi-dau'; }
+                                             return '<button type="button" class="bc-goi-1' + (co ? ' bc-goi-chon' : '') + dau + '" data-them="' + esc(x.m) + '">' +
+                                                          '<span class="bc-goi-tick">' + (co ? '✓' : '') + '</span>' + esc(x.m) + ' <i>' + fInt(x.n) + ' máy</i></button>';
+                                }).join('') + (ds.length > 30 ? '<div class="bc-goi-0">… còn ' + (ds.length - 30) + ' model nữa, gõ thêm để thu hẹp</div>' : '') + chan;
                                 oGoi.hidden = false;
                      }
-                     function themModel(m) {
-                                if (!m || lMods.indexOf(m) >= 0) return;
-                                lMods.push(m); oTim.value = ''; oGoi.hidden = true; veThe(); ve();
+                     function doiModel(m) {
+                                if (!m) return;
+                                var i = lMods.indexOf(m);
+                                if (i >= 0) lMods.splice(i, 1); else lMods.push(m);
+                                veThe(); ve(); veGoi(oTim.value);   // GIỮ danh sách đang mở + giữ nguyên chữ đã gõ
                      }
 
                      function themVao(t, ch, sl, sp, ds, dt) {
@@ -611,12 +621,13 @@
                                 if (e.key === 'Escape') { oGoi.hidden = true; return; }
                                 if (e.key !== 'Enter') return;
                                 e.preventDefault();
-                                var d1 = $('.bc-goi-dau', oGoi); if (d1) themModel(d1.getAttribute('data-them'));
+                                var d1 = $('.bc-goi-dau', oGoi); if (d1) doiModel(d1.getAttribute('data-them'));
                      });
                      loc.addEventListener('click', function (e) {
                                 var t = e.target;
+                                if (t.classList && t.classList.contains('bc-goi-xong')) { oGoi.hidden = true; oTim.value = ''; return; }
                                 var g = t.closest && t.closest('[data-them]');
-                                if (g) { themModel(g.getAttribute('data-them')); return; }
+                                if (g) { doiModel(g.getAttribute('data-them')); return; }
                                 var b = t.closest && t.closest('[data-bo]');
                                 if (b) { var m = b.getAttribute('data-bo'); lMods = lMods.filter(function (x) { return x !== m; }); veThe(); ve(); return; }
                                 if (!t.classList) return;
@@ -634,9 +645,14 @@
                                              oTim.value = ''; oGoi.hidden = true; veThe(); ve();
                                 }
                      });
+                     /* Bắt ở pha CAPTURE: chạy TRƯỚC khi veGoi() vẽ lại danh sách. Nếu bắt ở pha nổi bọt
+                        thì nút vừa bấm đã bị thay mất, contains() ra false và danh sách tự đóng oan. */
                      document.addEventListener('click', function (e) {
-                                if (!oGoi.hidden && !$('.bc-tim', loc).contains(e.target)) oGoi.hidden = true;
-                     });
+                                if (oGoi.hidden) return;
+                                var t = $('.bc-tim', loc);
+                                if (t && t.contains(e.target)) return;
+                                oGoi.hidden = true;
+                     }, true);
                      veThe(); ve();
                      var b1 = grid.querySelector('.bc-khoi');
                      if (b1) grid.insertBefore(kq, b1.nextSibling); else grid.appendChild(kq);

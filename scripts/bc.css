@@ -120,6 +120,10 @@ html.bc-dt .bc-bd-hop { height: 300px !important; }
 .bc-goi-1 i { font-style: normal; color: var(--text-secondary); white-space: nowrap; }
 .bc-goi-1:hover, .bc-goi-dau { background: var(--bg-hover, rgba(127,127,127,.14)); }
 .bc-goi-0 { padding: 7px 9px; font-size: 12px; color: var(--text-secondary); }
+.bc-goi-tick { display: inline-block; width: 14px; flex: 0 0 14px; font-weight: 800; color: var(--bc-tang, #1e8558); }
+.bc-goi-chon { font-weight: 700; }
+.bc-goi-chan { position: sticky; bottom: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 9px; margin-top: 4px; border-top: 1px solid var(--border-color); background: var(--bg-card); font-size: 12px; color: var(--text-secondary); }
+.bc-goi-xong { font: inherit; font-weight: 700; padding: 4px 12px; border-radius: 7px; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); cursor: pointer; }
 .bc-the { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
 .bc-the:empty { display: none; }
 .bc-the-1 { display: inline-flex; align-items: center; gap: 5px; padding: 3px 4px 3px 9px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-card); font-weight: 600; }
