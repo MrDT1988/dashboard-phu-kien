@@ -75,7 +75,9 @@ const shopCuaKenh = {};   // kenh -> Set(shop)
 // 'debug_target' bi catPhamVi CO Y bo di (chi la so lieu go roi cua admin),
 // nen khong duoc tinh la "thieu truong". Test dung du lieu gia khong co truong
 // nay nen lan dau chay that moi lo ra.
-const BO_CO_Y = new Set(['debug_target']);
+// 'week_store_series' (them 12/09) cung bi bo CO Y: no la so theo SHOP cua CA VUNG,
+// catPhamVi da quy doi thanh week_channel_series chi gom shop cua nguoi xem.
+const BO_CO_Y = new Set(['debug_target', 'week_store_series']);
 const truongGoc = Object.keys(AD).filter((k) => !BO_CO_Y.has(k)).sort();
 
 let soMo = 0, soThieuTruong = 0, soRoRi = 0, soKhongMo = 0;
