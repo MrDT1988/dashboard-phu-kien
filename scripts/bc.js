@@ -160,6 +160,23 @@
     });
     return { kenh: r, tong: tong };
   }
+  /* Anh Thai 12/09: Reno/Find theo TUAN. Uu tien week_channel_models (so that, theo model).
+     Goi cua SALE kenh MWG/KA khong co no -> lay week_channel_series (pham-vi-dbtg.mjs cong san
+     3 ro tu week_store_series cua Apps Script, dung pham vi cua tung nguoi). Khong co ca hai
+     thi tra ve 0 va khoi 1 se hien "-" thay vi so 0. */
+  function serKy(cd, kk) {
+    var mk = modelKy(cd, kk), s = gomSeries(mk);
+    if (cd !== 'tuan') return s;
+    var ws = (D.week_channel_series || {})[kk.tu];
+    if (!ws) return s;
+    kenhCoSo.forEach(function (c) {
+      if (mk[c] && Object.keys(mk[c]).length) return;   // da co so that theo model -> giu nguyen
+      var v = ws[c]; if (!v) return;
+      s.kenh[c] = { RENO: v.RENO || 0, FIND: v.FIND || 0, CONLAI: v.CONLAI || 0 };
+      s.tong.RENO += v.RENO || 0; s.tong.FIND += v.FIND || 0; s.tong.CONLAI += v.CONLAI || 0;
+    });
+    return s;
+  }
   function gomSeg(mk) {
     var thuTu = D.segments_list || [], r = {};
     thuTu.forEach(function (s) { r[s] = 0; });
@@ -354,14 +371,16 @@
             var nay = gom(k.tu, k.denCo), truoc = kt ? gom(kt.tu, kt.denCo) : null;
             var tenKyTruoc = kt ? kt.nhan + (kt.cungKy ? ' (cùng số ngày)' : '') : '';
             var chuoi12 = chuoiKy(cd, k, 12);
-            var mk = modelKy(cd, k), ser = gomSeries(mk);
+            var mk = modelKy(cd, k), ser = serKy(cd, k);
             /* Anh Thai 12/09: goi cua SALE kenh MWG/KA khong co week_channel_models
                (nguon duy nhat co model theo ngay theo shop la ind_daily_by_date - chi IND).
                Truoc day the Reno/Find cu hien 0 may -> doc nham la ban duoc 0. Nay hien "-". */
-            var thieuSerTuan = (cd === 'tuan') && kenhCoSo.some(function (c) { return !mk[c] || !Object.keys(mk[c]).length; });
+            var thieuSerTuan = (cd === 'tuan') && kenhCoSo.some(function (c) {
+                       return (!mk[c] || !Object.keys(mk[c]).length) && !((D.week_channel_series || {})[k.tu] || {})[c];
+            });
             var ktKy = kt ? (cd === 'tuan' ? khoangKy('tuan', kt.tu) : (k.so > 1 ? khoangKy('thang', k.so - 1) : null)) : null;
-            var serT = ktKy ? gomSeries(modelKy(cd, ktKy)) : null;
-            var ser12 = chuoi12.map(function (g) { return gomSeries(modelKy(cd, cd === 'tuan' ? khoangKy('tuan', g.id) : khoangKy('thang', g.id))); });
+            var serT = ktKy ? serKy(cd, ktKy) : null;
+            var ser12 = chuoi12.map(function (g) { return serKy(cd, cd === 'tuan' ? khoangKy('tuan', g.id) : khoangKy('thang', g.id)); });
             var sK = function (s, c, key) { return s && s.kenh[c] ? (s.kenh[c][key] || 0) : 0; };
             var thangCo = dsThangCo();
             var thangKy = cd === 'tuan' ? thangCua(k.denCo) : k.so;
