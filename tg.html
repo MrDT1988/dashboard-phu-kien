@@ -3730,6 +3730,12 @@ function mergeFinalData(a, b) {
     }
     ingestWeekStoreSeries(a);
     ingestWeekStoreSeries(b);
+    // Checkpoint CŨ (trước 12/09) không có week_store_series. Nếu chỉ gộp được phần delta thì số
+    // Reno/Find theo tuần sẽ THIẾU HỤT — sai còn tệ hơn không có. Nên thiếu ở checkpoint là bỏ hẳn,
+    // bc.js gặp rỗng sẽ hiện "—" thay vì số sai. Có checkpoint mới thì tự đầy trở lại.
+    if (!(a && a.week_store_series && Object.keys(a.week_store_series).length)) {
+        Object.keys(week_store_series).forEach((k) => { delete week_store_series[k]; });
+    }
 
     // --- week_revenue: gộp theo tuần (tổng cả 3 kênh), fallback {} cho checkpoint cũ chưa có field này ---
     const week_revenue = {};
