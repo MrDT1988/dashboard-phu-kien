@@ -496,10 +496,12 @@
                                              A = cayThang(m1, m2); B = (m1b >= mMin) ? cayThang(m1b, m2b) : null;
                                              dem = sm + ' tháng';
                                              var ten = [lSer, lSeg, lMod].filter(Boolean).map(esc).join(' · ');
+                                             var doDo = (thangCua(dMax) === m2 && +dMax.slice(8, 10) < soNgayThang(m2));
                                              ghi = '<b>⚠ Đang lọc sản phẩm → số tính THEO THÁNG</b> (số theo ngày không có cột sản phẩm). ' +
                                                           'Đang xem <b>T' + m1 + (sm > 1 ? ' → T' + m2 : '') + '</b>' +
                                                           (B ? ' · so với <b>T' + m1b + (sm > 1 ? ' → T' + m2b : '') + '</b>' : ' · chưa đủ tháng phía trước để so') +
-                                                          ' · lọc: <b>' + ten + '</b>.';
+                                                          ' · lọc: <b>' + ten + '</b>.' +
+                                                          (doDo && B ? ' <b class="bc-giam-chu">T' + m2 + ' mới có số tới ' + ngayVN(dMax) + ' (' + (+dMax.slice(8, 10)) + '/' + soNgayThang(m2) + ' ngày) nên % so tháng đủ sẽ âm giả tạo — chỉ dùng để so cơ cấu, đừng đọc như tăng/giảm thật.</b>' : '');
                                 } else {
                                              var n = demNgay(tu, den);
                                              var den2 = congNgay(tu, -1), tu2 = congNgay(den2, -(n - 1));
