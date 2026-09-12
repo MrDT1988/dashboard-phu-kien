@@ -649,10 +649,98 @@
                      grid.appendChild(kq);
             })();
 
-            /* ================= 7. Văn bản: Chiến lược / Chính sách / Chương trình (chỉ tháng) ================= */
+            /* ================= 7. Phân tích Sell-out — bảng cây Kênh → Sale → Shop =================
+               Anh Thái 12/09: học theo màn "Phân tích Sell-out" của app OPPO. Chọn khoảng ngày bất kỳ,
+               mỗi dòng có % so CÙNG KỲ (cùng số ngày, liền ngay trước), bấm để bung 3 cấp.
+               DB TG chỉ 1 vùng nên cấp 1 là KÊNH (app OPPO cấp 1 là Khu vực).
+               KHÔNG có DOS / Hàng tồn / so Năm trước: Sell In chỉ có kênh IND và dữ liệu chỉ từ 01/01/2026. */
+            (function () {
+                     if (!NGAY.length) return;
+                     var kq = khoi({ stt: 7, ten: 'Phân tích Sell-out — theo cây', rong: true,
+                                dangXem: 'Chọn khoảng ngày bất kỳ · bấm ▸ để bung Kênh → Sale → Shop · % là so với cùng số ngày liền trước · bấm tiêu đề cột để đổi cách xếp' });
+                     var than = $('.bc-than', kq);
+                     var dMin = NGAY[0], dMax = NGAY[NGAY.length - 1];
+                     var tu = k.tu < dMin ? dMin : k.tu, den = k.denCo > dMax ? dMax : k.denCo;
+                     var sapTheo = 'ds', mo = {};
+                     var demNgay = function (a, b) { return Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 86400000) + 1; };
+                     var loc = el('div', 'bc-loc');
+                     loc.innerHTML = '<label>Từ <input type="date" data-k="tu" min="' + dMin + '" max="' + dMax + '" value="' + tu + '"></label>' +
+                                '<label>Đến <input type="date" data-k="den" min="' + dMin + '" max="' + dMax + '" value="' + den + '"></label>' +
+                                '<button type="button" class="bc-nut bc-nut-ap">Áp dụng</button><span class="bc-loc-dem"></span>';
+                     var box = el('div', 'bc-cuon');
+                     than.appendChild(loc); than.appendChild(box);
+                     function cay(a, b) {
+                                var g = gom(a, b), t = {};
+                                Object.keys(g.shop).forEach(function (s) {
+                                             var x = g.shop[s]; if (!x.ds && !x.dt) return;
+                                             var ch = x.kenh || '(Không rõ)', sl = x.sale || '(Không rõ)';
+                                             var K = t[ch] || (t[ch] = { ds: 0, dt: 0, sale: {} });
+                                             K.ds += x.ds; K.dt += x.dt;
+                                             var S = K.sale[sl] || (K.sale[sl] = { ds: 0, dt: 0, shop: {} });
+                                             S.ds += x.ds; S.dt += x.dt;
+                                             S.shop[s] = { ds: x.ds, dt: x.dt };
+                                });
+                                return { ds: g.ds, dt: g.dt, kenh: t };
+                     }
+                     var oSo = function (a, b) {
+                                return '<td><b>' + fInt(a.ds) + '</b></td><td>' + chip(b ? pct(a.ds, b.ds) : null) + '</td>' +
+                                             '<td><b>' + fTyNgan(a.dt) + '</b></td><td>' + chip(b ? pct(a.dt, b.dt) : null) + '</td>';
+                     };
+                     function ve() {
+                                var n = demNgay(tu, den);
+                                var den2 = congNgay(tu, -1), tu2 = congNgay(den2, -(n - 1));
+                                var A = cay(tu, den), B = (tu2 >= dMin) ? cay(tu2, den2) : null;
+                                var xep = function (o) { return Object.keys(o).sort(function (x, y) { return (o[y][sapTheo] || 0) - (o[x][sapTheo] || 0); }); };
+                                var mui = function (k2) { return '<span class="bc-mui">' + (mo[k2] ? '▾' : '▸') + '</span> '; };
+                                var h = '<table class="bc-bang bc-bang-cay"><thead><tr><th>Kênh / Sale / Shop</th>' +
+                                             '<th class="bc-sap" data-sap="ds" style="cursor:pointer">Số bán' + (sapTheo === 'ds' ? ' ▾' : '') + '</th><th>so cùng kỳ</th>' +
+                                             '<th class="bc-sap" data-sap="dt" style="cursor:pointer">Doanh thu' + (sapTheo === 'dt' ? ' ▾' : '') + '</th><th>so cùng kỳ</th></tr></thead><tbody>';
+                                h += '<tr class="bc-tong"><td><b>Tất cả</b></td>' + oSo(A, B) + '</tr>';
+                                xep(A.kenh).forEach(function (ch) {
+                                             var K = A.kenh[ch], KB = B ? B.kenh[ch] : null, mk = 'k:' + ch;
+                                             h += '<tr data-mo="' + esc(mk) + '" style="cursor:pointer"><td><b>' + mui(mk) + '<i class="bc-cham" style="background:' + mau(ch) + '"></i>' + esc(ch) + '</b></td>' + oSo(K, KB) + '</tr>';
+                                             if (!mo[mk]) return;
+                                             xep(K.sale).forEach(function (sl) {
+                                                            var S = K.sale[sl], SB = KB ? KB.sale[sl] : null, ms = mk + '|s:' + sl;
+                                                            h += '<tr data-mo="' + esc(ms) + '" style="cursor:pointer"><td style="padding-left:24px">' + mui(ms) + esc(sl) + '</td>' + oSo(S, SB) + '</tr>';
+                                                            if (!mo[ms]) return;
+                                                            xep(S.shop).forEach(function (sp) {
+                                                                         var H = S.shop[sp], HB = SB ? SB.shop[sp] : null;
+                                                                         h += '<tr class="bc-mo-nhe"><td style="padding-left:48px" title="' + esc(sp) + '">' + esc(sp) + '</td>' + oSo(H, HB) + '</tr>';
+                                                            });
+                                             });
+                                });
+                                box.innerHTML = h + '</tbody></table>';
+                                $('.bc-loc-dem', loc).textContent = n + ' ngày';
+                                chot(kq, 'Đang xem <b>' + ngayVN(tu) + ' → ' + ngayVN(den) + '</b> (' + n + ' ngày)' +
+                                             (B ? ' · so với <b>' + ngayVN(tu2) + ' → ' + ngayVN(den2) + '</b> (cùng ' + n + ' ngày)' : ' · chưa đủ dữ liệu phía trước để so cùng kỳ') + '.');
+                     }
+                     box.addEventListener('click', function (e) {
+                                var th = e.target.closest && e.target.closest('th[data-sap]');
+                                if (th) { sapTheo = th.getAttribute('data-sap'); ve(); return; }
+                                var tr = e.target.closest && e.target.closest('tr[data-mo]');
+                                if (!tr) return;
+                                var key = tr.getAttribute('data-mo');
+                                if (mo[key]) { delete mo[key]; Object.keys(mo).forEach(function (x) { if (x.indexOf(key + '|') === 0) delete mo[x]; }); }
+                                else mo[key] = 1;
+                                ve();
+                     });
+                     $('.bc-nut-ap', loc).addEventListener('click', function () {
+                                var a = $('[data-k=tu]', loc).value, b = $('[data-k=den]', loc).value;
+                                if (!a || !b) return;
+                                if (a > b) { var z = a; a = b; b = z; }
+                                tu = a < dMin ? dMin : a; den = b > dMax ? dMax : b;
+                                $('[data-k=tu]', loc).value = tu; $('[data-k=den]', loc).value = den;
+                                ve();
+                     });
+                     ve();
+                     grid.appendChild(kq);
+            })();
+
+            /* ================= 8. Văn bản: Chiến lược / Chính sách / Chương trình (chỉ tháng) ================= */
             if (cd === 'thang') (function () {
                      var cu = window.__bcKhoiCu || []; if (!cu.length) return;
-                     var kq = khoi({ stt: 7, ten: 'Chiến lược · Chính sách · Chương trình', rong: true, cls: 'bc-van', dangXem: 'Thu gọn — bấm từng mục để mở (nội dung như DB TG cũ)' });
+                     var kq = khoi({ stt: 8, ten: 'Chiến lược · Chính sách · Chương trình', rong: true, cls: 'bc-van', dangXem: 'Thu gọn — bấm từng mục để mở (nội dung như DB TG cũ)' });
                      var than = $('.bc-than', kq);
                      cu.forEach(function (c) { var d = el('details', 'bc-details'); d.innerHTML = '<summary>' + esc(c.ten) + '</summary>'; d.appendChild(c.el); c.el.style.display = ''; than.appendChild(d); });
                      grid.appendChild(kq);
