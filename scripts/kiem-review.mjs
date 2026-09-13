@@ -42,6 +42,8 @@ function moShop(ten, i) {
     r[8] = r[0] + r[2] + r[4] + r[6] + 3; r[9] = r[1] + r[3] + r[5] + r[7] + 20;
     dk.push(r);
   }
+  /* 13/09: ngày 12 phải làm CẢ CHỢ vọt >30% so nền cùng thứ, nếu không thì theo luật mới
+     sẽ không có ngày đột biến nào và mọi phép kiểm bên dưới đều vô nghĩa. */
   CAI.forEach(([sp, d, iu, u, dt]) => {
     if (sp !== ten) return;
     const r = dk[d - 1];
@@ -87,62 +89,60 @@ await new Promise(r => setTimeout(r, 600));
 
 const ok = [], xau = [];
 const kt = (t, c) => (c ? ok : xau).push(t);
-const txt = () => doc.body.textContent;
 
 /* --- 1. section có mặt, đúng chỗ --- */
 const h2 = [...doc.querySelectorAll('h2')].map(x => x.textContent.trim());
-kt('Có mục "Đơn hàng dự án": ' + h2.join(' | ').slice(0, 120), h2.includes('Đơn hàng dự án'));
+kt('Có mục "Đơn hàng dự án"', h2.includes('Đơn hàng dự án'));
 kt('Nằm NGAY DƯỚI "Đối thủ bán gì"', h2.indexOf('Đơn hàng dự án') === h2.indexOf('Đối thủ bán gì') + 1);
 
-/* --- 2. bắt đúng ngày đã cài --- */
+/* --- 2. CHỈ hiện ngày đột biến, không phải mọi ngày --- */
 const box = doc.getElementById('dabox');
 const ngay = [...box.querySelectorAll('[data-dam]')].map(b => +b.getAttribute('data-dam'));
-kt('Bắt được các ngày bất thường: ' + ngay.join(', '), ngay.includes(12) && ngay.includes(7));
-kt('Ngày mới nhất đứng đầu', ngay[0] === Math.max(...ngay));
+kt('Chỉ hiện ngày ĐỘT BIẾN (' + ngay.length + ' ngày trên ' + DMAX + ' ngày có số): ' + ngay.join(', '),
+  ngay.length >= 1 && ngay.length < DMAX);
+kt('Ngày 12 (cả chợ vọt) có trong danh sách', ngay.includes(12));
+kt('Ngày 7 (chỉ 1 shop Xiaomi nhảy, cả chợ không vọt) KHÔNG bị kêu', !ngay.includes(7));
+kt('Có dòng tổng kết "N ngày đột biến trên M ngày có số"', /ngày đột biến trên \d+ ngày có số/.test(box.textContent));
 
-/* --- 3. ngày mới nhất tự bung, có đủ dòng --- */
-let rows = [...box.querySelectorAll('.da-ng.open .da-tb tbody tr')];
+/* --- 3. đầu mỗi ngày ghi % vượt + nền cùng thứ --- */
+const hd = box.querySelector('[data-dam="12"]').textContent.replace(/\s+/g, ' ');
+kt('Đầu ngày ghi % vượt + cả chợ + nền theo THỨ: ' + hd.slice(0, 90),
+  /\+\d+%/.test(hd) && /cả chợ/.test(hd) && /nền (Thứ|Chủ)/.test(hd));
+
+/* --- 4. bung ra: dải hãng + bảng shop --- */
+const hg = [...box.querySelectorAll('.da-ng.open .da-hg1')].map(x => x.textContent.replace(/\s+/g, ' '));
+kt('Có dải 4 hãng kèm nền và %: ' + hg.join(' | ').slice(0, 110), hg.length === 4 && /nền/.test(hg.join('')));
 const lay = r => [...r.querySelectorAll('td')].map(t => t.textContent.trim());
-const ds12 = rows.map(lay);
-kt('Ngày 12 tự bung, ra ' + rows.length + ' dòng', rows.length >= 3);
+const ds12 = [...box.querySelectorAll('.da-ng.open .da-tb tbody tr')].map(lay);
 const co = (id, hang) => ds12.some(r => r[0].includes(id) && r[2] === hang);
-kt('Có Shop 1 / Samsung', co('Shop 1', 'Samsung'));
-kt('Có Shop 2 / Samsung', co('Shop 2', 'Samsung'));
-kt('Có Shop 4 / OPPO (dự án của mình cũng phải hiện)', co('Shop 4', 'OPPO'));
+kt('Bảng shop trong ngày 12 có Shop 1 / Samsung', co('Shop 1', 'Samsung'));
+kt('Có Shop 4 / OPPO (dự án của mình cũng hiện)', co('Shop 4', 'OPPO'));
 kt('KHÔNG lôi nhầm shop bán đều (Shop 5..9)', !ds12.some(r => /Shop [5-9]/.test(r[0])));
-
-/* --- 4. các cột có số đúng dạng --- */
 const r1 = ds12.find(r => r[0].includes('Shop 1'));
-kt('Dòng Shop 1: máy=' + r1[3] + ' nền=' + r1[4] + ' đỉnh=' + r1[5] + ' bội=' + r1[6] + ' ĐGngày=' + r1[7] + ' ĐGnền=' + r1[8],
-  r1[3] === '19' && /×$/.test(r1[6]) && /tr$/.test(r1[7]) && /tr$/.test(r1[8]));
-kt('Shop 1 được gắn nhãn "kỷ lục" (vượt đỉnh cũ)', r1[5].includes('kỷ lục'));
-const reDo = [...box.querySelectorAll('.da-ng.open .da-tb .da-re')].length;
-kt('Đơn giá tụt >20% so nền được tô đỏ (' + reDo + ' ô)', reDo >= 2);
+kt('Dòng Shop 1 đủ cột: máy=' + r1[3] + ' nền=' + r1[4] + ' đỉnh=' + r1[5] + ' bội=' + r1[6],
+  r1[3] === '19' && /×$/.test(r1[6]) && r1[5].includes('kỷ lục'));
+kt('Đơn giá tụt >20% so nền được tô đỏ', [...box.querySelectorAll('.da-ng.open .da-tb .da-re')].length >= 2);
 
 /* --- 5. bấm mở/đóng --- */
-const nut12 = [...box.querySelectorAll('[data-dam]')].find(b => b.getAttribute('data-dam') === '12');
-nut12.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
-const sauDong = doc.getElementById('dabox').querySelector('[data-dam="12"]').closest('.da-ng').classList.contains('open');
-kt('Bấm vào ngày 12 thì ĐÓNG lại', !sauDong);
-doc.getElementById('dabox').querySelector('[data-dam="7"]').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
-const mo7 = doc.getElementById('dabox').querySelector('[data-dam="7"]').closest('.da-ng').classList.contains('open');
-const r7 = [...doc.getElementById('dabox').querySelectorAll('.da-ng.open .da-tb tbody tr')].map(lay);
-kt('Bấm ngày 7 thì MỞ ra, có Shop 3 / Xiaomi', mo7 && r7.some(r => r[0].includes('Shop 3') && r[2] === 'Xiaomi'));
+box.querySelector('[data-dam="12"]').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+kt('Bấm vào ngày thì ĐÓNG lại',
+  !doc.getElementById('dabox').querySelector('[data-dam="12"]').closest('.da-ng').classList.contains('open'));
+doc.getElementById('dabox').querySelector('[data-dam="12"]').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+kt('Bấm lần nữa thì MỞ lại, vẫn có bảng shop',
+  doc.getElementById('dabox').querySelectorAll('.da-ng.open .da-tb tbody tr').length >= 3);
 
-/* --- 6. tóm tắt trên đầu mỗi ngày --- */
-kt('Đầu mỗi ngày ghi số shop + số máy vượt nền + hãng',
-  /\d+ shop/.test(box.textContent) && /\+\d+ máy vượt nền/.test(box.textContent) && !!box.querySelector('.da-h-samsung'));
-
-/* --- 7. không có bất thường thì báo rõ --- */
+/* --- 6. tháng không có ngày nào đột biến thì IM, nói rõ một dòng --- */
 {
   const sach = JSON.parse(JSON.stringify(GOI));
   sach.sales.forEach(s => s.s.forEach(sh => { for (let d = 1; d <= DMAX; d++) { const r = sh.dk[d - 1]; r[0] = 2; r[1] = 14; r[2] = 2; r[3] = 16; r[4] = 1; r[5] = 4; r[6] = 0; r[7] = 0; r[8] = 8; r[9] = 40; } }));
+  sach.all.dnB = dnBcua(sach.sales.flatMap(s => s.s));
+  sach.sales.forEach(s => { s.dnB = dnBcua(s.s); });
   const d2 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://x.test/', pretendToBeVisual: true,
     beforeParse(ww) { ww.__REVIEW_DATA = sach; ww.fetch = () => Promise.reject(new Error('x')); } });
   await new Promise(r => setTimeout(r, 600));
   const b2 = d2.window.document.getElementById('dabox');
-  kt('Không có ngày nào bất thường thì báo rõ, không để trống',
-    !!b2 && /Không có ngày nào bất thường/.test(b2.textContent));
+  kt('Chợ đều đặn thì KHÔNG cảnh báo ngày nào, chỉ một dòng nói rõ',
+    !!b2 && /chưa có ngày nào đột biến/.test(b2.textContent) && !b2.querySelector('[data-dam]'));
 }
 
 console.log('\n--- KIEM REVIEW: DON HANG DU AN ---');
