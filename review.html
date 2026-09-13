@@ -412,6 +412,12 @@
 .da-tb .shopname{display:block;font-size:11px;color:var(--muted)}
 .da-ky{font-style:normal;font-size:10px;font-weight:800;color:var(--warn)}
 .da-re{color:var(--warn);font-weight:800}
+.da-im{padding:10px 12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:12.5px;line-height:1.5}
+.da-tt{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.da-hg{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px}
+.da-hg1{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.da-hg1.hot{color:var(--text);font-weight:700}
+.da-hg1 em{font-style:normal;font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -935,102 +941,140 @@ function pkBars(){
   return h;
 }
 /* ---- 5b. ĐƠN HÀNG DỰ ÁN — anh Thái 13/09 -------------------------------
-   Vì sao có: 12/09 Samsung toàn vùng 329 máy trong khi 4 thứ Bảy trước chỉ 146–165.
-   Đào ra thì phần dôi nằm gọn ở ~14 shop, mỗi shop im 4 ngày rồi nhảy vọt đúng 1 ngày
-   và đơn giá tụt hẳn — dạng đơn sỉ / dự án, không phải bán lẻ.
-   Khối này quét NGƯỢC LẠI toàn bộ: mọi shop × 4 hãng × mọi ngày đã có số trong tháng,
-   ngày nào có shop bất thường thì bày ra luôn, khỏi phải đi từng ngày mà dò.
-   Nền so sánh = tất cả ngày còn lại của THÁNG NÀY + CẢ THÁNG TRƯỚC của chính shop-hãng đó
-   (đã bỏ chính ngày đang xét ra khỏi nền).
+   SỬA 13/09 (lần 2) theo anh Thái: bản đầu liệt kê shop bất thường của MỌI ngày
+   nên ngày nào cũng có cảnh báo -> rối, không đọc được.
+   Nay đổi thành CỬA MỘT TẦNG Ở CẤP CHỢ:
+     Ngày đột biến = TỔNG CHỢ ngày đó vượt NỀN CÙNG THỨ từ +30% trở lên.
+     Nền cùng thứ = trung bình các ngày CÙNG THỨ trong tháng này + tháng trước
+     (bỏ chính ngày đang xét). Làm theo thứ vì T7/CN vốn đã cao hơn ngày thường —
+     anh Thái: "nền 500 máy/ngày, T7 CN lên 600 thì đó là bình thường".
+   Ngày nào không vượt ngưỡng thì KHÔNG hiện gì cả. Không có ngày nào thì nói rõ một dòng.
+   Chỉ khi ngày đã đột biến mới bung ra: hãng nào đẩy, rồi shop nào bất thường.
    CẢNH BÁO: đây là DẤU HIỆU, không phải bằng chứng. Gói số không có model theo ngày
    nên không chỉ đích danh được model; phải gọi shop xác minh. */
-var DA_MIN = 5;      // dưới 5 máy thì shop nhỏ nào cũng kêu, nhiễu
-var DA_BOI = 2.5;    // gấp 2,5 lần nền
-var DA_NGAY_NEN = 10;// ít hơn 10 ngày nền thì không đủ cơ sở, bỏ qua
-var daMo = {};       // ngày nào đang bung
+var DA_PC = 30;      // % vượt nền cùng thứ thì gọi là ngày đột biến
+var DA_MAU = 2;      // phải có ít nhất 2 ngày cùng thứ làm nền, không thì không dám kết luận
+var DA_MIN = 5;      // shop: dưới 5 máy thì shop nhỏ nào cũng kêu, nhiễu
+var DA_BOI = 2.5;    // shop: gấp 2,5 lần nền của chính nó
+var DA_NGAY_NEN = 10;
+var daMo = {};
 
-function duAnQuet(){
-  var ra = {};   // ngày -> [dòng]
+/* chuỗi ngày có số của CẢ CHỢ: tháng trước + tháng này, kèm thứ trong tuần */
+function daChuoi(){
+  var out = [], i, r;
+  if(PM){
+    var A0p = toDoy(Y,PM,1);
+    for(i=1;i<=DIMP;i++){ r = row(D.all.dnB, A0p+i-1); if(r && (r[8]||0)>0) out.push({m:PM,d:i,w:new Date(Date.UTC(Y,PM-1,i)).getUTCDay(),r:r}) }
+  }
+  for(i=1;i<=DMAX;i++){ r = row(D.all.dnB, A0+i-1); if(r && (r[8]||0)>0) out.push({m:M,d:i,w:new Date(Date.UTC(Y,M-1,i)).getUTCDay(),r:r}) }
+  return out;
+}
+/* nền cùng thứ cho một chỉ số k, bỏ chính phần tử idx */
+function daNen(ch, idx, k){
+  var t=0, n=0, w=ch[idx].w;
+  for(var i=0;i<ch.length;i++){ if(i===idx || ch[i].w!==w) continue; t += ch[i].r[k]||0; n++ }
+  return n>=DA_MAU ? {tb:t/n, n:n} : null;
+}
+/* các ngày đột biến của tháng đang xem */
+function daNgayDot(){
+  var ch = daChuoi(), ra = [];
+  ch.forEach(function(x, i){
+    if(x.m !== M) return;
+    var nen = daNen(ch, i, 8); if(!nen || nen.tb<=0) return;
+    var u = x.r[8]||0, pc = (u - nen.tb)/nen.tb*100;
+    if(pc < DA_PC) return;
+    var hang = [];
+    BR4.forEach(function(b){
+      var nb = daNen(ch, i, b[1]);
+      var v = x.r[b[1]]||0;
+      hang.push({ten:b[0], u:v, tb:nb?nb.tb:0, pc:(nb&&nb.tb>0)?(v-nb.tb)/nb.tb*100:null});
+    });
+    hang.sort(function(a,b){ return (b.pc===null?-1e9:b.pc) - (a.pc===null?-1e9:a.pc) });
+    ra.push({d:x.d, w:x.w, u:u, tb:nen.tb, n:nen.n, pc:pc, hang:hang});
+  });
+  ra.sort(function(a,b){return b.d-a.d});
+  return {ngay:ra, soNgayCoSo:ch.filter(function(x){return x.m===M}).length};
+}
+/* shop bất thường TRONG một ngày đã xác định là đột biến */
+function daShop(ngay){
+  var out = [];
   (D.sales||[]).forEach(function(s){
     (s.s||[]).forEach(function(sh){
       var dk = sh.dk||[], dkp = sh.dkp||[];
-      if(!dk.length) return;
+      if(!dk.length || !dk[ngay-1]) return;
       BR4.forEach(function(b){
         var iu = b[1], it = b[1]+1;
-        /* chuỗi nền: mỗi phần tử {d: ngày trong tháng này hoặc 0 nếu là tháng trước, u, dt} */
-        var arr = [], tongU = 0, tongDT = 0;
-        dkp.forEach(function(c){ if(!c) return; var u=c[iu]||0; arr.push({d:0,u:u}); tongU+=u; tongDT+=c[it]||0 });
-        for(var i=1;i<=DMAX;i++){ var c=dk[i-1]; if(!c) continue; var u=c[iu]||0; arr.push({d:i,u:u}); tongU+=u; tongDT+=c[it]||0 }
+        var arr = [], tongU = 0, tongDT = 0, i, c, u;
+        dkp.forEach(function(x){ if(!x) return; u=x[iu]||0; arr.push({d:0,u:u}); tongU+=u; tongDT+=x[it]||0 });
+        for(i=1;i<=DMAX;i++){ c=dk[i-1]; if(!c) continue; u=c[iu]||0; arr.push({d:i,u:u}); tongU+=u; tongDT+=c[it]||0 }
         if(arr.length < DA_NGAY_NEN) return;
-        /* đỉnh 1 và đỉnh 2 để bỏ được chính ngày đang xét ra khỏi đỉnh nền */
         var i1=-1, m1=-1, m2=-1;
-        arr.forEach(function(x,i){ if(x.u>m1){ m2=m1; m1=x.u; i1=i } else if(x.u>m2){ m2=x.u } });
-        arr.forEach(function(x,i){
-          if(!x.d || x.u < DA_MIN) return;
-          var c = dk[x.d-1]; if(!c) return;
-          var dt = c[it]||0;
-          var n = arr.length-1; if(n<1) return;
-          var tb = (tongU - x.u)/n;
-          var dinh = (i===i1) ? m2 : m1;
-          var boi = tb>0 ? x.u/tb : 99;
-          if(!(x.u > dinh || boi >= DA_BOI)) return;
-          var uNen = tongU - x.u, dtNen = tongDT - dt;
-          (ra[x.d] = ra[x.d] || []).push({
-            d:x.d, id:maSo(sh.n), nm:tenNgan(sh.n), sale:saleShort(s), sz:sh.size||'',
-            hang:b[0], i:b[1], u:x.u, dt:dt,
-            tb:tb, dinh:dinh, boi:boi, vuot:x.u - tb,
-            asp: x.u? dt/x.u : 0, asp0: uNen? dtNen/uNen : 0,
-            tot: c[8]||0
-          });
-        });
+        arr.forEach(function(x,j){ if(x.u>m1){ m2=m1; m1=x.u; i1=j } else if(x.u>m2){ m2=x.u } });
+        var vi=-1; for(i=0;i<arr.length;i++){ if(arr[i].d===ngay){ vi=i; break } }
+        if(vi<0) return;
+        var x0 = arr[vi]; if(x0.u < DA_MIN) return;
+        c = dk[ngay-1]; var dt = c[it]||0;
+        var n = arr.length-1; if(n<1) return;
+        var tb = (tongU - x0.u)/n;
+        var dinh = (vi===i1) ? m2 : m1;
+        var boi = tb>0 ? x0.u/tb : 99;
+        if(!(x0.u > dinh || boi >= DA_BOI)) return;
+        var uNen = tongU - x0.u, dtNen = tongDT - dt;
+        out.push({ id:maSo(sh.n), nm:tenNgan(sh.n), sale:saleShort(s), sz:sh.size||'',
+          hang:b[0], i:b[1], u:x0.u, tb:tb, dinh:dinh, boi:boi, vuot:x0.u-tb,
+          asp: x0.u? dt/x0.u : 0, asp0: uNen? dtNen/uNen : 0, tot: c[8]||0 });
       });
     });
   });
-  var ngay = Object.keys(ra).map(Number).sort(function(a,b){return b-a});
-  ngay.forEach(function(d){ ra[d].sort(function(a,b){return b.vuot-a.vuot}) });
-  return {ngay:ngay, ra:ra};
+  out.sort(function(a,b){return b.vuot-a.vuot});
+  return out;
 }
 
 function duAnBox(){
-  var q = duAnQuet();
+  var q = daNgayDot();
   if(!q.ngay.length)
-    return '<div class="nodata">Không có ngày nào bất thường trong tháng '+M+' — mọi shop đều bán trong khoảng bình thường của chính nó.</div>';
-  var h = '';
-  q.ngay.forEach(function(d, k){
-    var ds = q.ra[d];
-    var mo = (daMo[d] !== undefined) ? daMo[d] : (k===0);   // ngày mới nhất tự bung
-    var vuot = 0, hangs = {};
-    ds.forEach(function(x){ vuot += x.vuot; hangs[x.hang] = (hangs[x.hang]||0) + x.u });
-    var tomTat = Object.keys(hangs).sort(function(a,b){return hangs[b]-hangs[a]})
-      .map(function(b){ return '<span class="da-h da-h-'+b.toLowerCase()+'">'+esc(b)+' '+n0(hangs[b])+'</span>' }).join('');
+    return '<div class="da-im">Tháng '+M+' chưa có ngày nào đột biến. Đã soi '+q.soNgayCoSo+' ngày có số — ngày nào cũng nằm trong khoảng bình thường của chính thứ đó (ngưỡng +'+DA_PC+'%).</div>';
+  var h = '<div class="da-tt">Tháng '+M+': <b>'+q.ngay.length+'</b> ngày đột biến trên '+q.soNgayCoSo+' ngày có số.</div>';
+  q.ngay.forEach(function(x, k){
+    var mo = (daMo[x.d] !== undefined) ? daMo[x.d] : (k===0);
+    var ds = mo ? daShop(x.d) : null;
     h += '<div class="da-ng'+(mo?' open':'')+'">'+
-      '<button type="button" class="da-hd" data-dam="'+d+'">'+
+      '<button type="button" class="da-hd" data-dam="'+x.d+'">'+
         '<span class="da-car">'+(mo?'▾':'▸')+'</span>'+
-        '<span class="da-d">'+esc(thu(Y,M,d))+' '+dd2(d)+'/'+dd2(M)+'</span>'+
-        '<span class="da-c">'+ds.length+' shop</span>'+
-        '<span class="da-v">+'+n0(Math.round(vuot))+' máy vượt nền</span>'+
-        '<span class="da-bs">'+tomTat+'</span>'+
+        '<span class="da-d">'+esc(thu(Y,M,x.d))+' '+dd2(x.d)+'/'+dd2(M)+'</span>'+
+        '<span class="da-v">+'+n0(x.pc)+'%</span>'+
+        '<span class="da-c">cả chợ <b>'+n0(x.u)+'</b> máy · nền '+esc(thu(Y,M,x.d))+' <b>'+n0(x.tb)+'</b></span>'+
+        '<span class="da-bs">'+x.hang.filter(function(b){return b.pc!==null&&b.pc>=DA_PC&&b.u>0})
+          .map(function(b){ return '<span class="da-h da-h-'+b.ten.toLowerCase()+'">'+esc(b.ten)+' +'+n0(b.pc)+'%</span>' }).join('')+'</span>'+
       '</button>';
     if(mo){
-      h += '<div class="scroll"><table class="da-tb"><thead><tr>'+
-        '<th>Shop</th><th>Sale</th><th>Hãng</th><th>Máy</th><th>Nền TB</th><th>Đỉnh</th><th>Bội</th><th>ĐG ngày</th><th>ĐG nền</th><th>Chợ tại shop</th>'+
-        '</tr></thead><tbody>'+
-        ds.map(function(x){
-          var re = x.asp0 && x.asp < x.asp0*0.8;   // đơn giá tụt >20% so nền = càng giống đơn sỉ máy rẻ
-          return '<tr class="'+(x.i===0?'me':'')+'">'+
-            '<td>'+szTag(x.sz)+esc(x.id)+'<span class="shopname">'+esc(x.nm)+'</span></td>'+
-            '<td>'+esc(x.sale)+'</td>'+
-            '<td><span class="da-h da-h-'+x.hang.toLowerCase()+'">'+esc(x.hang)+'</span></td>'+
-            '<td><b>'+n0(x.u)+'</b></td>'+
-            '<td>'+n1(x.tb)+'</td>'+
-            '<td>'+n0(x.dinh)+(x.u>x.dinh?' <i class="da-ky">kỷ lục</i>':'')+'</td>'+
-            '<td><b>'+(x.boi>=99?'—':n1(x.boi)+'×')+'</b></td>'+
-            '<td class="'+(re?'da-re':'')+'">'+n1(x.asp)+' tr</td>'+
-            '<td>'+(x.asp0?n1(x.asp0)+' tr':'—')+'</td>'+
-            '<td>'+n0(x.tot)+'</td>'+
-          '</tr>';
-        }).join('')+
-        '</tbody></table></div>';
+      h += '<div class="da-hg">'+x.hang.map(function(b){
+          return '<span class="da-hg1'+(b.pc!==null&&b.pc>=DA_PC?' hot':'')+'"><i class="da-h da-h-'+b.ten.toLowerCase()+'">'+esc(b.ten)+'</i> '+
+            n0(b.u)+' máy <em>nền '+n1(b.tb)+(b.pc===null?'':' · '+(b.pc>=0?'+':'')+n0(b.pc)+'%')+'</em></span>';
+        }).join('')+'</div>';
+      if(!ds.length){
+        h += '<div class="da-im" style="margin:0 12px 12px">Cả chợ tăng nhưng <b>không shop nào</b> vượt ngưỡng bất thường — ngày này nhiều khả năng do chương trình/khuyến mại chạy đều, không phải đơn dự án.</div>';
+      } else {
+        h += '<div class="scroll"><table class="da-tb"><thead><tr>'+
+          '<th>Shop</th><th>Sale</th><th>Hãng</th><th>Máy</th><th>Nền TB</th><th>Đỉnh</th><th>Bội</th><th>ĐG ngày</th><th>ĐG nền</th><th>Chợ tại shop</th>'+
+          '</tr></thead><tbody>'+
+          ds.map(function(r){
+            var re = r.asp0 && r.asp < r.asp0*0.8;
+            return '<tr class="'+(r.i===0?'me':'')+'">'+
+              '<td>'+szTag(r.sz)+esc(r.id)+'<span class="shopname">'+esc(r.nm)+'</span></td>'+
+              '<td>'+esc(r.sale)+'</td>'+
+              '<td><span class="da-h da-h-'+r.hang.toLowerCase()+'">'+esc(r.hang)+'</span></td>'+
+              '<td><b>'+n0(r.u)+'</b></td>'+
+              '<td>'+n1(r.tb)+'</td>'+
+              '<td>'+n0(r.dinh)+(r.u>r.dinh?' <i class="da-ky">kỷ lục</i>':'')+'</td>'+
+              '<td><b>'+(r.boi>=99?'—':n1(r.boi)+'×')+'</b></td>'+
+              '<td class="'+(re?'da-re':'')+'">'+n1(r.asp)+' tr</td>'+
+              '<td>'+(r.asp0?n1(r.asp0)+' tr':'—')+'</td>'+
+              '<td>'+n0(r.tot)+'</td>'+
+            '</tr>';
+          }).join('')+
+          '</tbody></table></div>';
+      }
     }
     h += '</div>';
   });
@@ -1180,9 +1224,9 @@ function render(){
     '<div class="panel"><h3>Share doanh thu — <em>DT</em></h3><div class="body"><div>'+compTbl(1)+'</div><div class="foot">LK T'+M+' so cùng kỳ T'+(PM||'—')+' ('+DAY+' ngày đầu tháng).</div></div></div></div></section>'+
     '<section><div class="sec-head"><h2>Đối thủ bán gì</h2><div class="sec-note">bấm tên hãng để xem dòng máy · ngày '+DAY+'</div></div>'+
     '<div class="panel solo"><div class="body"><div id="mdlbox">'+hangList()+'</div><div class="foot">Top 8 dòng/hãng theo máy trong ngày, gộp theo dòng (bỏ màu). <b>Đơn giá</b> = doanh thu / máy · <span class="pkleg"></span><b>vạch cam</b> = đơn giá trong <b>10–20M</b>.</div></div></div></section>'+
-    '<section><div class="sec-head"><h2>Đơn hàng dự án</h2><div class="sec-note">ngày nào có shop bán bất thường thì hiện luôn · bấm vào ngày để mở/đóng</div></div>'+
+    '<section><div class="sec-head"><h2>Đơn hàng dự án</h2><div class="sec-note">chỉ hiện ngày cả chợ vọt hơn +30% so nền cùng thứ · ngày bình thường không hiện · bấm vào ngày để mở/đóng</div></div>'+
     '<div class="panel solo"><div class="body"><div id="dabox">'+duAnBox()+'</div>'+
-    '<div class="foot">Gọi là bất thường khi shop bán <b>&ge; 5</b> máy một hãng trong ngày VÀ (vượt <b>đỉnh cao nhất</b> của chính shop-hãng đó, HOẶC gấp <b>&ge; 2,5 lần</b> nền). Nền = mọi ngày còn lại tháng này + cả tháng trước của chính shop-hãng đó. <b class="da-re">Đơn giá đỏ</b> = tụt hơn 20% so nền, càng giống đơn sỉ máy phổ thông. Đây là <b>dấu hiệu</b>, chưa phải bằng chứng — gói số không có model theo ngày nên phải gọi shop xác minh.</div></div></div></section>'+
+    '<div class="foot"><b>Chỉ hiện ngày đột biến</b>: tổng chợ ngày đó vượt <b>&ge; 30%</b> so nền CÙNG THỨ (T7/CN vốn cao hơn ngày thường nên so theo thứ, không so bình quân). Nền = trung bình các ngày cùng thứ của tháng này + tháng trước. Ngày bình thường không hiện gì. Trong ngày đột biến mới liệt kê shop bán <b>&ge; 5</b> máy một hãng VÀ (vượt <b>đỉnh cũ</b> của chính shop-hãng đó HOẶC gấp <b>&ge; 2,5 lần</b> nền của nó). <b class=\"da-re\">Đơn giá đỏ</b> = tụt hơn 20% so nền, càng giống đơn sỉ máy phổ thông. Đây là <b>dấu hiệu</b>, chưa phải bằng chứng — gói số không có model theo ngày nên phải gọi shop xác minh.</div></div></div></section>'+
     '<section><div class="sec-head"><h2>PK 10–20M theo hãng</h2><div class="sec-note">mỗi thanh = 100% chợ phân khúc 10–20M</div></div>'+
     '<div class="panel solo"><div class="body"><div>'+pkBars()+'</div><div class="foot">Đúng ô OPPO đang đo. Đủ 7 nhóm hãng từ DATA MWG.</div></div></div></section>'+
     '<section><div class="sec-head"><h2>Chi tiết theo sale</h2><div class="sec-note">cơ cấu hãng + đối thủ bán gì + toàn bộ shop MWG · ngày '+DAY+'</div></div><div id="sdet">'+saleDetail()+'</div></section>'+
