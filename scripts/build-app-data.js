@@ -916,6 +916,46 @@
       });
     }
 
+    /* 7a2. 15/09 anh Thai: app Sale phai co 2 khoi "Tu dau nam" + "Ai lay cua ai" giong het
+       chi tiet shop MWG cua DB TG, va so phai KHOP TUYET DOI. Nen phan khuc 10-20M suy tu
+       GIA BAN THAT cua tung model (doanh thu / so may) ngay tai day, dung y cach DB TG lam.
+         sh.hgT[thang] = [[may, DT(trieu), may PK 10-20M, DT PK(trieu)] x 7 hang]
+       Thu tu hang = HANG7_BUILD: OPPO, Samsung, Xiaomi, Apple, vivo, realme, Khac.
+       Sub-brand di theo hang me: Redmi/POCO -> Xiaomi, iQOO -> vivo, iPhone -> Apple. */
+    var HANG7_BUILD = ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'vivo', 'realme', 'Khac'];
+    function gonHangBuild(b) {
+      var t = String(b || '').toLowerCase();
+      if (t.indexOf('oppo') >= 0) return 0;
+      if (t.indexOf('samsung') >= 0) return 1;
+      if (t.indexOf('xiaomi') >= 0 || t.indexOf('redmi') >= 0 || t.indexOf('poco') >= 0) return 2;
+      if (t.indexOf('apple') >= 0 || t.indexOf('iphone') >= 0) return 3;
+      if (t.indexOf('vivo') >= 0 || t.indexOf('iqoo') >= 0) return 4;
+      if (t.indexOf('realme') >= 0) return 5;
+      return 6;
+    }
+    if (smd && Object.keys(smd).length) {
+      Object.keys(smd).forEach(function (tenMain) {
+        var st = veShopOppo(tenMain); if (!st || !shops[st]) return;
+        var sh = shops[st]; if (sh.chan !== 'MWG') return;
+        var byM = smd[tenMain] || {}, out = {};
+        Object.keys(byM).forEach(function (mk) {
+          var m = parseInt(String(mk).replace(/\D/g, ''), 10); if (!m) return;
+          var cell = byM[mk] || {}, o = [], q, co = 0;
+          for (q = 0; q < 7; q++) o.push([0, 0, 0, 0]);
+          Object.keys(cell).forEach(function (mdl) {
+            var v = cell[mdl] || {}, u = v.units || 0, rv = v.rev || 0;
+            if (!u && !rv) return;
+            co = 1;
+            var i = gonHangBuild(v.brand);
+            o[i][0] += u; o[i][1] += rv;
+            if (u) { var gia = rv / u; if (gia >= 1e7 && gia < 2e7) { o[i][2] += u; o[i][3] += rv; } }
+          });
+          if (co) out[m] = o.map(function (x) { return [x[0], tr(x[1]), x[2], tr(x[3])]; });
+        });
+        if (Object.keys(out).length) sh.hgT = out;
+      });
+    }
+
     /* 7b0. SO THEO NGAY CUA KENH MWG - lay tu DATA MWG (quy tac 02/09/2026).
        Nguon: MAIN.shop_day_data[shopMAIN]['<thang>-<ngay>'] = {oppo_units, oppo_rev, ...}
        Day cung la cho quyet dinh maxDay (so lieu chay toi ngay may) cho thang hien
@@ -951,6 +991,21 @@
 
     // 7b. Thi phan theo NGAY tai shop -> sh.dk (thang nay) / sh.dkp (thang truoc) = [oppoMay, tongMay]
     var sdd = kho('shop_day_data');
+    /* 15/09: so ngay shop THUC SU co phat sinh trong tung thang -> sh.nCS[thang].
+       Thang dang chay chua du ngay, phai quy ve may/ngay thi so sanh moi cong bang. */
+    if (sdd && Object.keys(sdd).length) {
+      Object.keys(sdd).forEach(function (tenMain) {
+        var st = veShopOppo(tenMain); if (!st || !shops[st]) return;
+        var sh = shops[st]; if (sh.chan !== 'MWG') return;
+        var dm = sdd[tenMain] || {}, n = {};
+        Object.keys(dm).forEach(function (k) {
+          var p2 = String(k).split('-'); if (p2.length < 2) return;
+          var m = +p2[0]; if (!m) return;
+          if (((dm[k] || {}).total_units || 0) > 0) n[m] = (n[m] || 0) + 1;
+        });
+        if (Object.keys(n).length) sh.nCS = n;
+      });
+    }
     if (sdd && Object.keys(sdd).length) {
       src.dayMkt = true;
       Object.keys(sdd).forEach(function (tenMain) {
@@ -1477,6 +1532,8 @@
         if (sh.dkp) c.dkp = sh.dkp;
         if (sh.hr) c.hr = sh.hr;
         if (sh.stf) c.stf = sh.stf;
+        if (sh.hgT) c.hgT = sh.hgT;
+        if (sh.nCS) c.nCS = sh.nCS;
         return c;
       });
       return o;
