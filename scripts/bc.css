@@ -301,7 +301,7 @@ html.bc-dt .bc-3bd { grid-template-columns: 1fr; }
 .bc-nam .bc-sct-tp td:not(:first-child) { text-align: right; }
 .bc-ck-luoi .bc-sct-tp th { white-space: normal; font-size: 11px; line-height: 1.25; vertical-align: bottom; }
 .bc-ck-luoi .bc-sct-tp th:first-child, .bc-ck-luoi .bc-sct-tp td:first-child { width: 26%; }
-.bc-ck-luoi .bc-sct-tp th:not(:first-child), .bc-ck-luoi .bc-sct-tp td:not(:first-child) { width: 12.33%; text-align: right; }
+.bc-ck-luoi .bc-sct-tp th:not(:first-child), .bc-ck-luoi .bc-sct-tp td:not(:first-child) { width: 14.8%; text-align: right; }
 /* 14/09 anh Thái: khối chi tiết nằm trong <td> của bảng, nên bề ngang của nó kéo rộng
    cả bảng -> sinh thanh cuộn ngang, phải lướt qua lướt lại. Chặn ở hai chỗ:
      1. .bc-sct khoá bề ngang vào đúng ô bảng (width:0 + min-width:100%) — xem ở trên.

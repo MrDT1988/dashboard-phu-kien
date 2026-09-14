@@ -579,12 +579,11 @@
                                                     var d = function (r) { return pk ? r.dPk : r.dDs; };
                                                     var dn = function (r) { return pk ? r.dPNgay : r.dNgay; };
                                                     if (!ds.length) return '<div class="bc-sct-trong">Hai tháng đều không có số ở phần này.</div>';
-                                                    return '<div class="bc-cuon"><table class="bc-bang bc-sct-tp"><thead><tr><th>Hãng</th><th>Máy/ngày T' + mP + '</th><th>Máy/ngày T' + mT + '</th><th>±%</th><th>T.phần T' + mP + '</th><th>T.phần T' + mT + '</th><th>± điểm</th></tr></thead><tbody>'
+                                                    return '<div class="bc-cuon"><table class="bc-bang bc-sct-tp"><thead><tr><th>Hãng</th><th>Máy/ngày T' + mT + '</th><th>±%</th><th>T.phần T' + mP + '</th><th>T.phần T' + mT + '</th><th>± điểm</th></tr></thead><tbody>'
                                                        + ds.map(function (r) {
                                                                       var mh = mauHang(String(r.ten).toLowerCase());
                                                                       return '<tr class="' + (r.laO ? 'bc-sct-tp-oppo' : '') + '">'
                                                                          + '<td><i class="bc-sct-cham" style="background:' + mh + '"></i>' + esc(r.ten) + '</td>'
-                                                                         + '<td>' + g(r.z).toFixed(1) + '</td>'
                                                                          + '<td><b>' + g(r.a).toFixed(1) + '</b></td>'
                                                                          + '<td>' + muiX(dn(r), dauSo(dn(r), 0) + '%', r.laO) + '</td>'
                                                                          + '<td>' + s(r.z).toFixed(1) + '%</td>'
