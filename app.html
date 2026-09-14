@@ -560,7 +560,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-09-14.1';
+var APP_VER='2026-09-14.2';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -3220,6 +3220,18 @@ function boot(data){
   renderOver();
   // Mỗi lần mở app tự kiểm xem điện thoại có đang giữ bản cũ không
   setTimeout(function(){ kiemTraBanMoi(true) },1500);
+  /* 14/09: app mo san ca ngay thi khong bao gio kiem lai -> kiem them moi khi
+     quay lai app (tab sang lai), toi da 10 phut 1 lan cho do ton mang. */
+  if(!window.__theoDoiBan){
+    window.__theoDoiBan=1;
+    var lanCuoi=Date.now();
+    document.addEventListener('visibilitychange',function(){
+      if(document.hidden) return;
+      if(Date.now()-lanCuoi<600000) return;
+      lanCuoi=Date.now();
+      kiemTraBanMoi(true);
+    });
+  }
 }
 
 document.addEventListener('click',function(e){
@@ -3304,7 +3316,9 @@ function kiemTraBanMoi(imLang){
       var m=t.match(/APP_VER\s*=\s*'([^']+)'/);
       if(!m) return false;
       if(m[1]===APP_VER) return false;
-      toast('🔄 Có bản app mới ('+safe(m[1])+'). <a href="#" id="nap-lai">Bấm vào đây để cập nhật</a>',60);
+      /* 14/09: bao nam luon tren man hinh cho toi khi bam - truoc day 60 giay roi tu tat,
+         sale khong kip thay nen cu chay ban cu mai. */
+      toast('🔄 Có bản app mới ('+safe(m[1])+'). <a href="#" id="nap-lai">Bấm vào đây để cập nhật</a>',86400);
       var a2=document.getElementById('nap-lai');
       if(a2) a2.addEventListener('click',function(ev){
         ev.preventDefault();
