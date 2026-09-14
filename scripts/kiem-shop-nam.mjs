@@ -162,6 +162,27 @@ kt('Cung ky: shop la hoan toan thi bao ro, khong vo', !!chuSo(F.khoiCungKy('SHOP
   }
 }
 
+/* --- 8. IND: thu tu Sale O.C len dau + dap Sale cho shop chua gan (anh Thai 15/09) --- */
+{
+  const i4 = src.indexOf('var boDau = function (x)');
+  const i5 = src.indexOf('var saleCua = function (shop, trong)');
+  if (i4 < 0 || i5 < 0 || i5 < i4) { kt('Cat duoc doan ma thu tu Sale IND', false); }
+  else {
+    const F4 = new Function(src.slice(i4, i5) + '\n return { bacSale, buSale };')();
+    kt('Khanh = bac 0, Loi = 1, Thuan = 2',
+      F4.bacSale('NGUYỄN VĂN KHÁNH') === 0 && F4.bacSale('TRẦN LỢI') === 1 && F4.bacSale('LÊ THUẦN') === 2);
+    kt('Sale khac xep sau (bac 99)', F4.bacSale('CAO CHÍ BẢO') === 99 && F4.bacSale('') === 99);
+    kt('Khong dau van nhan ra: "tran van khanh" -> bac 0', F4.bacSale('tran van khanh') === 0);
+    const ds = ['CAO CHÍ BẢO', 'LÊ THUẦN', 'TRƯƠNG HỮU NHÂN', 'NGUYỄN VĂN KHÁNH', 'TRẦN LỢI']
+      .sort((x, y) => F4.bacSale(x) - F4.bacSale(y));
+    kt('Xep ra dung Khanh -> Loi -> Thuan roi moi toi nguoi khac: ' + ds.map((x) => x.split(' ').pop()).join(' / '),
+      ds.slice(0, 3).map((x) => x.split(' ').pop()).join(',') === 'KHÁNH,LỢI,THUẦN');
+    kt('Shop Huynh Mai -> Khanh (co dau)', F4.buSale('DĐ Huỳnh Mai') === 'KHÁNH');
+    kt('Shop Huynh Mai -> Khanh (khong dau, viet lien)', F4.buSale('CH HUYNHMAI TG') === 'KHÁNH');
+    kt('Shop khac khong bi dap nham', F4.buSale('Cửa hàng Mai Hương') === null && F4.buSale('Long Hưng 2') === null);
+  }
+}
+
 console.log('\n--- KIEM CHI TIET SHOP: TU DAU NAM + SO CUNG KY ---');
 ok.forEach((x) => console.log('  OK  ' + x));
 xau.forEach((x) => console.log('  SAI ' + x));

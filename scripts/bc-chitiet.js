@@ -1028,6 +1028,23 @@
     function veIND(root, ctx) {
       var d = du(), D = d.D, k = ctx.k, kt = ctx.kt, cd = ctx.cd, E = ext();
       var levelOf = {}, idToShop = {}, saleOf = {}; (D.store_rows || []).forEach(function (r) { if (r.channel !== 'IND') return; levelOf[r.store] = r.level; saleOf[r.store] = r.sale; if (r.store_id) idToShop[String(r.store_id).trim()] = r.store; });
+      /* ===== 15/09 anh Thái =====
+         1) Sale nhóm O.C xếp TRÊN CÙNG mọi bảng, đúng thứ tự Khánh / Lợi / Thuần, rồi mới tới
+            các Sale còn lại xếp theo số. Nhìn phát là thấy đúng chỗ cần xem.
+         2) Shop chưa gán Sale trên sheet thì đắp tạm theo bảng dưới — hiện có Huỳnh Mai -> Khánh.
+            CHỈ đắp khi sheet đang để trống / "(Không rõ)"; ngày nào sheet ghi đúng người thì
+            số của sheet thắng, không phải sửa lại code. */
+      var boDau = function (x) { return String(x == null ? '' : x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd'); };
+      var THU_TU_OC = ['KHANH', 'LOI', 'THUAN'];
+      var bacSale = function (x) {
+                 var t = boDau(x).split(/\s+/).filter(Boolean).slice(-1)[0] || '';
+                 var i = THU_TU_OC.indexOf(t.toUpperCase());
+                 return i < 0 ? 99 : i;
+      };
+      var BU_SALE = [{ re: /huynh\s*mai/, sale: 'KHÁNH' }];
+      var buSale = function (shop) { var t = boDau(shop); for (var i = 0; i < BU_SALE.length; i++) if (BU_SALE[i].re.test(t)) return BU_SALE[i].sale; return null; };
+      var saleCua = function (shop, trong) { return saleOf[shop] || buSale(shop) || (trong === undefined ? '(Không rõ)' : trong); };
+      Object.keys(levelOf).forEach(function (sp) { if (!saleOf[sp] || saleOf[sp] === '(Không rõ)') { var b = buSale(sp); if (b) saleOf[sp] = b; } });
       var nhom = function (shop) { try { return E.ocLevel ? E.ocLevel(levelOf[shop]) : { group: 'Normal', sub: null }; } catch (e) { return { group: 'Normal', sub: null }; } };
       var OC_T = E.ocTarget || {}, OC_TT = E.ocThuTu || ['Platinum', 'Titan', 'Gold'];
       var CHUA_GAN = '(chưa gán shop)';
@@ -1051,7 +1068,7 @@
              function gomIND(tu, den) { var g = gomKenh(tu, den, 'IND'); g.oc = { 'O.C': { ds: 0, dt: 0, shop: 0 }, Normal: { ds: 0, dt: 0, shop: 0 } }; g.level = {}; OC_TT.forEach(function (l) { g.level[l] = { ds: 0, dt: 0, shop: 0, shops: [] }; }); Object.keys(g.shop).forEach(function (s) { var x = g.shop[s], n = nhom(s); g.oc[n.group].ds += x.ds; g.oc[n.group].dt += x.dt; if (x.ds > 0) g.oc[n.group].shop++; if (n.sub && g.level[n.sub]) { g.level[n.sub].ds += x.ds; g.level[n.sub].dt += x.dt; if (x.ds > 0) { g.level[n.sub].shop++; g.level[n.sub].shops.push(s); } } }); g.si = gomSI(tu, den); return g; }
              var nay = gomIND(k.tu, k.denCo), truoc = kt ? gomIND(kt.tu, kt.denCo) : null;
              var ky12 = dsKy12(ctx), chuoi = ky12.map(function (q) { return gomIND(q.tu, q.den); });
-             var SALES = Object.keys(nay.sale).concat(chuoi.length ? Object.keys(chuoi[chuoi.length - 1].sale) : []).filter(function (s, i, a) { return a.indexOf(s) === i && s !== '(Không rõ)'; }).sort(function (a, b) { return nay.sale[b] ? nay.sale[b].ds : 0 - (nay.sale[a] ? nay.sale[a].ds : 0); });
+             var SALES = Object.keys(nay.sale).concat(chuoi.length ? Object.keys(chuoi[chuoi.length - 1].sale) : []).filter(function (s, i, a) { return a.indexOf(s) === i && s !== '(Không rõ)'; }).sort(function (a, b) { return bacSale(a) - bacSale(b) || ((nay.sale[b] ? nay.sale[b].ds : 0) - (nay.sale[a] ? nay.sale[a].ds : 0)); });
              var tenNgan = function (s) { return s.split(' ').slice(-1)[0]; };
              var grid = el('div', 'bc-luoi'); root.appendChild(grid);
              grid.appendChild(bangKyChung(ctx, 'Kênh IND (OPPO Club) — O.C / Normal'));
@@ -1061,7 +1078,7 @@
                         var kq = khoi({ stt: 1, ten: 'Kết quả IND ' + k.nhan.toLowerCase(), rong: true, dangXem: 'Tách theo Sale trong từng thẻ · thẻ Sell In chỉ tính máy OPPO (không gồm phụ kiện) — chip so ' + esc(ctx.tenKyTruoc || 'kỳ trước') });
                         var rows = function (lay, fmt) { return SALES.map(function (s) { var a = nay.sale[s] || { ds: 0, dt: 0, shop: 0 }, b = truoc ? (truoc.sale[s] || { ds: 0, dt: 0, shop: 0 }) : null; return dongKenh(tenNgan(s), mau('IND'), lay(a), b ? lay(b) : null, fmt); }).join(''); };
                         /* Anh Thái 06/09: bỏ thẻ Đơn giá TB, thay bằng Sell In (chỉ OPPO) — chi tiết theo Sale */
-                        var siSale = function (g) { var r = {}; Object.keys(g.si.shop).forEach(function (s2) { if (s2 === CHUA_GAN) return; var sl = saleOf[s2] || '(Không rõ)'; r[sl] = (r[sl] || 0) + g.si.shop[s2]; }); return r; };
+                        var siSale = function (g) { var r = {}; Object.keys(g.si.shop).forEach(function (s2) { if (s2 === CHUA_GAN) return; var sl = saleCua(s2); r[sl] = (r[sl] || 0) + g.si.shop[s2]; }); return r; };
                         var siN = siSale(nay), siT = truoc ? siSale(truoc) : null;
                         var rowsSI = SALES.map(function (s) { return dongKenh(tenNgan(s), mau('IND'), siN[s] || 0, siT ? (siT[s] || 0) : null, fInt); }).join('');
                         $('.bc-than', kq).innerHTML = '<div class="bc-kpi-row">' +
@@ -1106,7 +1123,7 @@
              (function () {
                         var kq = khoi({ stt: 4, ten: 'Theo Sale — 12 ' + (cd === 'tuan' ? 'tuần' : 'tháng'), rong: true,
                                                  dangXem: 'DS · DT · Shop · S.I OPPO · S.I PK (phụ kiện) · Tồn (S.I OPPO − S.O luỹ kế đến hết kỳ) · ô ĐỎ = xấu đi so với kỳ liền trước' });
-                        var saleSI = function (g, f) { var r = {}; Object.keys(g.si[f]).forEach(function (s) { if (s === CHUA_GAN) return; var sl = saleOf[s] || '(Không rõ)'; r[sl] = (r[sl] || 0) + g.si[f][s]; }); return r; };
+                        var saleSI = function (g, f) { var r = {}; Object.keys(g.si[f]).forEach(function (s) { if (s === CHUA_GAN) return; var sl = saleCua(s); r[sl] = (r[sl] || 0) + g.si[f][s]; }); return r; };
                         var siKy = chuoi.map(function (g) { return saleSI(g, 'shop'); });
                         var siPkKy = chuoi.map(function (g) { return saleSI(g, 'shopPk'); });
                         var tonKy = ky12.map(function (q) { var g = gomIND('2026-01-01', q.den); var si = saleSI(g, 'shop'); var r = {}; Object.keys(g.sale).concat(Object.keys(si)).forEach(function (s) { r[s] = (si[s] || 0) - (g.sale[s] ? g.sale[s].ds : 0); }); return r; });
@@ -1160,15 +1177,15 @@
                                      var t = TABS[chon], dat = 0, h = '';
                                      if (chon === 0) {
                                                     dat = lk.dt;
-                                                    var rows = SALES.map(function (s) { var a = lk.sale[s] || { ds: 0, dt: 0, shop: 0 }; return { s: s, dt: a.dt, ds: a.ds }; }).sort(function (a, b) { return b.dt - a.dt; });
+                                                    var rows = SALES.map(function (s) { var a = lk.sale[s] || { ds: 0, dt: 0, shop: 0 }; return { s: s, dt: a.dt, ds: a.ds }; }).sort(function (a, b) { return bacSale(a.s) - bacSale(b.s) || b.dt - a.dt; });
                                                     h = '<table class="bc-bang"><thead><tr><th>Sale</th><th>Doanh thu</th><th>Tỉ trọng</th><th>Máy</th></tr></thead><tbody>'
                                                                      + rows.map(function (r) { return '<tr><td>' + esc(tenNgan(r.s)) + '</td><td><b>' + fTyNgan(r.dt) + '</b></td><td>' + (dat ? (r.dt / dat * 100).toFixed(1) : '0.0') + '%</td><td>' + fInt(r.ds) + '</td></tr>'; }).join('')
                                                                      + '<tr class="bc-tong"><td>Tổng</td><td>' + fTyNgan(dat) + '</td><td>100%</td><td>' + fInt(lk.ds) + '</td></tr></tbody></table>';
                                      } else if (chon === 1) {
                                                     var theoSale = {};
-                                                    Object.keys(levelOf).forEach(function (s) { var sl = saleOf[s] || '(Không rõ)'; var a = theoSale[sl] || (theoSale[sl] = { co: 0, tong: 0 }); a.tong++; var x = lk.shop[s]; if (x && x.ds > 0) a.co++; });
+                                                    Object.keys(levelOf).forEach(function (s) { var sl = saleCua(s); var a = theoSale[sl] || (theoSale[sl] = { co: 0, tong: 0 }); a.tong++; var x = lk.shop[s]; if (x && x.ds > 0) a.co++; });
                                                     dat = Object.keys(theoSale).reduce(function (z, s) { return z + theoSale[s].co; }, 0);
-                                                    var ss = Object.keys(theoSale).sort(function (a, b) { return theoSale[b].co - theoSale[a].co; });
+                                                    var ss = Object.keys(theoSale).sort(function (a, b) { return bacSale(a) - bacSale(b) || theoSale[b].co - theoSale[a].co; });
                                                     h = '<table class="bc-bang"><thead><tr><th>Sale</th><th>Shop phụ trách</th><th>Shop có S.O</th><th>Tỉ lệ</th></tr></thead><tbody>'
                                                                      + ss.map(function (s) { var a = theoSale[s]; var p = a.tong ? a.co / a.tong * 100 : 0; return '<tr><td>' + esc(tenNgan(s)) + '</td><td>' + a.tong + '</td><td>' + do_(p < 50, '<b>' + a.co + '</b>') + '</td><td>' + thanhNho(p) + '</td></tr>'; }).join('')
                                                                      + '</tbody></table>';
@@ -1176,7 +1193,7 @@
                                                     var nhomOC = {};
                                                     Object.keys(levelOf).forEach(function (s) {
                                                                      if (nhom(s).group !== 'O.C') return;
-                                                                     var kk2 = khoaOC(s), a = nhomOC[kk2] || (nhomOC[kk2] = { ten: s, dt: 0, ds: 0, n: 0, sale: saleOf[s] || '' });
+                                                                     var kk2 = khoaOC(s), a = nhomOC[kk2] || (nhomOC[kk2] = { ten: s, dt: 0, ds: 0, n: 0, sale: saleCua(s, '') });
                                                                      var x = lk.shop[s]; a.n++; if (x) { a.dt += x.dt; a.ds += x.ds; }
                                                                      if (s.length < a.ten.length) a.ten = s;
                                                     });
@@ -1189,12 +1206,12 @@
                                                     var tSale = {}, dsN = [];
                                                     Object.keys(levelOf).forEach(function (s) {
                                                                      if (nhom(s).group === 'O.C') return;
-                                                                     var sl = saleOf[s] || '(Không rõ)', a = tSale[sl] || (tSale[sl] = { co: 0, tong: 0 });
+                                                                     var sl = saleCua(s), a = tSale[sl] || (tSale[sl] = { co: 0, tong: 0 });
                                                                      a.tong++; var x = lk.shop[s], sl2 = x ? x.ds : 0;
                                                                      if (sl2 >= SO_MAY_NORMAL) { a.co++; dsN.push({ s: s, ds: sl2, dt: x ? x.dt : 0, sale: sl }); }
                                                     });
                                                     dat = dsN.length;
-                                                    var ss2 = Object.keys(tSale).sort(function (a, b) { return tSale[b].co - tSale[a].co; });
+                                                    var ss2 = Object.keys(tSale).sort(function (a, b) { return bacSale(a) - bacSale(b) || tSale[b].co - tSale[a].co; });
                                                     h = '<table class="bc-bang"><thead><tr><th>Sale</th><th>Shop Normal</th><th>Shop ≥ 5 máy</th><th>Tỉ lệ</th></tr></thead><tbody>'
                                                                      + ss2.map(function (s) { var a = tSale[s]; var p = a.tong ? a.co / a.tong * 100 : 0; return '<tr><td>' + esc(tenNgan(s)) + '</td><td>' + a.tong + '</td><td>' + do_(!a.co, '<b>' + a.co + '</b>') + '</td><td>' + thanhNho(p) + '</td></tr>'; }).join('')
                                                                      + '<tr class="bc-tong"><td>Tổng</td><td></td><td>' + dat + '</td><td></td></tr></tbody></table>';
@@ -1254,7 +1271,7 @@
                                                     tg.shop += ds.length; tg.ban += ban; tg.ds += mDs; tg.tds += tgDs; tg.dt += mDt; tg.tdt += tgDt; tg.dat += dat;
                                                     h += '<tr><td><b>' + esc(l) + '</b></td><td>' + ds.length + '</td><td>' + ban + '</td><td><b>' + fInt(mDs) + '</b></td><td>' + fInt(tgDs) + '</td><td>' + thanhNho(tgDs ? mDs / tgDs * 100 : null) + '</td><td><b>' + fTyNgan(mDt) + '</b></td><td>' + fTyNgan(tgDt) + '</td><td>' + thanhNho(tgDt ? mDt / tgDt * 100 : null) + '</td><td>' + dat + '/' + ds.length + '</td>'
                                                       + (ngayCon ? '<td>' + fInt(Math.max(0, tgDs - mDs) / (ngayCon / 7)) + '</td>' : '') + '</tr>';
-                                                    ds.forEach(function (x) { chiTiet.push({ s: x.s, l: l, ds: soDS(x.s), dt: soDT(x.s), t: t.ds || 0, tdt: t.dt || 0, sale: saleOf[x.s] || '' }); });
+                                                    ds.forEach(function (x) { chiTiet.push({ s: x.s, l: l, ds: soDS(x.s), dt: soDT(x.s), t: t.ds || 0, tdt: t.dt || 0, sale: saleCua(x.s, '') }); });
                                      });
                                      h += '<tr class="bc-tong"><td>Tổng</td><td>' + tg.shop + '</td><td>' + tg.ban + '</td><td>' + fInt(tg.ds) + '</td><td>' + fInt(tg.tds) + '</td><td>' + thanhNho(tg.tds ? tg.ds / tg.tds * 100 : null) + '</td><td>' + fTyNgan(tg.dt) + '</td><td>' + fTyNgan(tg.tdt) + '</td><td>' + thanhNho(tg.tdt ? tg.dt / tg.tdt * 100 : null) + '</td><td>' + tg.dat + '/' + tg.shop + '</td>' + (ngayCon ? '<td></td>' : '') + '</tr></tbody></table>';
                                      hopTren.innerHTML = h;
