@@ -5237,6 +5237,31 @@ function renderModelChart() {
     });
 }
 
+// ================= Bảng màu PHÂN KHÚC GIÁ (anh Thái 14/09) =================
+// Dưới 10M dùng XÁM (nhạt dần khi giá tiến tới 10M) — vùng không phải trọng tâm.
+// Từ 10M trở lên dùng XANH LÁ, đậm dần khi giá lên — nhìn phát biết ngay vùng phải đánh.
+// Dùng chung cho cả 3 biểu đồ "Tỉ trọng phân khúc giá". Thứ tự mảng segs không quan trọng:
+// hàm tự xếp theo GIÁ rồi mới rải màu, nên nguồn trả về kiểu gì cũng ra đúng.
+const PK_XAM  = ['#4E565F', '#6B7480', '#88909A', '#A4ABB4'];
+const PK_XANH = ['#8FD3AE', '#5EBF8C', '#35A66F', '#1B8A57', '#0E6B41'];
+function pkGiaCua(s) { const m = String(s).match(/(\d+(?:[.,]\d+)?)/); return m ? parseFloat(m[1].replace(',', '.')) : 0; }
+function pkDuoi10M(s) { return pkGiaCua(s) < 10; }
+function mauPhanKhuc(segs) {
+    const xam  = segs.filter(pkDuoi10M).sort((a,b) => pkGiaCua(a) - pkGiaCua(b));
+    const xanh = segs.filter(x => !pkDuoi10M(x)).sort((a,b) => pkGiaCua(a) - pkGiaCua(b));
+    const lay = (n, i, pal) => pal[Math.min(Math.round(i * (pal.length - 1) / Math.max(1, n - 1)), pal.length - 1)];
+    const m = {};
+    xam.forEach((x, i)  => { m[x] = lay(xam.length, i, PK_XAM); });
+    xanh.forEach((x, i) => { m[x] = lay(xanh.length, i, PK_XANH); });
+    return segs.map(x => m[x] || '#8e8e93');
+}
+// nền sáng thì chữ số trên cột phải đổi sang đen, không thì mất chữ
+function pkChuTrenNen(hex) {
+    const h = String(hex || '').replace('#', ''); if (h.length < 6) return '#fff';
+    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+    return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#14171B' : '#fff';
+}
+
 // ================= Tỉ trọng phân khúc giá theo từng kênh =================
 function renderSegmentChannelChart() {
     const channels = DATA.channels_list;
@@ -5250,14 +5275,14 @@ function renderSegmentChannelChart() {
         channelTotals[rec.channel] = (channelTotals[rec.channel]||0) + rec.rev;
     });
 
-    const SEG_COLORS = ['#8e8e93','#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#CCB974','#64B5CD','#c9a0dc'];
+    const SEG_COLORS = mauPhanKhuc(segs);
     const datasets = segs.map((seg,i) => ({
         label: seg,
         data: channels.map(c => {
             const val = segChannelRev[seg+'|'+c] || 0;
             return channelTotals[c] ? (val/channelTotals[c]*100) : 0;
         }),
-        backgroundColor: SEG_COLORS[i % SEG_COLORS.length],
+        backgroundColor: SEG_COLORS[i],
         stack: 's1'
     }));
     if (segmentChannelChart) segmentChannelChart.destroy();
@@ -5268,7 +5293,7 @@ function renderSegmentChannelChart() {
             responsive:true, maintainAspectRatio:false,
             plugins: { legend:{ position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:10}} },
                 tooltip: { callbacks: { label: c => c.dataset.label+': '+c.parsed.y.toFixed(1)+'%' } },
-                datalabels: { display:true, color:'#fff', font:{size:9,weight:'700'}, formatter: v => v<5?'':v.toFixed(0)+'%' } },
+                datalabels: { display:true, color: c => pkChuTrenNen(c.dataset.backgroundColor), font:{size:9,weight:'700'}, formatter: v => v<5?'':v.toFixed(0)+'%' } },
             scales: { x: { stacked:true, grid:{display:false} }, y: { stacked:true, beginAtZero:true, max:100, display:false } }
         }
     });
@@ -11851,11 +11876,11 @@ function refreshSegCharts() {
     // vì chart này thể hiện hãng đang "bán tốt" ở phân khúc nào (số lượng máy bán ra), không phải giá trị tiền.
     const brandTotals = {};
     ALL_BRANDS_ORDER.forEach(b => { brandTotals[b] = segs.reduce((s,seg)=>s+segBrandUnits[seg][b],0); });
-    const segColors = ['#8e8e93','#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#CCB974','#64B5CD'];
+    const segColors = mauPhanKhuc(segs);
     const datasets2 = segs.map((seg,i) => ({
         label: seg,
         data: ALL_BRANDS_ORDER.map(b => brandTotals[b] ? (segBrandUnits[seg][b]/brandTotals[b]*100) : 0),
-        backgroundColor: segColors[i % segColors.length], stack:'s2'
+        backgroundColor: segColors[i], stack:'s2'
     }));
     if (brandSegmentChart) brandSegmentChart.destroy();
     brandSegmentChart = new Chart(document.getElementById('chart-brand-segment').getContext('2d'), {
@@ -11875,7 +11900,7 @@ function refreshSegCharts() {
                     },
                     afterLabel: c => segModelTooltipLines(segModelBreakdown, segs[c.datasetIndex], ALL_BRANDS_ORDER[c.dataIndex])
                 } },
-                datalabels: { display:true, color:'#fff', font:{size:10,weight:'700'}, formatter: v => v < 4 ? '' : v.toFixed(0)+'%' }
+                datalabels: { display:true, color: c => pkChuTrenNen(c.dataset.backgroundColor), font:{size:10,weight:'700'}, formatter: v => v < 4 ? '' : v.toFixed(0)+'%' }
             },
             scales: {
                 x: { stacked:true, grid:{display:false}, title:{display:true,text:'Hãng'} },
@@ -11900,7 +11925,7 @@ function refreshSegCharts() {
         ? segFilters.months.map(m => parseInt(m,10)).sort((a,b)=>a-b)
         : Array.from({length: DATA.month_labels.length}, (_,i)=>i+1);
     const monthLabelsActive = monthsWithData.map(m => 'T'+m);
-    const SEG_COLORS = ['#8e8e93','#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#CCB974','#64B5CD','#c9a0dc'];
+    const SEG_COLORS = mauPhanKhuc(segs);
     const monthTotalsUnits = monthsWithData.map(m => segs.reduce((s,seg)=>s+((unitsByMonth[m] && unitsByMonth[m][seg]) || 0),0));
     const datasets3 = segs.map((seg,i) => ({
         label: seg,
@@ -11908,7 +11933,7 @@ function refreshSegCharts() {
             const val = (unitsByMonth[m] && unitsByMonth[m][seg]) || 0;
             return monthTotalsUnits[mi] ? (val/monthTotalsUnits[mi]*100) : 0;
         }),
-        backgroundColor: SEG_COLORS[i % SEG_COLORS.length], stack:'s3'
+        backgroundColor: SEG_COLORS[i], stack:'s3'
     }));
     if (segmentUnitsChart) segmentUnitsChart.destroy();
     segmentUnitsChart = new Chart(document.getElementById('chart-segment-units').getContext('2d'), {
@@ -11920,7 +11945,7 @@ function refreshSegCharts() {
                 legend: { position:'bottom', labels:{usePointStyle:true, padding:16, font:{size:11}} },
                 tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%' } },
                 datalabels: {
-                    display: true, color:'#fff', font:{size:10,weight:'700'},
+                    display: true, color: c => pkChuTrenNen(c.dataset.backgroundColor), font:{size:10,weight:'700'},
                     formatter: v => v < 5 ? '' : v.toFixed(0)+'%'
                 }
             },
@@ -14400,9 +14425,9 @@ body.zoom-on { overflow: hidden; }
 <script src="scripts/demo-bo-cuc.js?v=202609010322"></script>
 <script src="scripts/demo-sang.js?v=202609010322"></script>
 <!-- 03/09/2026: Bao cao tuan / thang — lop trinh bay moi (anh Thai chot khung 03/09). Go 2 dong nay la ve y nhu cu. -->
-<link rel="stylesheet" href="scripts/bc.css?v=202609150230">
+<link rel="stylesheet" href="scripts/bc.css?v=202609150500">
 <script src="scripts/bc.js?v=202609121440"></script>
-<script src="scripts/bc-chitiet.js?v=202609142330"></script>
+<script src="scripts/bc-chitiet.js?v=202609150500"></script>
 <!-- 09/09/2026: nhan ky dang chon tren bieu do cot (quy tac "moi bieu do mot diem nhan").
      Chi doi mau ve, khong dung toi cach tinh so. Duong lui: xoa DUNG dong duoi day. -->
 <script src="scripts/bc-nhan-ky.js?v=202609101430"></script>
