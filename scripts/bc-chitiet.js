@@ -492,7 +492,7 @@
                                      var ds = dsHangNam(R);
                                      var o = ds.filter(function (x) { return laOppo(x.ten); })[0] || { u: 0, dt: 0, pu: 0, sDs: 0, sDt: 0, sPk: 0 };
                                      h += '<div class="bc-sct-ten">Tổng quan từ đầu năm <small>T' + R.thang[0] + '–T' + R.thang[R.thang.length - 1] + ' · ' + R.thang.length + ' tháng · nguồn DATA MWG theo model</small></div>';
-                                     h += '<div class="bc-nam-luoi"><div class="bc-sct-the">'
+                                     h += '<div class="bc-sct-the">'
                                         + the1('Máy cả chợ', fInt(R.tU) + ' máy', 'D.thu ' + fTr(R.tDt))
                                         + the1('Máy OPPO', fInt(o.u) + ' máy', 'Thị phần D.S <b>' + o.sDs.toFixed(1) + '%</b>')
                                         + the1('Doanh thu OPPO', fTr(o.dt), 'Thị phần D.T <b>' + o.sDt.toFixed(1) + '%</b>')
@@ -512,7 +512,7 @@
                                                        + '<td>' + x.sPk.toFixed(1) + '%</td></tr>';
                                      }).join('');
                                      h += '<tr class="bc-tong"><td>Tổng</td><td><b>' + fInt(R.tU) + '</b></td><td>100%</td><td>' + fTr(R.tDt) + '</td><td>100%</td><td>' + fTr(R.tU ? R.tDt / R.tU : 0) + '</td><td>' + fInt(R.pU) + '</td><td>100%</td></tr>';
-                                     h += '</tbody></table></div></div>';
+                                     h += '</tbody></table></div>';
                                      h += '<div class="bc-sct-ghi">Phân khúc suy từ giá bán thật (doanh thu ÷ số máy) của từng model tại chính shop này. Gộp còn 6 hãng chính, mọi hãng còn lại (Honor, Nokia, Tecno...) dồn vào <b>Khác</b>. Thị phần D.T tính trên tổng doanh thu mọi hãng (có cả Apple). Nguồn chỉ có số 2026 nên chưa so được cùng kỳ năm trước.</div>';
                                      return h + '</div>';
                         }
@@ -593,8 +593,8 @@
                                                        }).join('') + '</tbody></table></div>';
                                      };
                                      h += '<div class="bc-ck-luoi">'
-                                        + '<div><div class="bc-sct-ten bc-sct-ten2">PK 10-20M — ai lấy của ai <small>6 hãng + Khác</small></div>' + bangSS(rPk, true) + '</div>'
-                                        + '<div><div class="bc-sct-ten bc-sct-ten2">Toàn shop — tất cả các hãng <small>6 hãng + Khác</small></div>' + bangSS(rAll, false) + '</div>'
+                                        + '<div><div class="bc-sct-ten bc-sct-ten2">Số tổng toàn shop <small>tất cả các hãng</small></div>' + bangSS(rAll, false) + '</div>'
+                                        + '<div><div class="bc-sct-ten bc-sct-ten2">PK 10-20M — ai lấy của ai <small>trọng tâm</small></div>' + bangSS(rPk, true) + '</div>'
                                         + '</div>';
                                      h += '<div class="bc-sct-ghi">Tháng ' + mT + ' mới có <b>' + nA + '</b> ngày có số, tháng ' + mP + ' có <b>' + nZ + '</b> ngày — nên cột số máy quy về <b>máy/ngày</b> và mọi kết luận dựa trên <b>thị phần</b>, vì thị phần không phụ thuộc số ngày. Màu theo góc nhìn OPPO: <span class="bc-len-chu">xanh là tốt cho mình</span>, <span class="bc-giam-chu">đỏ là xấu cho mình</span> (đối thủ tăng thì tô đỏ).</div>';
                                      return h + '</div>';
