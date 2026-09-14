@@ -49,7 +49,7 @@ jobs:
         run: node scripts/kiem-review.mjs
       - name: Ra soat chi tiet shop (tu dau nam + so cung ky)
         run: node scripts/kiem-shop-nam.mjs
-      - name: Ra soat app Sale (chi tiet shop: tu dau nam + ai lay cua ai)
+      - name: Ra soat app Sale - chi tiet shop (tu dau nam + ai lay cua ai)
         run: node scripts/kiem-app-shop.mjs
       - name: Luu ket qua
         if: always()
