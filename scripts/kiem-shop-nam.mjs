@@ -141,6 +141,25 @@ kt('Cung ky: shop la hoan toan thi bao ro, khong vo', !!chuSo(F.khoiCungKy('SHOP
   kt('OPPO giam thi to DO', /bc-giam-chu/.test(dongO));
 }
 
+/* --- 7. IND / Muc tieu thang: dat goi O.C co HAI cua (DT >= 200M HOAC >= 40 may) --- */
+{
+  const i2 = src.indexOf('var MUC_OC = 200e6, MAY_OC = 40, SO_MAY_NORMAL = 5;');
+  const i3 = src.indexOf('var TG_DT =', i2);
+  if (i2 < 0 || i3 < 0) { kt('Cat duoc doan ma luat dat goi O.C', false); }
+  else {
+    const F3 = new Function(src.slice(i2, i3) + '\n return { datGoiOC, nhanGoiOC };')();
+    kt('DT 250M, 10 may -> DAT (qua cua doanh thu)', F3.datGoiOC(250e6, 10) === true);
+    kt('DT 120M, 45 may -> DAT (qua cua so may)', F3.datGoiOC(120e6, 45) === true);
+    kt('DT 250M, 45 may -> DAT (qua ca hai cua)', F3.datGoiOC(250e6, 45) === true);
+    kt('DT 199,9M, 39 may -> KHONG dat (sat nguong ca hai ben)', F3.datGoiOC(199.9e6, 39) === false);
+    kt('Dung 200M -> dat (bien duoi lay vao)', F3.datGoiOC(200e6, 0) === true);
+    kt('Dung 40 may -> dat (bien duoi lay vao)', F3.datGoiOC(0, 40) === true);
+    kt('Shop chua ban gi -> khong dat', F3.datGoiOC(0, 0) === false);
+    kt('Nhan ghi ro qua cua nao: ' + [F3.nhanGoiOC(250e6,10), F3.nhanGoiOC(120e6,45), F3.nhanGoiOC(250e6,45)].join(' | ').replace(/<[^>]+>/g,''),
+      /DT<\/small>/.test(F3.nhanGoiOC(250e6, 10)) && /máy<\/small>/.test(F3.nhanGoiOC(120e6, 45)) && /DT \+ máy/.test(F3.nhanGoiOC(250e6, 45)));
+  }
+}
+
 console.log('\n--- KIEM CHI TIET SHOP: TU DAU NAM + SO CUNG KY ---');
 ok.forEach((x) => console.log('  OK  ' + x));
 xau.forEach((x) => console.log('  SAI ' + x));
