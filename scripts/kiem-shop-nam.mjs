@@ -183,6 +183,30 @@ kt('Cung ky: shop la hoan toan thi bao ro, khong vo', !!chuSo(F.khoiCungKy('SHOP
   }
 }
 
+/* --- 9. IND: danh gia goi (Dat LV) xet CA may lan doanh thu (anh Thai 15/09) --- */
+{
+  const i6 = src.indexOf('var datLV = function (dt, ds)');
+  const i7 = src.indexOf('};', src.indexOf('return ten;', i6)) + 2;
+  if (i6 < 0 || i7 < 2) { kt('Cat duoc doan ma danh gia goi', false); }
+  else {
+    const F5 = new Function('OC_TT', 'OC_T', src.slice(i6, i7) + '\n return { datLV };')(
+      ['Platinum', 'Titan', 'Gold'],
+      { Platinum: { ds: 120, dt: 600e6 }, Titan: { ds: 80, dt: 400e6 }, Gold: { ds: 40, dt: 200e6 } });
+    const L = (dt, ds) => F5.datLV(dt, ds);
+    kt('650M / 10 may -> Platinum (qua cua doanh thu)', L(650e6, 10) === 'Platinum');
+    kt('100M / 130 may -> Platinum (qua cua so may)', L(100e6, 130) === 'Platinum');
+    kt('420M / 20 may -> Titan', L(420e6, 20) === 'Titan');
+    kt('80M / 85 may -> Titan (chi nho so may)', L(80e6, 85) === 'Titan');
+    kt('210M / 5 may -> Gold', L(210e6, 5) === 'Gold');
+    kt('50M / 42 may -> Gold (chi nho so may)', L(50e6, 42) === 'Gold');
+    kt('199M / 39 may -> khong dat goi nao', L(199e6, 39) === null);
+    kt('Dung moc: 200M hoac 40 may -> Gold', L(200e6, 0) === 'Gold' && L(0, 40) === 'Gold');
+    kt('Dung moc: 600M hoac 120 may -> Platinum', L(600e6, 0) === 'Platinum' && L(0, 120) === 'Platinum');
+    kt('Luon lay goi CAO NHAT cham duoc', L(610e6, 125) === 'Platinum' && L(410e6, 45) === 'Titan');
+    kt('Shop chua ban gi -> khong dat', L(0, 0) === null);
+  }
+}
+
 console.log('\n--- KIEM CHI TIET SHOP: TU DAU NAM + SO CUNG KY ---');
 ok.forEach((x) => console.log('  OK  ' + x));
 xau.forEach((x) => console.log('  SAI ' + x));

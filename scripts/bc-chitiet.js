@@ -1236,15 +1236,23 @@
                         var THANG_CO = (function () { var mC = d.NGAY.length ? U.thangCua(d.NGAY[d.NGAY.length - 1]) : 12; var a = []; for (var i = 1; i <= mC; i++) a.push(i); return a; })();
                         var mSel = cd === 'tuan' ? U.thangCua(k.denCo) : k.so;
                         var MOC_OC = 200e6, MOC_MAY = 40;   /* 14/09: đạt gói = DT ≥ 200M HOẶC ≥ 40 máy */
-                        /* Anh Thái 06/09: cột "Đạt LV" — doanh thu tháng chạm mốc DT của gói nào thì ghi gói đó
-                           (Platinum 600M · Titan 400M · Gold 200M, lấy từ __bcTarget().ocTarget). Xét theo DOANH THU,
-                           cùng thước đo với cột "O.C ≥200M". OC_TT xếp cao→thấp nên chỉ số nhỏ = gói cao hơn. */
-                        var datLV = function (dt) {
-                                     var ten = null, mocCao = 0;
-                                     OC_TT.forEach(function (l) { var m = (OC_T[l] || {}).dt || 0; if (m && dt >= m && m > mocCao) { mocCao = m; ten = l; } });
+                        /* Cột "Đạt LV" — 15/09 anh Thái: đánh giá gói theo CẢ HAI thước, chạm mốc MÁY
+                           HOẶC mốc DOANH THU của gói nào thì tính là đạt gói đó, lấy gói CAO NHẤT chạm được:
+                             Gold 40 máy / 200M · Titan 80 máy / 400M · Platinum 120 máy / 600M
+                           (mốc lấy từ __bcTarget().ocTarget). Trước đây chỉ xét doanh thu nên shop bán nhiều
+                           máy giá thấp bị đánh giá thiếu một bậc. Cùng một luật với cột "Đạt gói" — cột đó
+                           chính là mức Gold (40 máy hoặc 200M), nay mở rộng đủ 3 bậc.
+                           OC_TT xếp CAO → THẤP nên duyệt từ đầu, chạm được là dừng. */
+                        var datLV = function (dt, ds) {
+                                     var ten = null;
+                                     OC_TT.forEach(function (l) {
+                                                    if (ten) return;
+                                                    var t = OC_T[l] || {};
+                                                    if ((t.dt && (dt || 0) >= t.dt) || (t.ds && (ds || 0) >= t.ds)) ten = l;
+                                     });
                                      return ten;
                         };
-                        var kq = khoi({ stt: 6, ten: 'Mục tiêu shop O.C', rong: true, dangXem: 'Trên: gộp theo level (theo mã shop) · Dưới: từng shop O.C ĐÃ GỘP mã trùng tên · Target DT lấy theo level · cột Đạt gói: ✓ khi doanh thu tháng ≥ 200M HOẶC bán ≥ 40 máy' });var than = $('.bc-than', kq);
+                        var kq = khoi({ stt: 6, ten: 'Mục tiêu shop O.C', rong: true, dangXem: 'Trên: gộp theo level (theo mã shop) · Dưới: từng shop O.C ĐÃ GỘP mã trùng tên · Target DT lấy theo level · cột Đạt gói: ✓ khi doanh thu ≥ 200M HOẶC bán ≥ 40 máy · cột Đạt LV xét cả máy lẫn doanh thu (Gold 40 máy/200M · Titan 80/400M · Platinum 120/600M)' });var than = $('.bc-than', kq);
                 $('.bc-dau-phai', kq).appendChild(selThangCT(THANG_CO, mSel, false, function (v) { mSel = +v; ve(); }));
                         var hopTren = el('div', 'bc-cuon'), tenDuoi = el('div', 'bc-bd-ten'), hopDuoi = el('div', 'bc-cuon');
                         tenDuoi.style.textAlign = 'left'; tenDuoi.textContent = 'TIẾN ĐỘ TỪNG SHOP O.C';
@@ -1286,7 +1294,7 @@
                                                                 nhomCT.sort(function (a, b) { return (a.t ? a.ds / a.t : 0) - (b.t ? b.ds / b.t : 0); });
                                                                 var h2 = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Level</th><th>Sale</th><th>Máy</th><th>Target máy</th><th>% HT máy</th><th>Doanh thu</th><th>Target DT</th><th>% HT DT</th><th>Gộp</th><th>Đạt gói</th><th>Đạt LV</th>' + (ngayCon ? '<th>Cần/tuần</th>' : '') + '</tr></thead><tbody>'
                                                                                                           + nhomCT.map(function (r, i) {var p = r.t ? r.ds / r.t * 100 : null, pd = r.tdt ? r.dt / r.tdt * 100 : null;
-                                                        var okDt = r.dt >= MOC_OC, okMay = r.ds >= MOC_MAY, ok = okDt || okMay, lv = datLV(r.dt);
+                                                        var okDt = r.dt >= MOC_OC, okMay = r.ds >= MOC_MAY, ok = okDt || okMay, lv = datLV(r.dt, r.ds);
                                                         return '<tr' + (!r.ds ? ' class="bc-mo"' : '') + '><td>' + (i + 1) + '</td><td title="' + esc(r.s) + '">' + esc(tenShopNgan(r.s)) + '</td><td>' + esc(r.l) + '</td><td>' + esc(tenNgan(r.sale)) + '</td><td><b>' + fInt(r.ds) + '</b></td><td>' + fInt(r.t) + '</td><td>' + thanhNho(p) + '</td><td><b>' + fTyNgan(r.dt) + '</b></td><td>' + fTyNgan(r.tdt) + '</td><td>' + thanhNho(pd) + '</td>'
                                                           + '<td>' + (r.n > 1 ? '<b>' + r.n + ' mã</b>' : '<span class="bc-mo-chu">—</span>') + '</td>'
                                                            + '<td>' + (ok ? '<b class="bc-len-chu">✓</b>' : '<span class="bc-giam-chu">✗</span>') + '</td>'
@@ -1299,7 +1307,7 @@
                                                              tenDuoi.textContent = 'TIẾN ĐỘ TỪNG SHOP O.C — ' + nhomCT.length + ' shop (đã gộp mã trùng tên)';
                                      /* Anh Thái 06/09: đếm số shop chạm mốc DT của từng gói */
                                      var demLV = {}; OC_TT.forEach(function (l) { demLV[l] = 0; });
-                                     nhomCT.forEach(function (r) { var l = datLV(r.dt); if (l) demLV[l]++; });
+                                     nhomCT.forEach(function (r) { var l = datLV(r.dt, r.ds); if (l) demLV[l]++; });
                                      var chuoiLV = OC_TT.filter(function (l) { return demLV[l]; }).map(function (l) { return '<b>' + esc(l) + '</b> ' + demLV[l]; }).join(' · ');
                                                              /* 15/09 anh Thái: shop nào cột LEVEL ghi kiểu OPPO Club mà không khớp gói nào
                                         thì nêu đích danh ra đây, không im lặng cho rơi về Normal. Sửa sheet mà
@@ -1315,7 +1323,7 @@
                                                       + levelLa.slice(0, 4).map(function (sp) { return esc(tenShopNgan(sp)) + ': "' + esc(levelOf[sp]) + '"'; }).join(' · ')
                                                       + (levelLa.length > 4 ? ' …' : '') + ') — kiểm lại chính tả cột LEVEL trên sheet'
                                                     : '';
-                                     chot(kq, 'Tháng ' + mSel + ' (luỹ kế ' + ngayDa + '/' + ngayThang + ' ngày): <b>' + datDs + '/' + nhomCT.length + '</b> shop O.C đạt target máy · <b>' + dat200 + '/' + nhomCT.length + '</b> shop đạt gói (DT ≥ 200M hoặc ≥ 40 máy)' + (chuoiLV ? ' · đạt gói theo doanh thu: ' + chuoiLV : '') + (ngayCon ? ' · còn ' + ngayCon + ' ngày' : '') + canhLevel + '.');
+                                     chot(kq, 'Tháng ' + mSel + ' (luỹ kế ' + ngayDa + '/' + ngayThang + ' ngày): <b>' + datDs + '/' + nhomCT.length + '</b> shop O.C đạt target máy · <b>' + dat200 + '/' + nhomCT.length + '</b> shop đạt gói (DT ≥ 200M hoặc ≥ 40 máy)' + (chuoiLV ? ' · đạt gói (máy hoặc doanh thu): ' + chuoiLV : '') + (ngayCon ? ' · còn ' + ngayCon + ' ngày' : '') + canhLevel + '.');
                         }
                         ve();
                         grid.appendChild(kq);
