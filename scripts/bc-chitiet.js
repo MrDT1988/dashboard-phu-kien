@@ -486,7 +486,7 @@
 
                         /* ---- KHỐI A: tổng quan từ đầu năm + thị phần đầy đủ các hãng ---- */
                         function khoiNam(shop) {
-                                     var h = '<div class="bc-sct-o bc-sct-rong">';
+                                     var h = '<div class="bc-sct-o bc-sct-rong bc-nam">';
                                      var R = gomMD(shop, null);
                                      if (!R.tU) return h + '<div class="bc-sct-ten">Tổng quan từ đầu năm</div><div class="bc-sct-trong">Shop này chưa có số theo model từ đầu năm.</div></div>';
                                      var ds = dsHangNam(R);
@@ -523,7 +523,7 @@
                                      var byM = (B.shop_model_data || {})[shop] || {};
                                      var mP = Object.keys(byM).map(function (k) { return parseInt(String(k).replace(/\D/g, ''), 10); })
                                                     .filter(function (m) { return m && m < mT; }).sort(function (a, b) { return b - a; })[0];
-                                     var h = '<div class="bc-sct-o bc-sct-rong">';
+                                     var h = '<div class="bc-sct-o bc-sct-rong bc-ck">';
                                      h += '<div class="bc-sct-ten">Nhận xét so với cùng kỳ <small>tháng ' + mT + ' so tháng ' + (mP || '—') + ' · nguồn chỉ có 2026 nên không so được cùng kỳ năm trước</small></div>';
                                      if (!mP) return h + '<div class="bc-sct-trong">Tháng ' + mT + ' là tháng đầu tiên có số của shop này — chưa có kỳ trước để so.</div></div>';
                                      var A = gomMD(shop, function (m) { return m === mT; });
@@ -679,6 +679,7 @@
                                      h += khoiNam(shop);
                                      h += khoiCungKy(shop, th);
                                      if (!tongG && !tongNV) h += '<div class="bc-sct-trong bc-sct-rong">Tháng ' + esc(th) + ': shop này chưa có số chi tiết theo giờ bán / nhân viên.</div>';
+                                     h += '<div class="bc-sct-thang"><div class="bc-sct-ten">Chi tiết trong tháng ' + esc(th) + ' <small>giờ bán · model PK 10-20M · nhân viên</small></div>';
                                      h += '<div class="bc-sct-luoi">';
 
                                      /* --- cot trai: khung gio + TOP 3 PK, gian deu cho cao bang cot phai --- */
@@ -741,7 +742,7 @@
                                                     }).join('') + '</table>';
                                                     h += '<div class="bc-sct-ghi">Cột phải: số máy OPPO và tỉ lệ OPPO của riêng người đó — <span class="bc-giam-chu">đỏ</span> là thấp hơn mặt bằng OPPO của shop (' + pcOShop.toFixed(0) + '%).</div>';
                                      }
-                                     h += '</div></div></div>';
+                                     h += '</div></div></div></div>';
                                      return h;
                         }
 
