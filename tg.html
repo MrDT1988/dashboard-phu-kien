@@ -3512,7 +3512,14 @@ async function fetchRowsFromAppsScript(baseUrl, sheetName, startRow) {
     const msgEl = document.getElementById('loading-message');
     const CHUNK_SIZE = 15000;
     const MAX_CONCURRENT = 2;
-    const MAX_RETRIES = 3;
+    /* 15/09 anh Thái: Apps Script thỉnh thoảng trả HTTP 404 rồi vài giây sau lại trả 200 —
+       đã bắt tận tay: gọi 3 lần liên tiếp cùng một URL thì lần 1 ra 404, lần 2 và 3 ra 200
+       (4s rồi 19s). Đây là Google chặn tốc độ / quá tải phía họ, không phải sai đường dẫn.
+       Cũ: 3 lần thử, chờ 1,5s rồi 3s — quá ngắn, không vượt nổi cơn chặn, thế là cả trang
+       hỏng và robot treo tới hết 40 phút. Nay 6 lần, chờ dài dần tới 40s (tổng ~1,5 phút mỗi
+       phần). Lúc mạng khoẻ thì không lần nào phải thử lại nên không hề chậm thêm. */
+    const MAX_RETRIES = 6;
+    const CHO_THU_LAI = [3000, 8000, 15000, 25000, 40000];
     const sheetParam = 'sheet=' + encodeURIComponent(sheetName);
     startRow = startRow || 1;
 
@@ -3565,7 +3572,7 @@ async function fetchRowsFromAppsScript(baseUrl, sheetName, startRow) {
                 lastErr = err;
                 if (attempt < MAX_RETRIES) {
                     if (msgEl) msgEl.textContent = 'Phần ' + (idx + 1) + '/' + chunks.length + ' lỗi, đang thử lại (lần ' + (attempt + 1) + ')...';
-                    await sleep(1500 * attempt);
+                    await sleep(CHO_THU_LAI[attempt - 1] || 40000);
                 }
             }
         }
@@ -10393,7 +10400,14 @@ async function fetchRowsFromAppsScript(baseUrl, startRow) {
     const msgEl = document.getElementById('mwg-loading-message');
     const CHUNK_SIZE = 15000;
     const MAX_CONCURRENT = 2; // giảm xuống 2 để bớt bị giới hạn tốc độ
-    const MAX_RETRIES = 3;
+    /* 15/09 anh Thái: Apps Script thỉnh thoảng trả HTTP 404 rồi vài giây sau lại trả 200 —
+       đã bắt tận tay: gọi 3 lần liên tiếp cùng một URL thì lần 1 ra 404, lần 2 và 3 ra 200
+       (4s rồi 19s). Đây là Google chặn tốc độ / quá tải phía họ, không phải sai đường dẫn.
+       Cũ: 3 lần thử, chờ 1,5s rồi 3s — quá ngắn, không vượt nổi cơn chặn, thế là cả trang
+       hỏng và robot treo tới hết 40 phút. Nay 6 lần, chờ dài dần tới 40s (tổng ~1,5 phút mỗi
+       phần). Lúc mạng khoẻ thì không lần nào phải thử lại nên không hề chậm thêm. */
+    const MAX_RETRIES = 6;
+    const CHO_THU_LAI = [3000, 8000, 15000, 25000, 40000];
     startRow = startRow || 1;
 
     // Bước 1: hỏi tổng số dòng
@@ -10450,7 +10464,7 @@ async function fetchRowsFromAppsScript(baseUrl, startRow) {
                 lastErr = err;
                 if (attempt < MAX_RETRIES) {
                     if (msgEl) msgEl.textContent = 'Phần ' + (idx + 1) + '/' + chunks.length + ' lỗi, đang thử lại (lần ' + (attempt + 1) + ')...';
-                    await sleep(1500 * attempt); // chờ tăng dần trước khi thử lại
+                    await sleep(CHO_THU_LAI[attempt - 1] || 40000); // chờ dài dần, vượt qua cơn Apps Script chặn tốc độ
                 }
             }
         }
