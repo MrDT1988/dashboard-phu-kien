@@ -402,6 +402,185 @@
                                 tong theo nhan vien = so may 10-20M sau khi tru Apple, khop tuyet doi).
                              3) shop_model_data — loc model co don gia 10-20M (doi chieu: bang dung
                                 so cua phan khuc 10-15M + 15-20M, khop tuyet doi) roi tach 3 hang. */
+                        /* ===== 13/09 anh Thái: chi tiết shop có thêm 2 khối =====
+                           A. Tổng quan TỪ ĐẦU NĂM + bảng thị phần ĐẦY ĐỦ CÁC HÃNG.
+                           B. Nhận xét SO CÙNG KỲ: OPPO lên hay xuống, đối thủ nào đang lên,
+                              mình mất thị phần vào tay ai / lấy được của ai — soi kỹ PK 10-20M.
+                           NGUỒN: shop_model_data[shop][tháng][model] = {brand, units, rev}.
+                             Đây là nguồn DUY NHẤT có đủ chiều SHOP × HÃNG. shop_day_data chỉ
+                             có 4 hãng + tổng, không có vivo / realme / Honor... nên không dùng
+                             được cho bảng "đầy đủ các hãng".
+                             Phân khúc suy từ GIÁ BÁN THẬT = doanh thu ÷ số máy của từng model
+                             tại chính shop đó — đúng cách DB TG vẫn làm (đã đối chiếu khớp với
+                             bảng phân khúc 10-15M + 15-20M).
+                           THẬT THÀ: nguồn chỉ có số 2026 -> KHÔNG so được cùng kỳ NĂM TRƯỚC.
+                             "Cùng kỳ" ở đây là THÁNG LIỀN TRƯỚC có số của chính shop đó.
+                           Tháng đang chạy chưa đủ ngày, nên cột số máy quy về MÁY/NGÀY và mọi
+                           kết luận dựa trên THỊ PHẦN (%) — thị phần không phụ thuộc số ngày,
+                           so kiểu đó mới công bằng. */
+                        var giaPK = function (u, dt) { if (!u) return false; var g = dt / u; return g >= 1e7 && g < 2e7; };
+                        var laOppo = function (s) { return /oppo/i.test(String(s || '')); };
+                        var ngayTrongThang = function (m) { return new Date(2026, m, 0).getDate(); };
+                        var dauSo = function (v, n) { return (v > 0 ? '+' : '') + v.toFixed(n == null ? 1 : n); };
+                        /* mũi tên tô màu THEO GÓC NHÌN OPPO: dòng OPPO tăng = xanh; đối thủ tăng = đỏ */
+                        var muiX = function (v, s, laO) {
+                                     if (!isFinite(v) || Math.abs(v) < 0.05) return '<span class="bc-sct-0">– ' + s + '</span>';
+                                     var tot = laO ? v > 0 : v < 0;
+                                     return '<span class="' + (tot ? 'bc-len-chu' : 'bc-giam-chu') + '">' + (v > 0 ? '▲' : '▼') + ' ' + s + '</span>';
+                        };
+                        var the1 = function (n, v, s) { return '<div class="bc-sct-the1"><div class="bc-sct-the-n">' + n + '</div><div class="bc-sct-the-v">' + v + '</div><div class="bc-sct-the-s">' + s + '</div></div>'; };
+                        /* số ngày shop THỰC SỰ có số trong tháng — để quy về máy/ngày cho công bằng */
+                        function ngayCoSo(shop, m) {
+                                     var SD = (B.shop_day_data || {})[shop] || {}, n = 0;
+                                     Object.keys(SD).forEach(function (kk) {
+                                                    if (parseInt(String(kk).split('-')[0], 10) !== m) return;
+                                                    if (((SD[kk] || {}).total_units || 0) > 0) n++;
+                                     });
+                                     return n;
+                        }
+                        /* gom shop_model_data của 1 shop (lọc tháng tuỳ ý) -> theo hãng, kèm phần PK 10-20M */
+                        function gomMD(shop, loc) {
+                                     var byM = (B.shop_model_data || {})[shop] || {};
+                                     var R = { hang: {}, tU: 0, tDt: 0, pU: 0, pDt: 0, thang: [] };
+                                     Object.keys(byM).forEach(function (mk) {
+                                                    var m = parseInt(String(mk).replace(/\D/g, ''), 10);
+                                                    if (!m || (loc && !loc(m))) return;
+                                                    R.thang.push(m);
+                                                    var cell = byM[mk] || {};
+                                                    Object.keys(cell).forEach(function (md) {
+                                                                   var v = cell[md] || {}, u = v.units || 0, dt = v.rev || 0;
+                                                                   if (!u && !dt) return;
+                                                                   var b = tenHoa(v.brand || '(không rõ)');
+                                                                   var e = R.hang[b] || (R.hang[b] = { u: 0, dt: 0, pu: 0, pdt: 0 });
+                                                                   e.u += u; e.dt += dt; R.tU += u; R.tDt += dt;
+                                                                   if (giaPK(u, dt)) { e.pu += u; e.pdt += dt; R.pU += u; R.pDt += dt; }
+                                                    });
+                                     });
+                                     R.thang.sort(function (a, b) { return a - b; });
+                                     return R;
+                        }
+                        function dsHangNam(R) {
+                                     return Object.keys(R.hang).map(function (b) {
+                                                    var e = R.hang[b];
+                                                    return { ten: b, u: e.u, dt: e.dt, pu: e.pu, pdt: e.pdt,
+                                                             sDs: R.tU ? e.u / R.tU * 100 : 0, sDt: R.tDt ? e.dt / R.tDt * 100 : 0,
+                                                             sPk: R.pU ? e.pu / R.pU * 100 : 0, gia: e.u ? e.dt / e.u : 0 };
+                                     }).sort(function (a, b) { return b.u - a.u; });
+                        }
+
+                        /* ---- KHỐI A: tổng quan từ đầu năm + thị phần đầy đủ các hãng ---- */
+                        function khoiNam(shop) {
+                                     var h = '<div class="bc-sct-o bc-sct-rong">';
+                                     var R = gomMD(shop, null);
+                                     if (!R.tU) return h + '<div class="bc-sct-ten">Tổng quan từ đầu năm</div><div class="bc-sct-trong">Shop này chưa có số theo model từ đầu năm.</div></div>';
+                                     var ds = dsHangNam(R);
+                                     var o = ds.filter(function (x) { return laOppo(x.ten); })[0] || { u: 0, dt: 0, pu: 0, sDs: 0, sDt: 0, sPk: 0 };
+                                     h += '<div class="bc-sct-ten">Tổng quan từ đầu năm <small>T' + R.thang[0] + '–T' + R.thang[R.thang.length - 1] + ' · ' + R.thang.length + ' tháng · nguồn DATA MWG theo model</small></div>';
+                                     h += '<div class="bc-sct-the">'
+                                        + the1('Máy cả chợ', fInt(R.tU) + ' máy', 'D.thu ' + fTr(R.tDt))
+                                        + the1('Máy OPPO', fInt(o.u) + ' máy', 'Thị phần D.S <b>' + o.sDs.toFixed(1) + '%</b>')
+                                        + the1('Doanh thu OPPO', fTr(o.dt), 'Thị phần D.T <b>' + o.sDt.toFixed(1) + '%</b>')
+                                        + the1('PK 10-20M', fInt(R.pU) + ' máy cả chợ', 'OPPO ' + fInt(o.pu) + ' máy · <b>' + o.sPk.toFixed(1) + '%</b>')
+                                        + '</div>';
+                                     h += '<div class="bc-cuon"><table class="bc-bang bc-sct-tp"><thead><tr><th>Hãng</th><th>Máy</th><th>Thị phần D.S</th><th>Doanh thu</th><th>Thị phần D.T</th><th>Giá TB</th><th>PK 10-20M</th><th>Share PK</th></tr></thead><tbody>';
+                                     h += ds.map(function (x) {
+                                                    var mh = mauHang(String(x.ten).toLowerCase());
+                                                    return '<tr class="' + (laOppo(x.ten) ? 'bc-sct-tp-oppo' : '') + '">'
+                                                       + '<td><i class="bc-sct-cham" style="background:' + mh + '"></i>' + esc(x.ten) + '</td>'
+                                                       + '<td><b>' + fInt(x.u) + '</b></td>'
+                                                       + '<td>' + x.sDs.toFixed(1) + '%<i class="bc-sct-vach" style="width:' + Math.min(100, x.sDs).toFixed(1) + '%;background:' + mh + '"></i></td>'
+                                                       + '<td>' + fTr(x.dt) + '</td>'
+                                                       + '<td>' + x.sDt.toFixed(1) + '%</td>'
+                                                       + '<td>' + fTr(x.gia) + '</td>'
+                                                       + '<td>' + fInt(x.pu) + '</td>'
+                                                       + '<td>' + x.sPk.toFixed(1) + '%</td></tr>';
+                                     }).join('');
+                                     h += '<tr class="bc-tong"><td>Tổng</td><td><b>' + fInt(R.tU) + '</b></td><td>100%</td><td>' + fTr(R.tDt) + '</td><td>100%</td><td>' + fTr(R.tU ? R.tDt / R.tU : 0) + '</td><td>' + fInt(R.pU) + '</td><td>100%</td></tr>';
+                                     h += '</tbody></table></div>';
+                                     h += '<div class="bc-sct-ghi">Phân khúc suy từ giá bán thật (doanh thu ÷ số máy) của từng model tại chính shop này. Thị phần D.T tính trên tổng doanh thu mọi hãng (có cả Apple). Nguồn chỉ có số 2026 nên chưa so được cùng kỳ năm trước.</div>';
+                                     return h + '</div>';
+                        }
+
+                        /* ---- KHỐI B: nhận xét so cùng kỳ, tập trung PK 10-20M ---- */
+                        function khoiCungKy(shop, thang) {
+                                     var mT = +thang;
+                                     var byM = (B.shop_model_data || {})[shop] || {};
+                                     var mP = Object.keys(byM).map(function (k) { return parseInt(String(k).replace(/\D/g, ''), 10); })
+                                                    .filter(function (m) { return m && m < mT; }).sort(function (a, b) { return b - a; })[0];
+                                     var h = '<div class="bc-sct-o bc-sct-rong">';
+                                     h += '<div class="bc-sct-ten">Nhận xét so với cùng kỳ <small>tháng ' + mT + ' so tháng ' + (mP || '—') + ' · nguồn chỉ có 2026 nên không so được cùng kỳ năm trước</small></div>';
+                                     if (!mP) return h + '<div class="bc-sct-trong">Tháng ' + mT + ' là tháng đầu tiên có số của shop này — chưa có kỳ trước để so.</div></div>';
+                                     var A = gomMD(shop, function (m) { return m === mT; });
+                                     var Z = gomMD(shop, function (m) { return m === mP; });
+                                     if (!A.tU && !Z.tU) return h + '<div class="bc-sct-trong">Cả tháng ' + mT + ' và tháng ' + mP + ' đều chưa có số.</div></div>';
+                                     var nA = ngayCoSo(shop, mT) || ngayTrongThang(mT), nZ = ngayCoSo(shop, mP) || ngayTrongThang(mP);
+                                     var tenH = {};
+                                     Object.keys(A.hang).forEach(function (b) { tenH[b] = 1; });
+                                     Object.keys(Z.hang).forEach(function (b) { tenH[b] = 1; });
+                                     var lay = function (R, b, n) {
+                                                    var e = R.hang[b] || { u: 0, dt: 0, pu: 0, pdt: 0 };
+                                                    return { u: e.u, pu: e.pu, ngay: n ? e.u / n : 0, pngay: n ? e.pu / n : 0,
+                                                             sDs: R.tU ? e.u / R.tU * 100 : 0, sPk: R.pU ? e.pu / R.pU * 100 : 0 };
+                                     };
+                                     var rows = Object.keys(tenH).map(function (b) {
+                                                    var a = lay(A, b, nA), z = lay(Z, b, nZ);
+                                                    return { ten: b, a: a, z: z, laO: laOppo(b),
+                                                             dDs: a.sDs - z.sDs, dPk: a.sPk - z.sPk,
+                                                             dNgay: z.ngay ? (a.ngay - z.ngay) / z.ngay * 100 : (a.ngay ? 100 : 0),
+                                                             dPNgay: z.pngay ? (a.pngay - z.pngay) / z.pngay * 100 : (a.pngay ? 100 : 0) };
+                                     });
+                                     var rAll = rows.filter(function (r) { return r.a.u || r.z.u; }).sort(function (p, q) { return q.a.u - p.a.u; });
+                                     var rPk = rows.filter(function (r) { return r.a.pu || r.z.pu; }).sort(function (p, q) { return q.dPk - p.dPk; });
+                                     var oo = rows.filter(function (r) { return r.laO; })[0];
+
+                                     /* --- mấy câu nhận xét, viết thẳng như đi họp --- */
+                                     var nx = [];
+                                     if (oo) {
+                                                    nx.push('<b>OPPO toàn shop</b>: ' + (oo.dNgay >= 0 ? 'tăng' : 'giảm') + ' <b>' + Math.abs(oo.dNgay).toFixed(0) + '%</b> máy/ngày ('
+                                                       + oo.z.ngay.toFixed(1) + ' → ' + oo.a.ngay.toFixed(1) + ' máy/ngày), thị phần '
+                                                       + muiX(oo.dDs, dauSo(oo.dDs) + ' điểm', true) + ' (' + oo.z.sDs.toFixed(1) + '% → ' + oo.a.sDs.toFixed(1) + '%).');
+                                                    nx.push('<b>PK 10-20M</b>: OPPO ' + oo.z.sPk.toFixed(1) + '% → ' + oo.a.sPk.toFixed(1) + '%, '
+                                                       + muiX(oo.dPk, dauSo(oo.dPk) + ' điểm', true) + ' · ' + oo.z.pngay.toFixed(1) + ' → ' + oo.a.pngay.toFixed(1) + ' máy/ngày.');
+                                                    var len = rPk.filter(function (r) { return !r.laO && r.dPk > 0.5; }).slice(0, 3);
+                                                    var xuong = rPk.filter(function (r) { return !r.laO && r.dPk < -0.5; }).sort(function (p, q) { return p.dPk - q.dPk; }).slice(0, 3);
+                                                    if (oo.dPk < -0.5 && len.length)
+                                                                   nx.push('OPPO <b class="bc-giam-chu">mất ' + Math.abs(oo.dPk).toFixed(1) + ' điểm</b> PK 10-20M — phần đó rơi vào tay: '
+                                                                      + len.map(function (r) { return '<b>' + esc(r.ten) + '</b> ' + dauSo(r.dPk) + ' điểm'; }).join(' · ') + '. Đây là chỗ phải đánh trước.');
+                                                    else if (oo.dPk > 0.5 && xuong.length)
+                                                                   nx.push('OPPO <b class="bc-len-chu">lấy thêm ' + oo.dPk.toFixed(1) + ' điểm</b> PK 10-20M — lấy chủ yếu từ: '
+                                                                      + xuong.map(function (r) { return '<b>' + esc(r.ten) + '</b> ' + dauSo(r.dPk) + ' điểm'; }).join(' · ') + '. Giữ nguyên nhịp đang chạy.');
+                                                    else nx.push('PK 10-20M gần như đứng yên (' + dauSo(oo.dPk) + ' điểm) — tháng này chưa ai lấy được của ai ở shop này.');
+                                                    var manh = rAll.filter(function (r) { return !r.laO && r.dDs > 1; }).sort(function (p, q) { return q.dDs - p.dDs; }).slice(0, 3);
+                                                    if (manh.length) nx.push('Đối thủ đang lên ở shop này: ' + manh.map(function (r) { return '<b>' + esc(r.ten) + '</b> ' + dauSo(r.dDs) + ' điểm (' + r.z.ngay.toFixed(1) + ' → ' + r.a.ngay.toFixed(1) + ' máy/ngày)'; }).join(' · ') + '.');
+                                                    if (!oo.a.pu) nx.push('<b class="bc-giam-chu">Cảnh báo: tháng ' + mT + ' shop chưa bán được máy OPPO nào trong PK 10-20M.</b>');
+                                     } else nx.push('<b class="bc-giam-chu">Shop này không có số OPPO ở cả hai tháng.</b>');
+                                     h += '<div class="bc-sct-nx">' + nx.map(function (c) { return '<div>' + c + '</div>'; }).join('') + '</div>';
+
+                                     var bangSS = function (ds, pk) {
+                                                    var g = function (o) { return pk ? o.pngay : o.ngay; };
+                                                    var s = function (o) { return pk ? o.sPk : o.sDs; };
+                                                    var d = function (r) { return pk ? r.dPk : r.dDs; };
+                                                    var dn = function (r) { return pk ? r.dPNgay : r.dNgay; };
+                                                    if (!ds.length) return '<div class="bc-sct-trong">Hai tháng đều không có số ở phần này.</div>';
+                                                    return '<div class="bc-cuon"><table class="bc-bang bc-sct-tp"><thead><tr><th>Hãng</th><th>Máy/ngày T' + mP + '</th><th>Máy/ngày T' + mT + '</th><th>±%</th><th>T.phần T' + mP + '</th><th>T.phần T' + mT + '</th><th>± điểm</th></tr></thead><tbody>'
+                                                       + ds.map(function (r) {
+                                                                      var mh = mauHang(String(r.ten).toLowerCase());
+                                                                      return '<tr class="' + (r.laO ? 'bc-sct-tp-oppo' : '') + '">'
+                                                                         + '<td><i class="bc-sct-cham" style="background:' + mh + '"></i>' + esc(r.ten) + '</td>'
+                                                                         + '<td>' + g(r.z).toFixed(1) + '</td>'
+                                                                         + '<td><b>' + g(r.a).toFixed(1) + '</b></td>'
+                                                                         + '<td>' + muiX(dn(r), dauSo(dn(r), 0) + '%', r.laO) + '</td>'
+                                                                         + '<td>' + s(r.z).toFixed(1) + '%</td>'
+                                                                         + '<td><b>' + s(r.a).toFixed(1) + '%</b></td>'
+                                                                         + '<td>' + muiX(d(r), dauSo(d(r)) + ' đ', r.laO) + '</td></tr>';
+                                                       }).join('') + '</tbody></table></div>';
+                                     };
+                                     h += '<div class="bc-sct-ten bc-sct-ten2">PK 10-20M — ai lấy thị phần của ai <small>xếp theo ± điểm thị phần PK</small></div>' + bangSS(rPk, true);
+                                     h += '<div class="bc-sct-ten bc-sct-ten2">Toàn shop — tất cả các hãng <small>xếp theo số máy tháng ' + mT + '</small></div>' + bangSS(rAll, false);
+                                     h += '<div class="bc-sct-ghi">Tháng ' + mT + ' mới có <b>' + nA + '</b> ngày có số, tháng ' + mP + ' có <b>' + nZ + '</b> ngày — nên cột số máy quy về <b>máy/ngày</b> và mọi kết luận dựa trên <b>thị phần</b>, vì thị phần không phụ thuộc số ngày. Màu theo góc nhìn OPPO: <span class="bc-len-chu">xanh là tốt cho mình</span>, <span class="bc-giam-chu">đỏ là xấu cho mình</span> (đối thủ tăng thì tô đỏ).</div>';
+                                     return h + '</div>';
+                        }
+
                         function chiTietShop(shop, thang) {
                                      var th = String(thang);
                                      var hg = (((B.shop_hour_all_brand || {})[shop]) || {})[th] || {};
@@ -476,14 +655,13 @@
                                      }).sort(function (a, b) { return (b.u - a.u) || (b.dt - a.dt); }).slice(0, 3);
                                      var maxPK = top3PK.length ? top3PK[0].u : 0;
 
-                                     if (!tongG && !tongNV) {
-                                                    return '<div class="bc-sct"><div class="bc-sct-trong">Tháng ' + esc(th) + ': shop này chưa có số chi tiết (giờ bán / nhân viên / model).</div></div>';
-                                     }
-
                                      var h = '<div class="bc-sct">';
                                      h += '<div class="bc-sct-dau"><b>' + esc(tenShopNgan(shop)) + '</b> · tháng ' + esc(th)
                                         + ' · <b>' + fInt(tongG) + '</b> máy toàn shop · PK 10-20M Android <b>' + fInt(tongNV) + '</b> máy · '
                                         + 'OPPO <b>' + fInt(oppoNV) + '</b> (<b>' + pcOShop.toFixed(0) + '%</b>)</div>';
+                                     h += khoiNam(shop);
+                                     h += khoiCungKy(shop, th);
+                                     if (!tongG && !tongNV) h += '<div class="bc-sct-trong bc-sct-rong">Tháng ' + esc(th) + ': shop này chưa có số chi tiết theo giờ bán / nhân viên.</div>';
                                      h += '<div class="bc-sct-luoi">';
 
                                      /* --- cot trai: khung gio + TOP 3 PK, gian deu cho cao bang cot phai --- */

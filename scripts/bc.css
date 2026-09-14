@@ -265,6 +265,21 @@ html.bc-dt .bc-3bd { grid-template-columns: 1fr; }
 .bc-sct-hang-ten { font-size: 12px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
 .bc-sct-hang-ten i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 @media (max-width: 820px) { .bc-sct-luoi, .bc-sct-3 { grid-template-columns: minmax(0,1fr); } }
+/* --- 13/09 anh Thái: khối "Tổng quan từ đầu năm" + "Nhận xét so cùng kỳ" trong chi tiết shop --- */
+.bc-sct-ten2 { margin-top: 12px; }
+.bc-sct-the { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; margin: 8px 0 10px; }
+.bc-sct-the1 { padding: 8px 10px; border-radius: 9px; background: color-mix(in srgb, currentColor 5%, transparent); min-width: 0; }
+.bc-sct-the-n { font-size: 10.5px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--text-secondary); }
+.bc-sct-the-v { font-size: 16px; font-weight: 800; margin: 2px 0 1px; }
+.bc-sct-the-s { font-size: 11px; color: var(--text-secondary); }
+.bc-sct-tp { font-size: 12.5px; }
+.bc-sct-tp td, .bc-sct-tp th { white-space: nowrap; }
+.bc-sct-tp-oppo td { background: color-mix(in srgb, currentColor 7%, transparent); font-weight: 700; }
+.bc-sct-vach { display: block; height: 3px; border-radius: 2px; min-width: 2px; margin-top: 3px; opacity: .75; }
+.bc-sct-nx { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; line-height: 1.5; padding: 9px 11px; margin: 2px 0 4px;
+             border-radius: 9px; border: 1px dashed color-mix(in srgb, currentColor 22%, transparent); }
+.bc-sct-0 { color: var(--text-secondary); }
+@media (max-width: 820px) { .bc-sct-the { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 
 /* ---- Anh Thái 06/09: KA & IND ---- */
 /* Ô giảm/xấu đi trong bảng mini (thay bản đồ nhiệt) */
