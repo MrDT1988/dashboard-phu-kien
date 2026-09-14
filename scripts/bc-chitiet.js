@@ -420,6 +420,22 @@
                            so kiểu đó mới công bằng. */
                         var giaPK = function (u, dt) { if (!u) return false; var g = dt / u; return g >= 1e7 && g < 2e7; };
                         var laOppo = function (s) { return /oppo/i.test(String(s || '')); };
+                        /* 14/09 anh Thái: bảng hãng gọn lại còn 6 + Khác cho dễ đọc.
+                           Mọi hãng ngoài 6 cái này (Honor, Nokia, Tecno, Itel, Masstel...) dồn hết vào "Khác".
+                           Sub-brand đi theo hãng mẹ: Redmi/POCO -> Xiaomi, iQOO -> vivo, iPhone -> Apple. */
+                        var HANG7 = ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'vivo', 'realme'];
+                        var gonHang = function (b) {
+                                     var t = String(b || '').toLowerCase();
+                                     if (/oppo/.test(t)) return 'OPPO';
+                                     if (/samsung/.test(t)) return 'Samsung';
+                                     if (/xiaomi|redmi|poco/.test(t)) return 'Xiaomi';
+                                     if (/apple|iphone/.test(t)) return 'Apple';
+                                     if (/vivo|iqoo/.test(t)) return 'vivo';
+                                     if (/realme/.test(t)) return 'realme';
+                                     return 'Khác';
+                        };
+                        /* xếp theo thứ tự cố định, "Khác" luôn nằm cuối — nhìn shop nào cũng cùng một mạch */
+                        var thuTuHang = function (b) { var i = HANG7.indexOf(b); return i < 0 ? 99 : i; };
                         var ngayTrongThang = function (m) { return new Date(2026, m, 0).getDate(); };
                         var dauSo = function (v, n) { return (v > 0 ? '+' : '') + v.toFixed(n == null ? 1 : n); };
                         /* mũi tên tô màu THEO GÓC NHÌN OPPO: dòng OPPO tăng = xanh; đối thủ tăng = đỏ */
@@ -450,7 +466,7 @@
                                                     Object.keys(cell).forEach(function (md) {
                                                                    var v = cell[md] || {}, u = v.units || 0, dt = v.rev || 0;
                                                                    if (!u && !dt) return;
-                                                                   var b = tenHoa(v.brand || '(không rõ)');
+                                                                   var b = gonHang(v.brand);
                                                                    var e = R.hang[b] || (R.hang[b] = { u: 0, dt: 0, pu: 0, pdt: 0 });
                                                                    e.u += u; e.dt += dt; R.tU += u; R.tDt += dt;
                                                                    if (giaPK(u, dt)) { e.pu += u; e.pdt += dt; R.pU += u; R.pDt += dt; }
@@ -465,7 +481,7 @@
                                                     return { ten: b, u: e.u, dt: e.dt, pu: e.pu, pdt: e.pdt,
                                                              sDs: R.tU ? e.u / R.tU * 100 : 0, sDt: R.tDt ? e.dt / R.tDt * 100 : 0,
                                                              sPk: R.pU ? e.pu / R.pU * 100 : 0, gia: e.u ? e.dt / e.u : 0 };
-                                     }).sort(function (a, b) { return b.u - a.u; });
+                                     }).sort(function (a, b) { return thuTuHang(a.ten) - thuTuHang(b.ten) || b.u - a.u; });
                         }
 
                         /* ---- KHỐI A: tổng quan từ đầu năm + thị phần đầy đủ các hãng ---- */
@@ -497,7 +513,7 @@
                                      }).join('');
                                      h += '<tr class="bc-tong"><td>Tổng</td><td><b>' + fInt(R.tU) + '</b></td><td>100%</td><td>' + fTr(R.tDt) + '</td><td>100%</td><td>' + fTr(R.tU ? R.tDt / R.tU : 0) + '</td><td>' + fInt(R.pU) + '</td><td>100%</td></tr>';
                                      h += '</tbody></table></div>';
-                                     h += '<div class="bc-sct-ghi">Phân khúc suy từ giá bán thật (doanh thu ÷ số máy) của từng model tại chính shop này. Thị phần D.T tính trên tổng doanh thu mọi hãng (có cả Apple). Nguồn chỉ có số 2026 nên chưa so được cùng kỳ năm trước.</div>';
+                                     h += '<div class="bc-sct-ghi">Phân khúc suy từ giá bán thật (doanh thu ÷ số máy) của từng model tại chính shop này. Gộp còn 6 hãng chính, mọi hãng còn lại (Honor, Nokia, Tecno...) dồn vào <b>Khác</b>. Thị phần D.T tính trên tổng doanh thu mọi hãng (có cả Apple). Nguồn chỉ có số 2026 nên chưa so được cùng kỳ năm trước.</div>';
                                      return h + '</div>';
                         }
 
@@ -529,8 +545,9 @@
                                                              dNgay: z.ngay ? (a.ngay - z.ngay) / z.ngay * 100 : (a.ngay ? 100 : 0),
                                                              dPNgay: z.pngay ? (a.pngay - z.pngay) / z.pngay * 100 : (a.pngay ? 100 : 0) };
                                      });
-                                     var rAll = rows.filter(function (r) { return r.a.u || r.z.u; }).sort(function (p, q) { return q.a.u - p.a.u; });
-                                     var rPk = rows.filter(function (r) { return r.a.pu || r.z.pu; }).sort(function (p, q) { return q.dPk - p.dPk; });
+                                     var xep = function (p, q) { return thuTuHang(p.ten) - thuTuHang(q.ten) || q.a.u - p.a.u; };
+                                     var rAll = rows.filter(function (r) { return r.a.u || r.z.u; }).sort(xep);
+                                     var rPk = rows.filter(function (r) { return r.a.pu || r.z.pu; }).sort(xep);
                                      var oo = rows.filter(function (r) { return r.laO; })[0];
 
                                      /* --- mấy câu nhận xét, viết thẳng như đi họp --- */
@@ -541,7 +558,7 @@
                                                        + muiX(oo.dDs, dauSo(oo.dDs) + ' điểm', true) + ' (' + oo.z.sDs.toFixed(1) + '% → ' + oo.a.sDs.toFixed(1) + '%).');
                                                     nx.push('<b>PK 10-20M</b>: OPPO ' + oo.z.sPk.toFixed(1) + '% → ' + oo.a.sPk.toFixed(1) + '%, '
                                                        + muiX(oo.dPk, dauSo(oo.dPk) + ' điểm', true) + ' · ' + oo.z.pngay.toFixed(1) + ' → ' + oo.a.pngay.toFixed(1) + ' máy/ngày.');
-                                                    var len = rPk.filter(function (r) { return !r.laO && r.dPk > 0.5; }).slice(0, 3);
+                                                    var len = rPk.filter(function (r) { return !r.laO && r.dPk > 0.5; }).sort(function (p, q) { return q.dPk - p.dPk; }).slice(0, 3);
                                                     var xuong = rPk.filter(function (r) { return !r.laO && r.dPk < -0.5; }).sort(function (p, q) { return p.dPk - q.dPk; }).slice(0, 3);
                                                     if (oo.dPk < -0.5 && len.length)
                                                                    nx.push('OPPO <b class="bc-giam-chu">mất ' + Math.abs(oo.dPk).toFixed(1) + ' điểm</b> PK 10-20M — phần đó rơi vào tay: '
@@ -575,8 +592,8 @@
                                                                          + '<td>' + muiX(d(r), dauSo(d(r)) + ' đ', r.laO) + '</td></tr>';
                                                        }).join('') + '</tbody></table></div>';
                                      };
-                                     h += '<div class="bc-sct-ten bc-sct-ten2">PK 10-20M — ai lấy thị phần của ai <small>xếp theo ± điểm thị phần PK</small></div>' + bangSS(rPk, true);
-                                     h += '<div class="bc-sct-ten bc-sct-ten2">Toàn shop — tất cả các hãng <small>xếp theo số máy tháng ' + mT + '</small></div>' + bangSS(rAll, false);
+                                     h += '<div class="bc-sct-ten bc-sct-ten2">PK 10-20M — ai lấy thị phần của ai <small>6 hãng + Khác · thứ tự cố định</small></div>' + bangSS(rPk, true);
+                                     h += '<div class="bc-sct-ten bc-sct-ten2">Toàn shop — tất cả các hãng <small>6 hãng + Khác · thứ tự cố định</small></div>' + bangSS(rAll, false);
                                      h += '<div class="bc-sct-ghi">Tháng ' + mT + ' mới có <b>' + nA + '</b> ngày có số, tháng ' + mP + ' có <b>' + nZ + '</b> ngày — nên cột số máy quy về <b>máy/ngày</b> và mọi kết luận dựa trên <b>thị phần</b>, vì thị phần không phụ thuộc số ngày. Màu theo góc nhìn OPPO: <span class="bc-len-chu">xanh là tốt cho mình</span>, <span class="bc-giam-chu">đỏ là xấu cho mình</span> (đối thủ tăng thì tô đỏ).</div>';
                                      return h + '</div>';
                         }

@@ -25,6 +25,7 @@ const B = {
         'Xiaomi Redmi Note 14':     md('Xiaomi', 5, 50e6),  // 10,0M -> PK (dung bien duoi)
         'iPhone 15':                md('Apple', 2, 60e6),   // 30,0M -> khong PK
         'vivo Y19s':                md('vivo', 3, 15e6),    //  5,0M -> khong PK
+        'Honor X5 Plus':            md('Honor', 4, 8e6),    //  2,0M -> phai don vao "Khac"
       },
       9: {
         'OPPO Reno 12 5G 8+256GB': md('OPPO', 4, 52e6),     // 13,0M -> PK
@@ -64,20 +65,38 @@ kt('Gia 20,0M KHONG con la PK 10-20M (bien tren loai ra)', F.giaPK(1, 20e6) === 
 kt('Gia 9,9M khong phai PK', F.giaPK(1, 9.9e6) === false);
 kt('0 may thi khong tinh PK (khong chia cho 0)', F.giaPK(0, 50e6) === false);
 
+/* --- 1b. gop hang: sub-brand phai theo hang me --- */
+{
+  const G = (b) => F.gomMD;  // giu cho de doc; kiem qua ket qua gom ben duoi
+  const thu = { 'Redmi Note 13': 'Xiaomi', 'POCO X6': 'Xiaomi', 'iQOO Z9': 'vivo', 'iPhone 15': 'Apple', 'Tecno Spark': 'Khác' };
+  const BB = { shop_model_data: { X: { 9: {} } }, shop_day_data: {} };
+  Object.keys(thu).forEach((b, i) => { BB.shop_model_data.X[9]['may ' + i] = md(b, 1, 5e6); });
+  const F2 = new Function(...Object.keys(phu), doan + '\n return { gomMD };')(BB, phu.tenHoa, phu.mauHang, phu.esc, phu.fInt, phu.fTr);
+  const R = F2.gomMD('X', null);
+  kt('Redmi/POCO -> Xiaomi, iQOO -> vivo, iPhone -> Apple, Tecno -> Khac -> ' + Object.keys(R.hang).sort().join(','),
+    R.hang.Xiaomi && R.hang.Xiaomi.u === 2 && R.hang.vivo && R.hang.vivo.u === 1
+    && R.hang.Apple && R.hang.Apple.u === 1 && R.hang['Khác'] && R.hang['Khác'].u === 1);
+}
+
 /* --- 2. gom ca nam --- */
 const N = F.gomMD(SP, null);
-kt('Ca nam: tong may = 82 (thang 8: 50, thang 9: 32) -> ' + N.tU, N.tU === 82);
-kt('Ca nam: co du 5 hang ke ca vivo -> ' + Object.keys(N.hang).sort().join(','),
-  ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'vivo'].every((b) => N.hang[b]));
+kt('Ca nam: tong may = 86 (thang 8: 54, thang 9: 32) -> ' + N.tU, N.tU === 86);
+kt('Ca nam: gop con 6 hang + Khac -> ' + Object.keys(N.hang).sort().join(','),
+  ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'vivo', 'Khác'].every((b) => N.hang[b]));
+kt('Ca nam: Honor bi don vao Khac, khong dung rieng mot dong', !N.hang.Honor && N.hang['Khác'].u === 4);
+kt('Ca nam: khong de lot hang la nao ngoai 7 o -> ' + Object.keys(N.hang).length,
+  Object.keys(N.hang).every((b) => ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'vivo', 'realme', 'Khác'].includes(b)));
 kt('Ca nam: OPPO 44 may (10+20+4+10) -> ' + N.hang.OPPO.u, N.hang.OPPO.u === 44);
 kt('Ca nam: PK 10-20M ca cho 47 may (25+22) -> ' + N.pU, N.pU === 47);
 kt('Ca nam: PK 10-20M cua OPPO 14 may (10+4) -> ' + N.hang.OPPO.pu, N.hang.OPPO.pu === 14);
-kt('Ca nam: Apple/vivo khong lot vao PK 10-20M', N.hang.Apple.pu === 0 && N.hang.vivo.pu === 0);
+kt('Ca nam: Apple/vivo/Khac khong lot vao PK 10-20M', N.hang.Apple.pu === 0 && N.hang.vivo.pu === 0 && N.hang['Khác'].pu === 0);
 kt('Ca nam: liet ke dung 2 thang co so -> ' + N.thang.join(','), N.thang.join(',') === '8,9');
 
 const ds = F.dsHangNam(N);
-kt('Xep theo so may giam dan, OPPO dung dau -> ' + ds.map((x) => x.ten).join(','), ds[0].ten === 'OPPO');
-kt('Share D.S cua OPPO = 44/82 = 53,7% -> ' + ds[0].sDs.toFixed(1), so(ds[0].sDs, 53.66));
+kt('Xep thu tu co dinh, OPPO dau - Khac cuoi -> ' + ds.map((x) => x.ten).join(','),
+  ds[0].ten === 'OPPO' && ds[ds.length - 1].ten === 'Khác'
+  && ds.map((x) => x.ten).join(',') === 'OPPO,Samsung,Xiaomi,Apple,vivo,Khác');
+kt('Share D.S cua OPPO = 44/86 = 51,2% -> ' + ds[0].sDs.toFixed(1), so(ds[0].sDs, 51.16));
 kt('Share PK cua OPPO = 14/47 = 29,8% -> ' + ds[0].sPk.toFixed(1), so(ds[0].sPk, 29.79));
 kt('Tong share D.S cua moi hang = 100%', so(ds.reduce((s, x) => s + x.sDs, 0), 100));
 
@@ -88,7 +107,8 @@ kt('Thang 9 moi 12 ngay co so -> ' + F.ngayCoSo(SP, 9), F.ngayCoSo(SP, 9) === 12
 /* --- 4. khoi "Tu dau nam" --- */
 const hN = F.khoiNam(SP);
 const tN = chuSo(hN);
-kt('Khoi nam: co du ten 5 hang', ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'vivo'].every((b) => tN.includes(b)));
+kt('Khoi nam: co du 6 hang + Khac', ['OPPO', 'Samsung', 'Xiaomi', 'Apple', 'vivo', 'Khác'].every((b) => tN.includes(b)));
+kt('Khoi nam: KHONG co dong Honor rieng trong bang (chi nhac trong ghi chu)', !/>Honor</.test(hN));
 kt('Khoi nam: khong lot NaN / undefined', !/NaN|undefined/.test(hN));
 kt('Khoi nam: ghi ro khoang thang T8–T9', /T8[–-]T9/.test(tN));
 kt('Khoi nam: dong OPPO duoc danh dau rieng', hN.includes('bc-sct-tp-oppo'));
