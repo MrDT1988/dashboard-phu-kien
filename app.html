@@ -560,7 +560,7 @@ h4.dh:first-child{margin-top:0}
 'use strict';
 /* Số hiệu bản app — ĐỔI MỖI LẦN SỬA app.html. App tự so với bản trên máy chủ
    để biết điện thoại có đang giữ bản cũ trong bộ nhớ hay không. */
-var APP_VER='2026-09-14.2';
+var APP_VER='2026-09-14.3';
 var $=function(s){return document.querySelector(s)};
 var $$=function(s){return [].slice.call(document.querySelectorAll(s))};
 var LS_WHO='oppo_sale_app_v1', LS_DATA='oppo_sale_data_v2';
@@ -2681,9 +2681,16 @@ function muiApp(v, txt, laO) {
 }
 function dauSoApp(v, n) { return (v > 0 ? '+' : '') + (Math.round(v * Math.pow(10, n === undefined ? 1 : n)) / Math.pow(10, n === undefined ? 1 : n)).toFixed(n === undefined ? 1 : n).replace('.', ','); }
 
+/* 14/09: khong co so thi noi RO ly do, truoc day tra ve rong nen nhin nhu app chua cap nhat. */
+function vangSoApp(s) {
+  return '<h4 class="dh">Từ đầu năm · Ai lấy của ai</h4>' +
+    '<div class="note">Shop <b>' + safe(s.n) + '</b> (' + safe(s.ch2) + ') chưa có số bán theo model từng hãng, ' +
+    'nên chưa dựng được 2 khối này.<br>' +
+    '<span style="color:var(--muted)">Số theo model từng hãng hiện chỉ có ở kênh MWG — giống hệt DB TG. Bản app ' + safe(APP_VER) + '.</span></div>';
+}
 function khoiNamApp(s) {
-  if (!s.hgT) return '';
-  var R = hgtGom(s, null); if (!R.tU) return '';
+  if (!s.hgT) return vangSoApp(s);
+  var R = hgtGom(s, null); if (!R.tU) return vangSoApp(s);
   var o = R.h[0], i;
   var head = ['Hãng', 'Máy', 'T.phần D.S', 'Doanh thu', 'T.phần D.T', 'Giá TB', 'PK 10–20M', 'Share PK'];
   var rows = [];
