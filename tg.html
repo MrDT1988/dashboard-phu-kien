@@ -4097,9 +4097,22 @@ const OC_TARGET_PER_SHOP = {
     'Titan': { ds: 80, dt: 400000000 },
     'Gold': { ds: 40, dt: 200000000 },
 };
+/* 15/09 anh Thái: trước đây khớp CHÍNH XÁC từng ký tự, nên sheet ghi "OPPO CLUB-GOLD"
+   (thiếu khoảng trắng quanh gạch), dư một dấu cách, hay viết thêm chữ phía sau là shop
+   rơi thẳng về Normal mà KHÔNG BÁO GÌ — sửa trên sheet rồi mà dashboard vẫn y như cũ,
+   không biết vì sao. Nay bỏ hết khoảng trắng / gạch / chấm rồi mới khớp, và nếu vẫn
+   không khớp thì dò xem có chữ OPPO CLUB kèm tên gói hay không.
+   VIP vẫn là Normal đúng như anh Thái chốt — VIP không nằm trong bảng gói. */
+const OC_LEVEL_KEY = {};
+Object.keys(OC_LEVEL_MAP).forEach(k => { OC_LEVEL_KEY[k.replace(/[\s\-–—_.]/g, '')] = OC_LEVEL_MAP[k]; });
 function classifyIndLevel(rawLevel) {
-    const key = (rawLevel || '').trim().toUpperCase();
-    const sub = OC_LEVEL_MAP[key];
+    const key = String(rawLevel || '').trim().toUpperCase().replace(/[\s\-–—_.]/g, '');
+    let sub = OC_LEVEL_KEY[key];
+    if (!sub && key.indexOf('OPPOCLUB') >= 0) {
+        if (key.indexOf('PLATINUM') >= 0) sub = 'Platinum';
+        else if (key.indexOf('TITAN') >= 0) sub = 'Titan';
+        else if (key.indexOf('GOLD') >= 0) sub = 'Gold';
+    }
     return sub ? { group: 'O.C', sub: sub } : { group: 'Normal', sub: null };
 }
 function indStoreLevelByName() {
@@ -14475,7 +14488,7 @@ body.zoom-on { overflow: hidden; }
 <!-- 03/09/2026: Bao cao tuan / thang — lop trinh bay moi (anh Thai chot khung 03/09). Go 2 dong nay la ve y nhu cu. -->
 <link rel="stylesheet" href="scripts/bc.css?v=202609151100">
 <script src="scripts/bc.js?v=202609151100"></script>
-<script src="scripts/bc-chitiet.js?v=202609160900"></script>
+<script src="scripts/bc-chitiet.js?v=202609162200"></script>
 <!-- 09/09/2026: nhan ky dang chon tren bieu do cot (quy tac "moi bieu do mot diem nhan").
      Chi doi mau ve, khong dung toi cach tinh so. Duong lui: xoa DUNG dong duoi day. -->
 <script src="scripts/bc-nhan-ky.js?v=202609101430"></script>
