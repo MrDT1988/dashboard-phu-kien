@@ -349,8 +349,11 @@
                         function nap() { var kk = khoangThang(mSel); G = gomMWG(kk.tu, kk.denCo); }
                         nap();
         /* Anh Thái 05-09 tối: phân khúc xếp THẤP → CAO; dưới 10M màu xám đậm dần, từ 10M màu xanh lá đậm dần */
-                        var XAM = { sang: ['#DDE2E8', '#C3CBD4', '#A6B1BD', '#8794A2'], toi: ['#414C58', '#4F5C6A', '#5F6E7D', '#71818F'] };
-                        var XANH = { sang: ['#CFEBD8', '#A6DCB7', '#77C895', '#48AE72', '#218F55'], toi: ['#1B6349', '#27825E', '#33A175', '#4BC090', '#77DCAE'] };
+                        /* 14/09 anh Thái: xám cũ quá nhạt, nhìn vẫn ra xanh. Nay xám đậm hẳn và NHẠT DẦN
+                           khi giá tiến tới 10M (vùng không phải trọng tâm mờ đi), từ 10M trở lên xanh ĐẬM DẦN
+                           theo giá — đúng một bảng màu với 3 biểu đồ "Tỉ trọng phân khúc giá" của DB TG. */
+                        var XAM = { sang: ['#4E565F', '#6B7480', '#88909A', '#A4ABB4'], toi: ['#AEB6C0', '#959DA8', '#7C8590', '#646D78'] };
+                        var XANH = { sang: ['#8FD3AE', '#5EBF8C', '#35A66F', '#1B8A57', '#0E6B41'], toi: ['#1B6349', '#27825E', '#33A175', '#4BC090', '#77DCAE'] };
                         var mauSeg = function (ten, thuTuXam, thuTuXanh, soXam, soXanh) {
                                      var s = sang() ? 'sang' : 'toi';
                                      if (duoi10M(ten)) { var a = XAM[s]; return a[Math.min(Math.round(thuTuXam * (a.length - 1) / Math.max(1, soXam - 1)), a.length - 1)]; }

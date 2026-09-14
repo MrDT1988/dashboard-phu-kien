@@ -27,6 +27,16 @@
     toi:  { MWG: '#2AD998', IND: '#68B6EF', KA: '#E8B45E', TONG: '#8B98A9', OPPO: '#2AD998', KHAC: '#3A4655', RENO: '#2AD998', FIND: '#B18BE0', CONLAI: '#3A4655', xam: '#8B98A9', chu: '#E8EDF2', chuPhu: '#96A1AE', luoi: 'rgba(255,255,255,.08)', tang: '#2ee673', giam: '#ff5c72' }
   };
   var PK = { sang: ['#B5DDC8', '#8AC7A9', '#63B18C', '#3F9B70', '#1E8558', '#006B41', '#00522F'], toi: ['#0A4530', '#0F5B3E', '#15724D', '#1C8A5D', '#26A26F', '#3FBB87', '#68D3A6'] };
+  /* 14/09 anh Thái: từ khi phân khúc dưới 10M chuyển sang màu xám nhạt, chữ số trắng trên
+     miếng nhạt là mất chữ. Hàm này tự chọn chữ đen hay trắng theo độ sáng của chính nền đó. */
+  var chuNen = function (hex) {
+    var h = String(hex || '').replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    if (h.length < 6) return sang() ? '#fff' : '#0b1017';
+    var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#14171B' : '#fff';
+  };
+  var chuNenCua = function (c) { var d = c.dataset.backgroundColor; return chuNen(typeof d === 'string' ? d : (d && d[c.dataIndex])); };
   var mau = function (k) { var b = MAU[sang() ? 'sang' : 'toi']; return b[k] || b.xam; };
 
   var KENH = ['MWG', 'IND', 'KA'];
@@ -273,7 +283,7 @@
     var fmt = opt.fmt || fInt;
     return {
       type: 'bar',
-      data: { labels: labels, datasets: datasets.map(function (d, j) { return Object.assign({ borderWidth: 0, borderRadius: 3, maxBarThickness: 46, datalabels: { display: function (c) { var v = c.dataset.data[c.dataIndex]; return v && v / max >= 0.045; }, color: sang() ? '#fff' : '#0b1017', font: { size: 11, weight: '700' }, formatter: function (v) { return fmt(v); }, clamp: true }, order: 2 }, d); }) },
+      data: { labels: labels, datasets: datasets.map(function (d, j) { return Object.assign({ borderWidth: 0, borderRadius: 3, maxBarThickness: 46, datalabels: { display: function (c) { var v = c.dataset.data[c.dataIndex]; return v && v / max >= 0.045; }, color: chuNenCua, font: { size: 11, weight: '700' }, formatter: function (v) { return fmt(v); }, clamp: true }, order: 2 }, d); }) },
       options: {
         layout: { padding: { top: 22 } },
         plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'rectRounded', color: mau('chuPhu'), font: { size: 12 } } },
@@ -306,7 +316,7 @@
       data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: sang() ? '#fff' : '#111820', hoverOffset: 6 }] },
       options: { cutout: '58%', layout: { padding: 8 },
         plugins: { legend: { position: 'right', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'rectRounded', color: mau('chuPhu'), font: { size: 12 }, generateLabels: function (c) { return c.data.labels.map(function (l, i) { var v = c.data.datasets[0].data[i]; return { text: l + '  ' + (v / tong * 100).toFixed(1) + '%  (' + (fmt || fInt)(v) + ')', fillStyle: c.data.datasets[0].backgroundColor[i], strokeStyle: 'transparent', index: i, pointStyle: 'rectRounded' }; }); } } },
-          datalabels: { display: function (c) { return c.dataset.data[c.dataIndex] / tong >= 0.04; }, color: '#fff', font: { size: 12, weight: '700' }, formatter: function (v) { return (v / tong * 100).toFixed(0) + '%'; } },
+          datalabels: { display: function (c) { return c.dataset.data[c.dataIndex] / tong >= 0.04; }, color: chuNenCua, font: { size: 12, weight: '700' }, formatter: function (v) { return (v / tong * 100).toFixed(0) + '%'; } },
           tooltip: { callbacks: { label: function (c) { return ' ' + c.label + ': ' + (fmt || fInt)(c.raw) + ' (' + (c.raw / tong * 100).toFixed(1) + '%)'; } } } } }
     };
   }
