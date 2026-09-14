@@ -894,6 +894,19 @@ body {
 .table-section h3 { font-size:14.5px; font-weight:700; padding-left:11px; position:relative; }
 .table-section h3::before { content:''; position:absolute; left:0; top:2px; bottom:2px; width:4px; border-radius:3px; background: var(--oppo-green); box-shadow: 0 0 6px rgba(34,229,160,0.6); }
 .table-section .chart-sub { font-size:12px; color:var(--text-secondary); }
+/* --- 14/09 anh Thái: ghi hẳn RULE thưởng Sale IND ra thành thẻ, đọc là hiểu, khỏi dò trong đoạn văn --- */
+.ind-rule { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin:10px 0 14px; }
+.ind-rule-o { padding:9px 11px; border-radius:10px; border:1px solid var(--border-color); background:rgba(139,152,169,.07); font-size:12px; line-height:1.5; min-width:0; }
+.ind-rule-t { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; color:var(--text-secondary); }
+.ind-rule-b { width:100%; border-collapse:collapse; font-size:11.5px; margin:2px 0 6px; }
+.ind-rule-b th { font-size:10px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); text-align:right; padding:2px 4px; font-weight:700; }
+.ind-rule-b th:first-child, .ind-rule-b td:first-child { text-align:left; }
+.ind-rule-b td { padding:2px 4px; text-align:right; border-top:1px solid rgba(139,152,169,.18); font-variant-numeric:tabular-nums; }
+.ind-rule-g { font-size:11px; color:var(--text-secondary); line-height:1.45; }
+.ind-rule-ct { display:flex; flex-direction:column; gap:3px; }
+.ind-rule-ct i { font-style:normal; color:var(--text-secondary); }
+@media (max-width:1180px) { .ind-rule { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+@media (max-width:700px) { .ind-rule { grid-template-columns:minmax(0,1fr); } }
 .table-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .table-controls input, .table-controls select { padding:7px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:12.5px; background:var(--bg-input); }
 .table-scroll { overflow-x:auto; max-height: 640px; overflow-y:auto; border:1px solid var(--border-color); border-radius:8px; background:#48566a; }
@@ -2956,7 +2969,42 @@ tr.product-detail-row td > div { animation: detailRowIn 0.25s ease; }
         <div class="table-section-header">
             <div>
                 <h3>Chương trình tháng — Thưởng Sale IND</h3>
-                <div class="chart-sub">Áp dụng cho các Sale IND <b>không bao gồm Khánh / Thuần / Lợi</b> (nhóm O.C), gộp theo <b>Xe</b> (Xe 1 = Tiến+Tài, Xe 2 = Thái+An, Xe 3 = Khoa+Nhân). <b>DT</b> = doanh thu thực tế, <b>Center</b> = doanh thu tính thưởng (80% DT). Mỗi Xe: 2 Lương cơ bản <b>6.000.000đ/tháng</b> + thưởng theo bậc <b>TỔNG số máy CẢ XE</b> (cộng số máy 2 Sale lại rồi mới tra bậc, ra đúng 1 mức chung cho cả xe): <b>&lt;100 máy: 3.2%</b>, <b>&gt;100 máy: 4.2%</b>, <b>&gt;150 máy: 4.7%</b>, <b>&gt;200 máy: 5.2%</b>, <b>&gt;250 máy: 5.7%</b> (lấy mức cao nhất đạt được, không cộng dồn). Riêng doanh thu từ model <b>A6c</b>: mỗi mốc thấp hơn <b>1%</b> so với bậc chuẩn. <b>Độ phủ Shop S.O</b> = tổng số shop có bán / tổng số shop đăng ký của CẢ XE (gộp 2 Sale, không xét riêng từng người) - dưới <b>60%</b> bị phạt <b>1.000.000đ/Xe</b> (đúng 1 lần cho cả xe, không nhân theo số người), trừ vào Lương Sale. <b>Lương Sale</b> = 2 Lương cơ bản + Tiền thưởng chung của xe (đã trừ phạt nếu có). <b>LĐ = 0.5% × Center</b>. <b>%HR = (LĐ + Lương Sale) / Center</b>. Theo Tháng đang chọn ở trên.</div>
+                <div class="chart-sub">Tính thử chi phí lương + thưởng Sale IND trong <b>đúng tháng đang chọn</b> (không luỹ kế, không so tháng trước). Gộp theo <b>Xe</b>: Xe 1 = Tiến + Tài · Xe 2 = Thái + An · Xe 3 = Khoa + Nhân.</div>
+                <div class="ind-rule">
+                    <div class="ind-rule-o">
+                        <div class="ind-rule-t">1 · Ai được tính</div>
+                        Sale IND <b>không thuộc nhóm O.C</b> — loại Khánh / Thuần / Lợi và loại Sale "(Không rõ)".<br>
+                        Shop đã có <b>Gói</b> (Platinum / Titan / Gold) <b>loại hẳn</b>, kể cả khi sheet ghi Sale là người của Xe — shop O.C có chương trình thưởng riêng. Loại khỏi cả số máy lẫn mẫu số Shop S.O.<br>
+                        Sale phụ trách shop lấy theo sheet <b>SHOP THEO SALE</b>, không lấy cột Sale của CENTER.
+                    </div>
+                    <div class="ind-rule-o">
+                        <div class="ind-rule-t">2 · Bậc thưởng — tra theo TỔNG máy CẢ XE</div>
+                        <table class="ind-rule-b"><thead><tr><th>Tổng máy cả xe</th><th>Bậc chuẩn</th><th>Riêng A6c</th></tr></thead><tbody>
+                            <tr><td>đến 100 máy</td><td>3,2%</td><td>2,2%</td></tr>
+                            <tr><td>trên 100 máy</td><td>4,2%</td><td>3,2%</td></tr>
+                            <tr><td>trên 150 máy</td><td>4,7%</td><td>3,7%</td></tr>
+                            <tr><td>trên 200 máy</td><td>5,2%</td><td>4,2%</td></tr>
+                            <tr><td>trên 250 máy</td><td>5,7%</td><td>4,7%</td></tr>
+                        </tbody></table>
+                        <div class="ind-rule-g">Cộng máy 2 Sale lại rồi mới tra bậc → <b>một mức chung cho cả xe</b>. Lấy mức cao nhất đã <b>vượt qua</b>, <b>không cộng dồn</b>: đúng 100 máy vẫn 3,2%, 101 máy mới lên 4,2%. Mốc máy tính <b>mọi model</b>, kể cả A6c; riêng <b>phần doanh thu</b> từ A6c mới nhân bậc A6c (thấp hơn 1 điểm %).</div>
+                    </div>
+                    <div class="ind-rule-o">
+                        <div class="ind-rule-t">3 · Phạt độ phủ</div>
+                        <b>Shop S.O</b> = shop có bán ÷ shop đã đăng ký, tính cho <b>CẢ XE</b> (gộp 2 Sale, không xét riêng từng người).<br>
+                        Dưới <b>60%</b> → trừ <b>1.000.000đ</b> mỗi xe, <b>đúng một lần</b>, không nhân theo số người. Trừ thẳng vào Lương Sale.
+                    </div>
+                    <div class="ind-rule-o">
+                        <div class="ind-rule-t">4 · Công thức</div>
+                        <div class="ind-rule-ct">
+                            <span><b>Center</b> = 80% × DT <i>(DT = doanh thu thực tế)</i></span>
+                            <span><b>Tiền thưởng</b> = bậc × Center <i>(A6c tính riêng theo bậc A6c)</i></span>
+                            <span><b>Lương cơ bản</b> = 6.000.000đ × 2 người</span>
+                            <span><b>Lương Sale</b> = Lương cơ bản + Tiền thưởng − Phạt</span>
+                            <span><b>LĐ</b> = 0,5% × Center</span>
+                            <span><b>%HR</b> = (LĐ + Lương Sale) ÷ Center</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="table-scroll" style="max-height:none;">
