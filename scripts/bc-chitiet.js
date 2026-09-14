@@ -1301,7 +1301,21 @@
                                      var demLV = {}; OC_TT.forEach(function (l) { demLV[l] = 0; });
                                      nhomCT.forEach(function (r) { var l = datLV(r.dt); if (l) demLV[l]++; });
                                      var chuoiLV = OC_TT.filter(function (l) { return demLV[l]; }).map(function (l) { return '<b>' + esc(l) + '</b> ' + demLV[l]; }).join(' · ');
-                                                             chot(kq, 'Tháng ' + mSel + ' (luỹ kế ' + ngayDa + '/' + ngayThang + ' ngày): <b>' + datDs + '/' + nhomCT.length + '</b> shop O.C đạt target máy · <b>' + dat200 + '/' + nhomCT.length + '</b> shop đạt gói (DT ≥ 200M hoặc ≥ 40 máy)' + (chuoiLV ? ' · đạt gói theo doanh thu: ' + chuoiLV : '') + (ngayCon ? ' · còn ' + ngayCon + ' ngày' : '') + '.');
+                                                             /* 15/09 anh Thái: shop nào cột LEVEL ghi kiểu OPPO Club mà không khớp gói nào
+                                        thì nêu đích danh ra đây, không im lặng cho rơi về Normal. Sửa sheet mà
+                                        dashboard không nhúc nhích thì phải nhìn thấy được lý do ở đâu. */
+                                     var levelLa = Object.keys(levelOf).filter(function (sp) {
+                                                    var t = String(levelOf[sp] || '').toUpperCase();
+                                                    if (!t || nhom(sp).group === 'O.C') return false;
+                                                    return t.indexOf('OPPO') >= 0 || t.indexOf('CLUB') >= 0
+                                                       || t.indexOf('PLATINUM') >= 0 || t.indexOf('TITAN') >= 0 || t.indexOf('GOLD') >= 0;
+                                     });
+                                     var canhLevel = levelLa.length
+                                                    ? ' · <b class="bc-giam-chu">' + levelLa.length + ' shop có cột LEVEL ghi kiểu OPPO Club nhưng không khớp gói nào</b> ('
+                                                      + levelLa.slice(0, 4).map(function (sp) { return esc(tenShopNgan(sp)) + ': "' + esc(levelOf[sp]) + '"'; }).join(' · ')
+                                                      + (levelLa.length > 4 ? ' …' : '') + ') — kiểm lại chính tả cột LEVEL trên sheet'
+                                                    : '';
+                                     chot(kq, 'Tháng ' + mSel + ' (luỹ kế ' + ngayDa + '/' + ngayThang + ' ngày): <b>' + datDs + '/' + nhomCT.length + '</b> shop O.C đạt target máy · <b>' + dat200 + '/' + nhomCT.length + '</b> shop đạt gói (DT ≥ 200M hoặc ≥ 40 máy)' + (chuoiLV ? ' · đạt gói theo doanh thu: ' + chuoiLV : '') + (ngayCon ? ' · còn ' + ngayCon + ' ngày' : '') + canhLevel + '.');
                         }
                         ve();
                         grid.appendChild(kq);
