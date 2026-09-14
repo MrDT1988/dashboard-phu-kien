@@ -127,7 +127,7 @@ kt('Cung ky: chi dich danh Samsung va Xiaomi la ben lay duoc', /rơi vào tay/.t
 /* toan shop: OPPO T8 30 may / 30 ngay = 1,0 ; T9 14 may / 12 ngay = 1,17 -> +17% */
 kt('Cung ky: quy ve may/ngay (1,0 -> 1,2), khong so thang chay do voi thang du', /1,0 ?→ ?1,2 máy\/ngày/.test(tK.replace(/\./g, ',')));
 kt('Cung ky: noi ro thang 9 moi co 12 ngay, thang 8 co 30 ngay', /12/.test(tK) && /30/.test(tK) && /máy\/ngày/.test(tK));
-kt('Cung ky: co ca bang PK lan bang toan shop', /ai lấy thị phần của ai/i.test(tK) && /Toàn shop/i.test(tK));
+kt('Cung ky: co ca bang PK lan bang toan shop', /ai lấy của ai/i.test(tK) && /Toàn shop/i.test(tK));
 kt('Cung ky: ghi ro khong so duoc cung ky NAM TRUOC', /không so được cùng kỳ năm trước/i.test(tK));
 kt('Cung ky: shop moi co 1 thang thi bao ro, khong vo',
   /tháng đầu tiên có số/i.test(chuSo(F.khoiCungKy('SHOP_MOT_THANG', 9))));
