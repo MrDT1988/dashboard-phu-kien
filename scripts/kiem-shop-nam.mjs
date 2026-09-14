@@ -155,8 +155,10 @@ kt('Cung ky: shop la hoan toan thi bao ro, khong vo', !!chuSo(F.khoiCungKy('SHOP
     kt('Dung 200M -> dat (bien duoi lay vao)', F3.datGoiOC(200e6, 0) === true);
     kt('Dung 40 may -> dat (bien duoi lay vao)', F3.datGoiOC(0, 40) === true);
     kt('Shop chua ban gi -> khong dat', F3.datGoiOC(0, 0) === false);
-    kt('Nhan ghi ro qua cua nao: ' + [F3.nhanGoiOC(250e6,10), F3.nhanGoiOC(120e6,45), F3.nhanGoiOC(250e6,45)].join(' | ').replace(/<[^>]+>/g,''),
-      /DT<\/small>/.test(F3.nhanGoiOC(250e6, 10)) && /máy<\/small>/.test(F3.nhanGoiOC(120e6, 45)) && /DT \+ máy/.test(F3.nhanGoiOC(250e6, 45)));
+    kt('Bang chi ghi ✓ / ✗, khong chu thich qua cua nao (anh Thai 14/09)',
+      /✓/.test(F3.nhanGoiOC(250e6, 10)) && !/<small>/.test(F3.nhanGoiOC(250e6, 10))
+      && !/<small>/.test(F3.nhanGoiOC(120e6, 45)) && !/<small>/.test(F3.nhanGoiOC(250e6, 45))
+      && /✗/.test(F3.nhanGoiOC(0, 0)));
   }
 }
 

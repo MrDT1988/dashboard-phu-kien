@@ -1132,13 +1132,8 @@
                            để hai chỗ không bao giờ vênh nhau. */
                         var MUC_OC = 200e6, MAY_OC = 40, SO_MAY_NORMAL = 5;
                         var datGoiOC = function (dt, ds) { return (dt || 0) >= MUC_OC || (ds || 0) >= MAY_OC; };
-                        var nhanGoiOC = function (dt, ds) {
-                                     var a = (dt || 0) >= MUC_OC, b = (ds || 0) >= MAY_OC;
-                                     if (a && b) return '<b class="bc-len-chu">✓</b> <small>DT + máy</small>';
-                                     if (a) return '<b class="bc-len-chu">✓</b> <small>DT</small>';
-                                     if (b) return '<b class="bc-len-chu">✓</b> <small>máy</small>';
-                                     return '<span class="bc-giam-chu">✗</span>';
-                        };
+                        /* 14/09 anh Thái: bảng chỉ cần ✓ / ✗, không ghi qua cửa nào cho gọn */
+                        var nhanGoiOC = function (dt, ds) { return datGoiOC(dt, ds) ? '<b class="bc-len-chu">✓</b>' : '<span class="bc-giam-chu">✗</span>'; };
                         var TG_DT = (E.kenh && E.kenh.IND ? E.kenh.IND.revenue : 0) || 0;
                         var TABS = [
                            { ten: 'Tiến độ target doanh thu', tg: TG_DT, fmt: fTyNgan, donVi: '' },
@@ -1187,7 +1182,7 @@
                                                     });
                                                     var ds2 = Object.keys(nhomOC).map(function (kk2) { return nhomOC[kk2]; }).sort(function (a, b) { return b.dt - a.dt; });
                                                     dat = ds2.filter(function (r) { return datGoiOC(r.dt, r.ds); }).length;
-                                                    h = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Nhóm shop O.C</th><th>Sale</th><th>Gộp</th><th>Máy</th><th>Doanh thu</th><th>Đạt gói <small>DT ≥200M hoặc ≥40 máy</small></th></tr></thead><tbody>'
+                                                    h = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Nhóm shop O.C</th><th>Sale</th><th>Gộp</th><th>Máy</th><th>Doanh thu</th><th>Đạt gói</th></tr></thead><tbody>'
                                                                      + ds2.map(function (r, i) { return '<tr' + (!r.ds ? ' class="bc-mo"' : '') + '><td>' + (i + 1) + '</td><td title="' + esc(r.ten) + '">' + esc(tenShopNgan(r.ten)) + '</td><td>' + esc(tenNgan(r.sale)) + '</td><td>' + (r.n > 1 ? r.n + ' shop' : '') + '</td><td>' + (r.ds >= MAY_OC ? '<b class="bc-len-chu">' + fInt(r.ds) + '</b>' : fInt(r.ds)) + '</td><td>' + (r.dt >= MUC_OC ? '<b class="bc-len-chu">' + fTyNgan(r.dt) + '</b>' : '<b>' + fTyNgan(r.dt) + '</b>') + '</td><td>' + nhanGoiOC(r.dt, r.ds) + '</td></tr>'; }).join('')
                                                                      + '<tr class="bc-tong"><td></td><td>' + ds2.length + ' nhóm</td><td></td><td></td><td></td><td></td><td>' + dat + ' đạt</td></tr></tbody></table>';
                                      } else {
@@ -1272,12 +1267,12 @@
                                                                                                                        if (r.dt > a.max) { a.max = r.dt; a.s = r.s; a.l = r.l; a.sale = r.sale; }
                                                                    });
                                                                 nhomCT.sort(function (a, b) { return (a.t ? a.ds / a.t : 0) - (b.t ? b.ds / b.t : 0); });
-                                                                var h2 = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Level</th><th>Sale</th><th>Máy</th><th>Target máy</th><th>% HT máy</th><th>Doanh thu</th><th>Target DT</th><th>% HT DT</th><th>Gộp</th><th>Đạt gói <small>≥200M hoặc ≥40 máy</small></th><th>Đạt LV</th>' + (ngayCon ? '<th>Cần/tuần</th>' : '') + '</tr></thead><tbody>'
+                                                                var h2 = '<table class="bc-bang bc-bang-shop"><thead><tr><th>#</th><th>Shop</th><th>Level</th><th>Sale</th><th>Máy</th><th>Target máy</th><th>% HT máy</th><th>Doanh thu</th><th>Target DT</th><th>% HT DT</th><th>Gộp</th><th>Đạt gói</th><th>Đạt LV</th>' + (ngayCon ? '<th>Cần/tuần</th>' : '') + '</tr></thead><tbody>'
                                                                                                           + nhomCT.map(function (r, i) {var p = r.t ? r.ds / r.t * 100 : null, pd = r.tdt ? r.dt / r.tdt * 100 : null;
                                                         var okDt = r.dt >= MOC_OC, okMay = r.ds >= MOC_MAY, ok = okDt || okMay, lv = datLV(r.dt);
                                                         return '<tr' + (!r.ds ? ' class="bc-mo"' : '') + '><td>' + (i + 1) + '</td><td title="' + esc(r.s) + '">' + esc(tenShopNgan(r.s)) + '</td><td>' + esc(r.l) + '</td><td>' + esc(tenNgan(r.sale)) + '</td><td><b>' + fInt(r.ds) + '</b></td><td>' + fInt(r.t) + '</td><td>' + thanhNho(p) + '</td><td><b>' + fTyNgan(r.dt) + '</b></td><td>' + fTyNgan(r.tdt) + '</td><td>' + thanhNho(pd) + '</td>'
                                                           + '<td>' + (r.n > 1 ? '<b>' + r.n + ' mã</b>' : '<span class="bc-mo-chu">—</span>') + '</td>'
-                                                           + '<td>' + (ok ? '<b class="bc-len-chu">✓</b> <small>' + (okDt && okMay ? 'DT + máy' : okDt ? 'DT' : 'máy') + '</small>' : '<span class="bc-giam-chu">✗</span>') + '</td>'
+                                                           + '<td>' + (ok ? '<b class="bc-len-chu">✓</b>' : '<span class="bc-giam-chu">✗</span>') + '</td>'
                                                            + '<td>' + (lv ? '<b class="' + (OC_TT.indexOf(lv) <= OC_TT.indexOf(r.l) ? 'bc-len-chu' : 'bc-giam-chu') + '">' + esc(lv) + '</b>' : '<span class="bc-mo-chu">—</span>') + '</td>'
                                                           + (ngayCon ? '<td>' + fInt(Math.max(0, r.t - r.ds) / (ngayCon / 7)) + '</td>' : '') + '</tr>';
                                        }).join('') + '</tbody></table>';
