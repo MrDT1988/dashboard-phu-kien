@@ -19,6 +19,8 @@ on:
       - 'scripts/build-dbtg-vault.mjs'
       - 'review.html'
       - 'scripts/kiem-review.mjs'
+      - 'scripts/bc-chitiet.js'
+      - 'scripts/kiem-shop-nam.mjs'
 
 permissions:
   contents: write
@@ -42,6 +44,8 @@ jobs:
         run: node scripts/kiem-pham-vi.mjs
       - name: Ra soat review.html (khoi Don hang du an)
         run: node scripts/kiem-review.mjs
+      - name: Ra soat chi tiet shop (tu dau nam + so cung ky)
+        run: node scripts/kiem-shop-nam.mjs
       - name: Luu ket qua
         if: always()
         run: |
