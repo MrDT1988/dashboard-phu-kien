@@ -180,9 +180,25 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 .cst.het{background:#f0f2f1;color:#7d8a83}
 .stp button:disabled{opacity:.35;cursor:not-allowed}
 .stp input:disabled{background:#f6f8f7;color:#9aa5a0}
-.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:7px;font-size:11px;color:var(--muted)}
-.legend span{display:inline-flex;align-items:center;gap:5px}
-.legend i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.legend{display:flex;gap:6px;margin-top:10px}
+.lg{flex:1 1 0;min-width:0;border:1px solid var(--line);background:var(--surf);border-radius:11px;
+ padding:9px 4px 7px;cursor:pointer;font-family:inherit;text-align:center;position:relative;
+ overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:1px;
+ box-shadow:var(--shadow);-webkit-tap-highlight-color:transparent}
+.lg::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:#c2ccc6}
+.lg.con::before{background:#076b3c}
+.lg.sap::before{background:#8a5a00}
+.lg.het::before{background:#7d8a83}
+.lg.na::before{background:#c2ccc6}
+.lg b{font-size:20px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.lg span{font-size:10.5px;color:var(--muted);line-height:1.2}
+.lg.con b{color:#076b3c}
+.lg.sap b{color:#8a5a00}
+.lg.het b{color:#5f6b65}
+.lg.na b{color:var(--muted)}
+.lg.on{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
+.lg:disabled{opacity:.45;cursor:default;box-shadow:none}
+@media (min-width:700px){.legend{max-width:520px}}
 
 .bd{display:inline-block;border-radius:999px;padding:1px 6px;font-size:9.5px;font-weight:800;
  letter-spacing:.04em;margin:0;background:var(--line);color:var(--muted);flex:0 0 auto}
@@ -236,12 +252,7 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 <span class="chip">Cập nhật 19/09/2026</span>
 <span class="chip">70 mã hàng</span>
 </div>
-<div class="legend">
-<span><i style="background:#076b3c"></i>Còn hàng</span>
-<span><i style="background:#8a5a00"></i>Sắp hết</span>
-<span><i style="background:#7d8a83"></i>Hết hàng</span>
-<span><i style="background:#c2ccc6"></i>Đang cập nhật</span>
-</div>
+<div class="legend" id="legend"></div>
 </header>
 
 <div class="tools">
@@ -391,6 +402,19 @@ document.addEventListener('input',function(e){
 
 var q=document.getElementById('q'),NONE=document.getElementById('none');
 var GR=document.getElementById('groups'),curG='';
+var LG=document.getElementById('legend'),curS='';
+var STORD=['con','sap','het','na'];
+function demSt(){var d={con:0,sap:0,het:0,na:0};
+ CAT[cur].forEach(function(g){g.it.forEach(function(it){d[ovSt(it)]++})});return d}
+function drawLegend(){var d=demSt();
+ LG.innerHTML=STORD.map(function(k){
+  return '<button type="button" class="lg '+k+(curS===k?' on':'')+'" data-s="'+k+'"'+
+   (d[k]?'':' disabled')+'><b>'+d[k]+'</b><span>'+STL[k]+'</span></button>'}).join('')}
+LG.addEventListener('click',function(e){var b=e.target.closest('.lg');if(!b||b.disabled)return;
+ curS=(curS===b.dataset.s)?'':b.dataset.s;
+ LG.querySelectorAll('.lg').forEach(function(x){x.classList.toggle('on',x.dataset.s===curS)});
+ filt();window.scrollTo(0,0)});
+drawLegend();
 function drawGroups(){
  if(cur==='ph'){GR.innerHTML='';GR.hidden=true;return}
  GR.hidden=false;
@@ -406,7 +430,7 @@ function filt(){var t=norm(q.value.trim()),n=0,p=document.getElementById('p_'+cu
  p.querySelectorAll('.grp').forEach(function(g){
   var okG=(cur==='ph')||!curG||g.dataset.g===curG,c=0;
   g.querySelectorAll('.card').forEach(function(x){
-   var h=okG&&(!t||norm(x.textContent).indexOf(t)>-1);
+   var h=okG&&(!t||norm(x.textContent).indexOf(t)>-1)&&(!curS||x.dataset.st===curS);
    x.hidden=!h;if(h)c++});
   g.hidden=c===0;n+=c});
  NONE.hidden=n>0}
@@ -415,7 +439,7 @@ document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click'
  cur=t.dataset.p;
  document.querySelectorAll('.tab').forEach(function(o){o.setAttribute('aria-selected',String(o.dataset.p===cur))});
  KEYS.forEach(function(k){document.getElementById('p_'+k).hidden=k!==cur});
- curG='';drawGroups();filt();window.scrollTo(0,0)})});
+ curG='';curS='';drawGroups();drawLegend();filt();window.scrollTo(0,0)})});
 
 var ov=document.getElementById('ov'),LN=document.getElementById('lines'),TT=document.getElementById('tt'),OK=document.getElementById('ok');
 document.getElementById('open').addEventListener('click',function(){
@@ -514,7 +538,7 @@ restore();
   var moi=('ton' in m)||('ct' in m)||('shops' in m);
   STOCK=moi?(m.ton||{}):m;
   if(moi)CT=m.ct||{};
-  render();drawGroups();restore();
+  render();drawGroups();drawLegend();restore();
   if(m.shops&&m.shops.length){SHOPS=m.shops}
   drawShops();showSel()}
  setTimeout(function(){apply(null)},6000);
