@@ -21,10 +21,10 @@ body{margin:0;background:var(--bg);color:var(--ink);
  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
  padding-bottom:88px}
 .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
-header{padding-block:18px 4px}
+header{padding-block:14px 2px}
 h1{font-size:23px;margin:0;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
 .sub{color:var(--muted);font-size:13px;margin:4px 0 0}
-.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .chip{background:var(--brand-soft);color:var(--brand);border-radius:999px;
  padding:4px 10px;font-size:11.5px;font-weight:600}
 .chip.w{background:var(--amber-soft);color:var(--amber)}
@@ -40,36 +40,36 @@ h1{font-size:23px;margin:0;letter-spacing:-.02em;font-weight:700;text-wrap:balan
 #q{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:11px;
  font-size:16px;background:var(--surf);color:var(--ink);font-family:inherit}
 #q:focus{outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent}
-.grp{margin-top:24px}
-.gh{font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);
- margin:0 0 11px;font-weight:700;display:flex;align-items:center;gap:7px}
+.grp{margin-top:17px}
+.gh{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+ margin:0 0 8px;font-weight:700;display:flex;align-items:center;gap:6px}
 .gh em{font-style:normal;background:var(--line);color:var(--muted);border-radius:999px;
  padding:1px 7px;font-size:11px;letter-spacing:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:11px}
-.card{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:11px;
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-items:start}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:9px;
  display:flex;flex-direction:column;box-shadow:var(--shadow)}
 .card.on{border-color:var(--brand)}
-.th{aspect-ratio:1;max-width:100%;border-radius:9px;overflow:hidden;background:var(--surf2);
+.th{aspect-ratio:1;max-width:100%;border-radius:8px;overflow:hidden;background:var(--surf2);
  display:flex;align-items:center;justify-content:center;margin-bottom:10px}
 .th img{width:100%;height:100%;object-fit:contain}
 .th span{color:var(--muted);opacity:.55;font-size:11.5px}
-.nm{font-size:13.5px;font-weight:600;margin:0;line-height:1.32}
-.sb{color:var(--muted);font-size:11.5px;margin:2px 0 9px}
+.nm{font-size:13px;font-weight:600;margin:0;line-height:1.28}
+.sb{color:var(--muted);font-size:11px;margin:3px 0 7px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;line-height:1.3}
 .pr{display:flex;justify-content:space-between;align-items:baseline;gap:6px;
- border-top:1px solid var(--line);padding-top:6px}
-.pl{color:var(--muted);font-size:11.5px;white-space:nowrap}
-.pv{font-variant-numeric:tabular-nums;font-size:14px;font-weight:600}
+ border-top:1px solid var(--line);padding-top:4px;margin-top:4px}
+.pl{color:var(--muted);font-size:11px;white-space:nowrap}
+.pv{font-variant-numeric:tabular-nums;font-size:13.5px;font-weight:600}
 .pv.n{color:var(--blue)}.pv.r{color:var(--brand)}.pv.x{color:var(--muted);font-weight:400}
-.cols{margin-top:9px;display:flex;flex-direction:column;gap:5px}
+.cols{margin-top:7px;display:flex;flex-direction:column;gap:4px}
 .cr{display:flex;align-items:center;justify-content:space-between;gap:6px}
-.cnm{font-size:12.5px}
+.cnm{font-size:12px}
 .stp{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;
  overflow:hidden;background:var(--surf)}
-.stp.w{margin-top:9px}
-.stp button{width:32px;height:32px;border:0;background:var(--surf2);color:var(--brand);
+.stp.w{margin-top:7px}
+.stp button{width:29px;height:29px;border:0;background:var(--surf2);color:var(--brand);
  font-size:17px;cursor:pointer;font-family:inherit;line-height:1;padding:0}
 .stp button:active{background:var(--brand-soft)}
-.stp input{width:40px;height:32px;border:0;border-inline:1px solid var(--line);
+.stp input{width:36px;height:29px;border:0;border-inline:1px solid var(--line);
  text-align:center;font-size:14px;font-family:inherit;color:var(--ink);background:var(--surf);
  -moz-appearance:textfield;font-variant-numeric:tabular-nums;padding:0}
 .stp.w input{flex:1;width:auto}
@@ -135,9 +135,9 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 .selshop b{color:var(--brand)}
 .selshop.on{background:var(--brand-soft);border-radius:9px;padding:8px 11px}
 .ct{display:block;background:linear-gradient(90deg,#fff1d6,#ffe6c7);color:#8a4b00;
- border:1px solid #f3cf9a;border-radius:9px;padding:6px 9px;margin:0 0 9px;
- font-size:11px;font-weight:700;line-height:1.35}
-.ct b{display:block;font-size:12.5px;color:#a33b00}
+ border:1px solid #f3cf9a;border-radius:8px;padding:4px 7px;margin:0 0 7px;
+ font-size:10px;font-weight:700;line-height:1.3}
+.ct b{display:block;font-size:11.5px;color:#a33b00}
 .ct i{font-style:normal;font-weight:600;opacity:.85}
 .pr.lai{border-top:1px dashed var(--line)}
 .pl.lai{color:var(--brand);font-weight:700}
@@ -147,12 +147,12 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
  padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-top:11px}
 .zalo:active{background:#0055d4}
 .shops{max-height:42vh}
-@media (min-width:700px){h1{font-size:28px}.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}}
+@media (min-width:700px){h1{font-size:28px}.grid{grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:11px}}
 @media (prefers-reduced-motion:reduce){.bar{transition:none}}
 @media print{.tools,.bar,.ov{display:none}.pane{display:block!important}.stp,.cols{display:none}}
 
-.st{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;
- border-radius:999px;padding:2px 7px;margin:0 0 8px}
+.st{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;
+ border-radius:999px;padding:1px 6px;margin:0 0 6px;align-self:flex-start}
 .st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .st.con{background:var(--brand-soft);color:var(--brand)}
 .st.sap{background:var(--amber-soft);color:var(--amber)}
@@ -166,12 +166,12 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 .cst.het{background:#f0f2f1;color:#7d8a83}
 .stp button:disabled{opacity:.35;cursor:not-allowed}
 .stp input:disabled{background:#f6f8f7;color:#9aa5a0}
-.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:9px;font-size:11.5px;color:var(--muted)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:7px;font-size:11px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend i{width:7px;height:7px;border-radius:50%;display:inline-block}
 
-.bd{display:inline-block;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:800;
- letter-spacing:.04em;margin:0 0 6px;background:var(--line);color:var(--muted)}
+.bd{display:inline-block;border-radius:999px;padding:1px 6px;font-size:9.5px;font-weight:800;
+ letter-spacing:.04em;margin:0;background:var(--line);color:var(--muted);flex:0 0 auto}
 .bd.oppo{background:#e6f0ff;color:#1554c0}
 .bd.remax{background:#ffe9e4;color:#b03a1d}
 .bd.anker{background:#e4f3ee;color:#0a6a4a}
@@ -266,7 +266,7 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 <button type="button" class="zshare" id="zshare">Gửi qua Zalo</button>
 <a class="zalo2" id="zalo" href="https://chat.zalo.me/" target="_blank" rel="noopener">Mở Zalo Web</a>
 </div>
-<p class="hint" style="margin:8px 0 0">Bấm <b>Gửi đơn</b>: đơn được ghi vào hệ thống, nội dung đơn tự sao chép. Bấm <b>Gửi qua Zalo</b> để mở app Zalo chọn sale/nhóm, hoặc <b>Mở Zalo Web</b> rồi dán.</p>
+<p class="hint" style="margin:8px 0 0">Bấm <b>Gửi đơn</b> → đơn vào hệ thống và tự sao chép → bấm <b>Gửi qua Zalo</b> chọn sale/nhóm.</p>
 </div></div></div>
 
 <script>
@@ -297,7 +297,7 @@ function stOf(n,c){var v=STOCK[stKey(n,c)];return v||'na'}
 var STL={con:'Còn hàng',sap:'Sắp hết',het:'Hết hàng',na:'Đang cập nhật'};
 var uid=0;
 function card(it){
- var t=it.i&&IM[it.i]?'<img loading="lazy" alt="" src="data:image/jpeg;base64,'+IM[it.i]+'">':'<span>chưa có ảnh</span>';
+ var t=it.i&&IM[it.i]?'<div class="th"><img loading="lazy" alt="" src="data:image/jpeg;base64,'+IM[it.i]+'"></div>':'';
  var retail=it.r?'<span class="pv r">'+vnd(it.r)+'</span>':'<span class="pv x">—</span>';
  var ct=ctOf(it),bonus=ct?so2n(ct.so):0;
  var lai='';
@@ -317,8 +317,8 @@ function card(it){
  else{var st=stOf(it.n,'');out=st==='het';uid++;
   head='<span class="st '+st+'">'+STL[st]+'</span>';
   q=stp(uid,it.n,'',it.p,true,out)}
- return '<article class="card'+(out?' out':'')+'" data-b="'+esc(it.b||'')+'"><div class="th">'+t+'</div>'+
-  bdHtml(it.b)+'<p class="nm">'+esc(it.n)+'</p><p class="sb">'+esc(it.s)+'</p>'+ctHtml(ct)+head+
+ return '<article class="card'+(out?' out':'')+'" data-b="'+esc(it.b||'')+'">'+t+
+  '<p class="nm">'+esc(it.n)+'</p><p class="sb">'+bdHtml(it.b)+'<span>'+esc(it.s)+'</span></p>'+ctHtml(ct)+head+
   '<div class="pr"><span class="pl">Đại lý</span><span class="pv n">'+vnd(it.p)+'</span></div>'+
   '<div class="pr"><span class="pl">Bán lẻ</span>'+retail+'</div>'+lai+q+'</article>'}
 function stp(id,n,c,p,wide,lock){
@@ -450,14 +450,19 @@ var ZR=document.getElementById('zrow'),ZS=document.getElementById('zshare'),LAST
 function copyTxt(t){
  try{if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t)}catch(e){}
  return Promise.reject()}
-if(!navigator.share)ZS.textContent='Sao chép nội dung đơn';
+var MOBI=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'')||((navigator.maxTouchPoints||0)>1&&!!navigator.share);
+ZA.href=MOBI?'https://zalo.me/':'https://chat.zalo.me/';
+ZA.textContent=MOBI?'Mở app Zalo':'Mở Zalo Web';
+if(!navigator.share)ZS.textContent='Sao chép đơn';
 ZS.addEventListener('click',function(){
  if(!LASTTXT)return;
+ copyTxt(LASTTXT).then(function(){},function(){});
  if(navigator.share){navigator.share({title:'Đơn đặt hàng',text:LASTTXT}).then(function(){
-   OK.textContent='Đã gửi qua Zalo. Cảm ơn anh/chị!'},function(){});return}
- copyTxt(LASTTXT).then(function(){
-   OK.textContent='Đã sao chép nội dung đơn — mở Zalo dán gửi cho sale.'},
-  function(){try{window.prompt('Chép nội dung này gửi Zalo cho sale:',LASTTXT)}catch(e){}})});
+   OK.textContent='Đã gửi. Cảm ơn anh/chị!'},function(e){
+   if(e&&e.name==='AbortError')return;
+   OK.textContent='Máy không mở được bảng chia sẻ. Đơn đã sao chép — bấm '+(MOBI?'Mở app Zalo':'Mở Zalo Web')+' rồi dán.'});
+  return}
+ OK.textContent='Đã sao chép đơn — bấm '+(MOBI?'Mở app Zalo':'Mở Zalo Web')+' rồi dán vào khung chat.'});
 ZA.addEventListener('click',function(){if(LASTTXT)copyTxt(LASTTXT).then(function(){},function(){})});
 SEND.addEventListener('click',function(){
  var s=sync();
@@ -472,11 +477,8 @@ SEND.addEventListener('click',function(){
   var base=ma?'Đã ghi nhận đơn. Mã đơn '+ma+'. ':'';
   LASTTXT=t;ZR.hidden=false;
   copyTxt(t).then(function(){},function(){});
-  if(navigator.share){
-   navigator.share({title:'Đơn đặt hàng - '+shop,text:t}).then(function(){
-    OK.textContent=base+'Đã gửi. Cảm ơn anh/chị!'},function(){
-    OK.textContent=base+'Đã sao chép nội dung đơn. Bấm Gửi qua Zalo để chọn app.'})}
-  else{OK.textContent=base+'Đã sao chép nội dung đơn. Bấm Mở Zalo Web rồi dán gửi cho sale.'}})});
+  OK.textContent=base+'Đơn đã sao chép sẵn. Bấm nút xanh bên dưới để gửi qua Zalo.';
+  try{ZS.scrollIntoView({block:'nearest'})}catch(e){}})});
 
 function restore(){
  try{var sv=JSON.parse(localStorage.getItem('bgo')||'[]');
