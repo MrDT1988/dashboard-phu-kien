@@ -134,6 +134,18 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 .selshop{margin:9px 0 0;font-size:12.5px;color:var(--muted)}
 .selshop b{color:var(--brand)}
 .selshop.on{background:var(--brand-soft);border-radius:9px;padding:8px 11px}
+.ct{display:block;background:linear-gradient(90deg,#fff1d6,#ffe6c7);color:#8a4b00;
+ border:1px solid #f3cf9a;border-radius:9px;padding:6px 9px;margin:0 0 9px;
+ font-size:11px;font-weight:700;line-height:1.35}
+.ct b{display:block;font-size:12.5px;color:#a33b00}
+.ct i{font-style:normal;font-weight:600;opacity:.85}
+.pr.lai{border-top:1px dashed var(--line)}
+.pl.lai{color:var(--brand);font-weight:700}
+.pv.lai{color:var(--brand);font-weight:700}
+.pv.lai em{font-style:normal;font-weight:600;font-size:11.5px;opacity:.8}
+.zalo{display:block;text-align:center;background:#0068ff;color:#fff;border-radius:11px;
+ padding:13px;font-size:15px;font-weight:700;text-decoration:none;margin-top:11px}
+.zalo:active{background:#0055d4}
 .shops{max-height:42vh}
 @media (min-width:700px){h1{font-size:28px}.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}}
 @media (prefers-reduced-motion:reduce){.bar{transition:none}}
@@ -228,6 +240,7 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 <button class="a2" id="clear">Xoá hết</button>
 </div>
 <p class="ok" id="ok"></p>
+<a class="zalo" id="zalo" hidden target="_blank" rel="noopener"></a>
 <p class="hint" style="margin:8px 0 0">Bấm <b>Gửi đơn</b>: đơn được ghi vào hệ thống và mở Zalo để gửi cho sale phụ trách.</p>
 </div></div></div>
 
@@ -240,14 +253,32 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){
  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0111/g,'d')}
 
-var STOCK={};
+var STOCK={},CT={},ZALO={};
 function stKey(n,c){return n+'|'+(c||'')}
+function ctOf(it){
+ var ks=it.c?it.c.map(function(c){return stKey(it.n,c)}):[stKey(it.n,'')];
+ for(var i=0;i<ks.length;i++){var v=CT[ks[i]];if(v&&(v.so||v.si))return v}
+ return null}
+function so2n(v){var x=String(v||'').replace(/[^0-9]/g,'');return x?parseInt(x,10):0}
+function ctHtml(ct){
+ if(!ct)return '';
+ var r=[];
+ if(ct.so)r.push('<b>Thưởng bán ra '+vnd(so2n(ct.so))+'/máy</b>'+(ct.sot?'<i>'+esc(ct.sot)+'</i>':''));
+ if(ct.si)r.push('<b>Thưởng nhập hàng '+vnd(so2n(ct.si))+'/máy</b>'+(ct.sit?'<i>'+esc(ct.sit)+'</i>':''));
+ return '<span class="ct">'+r.join('')+'</span>'}
 function stOf(n,c){var v=STOCK[stKey(n,c)];return v||'na'}
 var STL={con:'Còn hàng',sap:'Sắp hết',het:'Hết hàng',na:'Đang cập nhật'};
 var uid=0;
 function card(it){
  var t=it.i&&IM[it.i]?'<img loading="lazy" alt="" src="data:image/jpeg;base64,'+IM[it.i]+'">':'<span>chưa có ảnh</span>';
  var retail=it.r?'<span class="pv r">'+vnd(it.r)+'</span>':'<span class="pv x">—</span>';
+ var ct=ctOf(it),bonus=ct?so2n(ct.so):0;
+ var lai='';
+ if(it.r&&it.r>it.p){
+  var g=it.r-it.p,pc=Math.round(g*1000/it.r)/10;
+  lai='<div class="pr lai"><span class="pl lai">Lợi nhuận</span><span class="pv lai">'+vnd(g)+
+   ' <em>'+String(pc).replace('.',',')+'%</em></span></div>';
+  if(bonus)lai+='<div class="pr"><span class="pl">Kèm thưởng</span><span class="pv lai">'+vnd(g+bonus)+'</span></div>'}
  var q='',head='',out=false;
  if(it.c){
   var sts=it.c.map(function(c){return stOf(it.n,c)});
@@ -260,9 +291,9 @@ function card(it){
   head='<span class="st '+st+'">'+STL[st]+'</span>';
   q=stp(uid,it.n,'',it.p,true,out)}
  return '<article class="card'+(out?' out':'')+'"><div class="th">'+t+'</div>'+
-  '<p class="nm">'+esc(it.n)+'</p><p class="sb">'+esc(it.s)+'</p>'+head+
+  '<p class="nm">'+esc(it.n)+'</p><p class="sb">'+esc(it.s)+'</p>'+ctHtml(ct)+head+
   '<div class="pr"><span class="pl">Đại lý</span><span class="pv n">'+vnd(it.p)+'</span></div>'+
-  '<div class="pr"><span class="pl">Bán lẻ</span>'+retail+'</div>'+q+'</article>'}
+  '<div class="pr"><span class="pl">Bán lẻ</span>'+retail+'</div>'+lai+q+'</article>'}
 function stp(id,n,c,p,wide,lock){
  var d=lock?' disabled':'';
  return '<div class="stp'+(wide?' w':'')+'">'+
@@ -361,7 +392,7 @@ SB.addEventListener('click',function(e){var b=e.target.closest('.sh');if(!b)retu
  if(b.dataset.free){SEL=['',QS.value.trim(),'']}
  else{var id=b.dataset.id;SEL=SHOPS.filter(function(s){return s[0]===id})[0]||null}
  try{localStorage.setItem('bgshop',JSON.stringify(SEL))}catch(e2){}
- OK.textContent='';QS.value='';QS.blur();drawShops();showSel()});
+ OK.textContent='';ZA.hidden=true;QS.value='';QS.blur();drawShops();showSel()});
 QS.addEventListener('input',drawShops);
 try{var sv2=JSON.parse(localStorage.getItem('bgshop')||'null');if(sv2&&sv2[1])SEL=sv2}catch(e){}
 showSel();drawShops();
@@ -375,22 +406,25 @@ function postOrder(s,shop){
  return fetch(API,{method:'POST',body:JSON.stringify({
    shop:shop, shopId:(SEL&&SEL[0])||'', sale:(SEL&&SEL[2])||'', items:s.L})})
   .then(function(r){return r.json()}).catch(function(){return null})}
-var SEND=document.getElementById('send');
+var SEND=document.getElementById('send'),ZA=document.getElementById('zalo');
 SEND.addEventListener('click',function(){
  var s=sync();
  if(!s.L.length){OK.textContent='Chưa chọn sản phẩm nào.';return}
  if(!SEL||!SEL[1]){OK.textContent='Chọn shop trước khi gửi.';QS.focus();return}
  var o=cutName(SEL[1]),shop=o.n+(o.t?' — '+o.t:'');
- SEND.disabled=true;OK.textContent='Đang gửi đơn…';
+ SEND.disabled=true;OK.textContent='Đang gửi đơn…';ZA.hidden=true;
  postOrder(s,shop).then(function(res){
   SEND.disabled=false;
   var ma=(res&&res.ok&&res.ma)?res.ma:'';
   var t=orderText(s,shop)+(ma?'\nMã đơn: '+ma:'');
   var base=ma?'Đã ghi nhận đơn. Mã đơn '+ma+'. ':'';
+  var sdt=(SEL&&SEL[2]&&ZALO[String(SEL[2]).toUpperCase()])||'';
+  if(sdt){ZA.href='https://zalo.me/'+sdt;
+   ZA.textContent='Mở Zalo gửi sale '+SEL[2];ZA.hidden=false}
   function copied(){OK.textContent=base+'Đã sao chép nội dung — mở Zalo dán gửi cho sale.'}
   function ask(){try{window.prompt('Chép nội dung này gửi Zalo cho sale:',t)}catch(e){}}
   function fallback(){
-   OK.textContent=base+'Gửi tiếp cho sale qua Zalo giúp em.';
+   OK.textContent=base+(sdt?'Bấm nút Zalo bên dưới để gửi cho sale.':'Gửi tiếp cho sale qua Zalo giúp em.');
    if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(t).then(copied,ask)}
    else{ask()}}
@@ -412,7 +446,11 @@ restore();
  function apply(m){if(done)return;done=true;
   if(!m||typeof m!=='object'){drawShops();return}
   var ton=m.ton||(m.shops?{}:m);
-  if(ton&&Object.keys(ton).length){STOCK=ton;render();restore()}
+  var doiThay=false;
+  if(ton&&Object.keys(ton).length){STOCK=ton;doiThay=true}
+  if(m.ct&&Object.keys(m.ct).length){CT=m.ct;doiThay=true}
+  if(m.zalo)ZALO=m.zalo;
+  if(doiThay){render();restore()}
   if(m.shops&&m.shops.length){SHOPS=m.shops}
   drawShops();showSel()}
  setTimeout(function(){apply(null)},6000);
