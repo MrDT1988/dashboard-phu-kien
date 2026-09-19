@@ -319,7 +319,8 @@ function ctOf(it){
  return null}
 function so2n(v){var x=String(v||'').replace(/[^0-9]/g,'');return x?parseInt(x,10):0}
 function homNay(){var d=new Date();return d.getDate()+'/'+(d.getMonth()+1)}
-function ctHtml(ct){
+function ctHtml(ct,k){
+ if(k==='np')return '';
  var so=ct?so2n(ct.so):0;
  var ng=(so&&ct.sot)?esc(ct.sot):homNay();
  var h='<span class="ct '+(so?'on':'off')+'"><b>Thưởng bán ra '+vnd(so)+'</b><i>'+ng+'</i></span>';
@@ -349,16 +350,18 @@ var STL={con:'Còn hàng',sap:'Sắp hết',het:'Hết hàng',na:'Đang cập nh
 var uid=0;
 function card(it,k){
  var retail=it.r?'<span class="pv r">'+vnd(it.r)+'</span>':'<span class="pv x">—</span>';
- var ct=ctOf(it),bonus=ct?so2n(ct.so):0;
+ var coCT=(k!=='np');
+ var ct=coCT?ctOf(it):null,bonus=ct?so2n(ct.so):0;
+ var nhan=coCT?'Tổng lời':'Lợi nhuận';
  var lai='';
  if(it.r&&it.r>it.p){
   var g=it.r-it.p,tong=g+bonus,tp=Math.round(tong*1000/it.r)/10;
-  var sub=bonus?(vnd(g)+' máy + '+vnd(bonus)+' thưởng'):'Chưa có thưởng bán ra';
-  lai='<div class="lbox"><span class="lt">Tổng lời</span><span class="lv">'+vnd(tong)+
-   ' <em>'+String(tp).replace('.',',')+'%</em></span><span class="ls">'+sub+'</span></div>'}
+  var sub=coCT?('<span class="ls">'+(bonus?(vnd(g)+' máy + '+vnd(bonus)+' thưởng'):'Chưa có thưởng bán ra')+'</span>'):'';
+  lai='<div class="lbox"><span class="lt">'+nhan+'</span><span class="lv">'+vnd(tong)+
+   ' <em>'+String(tp).replace('.',',')+'%</em></span>'+sub+'</div>'}
  else{
-  lai='<div class="lbox na"><span class="lt">Tổng lời</span><span class="lv">—</span>'+
-   '<span class="ls">Chưa có giá bán lẻ để tính</span></div>'}
+  lai='<div class="lbox na"><span class="lt">'+nhan+'</span><span class="lv">—</span>'+
+   (coCT?'<span class="ls">Chưa có giá bán lẻ để tính</span>':'')+'</div>'}
  var q='',head='',out=false;
  if(it.c){
   var sts=it.c.map(function(c){return stOf(it.n,c)});
@@ -374,7 +377,7 @@ function card(it,k){
  return '<article class="card'+(out?' out':'')+'" data-b="'+esc(it.b||'')+'" data-st="'+ov+'">'+
   '<span class="tk '+ov+'">'+esc(tkText(it,k,ov))+'</span>'+
   '<p class="nm">'+esc(it.n)+'</p>'+
-  '<p class="sb">'+bdHtml(it.b)+'<span>'+esc(it.s)+'</span></p>'+ctHtml(ct)+head+
+  '<p class="sb">'+bdHtml(it.b)+'<span>'+esc(it.s)+'</span></p>'+ctHtml(ct,k)+head+
   '<div class="pbox"><div class="pr"><span class="pl">Đại lý</span><span class="pv n">'+vnd(it.p)+'</span></div>'+
   '<div class="pr"><span class="pl">Bán lẻ</span>'+retail+'</div></div>'+lai+q+'</article>'}
 function stp(id,n,c,p,wide,lock){
