@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Báo cáo ngày — Vùng Tiền Giang</title>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --ink:#111827; --mut:#6b7280; --line:#e5e7eb;
+  --acc:#046a38; --acc2:#0a8f4d; --warn:#b45309; --bad:#b91c1c; --ok:#046a38;
+  --chip:#eef2f5;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1418; --card:#171e24; --ink:#e8edf2; --mut:#9aa7b2; --line:#26313a;
+  --acc:#2ea96a; --acc2:#39c47c; --warn:#f0b357; --bad:#f2837c; --ok:#39c47c; --chip:#1e272e;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1418; --card:#171e24; --ink:#e8edf2; --mut:#9aa7b2; --line:#26313a;
+  --acc:#2ea96a; --acc2:#39c47c; --warn:#f0b357; --bad:#f2837c; --ok:#39c47c; --chip:#1e272e;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 96px}
+header{position:sticky;top:0;z-index:20;background:var(--acc);color:#fff;
+  padding:calc(14px + env(safe-area-inset-top,0)) 16px 14px;margin:0 0 16px}
+header .w{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:10px}
+header h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px;flex:1}
+header .sub{font-size:12px;opacity:.85;margin-top:2px;font-weight:400}
+.tabs{display:flex;gap:6px;margin:0 0 16px;background:var(--chip);padding:4px;border-radius:12px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--mut);font:600 13px/1 inherit;
+  padding:10px 4px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 12px;font-size:14px;letter-spacing:.4px;text-transform:uppercase;color:var(--mut)}
+label{display:block;font-size:13px;font-weight:600;margin:0 0 6px}
+.hint{font-size:12px;color:var(--mut);font-weight:400}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--bg);color:var(--ink);font:16px/1.3 inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acc2);outline-offset:1px}
+.row{margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;padding:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);
+  border-radius:10px;font:600 14px/1 inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+.seg button.off[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#1a1200}
+.btn{width:100%;padding:15px;border:0;border-radius:12px;background:var(--acc);color:#fff;
+  font:700 16px/1 inherit;cursor:pointer}
+.btn:disabled{opacity:.5}
+.btn.sec{background:var(--chip);color:var(--ink);border:1px solid var(--line)}
+pre.rep{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;
+  font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow-x:auto;margin:0 0 10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.3px;font-weight:700}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.dot.y{background:var(--ok)}.dot.n{background:var(--line);border:1px solid var(--mut)}
+.dot.o{background:var(--warn)}
+.msg{padding:12px;border-radius:10px;font-size:14px;margin-bottom:14px;font-weight:600}
+.msg.ok{background:rgba(4,106,56,.12);color:var(--ok);border:1px solid rgba(4,106,56,.3)}
+.msg.er{background:rgba(185,28,28,.1);color:var(--bad);border:1px solid rgba(185,28,28,.3)}
+.msg.wn{background:rgba(180,83,9,.12);color:var(--warn);border:1px solid rgba(180,83,9,.3)}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.kpi div{background:var(--chip);border-radius:10px;padding:10px;text-align:center}
+.kpi b{display:block;font-size:20px;line-height:1.2}
+.kpi span{font-size:11px;color:var(--mut)}
+.foot{font-size:12px;color:var(--mut);text-align:center;padding:8px 0 24px}
+.lnk{color:var(--acc2);cursor:pointer;text-decoration:underline;background:none;border:0;font:inherit;padding:0}
+.hide{display:none!important}
+@media(max-width:400px){.grid2{grid-template-columns:1fr}.kpi{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="w"><div style="flex:1">
+  <h1 id="hTitle">Báo cáo ngày</h1>
+  <div class="sub" id="hSub">Vùng Tiền Giang</div>
+</div><button class="lnk" style="color:#fff" onclick="moCaiDat()">⚙︎</button></div></header>
+
+<div class="wrap">
+  <div class="tabs" id="tabs" role="tablist">
+    <button role="tab" data-v="pg">PG</button>
+    <button role="tab" data-v="sale">Sale</button>
+    <button role="tab" data-v="leader">Leader / Vùng</button>
+  </div>
+
+  <div id="msg"></div>
+
+  <!-- ================= PG ================= -->
+  <section id="vPG" class="hide">
+    <div class="card">
+      <h2>Người báo</h2>
+      <div class="row">
+        <label>Tên PG</label>
+        <select id="pgTen"></select>
+      </div>
+      <div class="row" id="pgStoreWrap">
+        <label>Shop</label>
+        <select id="pgStore"></select>
+      </div>
+      <div class="row"><label>Ngày báo cáo</label><input type="date" id="pgNgay"></div>
+      <div class="row">
+        <label>Ca làm hôm nay</label>
+        <div class="seg">
+          <button type="button" id="caOn" onclick="setCa('On')">Đi làm</button>
+          <button type="button" class="off" id="caOff" onclick="setCa('Off')">Nghỉ</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="pgSo">
+      <h2>Số ngày</h2>
+      <div class="grid2">
+        <div class="row"><label>D.Thu ngày <span class="hint">(triệu)</span></label>
+          <input type="number" inputmode="decimal" id="pgDThu" min="0" step="0.1" placeholder="0"></div>
+        <div class="row"><label>S.O ngày <span class="hint">(máy)</span></label>
+          <input type="number" inputmode="numeric" id="pgSO" min="0" step="1" placeholder="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="row"><label>Trong đó Reno16 sr</label>
+          <input type="number" inputmode="numeric" id="pgR16" min="0" step="1" placeholder="0"></div>
+        <div class="row"><label>Trong đó Find X9</label>
+          <input type="number" inputmode="numeric" id="pgFX" min="0" step="1" placeholder="0"></div>
+      </div>
+      <div class="row"><label>Ghi chú <span class="hint">(không bắt buộc)</span></label>
+        <textarea id="pgGC" rows="2" placeholder="Shop hết hàng màu Tím, khách hẹn mai lấy…"></textarea></div>
+    </div>
+
+    <button class="btn" id="pgGui" onclick="guiPG()">Gửi cho Sale</button>
+    <div class="foot" id="pgFoot"></div>
+  </section>
+
+  <!-- ================= SALE ================= -->
+  <section id="vSale" class="hide">
+    <div class="card">
+      <h2>Sale báo cáo</h2>
+      <div class="row"><label>Tên Sale</label><select id="sTen"></select></div>
+      <div class="row"><label>Ngày báo cáo</label><input type="date" id="sNgay"></div>
+      <button class="btn sec" onclick="tai()">↻ Lấy số PG đã báo</button>
+    </div>
+
+    <div class="card" id="sCardPG">
+      <h2>PG đã báo <span class="hint" id="sDem"></span></h2>
+      <table id="sBang"><tbody></tbody></table>
+    </div>
+
+    <div class="card hide" id="sNoPG">
+      <h2>Số ngày <span class="hint">(shop không có PG — Sale tự nhập)</span></h2>
+      <div class="grid2">
+        <div class="row"><label>D.Thu ngày <span class="hint">(triệu)</span></label>
+          <input type="number" inputmode="decimal" id="sDThu" min="0" step="0.1" placeholder="0"></div>
+        <div class="row"><label>S.O ngày <span class="hint">(máy)</span></label>
+          <input type="number" inputmode="numeric" id="sSO" min="0" step="1" placeholder="0"></div>
+      </div>
+      <div class="grid2">
+        <div class="row"><label>S.O VIP ngày</label>
+          <input type="number" inputmode="numeric" id="sSOVIP" min="0" step="1" placeholder="0"></div>
+        <div class="row"><label>R16 ngày</label>
+          <input type="number" inputmode="numeric" id="sR16" min="0" step="1" placeholder="0"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Số Sale tự nhập</h2>
+      <div class="grid2">
+        <div class="row"><label>Check shop tuần <span class="hint">(shop)</span></label>
+          <input type="number" inputmode="numeric" id="sCheck" min="0" step="1" placeholder="0"></div>
+        <div class="row"><label>D.Thu IOT ngày <span class="hint">(triệu)</span></label>
+          <input type="number" inputmode="decimal" id="sIOT" min="0" step="0.1" placeholder="0"></div>
+      </div>
+      <div id="sIND" class="hide">
+        <div class="grid2">
+          <div class="row"><label>S.I ngày <span class="hint">(máy)</span></label>
+            <input type="number" inputmode="numeric" id="sSI" min="0" step="1" placeholder="0"></div>
+          <div class="row"><label>S.I PK ngày <span class="hint">(triệu)</span></label>
+            <input type="number" inputmode="decimal" id="sSIPK" min="0" step="0.1" placeholder="0"></div>
+        </div>
+        <div class="grid2">
+          <div class="row"><label>S.I Reno ngày</label>
+            <input type="number" inputmode="numeric" id="sSIReno" min="0" step="1" placeholder="0"></div>
+          <div class="row"><label>S.I OPPO ngày</label>
+            <input type="number" inputmode="numeric" id="sSIOPPO" min="0" step="1" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="row"><label>Ghi chú gửi Leader</label>
+        <textarea id="sGC" rows="2" placeholder="Lý do hụt / việc cần hỗ trợ…"></textarea></div>
+    </div>
+
+    <button class="btn" onclick="guiSale()">Gửi Leader &amp; Vùng</button>
+
+    <div class="card" id="sRepWrap" style="margin-top:14px">
+      <h2>Báo cáo gửi đi</h2>
+      <pre class="rep" id="sRep">Bấm “Lấy số PG đã báo” để xem trước.</pre>
+      <button class="btn sec" onclick="chep('sRep')">📋 Copy để dán Zalo</button>
+    </div>
+  </section>
+
+  <!-- ================= LEADER ================= -->
+  <section id="vLead" class="hide">
+    <div class="card">
+      <div class="row"><label>Ngày báo cáo</label><input type="date" id="lNgay"></div>
+      <button class="btn sec" onclick="taiVung()">↻ Cập nhật</button>
+    </div>
+    <div class="kpi" id="lKpi"></div>
+    <div class="card">
+      <h2>Báo cáo vùng</h2>
+      <pre class="rep" id="lRep">Bấm “Cập nhật”.</pre>
+      <button class="btn sec" onclick="chep('lRep')">📋 Copy để dán Zalo</button>
+    </div>
+    <div class="card">
+      <h2>Ai đã báo</h2>
+      <table id="lBang"><tbody></tbody></table>
+    </div>
+  </section>
+
+  <div class="foot">Vùng Tiền Giang · PG → Sale → Leader · <button class="lnk" onclick="moCaiDat()">Cài đặt link</button></div>
+</div>
+
+<script>
+/* ===== CẤU HÌNH ===== */
+var API = localStorage.getItem('bc_api') || '';   /* dán link /exec của Apps Script */
+var DATA = {"pg":[{"TenPG":"TRẦN THỊ HỒNG THẮM","StoreID":"789","StoreName":"TGD_TGI_CLA - 3/59 Quốc Lộ 1A","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"VÕ MINH QUY","StoreID":"789","StoreName":"TGD_TGI_CLA - 3/59 Quốc Lộ 1A","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LÊ NGỌC THẢO NHI","StoreID":"10169","StoreName":"TGD_TGI_CBE - An Thái Trung","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"ĐẶNG THỊ QUỲNH NHƯ","StoreID":"10169","StoreName":"TGD_TGI_CBE - An Thái Trung","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"TRƯƠNG THỊ QUẾ ANH","StoreID":"12184","StoreName":"TGD_TGI_CBE - Cái Bè","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN THỊ MỸ QUYÊN","StoreID":"12888","StoreName":"TGD_BTR_MCB - Phước Mỹ Trung (Ba Vát)","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"VÕ THỊ TUYẾT NHUNG","StoreID":"12888","StoreName":"TGD_BTR_MCB - Phước Mỹ Trung (Ba Vát)","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"PHẠM THỊ NGỌC MỸ","StoreID":"11759","StoreName":"TGD_BTR_CLA - Chợ Lách","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN THỊ THẢO VY","StoreID":"11759","StoreName":"TGD_BTR_CLA - Chợ Lách","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGÔ THÚY VY","StoreID":"14086","StoreName":"TGD_TGI_CLA - Cai Lậy 1","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"ĐÀO THỊ KIỀU VY","StoreID":"17019","StoreName":"ĐML_TGI_CBE - Hòa Khánh","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN VĂN BIÊU","StoreID":"11947","StoreName":"ĐML_TGI_CLA - 2/9 Quốc Lộ 1A (Cai Lậy)","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN THỊ THANH THÙY","StoreID":"21489","StoreName":"ĐMM_TGI_CLA - Mỹ Phước Tây","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"PHAN THỊ NGỌC TRÂM","StoreID":"30228","StoreName":"TGD_TGI_CBE - Tân Hưng","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"ĐẶNG THỊ QUỲNH NHƯ","StoreID":"28376","StoreName":"ĐMS_TGI_CBE - An Thái Đông (Chợ Cổ Cò)","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"LÊ NGỌC THẢO NHI","StoreID":"28376","StoreName":"ĐMS_TGI_CBE - An Thái Đông (Chợ Cổ Cò)","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"PHẠM THỊ KIM NGÂN","StoreID":"22000","StoreName":"ĐMM_BTR_CTH - An Hiệp","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"PHAN THỊ NGA","StoreID":"31168","StoreName":"TGD_TGI_CBE - Hậu Mỹ Bắc A","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"TRẦN THÚY VY","StoreID":"18666","StoreName":"ĐML_TGI_CBE - Cái Bè","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"PHAN THỊ NGA","StoreID":"28263","StoreName":"ĐMM_TGI_CBE - Hậu Mỹ Bắc A","Tinh":"Tiền Giang","Sale":"Bảo","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"HUỲNH THỊ PHƯỢNG TUYỀN","StoreID":"791","StoreName":"TGD_TGI_GCO - 313 Nguyễn Huệ","Tinh":"Tiền Giang","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"THẠCH NGỌC CHUNG","StoreID":"791","StoreName":"TGD_TGI_GCO - 313 Nguyễn Huệ","Tinh":"Tiền Giang","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LÊ THỊ NGỌC ĐIỆP","StoreID":"12325","StoreName":"TGD_TGI_CGA - Long Bình Điền","Tinh":"Tiền Giang","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN BẠCH GIA THỊNH","StoreID":"12325","StoreName":"TGD_TGI_CGA - Long Bình Điền","Tinh":"Tiền Giang","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"PHẠM MINH HƯNG","StoreID":"790","StoreName":"TGD_TGI_MTH - 3/6 Đinh Bộ Lĩnh","Tinh":"Tiền Giang","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LÂM THỊ BẠCH HUỆ","StoreID":"790","StoreName":"TGD_TGI_MTH - 3/6 Đinh Bộ Lĩnh","Tinh":"Tiền Giang","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"TRẦN THỊ KIỀU MY","StoreID":"11545","StoreName":"ĐML_TGI_GCT - Bình Nhì","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN THỊ THÙY DƯƠNG","StoreID":"11545","StoreName":"ĐML_TGI_GCT - Bình Nhì","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN THỊ DIỄM THI","StoreID":"11763","StoreName":"ĐML_TGI_MTH - 115 Nguyễn Trãi","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"PHAN THỊ THÙY TRANG","StoreID":"18290","StoreName":"ĐML_TGI_CGA - Tân Thuận Bình","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LÊ HOÀNG LONG","StoreID":"13560","StoreName":"TGD_TGI_GCD - 162 Tỉnh Lộ 862","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"HUỲNH PHAN HỒNG KIM CƯƠNG","StoreID":"14087","StoreName":"TGD_TGI_GCD - Kiểng Phước (Vàm Láng)","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"HUỲNH TRƯƠNG TÚ ÂN","StoreID":"30972","StoreName":"ĐMM_TGI_TPD - Ấp Tân Phú (Phú Thạnh)","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"PHÙNG QUỐC THOẠI","StoreID":"22292","StoreName":"ĐMM_TGI_GCO - Tân Trung","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"NGUYỄN THÀNH LỢI","StoreID":"21295","StoreName":"ĐMM_TGI_GCD - Tân Đông","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"NGUYỄN THỊ TUYẾT NHUNG","StoreID":"16505","StoreName":"TGD_TGI_GCO - 6 Nguyễn Huệ (Gò Công)","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"CT MWG"},{"TenPG":"HUỲNH MINH TRÍ","StoreID":"28807","StoreName":"ĐMM_TGI_GCD - Vàm Láng","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"PHẠM VĂN BÌNH","StoreID":"28424","StoreName":"ĐMS_TGI_GCD - Tân Phước","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"LÊ PHƯƠNG HIẾU","StoreID":"13162","StoreName":"ĐML_TGI_GCO - Trương Định","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"LÊ PHẠM THANH KHOA","StoreID":"29450","StoreName":"TGD_TGI_GCT - Vĩnh Bình","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"HUỲNH TRƯƠNG TÚ ÂN","StoreID":"28464","StoreName":"TGD_TGI_TPD - Chợ Phú Thạnh","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"PHÙNG QUỐC THOẠI","StoreID":"30413","StoreName":"ĐMS_TGI_GCO - Bình Xuân","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"LÊ PHƯƠNG HIẾU","StoreID":"21252","StoreName":"ĐMM_TGI_GCO - 49A Quốc Lộ 50","Tinh":"Bến Tre","Sale":"Hoàng Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"HUỲNH KIM CHÂU","StoreID":"12245","StoreName":"TGD_TGI_CTH - Vĩnh Kim","Tinh":"Bến Tre","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"VÕ KHẮC KIỆT","StoreID":"12245","StoreName":"TGD_TGI_CTH - Vĩnh Kim","Tinh":"Bến Tre","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"ĐÀO THANH PHONG","StoreID":"7742","StoreName":"TGD_TGI_CTH - Tân Hiệp","Tinh":"Bến Tre","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LƯU TRẦN NGỌC ANH","StoreID":"7742","StoreName":"TGD_TGI_CTH - Tân Hiệp","Tinh":"Bến Tre","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN HOÀI PHONG","StoreID":"531","StoreName":"TGD_TGI_MTH - 49/2 Ấp Bắc","Tinh":"Bến Tre","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"HUỲNH THỊ KIỀU OANH","StoreID":"531","StoreName":"TGD_TGI_MTH - 49/2 Ấp Bắc","Tinh":"Bến Tre","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGÔ VÂN KHANH","StoreID":"13561","StoreName":"ĐMM_TGI_TPH - Mỹ Phước","Tinh":"Bến Tre","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LÊ THỊ THANH HƯƠNG","StoreID":"16807","StoreName":"ĐML_BTR_CTH - Quới Sơn (Giao Long)","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN THỊ CẨM MY","StoreID":"792","StoreName":"TGD_TGI_MTH - 57/6 Lê Thị Hồng Gấm","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"TĂNG TƯỜNG PHỤNG LOAN","StoreID":"29695","StoreName":"TGD_TGI_CTH - Tân Lý Tây","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LÂM MINH QUYÊN","StoreID":"6835","StoreName":"TGD_TGI_MTH - 920 Lý Thường Kiệt","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGÔ THỊ NGỌC HÂN","StoreID":"18662","StoreName":"ĐML_BTR_BDA - Bình Đại","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"VÕ THỊ THANH THÚY","StoreID":"29608","StoreName":"TGD_BTR_CTH - Tân Thạch","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"TẠ YẾN NHI","StoreID":"19516","StoreName":"TGD_TGI_MTH - Trung An","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN KIỀU YẾN VY","StoreID":"28260","StoreName":"ĐMM_TGI_CLA - Long Trung","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"TRẦN TRỌNG CHUNG","StoreID":"22454","StoreName":"ĐMM_TGI_CTH - Hòa Tịnh (Tân Lý Tây)","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN VŨ XUÂN NGHI","StoreID":"18438","StoreName":"ĐML_TGI_MTH - 98 Phường 10 (Ấp Bắc)","Tinh":"Tiền Giang","Sale":"Hữu Nhân","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"PHẠM NGỌC YẾN NHI","StoreID":"782","StoreName":"TGD_BTR_BTR - 591B Đồng Khởi","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LÊ HUỲNH MINH TIẾN","StoreID":"782","StoreName":"TGD_BTR_BTR - 591B Đồng Khởi","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"BÙI PHẠM KIỀU CHINH","StoreID":"783","StoreName":"TGD_BTR_MCN - Mỏ Cày","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"TRƯƠNG THỊ HỒNG OANH","StoreID":"783","StoreName":"TGD_BTR_MCN - Mỏ Cày","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"NGUYỄN THỊ HUẾ THƯƠNG","StoreID":"14735","StoreName":"ĐML_BTR_BAT - 21A1 Trần Hưng Đạo (Ba Tri)","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LÊ THỊ MỸ XUYÊN","StoreID":"29770","StoreName":"TGD_BTR_BAT - Ba Tri","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"VÕ THỊ QUỲNH NHƯ","StoreID":"10170","StoreName":"TGD_BTR_BTR - 174A Đoàn Hoàng Minh","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"LÊ NGỌC PHÚC","StoreID":"16504","StoreName":"ĐML_BTR_GTR - Giồng Trôm","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"PHẠM THỊ YẾN VY","StoreID":"21369","StoreName":"ĐMM_BTR_BTR - 105A3 Võ Nguyên Giáp","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"VÕ VĂN THÀNH","StoreID":"11666","StoreName":"TGD_BTR_BTR - 112B Đồng Khởi","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"VÕ THỊ NHƯ Ý","StoreID":"20426","StoreName":"ĐMM_BTR_TPH - Thạnh Phú","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FOCUS MWG"},{"TenPG":"PHAN THỊ MỸ DUYÊN","StoreID":"29162","StoreName":"ĐMS_BTR_TPH - Tân Phong","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"CT MWG"},{"TenPG":"NGUYỄN THỊ NGỌC ÁNH","StoreID":"21702","StoreName":"ĐMM_BTR_BAT - An Ngãi Trung","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"ĐOÀN THỊ XUÂN HƯƠNG","StoreID":"29633","StoreName":"TGD_BTR_GTR - Giồng Trôm","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"VÕ VĂN THÀNH","StoreID":"11762","StoreName":"ĐML_BTR_BTR - 549B Bến Tre","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"ĐOÀN THỊ XUÂN HƯƠNG","StoreID":"28860","StoreName":"ĐMS_BTR_GTR - Lương Quới","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"NGUYỄN THỊ NGỌC ÁNH","StoreID":"30235","StoreName":"ĐMS_BTR_BAT - Mỹ Chánh","Tinh":"Bến Tre","Sale":"Như","Kenh":"MWG","LoaiShop":"FF MWG"},{"TenPG":"NGUYỄN TRƯƠNG ĐỨC KHẢI","StoreID":"9785","StoreName":"Điện máy Chợ Lớn_KA Bến Tre","Tinh":"Bến Tre","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"SHOP PG"},{"TenPG":"NGUYỄN VĂN NHẪN","StoreID":"17501","StoreName":"Viettel - TGG16, X, 3/58 KP2 Phường 1, Cai Lậy","Tinh":"Tiền Giang","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"SHOP PG"},{"TenPG":"TRƯƠNG NGỌC TRÚC MAI","StoreID":"31333","StoreName":"Cellphones - DP - 472 Đường Ấp Bắc, Tỉnh Tiền Giang","Tinh":"Tiền Giang","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"SHOP PG"},{"TenPG":"VÕ THỊ THÚY NGÂN","StoreID":"1274","StoreName":"Viettel - TGG1, P, 02C Thủ Khoa Huân, Mỹ Tho","Tinh":"Tiền Giang","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"SHOP PG"},{"TenPG":"VÕ THỊ THÚY NGÂN","StoreID":"8617","StoreName":"Viettel - TGG15, P, 49/2 Ấp Bắc, Mỹ Tho","Tinh":"Tiền Giang","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"CT"},{"TenPG":"ĐÀO NGUYỄN THANH TRÚC","StoreID":"11022","StoreName":"FPT-TGG 365 Quốc Lộ 1A","Tinh":"Tiền Giang","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"SHOP PG"},{"TenPG":"LÊ TRẦN THẢO VY","StoreID":"11761","StoreName":"Viettel - BTE15, H, Mỏ Cày Nam 02, Mỏ Cày","Tinh":"Bến Tre","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"SHOP PG"},{"TenPG":"BÙI THỊ HOÀNG NGÂN","StoreID":"30484","StoreName":"Cellphones - DP - 15C - 18C Đại Lộ Đồng Khởi, Bến Tre","Tinh":"Bến Tre","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"SHOP PG"},{"TenPG":"VÕ NGUYỄN HOÀNG TRÂM","StoreID":"35155","StoreName":"Cellphones - DP - 300A Đoàn Hoàng Minh, Vĩnh Long","Tinh":"Bến Tre","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"SHOP PG"},{"TenPG":"LÊ TRẦN THẢO VY","StoreID":"1300","StoreName":"Viettel - BTE12, P, 489B Đồng Khởi, Bến Tre","Tinh":"Bến Tre","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"CT"},{"TenPG":"VÕ NGUYỄN HOÀNG TRÂM","StoreID":"1300","StoreName":"Viettel - BTE12, P, 489B Đồng Khởi, Bến Tre","Tinh":"Bến Tre","Sale":"Lam Trường","Kenh":"KA","LoaiShop":"CT"},{"TenPG":"HUỲNH THỊ MỸ DUNG","StoreID":"1499","StoreName":"Chí Trung - Bến Tre - Khu phố 2, thị tấn Bình Đại, Huện Bình Đại","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"},{"TenPG":"TRANG TUẤN KIỆT","StoreID":"3300","StoreName":"CỬA HÀNG THÀNH NHÂN - Bến Tre - 229/10A Khu phố 1 - thị trấn Chợ Lách - huyện Chợ Lách - Bến Tre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"},{"TenPG":"NGUYỄN NGỌC NHƯ QUỲNH","StoreID":"7139","StoreName":"Cửa hàng ĐTDĐ Và Laptop Mai Phương-Bến Tre-81 Ấp Chợ, Xã Mỹ Thạnh, Huyện Giồng Trôm, Tỉnh Bến Tre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"},{"TenPG":"TRẦN MAI TRINH","StoreID":"12192","StoreName":"Trọng Nghĩa - Bến Tre - 556/29, Ấp Vĩnh Hưng 1, Xã Vĩnh Thành, Huyện Chợ Lách, Tỉnh Bến Tre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - PLATINUM"},{"TenPG":"CAO MINH THƯ","StoreID":"12192","StoreName":"Trọng Nghĩa - Bến Tre - 556/29, Ấp Vĩnh Hưng 1, Xã Vĩnh Thành, Huyện Chợ Lách, Tỉnh Bến Tre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - PLATINUM"},{"TenPG":"LÊ THỊ NHƯ Ý","StoreID":"12781","StoreName":"Tuấn Kiệt - Bến Tre - Ấp 2, xã Tân Thủy,Huyện Ba Tri,Tỉnh Bến Tre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"},{"TenPG":"ĐẶNG THỊ LƯỢM","StoreID":"18272","StoreName":"Thanh Duy- Bến Tre- Tổ 5, Ấp Giồng Tre, Xã Phú Long, Huyện Bình Đại, Tỉnh Bến Tre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"},{"TenPG":"TRẦN NGỌC THÚY HUỲNH","StoreID":"34466","StoreName":"Khang - Bến Tre (Công ty)","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"},{"TenPG":"PHẠM THỊ THẢO VY","StoreID":"2820","StoreName":"Khang Thịnh - Long An - 300 Ấp Nhơn Hòa 1, Xã Đức Hòa Thượng, H. Đức Hòa, T. Long An","Tinh":"Long An IND","Sale":"Thái","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"},{"TenPG":"NGUYỄN PHẠM PHƯƠNG TRUYỀN","StoreID":"7589","StoreName":"Minh Đức - Bến Tre - số 76B, Tiên Đông Vàm, Tiên Thủy, Châu Thành, Bến Tre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - PLATINUM"},{"TenPG":"PHẠM TRẦN MỸ HUYỀN","StoreID":"7589","StoreName":"Minh Đức - Bến Tre - số 76B, Tiên Đông Vàm, Tiên Thủy, Châu Thành, Bến Tre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - PLATINUM"},{"TenPG":"LÊ ĐẶNG NGỌC DANH","StoreID":"32230","StoreName":"Nhựt Huy - Chợ Lách - Bến Tre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"},{"TenPG":"LÊ THỊ HOÀNG MY","StoreID":"35026","StoreName":"Hoài Nam - Bến Tre - cty","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"},{"TenPG":"VÕ THỊ NGỌC HÀ","StoreID":"33399","StoreName":"Gia Thành (cty) - Châu Thành, BếnTre","Tinh":"Bến Tre","Sale":"Thuần","Kenh":"IND","LoaiShop":"OPPO CLUB - GOLD"}],"sale":[{"Sale":"Bảo","Kenh":"MWG","Leader":"Tân","SoPG":20,"TgDThuNgay":219,"TgSONgay":25,"TgDThuThang":6600,"TgIOTThang":450,"TgSOThang":730,"TgSOFocus":510,"TgSOFF":220,"TgR16Thang":365,"TgFindXThang":57,"TgCheckShopTuan":20,"SoShop":15,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":"","SoShopVIP":"","Dang":"MWG"},{"Sale":"Hoàng Nhân","Kenh":"MWG","Leader":"Tân","SoPG":23,"TgDThuNgay":272,"TgSONgay":24,"TgDThuThang":8440,"TgIOTThang":755,"TgSOThang":730,"TgSOFocus":480,"TgSOFF":250,"TgR16Thang":270,"TgFindXThang":20,"TgCheckShopTuan":20,"SoShop":19,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":"","SoShopVIP":"","Dang":"MWG"},{"Sale":"Hữu Nhân","Kenh":"MWG","Leader":"Tân","SoPG":17,"TgDThuNgay":257,"TgSONgay":24,"TgDThuThang":7980,"TgIOTThang":500,"TgSOThang":730,"TgSOFocus":690,"TgSOFF":40,"TgR16Thang":250,"TgFindXThang":50,"TgCheckShopTuan":20,"SoShop":15,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":"","SoShopVIP":"","Dang":"MWG"},{"Sale":"Như","Kenh":"MWG","Leader":"Tân","SoPG":17,"TgDThuNgay":251,"TgSONgay":24,"TgDThuThang":7780,"TgIOTThang":517,"TgSOThang":730,"TgSOFocus":510,"TgSOFF":220,"TgR16Thang":250,"TgFindXThang":57,"TgCheckShopTuan":20,"SoShop":19,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":"","SoShopVIP":"","Dang":"MWG"},{"Sale":"Khải","Kenh":"MWG","Leader":"Tân","SoPG":0,"TgDThuNgay":71,"TgSONgay":10,"TgDThuThang":2200,"TgIOTThang":"","TgSOThang":300,"TgSOFocus":"","TgSOFF":"","TgR16Thang":70,"TgFindXThang":2,"TgCheckShopTuan":28,"SoShop":28,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":"","SoShopVIP":"","Dang":"MWG"},{"Sale":"Lộc","Kenh":"MWG","Leader":"Tân","SoPG":0,"TgDThuNgay":65,"TgSONgay":8,"TgDThuThang":2000,"TgIOTThang":"","TgSOThang":250,"TgSOFocus":"","TgSOFF":"","TgR16Thang":65,"TgFindXThang":10,"TgCheckShopTuan":28,"SoShop":28,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":"","SoShopVIP":"","Dang":"MWG"},{"Sale":"Lam Trường","Kenh":"KA","Leader":"","SoPG":11,"TgDThuNgay":"","TgSONgay":"","TgDThuThang":"","TgIOTThang":"","TgSOThang":"","TgSOFocus":"","TgSOFF":"","TgR16Thang":135,"TgFindXThang":"","TgCheckShopTuan":"","SoShop":24,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":"","SoShopVIP":"","Dang":"MWG"},{"Sale":"Lợi","Kenh":"IND","Leader":"Tiền Giang","SoPG":0,"TgDThuNgay":81,"TgSONgay":13,"TgDThuThang":2500,"TgIOTThang":"","TgSOThang":400,"TgSOFocus":"","TgSOFF":"","TgR16Thang":120,"TgFindXThang":"","TgCheckShopTuan":10,"SoShop":8,"TgSIPK":300,"TgSIReno":150,"TgSIOPPO":420,"TgSOVIP":"","SoShopVIP":"","Dang":"IND"},{"Sale":"Thuần","Kenh":"IND","Leader":"Tiền Giang","SoPG":13,"TgDThuNgay":97,"TgSONgay":19,"TgDThuThang":3000,"TgIOTThang":"","TgSOThang":600,"TgSOFocus":"","TgSOFF":"","TgR16Thang":120,"TgFindXThang":"","TgCheckShopTuan":11,"SoShop":11,"TgSIPK":30,"TgSIReno":150,"TgSIOPPO":630,"TgSOVIP":"","SoShopVIP":"","Dang":"IND"},{"Sale":"Khánh","Kenh":"IND","Leader":"Tiền Giang","SoPG":0,"TgDThuNgay":71,"TgSONgay":20,"TgDThuThang":2200,"TgIOTThang":"","TgSOThang":450,"TgSOFocus":"","TgSOFF":"","TgR16Thang":50,"TgFindXThang":"","TgCheckShopTuan":10,"SoShop":3,"TgSIPK":20,"TgSIReno":150,"TgSIOPPO":473,"TgSOVIP":"","SoShopVIP":"","Dang":"IND"},{"Sale":"Tiến","Kenh":"IND","Leader":"Xe 1","SoPG":0,"TgDThuNgay":"","TgSONgay":"","TgDThuThang":300,"TgIOTThang":"","TgSOThang":100,"TgSOFocus":"","TgSOFF":"","TgR16Thang":10,"TgFindXThang":"","TgCheckShopTuan":120,"SoShop":26,"TgSIPK":60,"TgSIReno":20,"TgSIOPPO":150,"TgSOVIP":50,"SoShopVIP":5,"Dang":"XE"},{"Sale":"Tài","Kenh":"IND","Leader":"Xe 1","SoPG":0,"TgDThuNgay":"","TgSONgay":"","TgDThuThang":300,"TgIOTThang":"","TgSOThang":100,"TgSOFocus":"","TgSOFF":"","TgR16Thang":10,"TgFindXThang":"","TgCheckShopTuan":0,"SoShop":25,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":60,"SoShopVIP":6,"Dang":"XE"},{"Sale":"Thái","Kenh":"IND","Leader":"Xe 2","SoPG":1,"TgDThuNgay":"","TgSONgay":"","TgDThuThang":400,"TgIOTThang":"","TgSOThang":130,"TgSOFocus":"","TgSOFF":"","TgR16Thang":15,"TgFindXThang":"","TgCheckShopTuan":120,"SoShop":26,"TgSIPK":50,"TgSIReno":150,"TgSIOPPO":150,"TgSOVIP":30,"SoShopVIP":5,"Dang":"XE"},{"Sale":"An","Kenh":"IND","Leader":"Xe 2","SoPG":0,"TgDThuNgay":"","TgSONgay":"","TgDThuThang":400,"TgIOTThang":"","TgSOThang":100,"TgSOFocus":"","TgSOFF":"","TgR16Thang":10,"TgFindXThang":"","TgCheckShopTuan":0,"SoShop":25,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":70,"SoShopVIP":5,"Dang":"XE"},{"Sale":"Khoa","Kenh":"IND","Leader":"Xe 3","SoPG":0,"TgDThuNgay":"","TgSONgay":"","TgDThuThang":550,"TgIOTThang":"","TgSOThang":110,"TgSOFocus":"","TgSOFF":"","TgR16Thang":20,"TgFindXThang":"","TgCheckShopTuan":120,"SoShop":26,"TgSIPK":60,"TgSIReno":150,"TgSIOPPO":150,"TgSOVIP":70,"SoShopVIP":5,"Dang":"XE"},{"Sale":"Nhân","Kenh":"IND","Leader":"Xe 3","SoPG":0,"TgDThuNgay":"","TgSONgay":"","TgDThuThang":550,"TgIOTThang":"","TgSOThang":110,"TgSOFocus":"","TgSOFF":"","TgR16Thang":20,"TgFindXThang":"","TgCheckShopTuan":0,"SoShop":25,"TgSIPK":"","TgSIReno":"","TgSIOPPO":"","TgSOVIP":80,"SoShopVIP":7,"Dang":"XE"}]};
+var VAI = 'pg', CA = 'On', CACHE = null;
+
+function $(id){return document.getElementById(id)}
+function q(s){return document.querySelector(s)}
+function hnay(){var d=new Date(Date.now()+7*36e5);return d.toISOString().slice(0,10)}
+function bao(t,k){ $('msg').innerHTML = t? '<div class="msg '+(k||'ok')+'">'+t+'</div>' : ''; if(t) window.scrollTo({top:0,behavior:'smooth'}); }
+function num(id){var v=parseFloat($(id).value);return isNaN(v)?0:v}
+function fmt(x){var v=Math.round(x*10)/10;return String(v).replace('.',',')}
+function pct(a,b){return b? Math.round(a/b*100)+'%':'0%'}
+
+function moCaiDat(){
+  var u = prompt('Dán link Ứng dụng web của Apps Script (kết thúc bằng /exec).\nĐể trống = chạy thử ngoại tuyến.', API);
+  if(u===null) return;
+  API = u.trim(); localStorage.setItem('bc_api',API);
+  bao(API? 'Đã lưu link. Tải lại trang…':'Đã chuyển sang chế độ chạy thử.','ok');
+  setTimeout(function(){location.reload()},700);
+}
+
+/* ===== GỌI API ===== */
+function get(params){
+  if(!API) return Promise.reject('offline');
+  var u = API + (API.indexOf('?')>-1?'&':'?') + params;
+  return fetch(u).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok) throw (j.err||'Lỗi'); return j;
+  });
+}
+function post(body){
+  if(!API) return Promise.reject('offline');
+  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(body)}).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok) throw (j.err||'Lỗi'); return j;
+  });
+}
+
+/* ===== KHỞI TẠO ===== */
+function doiVai(v){
+  VAI=v;
+  ['pg','sale','leader'].forEach(function(x,i){
+    tabs.children[i].setAttribute('aria-selected', x===v);
+  });
+  $('vPG').classList.toggle('hide', v!=='pg');
+  $('vSale').classList.toggle('hide', v!=='sale');
+  $('vLead').classList.toggle('hide', v!=='leader');
+  $('hTitle').textContent = v==='pg'?'PG báo cáo ngày': v==='sale'?'Sale báo cáo ngày':'Báo cáo vùng';
+  history.replaceState(null,'','?v='+v);
+  bao('');
+  if(v==='leader') taiVung();
+}
+
+var tabs=$('tabs');
+Array.prototype.forEach.call(tabs.children,function(b){ b.onclick=function(){doiVai(b.dataset.v)} });
+
+function napDanhMuc(){
+  var ten={}, sel=$('pgTen');
+  DATA.pg.forEach(function(r){ ten[r.TenPG]=1 });
+  sel.innerHTML = '<option value="">— Chọn tên —</option>' +
+    Object.keys(ten).sort(function(a,b){return a.localeCompare(b,'vi')})
+      .map(function(t){return '<option>'+t+'</option>'}).join('');
+  sel.onchange = napShop;
+  var s=$('sTen');
+  s.innerHTML = '<option value="">— Chọn Sale —</option>' +
+    DATA.sale.map(function(r){return '<option value="'+r.Sale+'">'+r.Sale+' ('+r.Kenh+')</option>'}).join('');
+  s.onchange=function(){ localStorage.setItem('bc_sale',s.value); doiKenh(); };
+  var nho=localStorage.getItem('bc_pg'); if(nho){sel.value=nho;napShop()}
+  var nhoS=localStorage.getItem('bc_sale'); if(nhoS){s.value=nhoS;doiKenh()}
+}
+function napShop(){
+  var t=$('pgTen').value, w=$('pgStore');
+  var ds=DATA.pg.filter(function(r){return r.TenPG===t});
+  w.innerHTML = ds.map(function(r){return '<option value="'+r.StoreID+'">'+r.StoreName+'</option>'}).join('');
+  $('pgStoreWrap').classList.toggle('hide', ds.length<2);
+  if(t) localStorage.setItem('bc_pg',t);
+  $('pgFoot').textContent = ds.length? 'Sale phụ trách: '+ds[0].Sale+' · '+ds[0].Kenh+' · '+ds[0].LoaiShop : '';
+}
+function doiKenh(){
+  var v=$('sTen').value;
+  var r=DATA.sale.filter(function(x){return x.Sale===v})[0];
+  var soPG=DATA.pg.filter(function(p){return p.Sale===v}).length;
+  $('sIND').classList.toggle('hide', !r || String(r.Kenh).toUpperCase()!=='IND');
+  $('sNoPG').classList.toggle('hide', soPG>0);
+  $('sCardPG').classList.toggle('hide', soPG===0);
+}
+function setCa(c){
+  CA=c;
+  $('caOn').setAttribute('aria-pressed', c==='On');
+  $('caOff').setAttribute('aria-pressed', c==='Off');
+  $('pgSo').classList.toggle('hide', c==='Off');
+}
+
+/* ===== PG GỬI ===== */
+function guiPG(){
+  var ten=$('pgTen').value, store=$('pgStore').value;
+  if(!ten) return bao('Chưa chọn tên PG.','er');
+  if(CA==='On'){
+    var so=num('pgSO'), r16=num('pgR16'), fx=num('pgFX');
+    if(r16+fx>so) return bao('Reno16 + Find X9 ('+(r16+fx)+') đang lớn hơn S.O ngày ('+so+'). Kiểm tra lại.','er');
+    if(so>0 && num('pgDThu')<=0) return bao('Có S.O nhưng D.Thu đang bằng 0. Kiểm tra lại.','er');
+  }
+  var body={loai:'pg',ngay:$('pgNgay').value,tenPG:ten,storeID:store,ca:CA,
+    dthu:num('pgDThu'),so:num('pgSO'),r16:num('pgR16'),findx:num('pgFX'),ghichu:$('pgGC').value};
+  $('pgGui').disabled=true;
+  post(body).then(function(j){
+    bao((j.ghiDe?'Đã cập nhật lại báo cáo. ':'Đã gửi. ')+'Sale <b>'+(j.sale||'')+'</b> nhận được rồi.','ok');
+    $('pgGui').disabled=false;
+  }).catch(function(e){
+    $('pgGui').disabled=false;
+    if(e==='offline'){ bao('Chưa gắn link Apps Script — đang chạy thử. Số đã ghi nhận tạm trên máy.','wn');
+      luuTam(body); } else bao('Không gửi được: '+e,'er');
+  });
+}
+function luuTam(b){
+  var k='bc_tam', a=JSON.parse(localStorage.getItem(k)||'[]');
+  a=a.filter(function(x){return !(x.ngay===b.ngay&&x.tenPG===b.tenPG&&x.storeID===b.storeID)});
+  a.push(b); localStorage.setItem(k,JSON.stringify(a));
+}
+function docTam(ngay,sale){
+  var a=JSON.parse(localStorage.getItem('bc_tam')||'[]');
+  var idx={}; DATA.pg.forEach(function(r){ idx[r.TenPG+'|'+r.StoreID]=r });
+  return a.filter(function(x){
+    var r=idx[x.tenPG+'|'+x.storeID];
+    return x.ngay===ngay && r && r.Sale===sale;
+  });
+}
+
+/* ===== SALE ===== */
+function tai(){
+  var sale=$('sTen').value, ngay=$('sNgay').value;
+  if(!sale) return bao('Chưa chọn Sale.','er');
+  get('fn=ngay&d='+ngay+'&sale='+encodeURIComponent(sale))
+    .then(function(j){ CACHE=j.data; veBangSale(j.data); $('sRep').textContent=j.data.text; bao(''); })
+    .catch(function(e){ if(e==='offline'){ veBangSaleTam(sale,ngay); bao('Chế độ chạy thử — số lấy từ máy này.','wn'); }
+      else bao('Không tải được: '+e,'er'); });
+}
+function veBangSale(d){
+  var tb=$('sBang').querySelector('tbody');
+  tb.innerHTML='<tr><th>PG / Shop</th><th>D.Thu</th><th>S.O</th><th>R16</th><th>X9</th></tr>'+
+    d.pg.map(function(r){
+      var cls = r.daBao? (r.ca==='Off'?'o':'y') : 'n';
+      return '<tr><td><span class="dot '+cls+'"></span>'+r.tenPG+
+        '<div class="hint">'+(r.store||'')+'</div></td><td>'+(r.daBao?fmt(r.dthu):'–')+
+        '</td><td>'+(r.daBao?r.so:'–')+'</td><td>'+(r.daBao?r.r16:'–')+'</td><td>'+(r.daBao?r.findx:'–')+'</td></tr>';
+    }).join('');
+  var da=d.pg.filter(function(r){return r.daBao}).length;
+  $('sDem').textContent = da+'/'+d.pg.length+(d.tong.chuaBao>0?' · còn '+d.tong.chuaBao+' chưa báo':'');
+}
+function veBangSaleTam(sale,ngay){
+  var ds=DATA.pg.filter(function(r){return r.Sale===sale});
+  var tam=docTam(ngay,sale), m={}; tam.forEach(function(x){m[x.tenPG+'|'+x.storeID]=x});
+  var d={pg:ds.map(function(r){var x=m[r.TenPG+'|'+r.StoreID];
+    return {tenPG:r.TenPG,store:r.StoreName,daBao:x?1:0,ca:x?x.ca:'',dthu:x?x.dthu:0,so:x?x.so:0,r16:x?x.r16:0,findx:x?x.findx:0}}),
+    tong:{chuaBao:ds.length-tam.length}};
+  veBangSale(d);
+  $('sRep').textContent=repSaleTam(sale,ngay,d);
+}
+function repSaleTam(sale,ngay,d){
+  var s=DATA.sale.filter(function(x){return x.Sale===sale})[0]||{};
+  var g=function(f){return d.pg.reduce(function(a,r){return a+(r[f]||0)},0)};
+  var D=ngay.split('-').reverse().join('/');
+  var on=d.pg.filter(function(r){return r.daBao&&r.ca!=='Off'}).length;
+  var off=d.pg.filter(function(r){return r.ca==='Off'}).length;
+  var L=['REPORT '+String(s.Kenh||'').toUpperCase()+' - '+sale,'Date\t:\t'+D,'-----------------------',
+    'SL PG\t:\t'+on+'\t/\t'+d.pg.length+'\t/\t'+pct(on,d.pg.length),
+    'PGs OFF ngày\t:\t'+off+'\t/\t'+d.pg.length+'\t/\t'+pct(off,d.pg.length),'-----------------------',
+    'D.Thu ngày ( M )\t:\t'+fmt(g('dthu'))+'\t/\t'+(s.TgDThuNgay||0)+'\t/\t'+pct(g('dthu'),s.TgDThuNgay),
+    'S.O Ngày\t:\t'+g('so')+'\t/\t'+(s.TgSONgay||0)+'\t/\t'+pct(g('so'),s.TgSONgay),'-----------------------',
+    'R16sr\t:\t'+g('r16')+'\t/\t'+(s.TgR16Thang||0),
+    'FindX9 Series\t:\t'+g('findx')+'\t/\t'+(s.TgFindXThang||0)];
+  return L.join('\n');
+}
+function guiSale(){
+  var sale=$('sTen').value; if(!sale) return bao('Chưa chọn Sale.','er');
+  var s=DATA.sale.filter(function(x){return x.Sale===sale})[0]||{};
+  post({loai:'sale',ngay:$('sNgay').value,sale:sale,kenh:s.Kenh,
+    checkShop:num('sCheck'),dthuIOT:num('sIOT'),siNgay:num('sSI'),siPK:num('sSIPK'),
+    siReno:num('sSIReno'),siOPPO:num('sSIOPPO'),
+    dthu:num('sDThu'),so:num('sSO'),soVIP:num('sSOVIP'),r16:num('sR16'),
+    ghichu:$('sGC').value})
+  .then(function(j){ $('sRep').textContent=j.text; bao('Đã gửi Leader &amp; Vùng. Bấm Copy để dán vào Zalo.','ok'); })
+  .catch(function(e){ if(e==='offline') bao('Chế độ chạy thử — chưa gắn link Apps Script.','wn');
+    else bao('Không gửi được: '+e,'er'); });
+}
+
+/* ===== LEADER ===== */
+function taiVung(){
+  get('fn=report&d='+$('lNgay').value).then(function(j){
+    $('lRep').textContent=j.data.text; veBangVung(j.data.trangThai); bao('');
+  }).catch(function(e){
+    if(e==='offline'){ $('lRep').textContent='Chưa gắn link Apps Script.\nBấm ⚙︎ ở góc trên để dán link /exec.';
+      veBangVung(DATA.sale.map(function(s){return {sale:s.Sale,kenh:s.Kenh,leader:s.Leader,
+        soPG:DATA.pg.filter(function(p){return p.Sale===s.Sale}).length,pgDaBao:0,saleDaBao:0,r16:0,so:0,dthu:0}}));
+      bao('Chế độ chạy thử — chưa có số thật.','wn');
+    } else bao('Không tải được: '+e,'er');
+  });
+}
+function veBangVung(ts){
+  var tb=$('lBang').querySelector('tbody');
+  tb.innerHTML='<tr><th>Sale</th><th>PG báo</th><th>D.Thu</th><th>S.O</th><th>R16</th></tr>'+
+    ts.map(function(r){
+      var cls=r.saleDaBao?'y':(r.pgDaBao?'o':'n');
+      return '<tr><td><span class="dot '+cls+'"></span>'+r.sale+'<div class="hint">'+r.kenh+
+        (r.leader?' · '+r.leader:'')+'</div></td><td>'+r.pgDaBao+'/'+r.soPG+'</td><td>'+fmt(r.dthu)+
+        '</td><td>'+r.so+'</td><td>'+r.r16+'</td></tr>';
+    }).join('');
+  var t=ts.reduce(function(a,r){a.so+=r.so;a.r16+=r.r16;a.sale+=r.saleDaBao;return a},{so:0,r16:0,sale:0});
+  $('lKpi').innerHTML='<div><b>'+t.r16+'</b><span>R16 ngày</span></div>'+
+    '<div><b>'+t.so+'</b><span>S.O ngày</span></div>'+
+    '<div><b>'+t.sale+'/'+ts.length+'</b><span>Sale đã báo</span></div>';
+}
+
+/* ===== COPY ===== */
+function chep(id){
+  var t=$(id).textContent;
+  var done=function(){bao('Đã copy. Mở Zalo và dán vào nhóm.','ok')};
+  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(done,thuCong)}
+  else thuCong();
+  function thuCong(){
+    var a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity=0;
+    document.body.appendChild(a);a.select();
+    try{document.execCommand('copy');done()}catch(e){bao('Máy không cho copy tự động — giữ và chọn thủ công.','wn')}
+    document.body.removeChild(a);
+  }
+}
+
+/* ===== CHẠY ===== */
+(function(){
+  var h=hnay();
+  ['pgNgay','sNgay','lNgay'].forEach(function(i){$(i).value=h});
+  napDanhMuc(); setCa('On');
+  var v=(location.search.match(/v=(\w+)/)||[])[1];
+  doiVai(['pg','sale','leader'].indexOf(v)>-1?v:'pg');
+  if(!API) $('hSub').textContent='Vùng Tiền Giang · chế độ chạy thử';
+})();
+</script>
+</body>
+</html>
