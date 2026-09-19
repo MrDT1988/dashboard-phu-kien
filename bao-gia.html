@@ -133,6 +133,8 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 .sh.on{background:var(--brand-soft)}
 .selshop{margin:9px 0 0;font-size:12.5px;color:var(--muted)}
 .selshop b{color:var(--brand)}
+.selshop.on{background:var(--brand-soft);border-radius:9px;padding:8px 11px}
+.shops{max-height:42vh}
 @media (min-width:700px){h1{font-size:28px}.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}}
 @media (prefers-reduced-motion:reduce){.bar{transition:none}}
 @media print{.tools,.bar,.ov{display:none}.pane{display:block!important}.stp,.cols{display:none}}
@@ -217,7 +219,7 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 <div class="db">
 <label class="fl">Chọn shop</label>
 <input id="qshop" placeholder="Gõ tên shop hoặc tên sale (không dấu cũng được)" autocomplete="off">
-<div class="shops" id="shops"></div>
+<div class="shops" id="shops" hidden></div>
 <p class="selshop" id="selshop">Chưa chọn shop</p>
 <div id="lines"></div>
 <div class="tt"><span>Tổng cộng</span><b id="tt">0đ</b></div>
@@ -339,23 +341,27 @@ function cutName(full){
  if(t.length>22)t=t.slice(0,22)+'…';
  return {n:n,t:t}}
 function showSel(){
- if(!SEL){SS.innerHTML='Chưa chọn shop';return}
+ if(!SEL){SS.innerHTML='Chưa chọn shop — gõ tên vào ô trên';SS.className='selshop';return}
+ SS.className='selshop on';
  var o=cutName(SEL[1]);
  SS.innerHTML='Đang đặt cho <b>'+esc(o.n)+(o.t?' — '+esc(o.t):'')+'</b>'+(SEL[2]?' · sale '+esc(SEL[2]):'')}
 function drawShops(){
- var t=norm(QS.value.trim());
- var list=SHOPS.filter(function(s){return !t||norm(s[1]+' '+s[2]).indexOf(t)>-1});
+ var raw=QS.value.trim(),t=norm(raw);
+ if(!t){SB.innerHTML='';SB.hidden=true;return}
+ SB.hidden=false;
  if(!SHOPS.length){SB.innerHTML='<p class="hint" style="padding:11px;margin:0">Đang tải danh sách shop…</p>';return}
+ var list=SHOPS.filter(function(s){return norm(s[1]+' '+s[2]).indexOf(t)>-1});
  if(!list.length){
-  SB.innerHTML='<button type="button" class="sh" data-free="1"><b>Dùng tên đã gõ: '+esc(QS.value.trim())+'</b><u>không có trong danh sách '+SHOPS.length+' shop</u></button>';return}
- SB.innerHTML=list.slice(0,400).map(function(s){var o=cutName(s[1]);
+  SB.innerHTML='<button type="button" class="sh" data-free="1"><b>Dùng tên đã gõ: '+esc(raw)+'</b><u>không có trong danh sách '+SHOPS.length+' shop</u></button>';return}
+ SB.innerHTML=list.slice(0,60).map(function(s){var o=cutName(s[1]);
   return '<button type="button" class="sh'+(SEL&&SEL[0]===s[0]?' on':'')+'" data-id="'+esc(s[0])+'">'+
-   '<b>'+esc(o.n)+'</b>'+(o.t?'<i>'+esc(o.t)+'</i>':'')+'<u>'+esc(s[2])+'</u></button>'}).join('')}
+   '<b>'+esc(o.n)+'</b>'+(o.t?'<i>'+esc(o.t)+'</i>':'')+'<u>'+esc(s[2])+'</u></button>'}).join('')+
+  (list.length>60?'<p class="hint" style="padding:9px 11px;margin:0">Còn '+(list.length-60)+' shop nữa — gõ thêm chữ cho gọn.</p>':'')}
 SB.addEventListener('click',function(e){var b=e.target.closest('.sh');if(!b)return;
  if(b.dataset.free){SEL=['',QS.value.trim(),'']}
  else{var id=b.dataset.id;SEL=SHOPS.filter(function(s){return s[0]===id})[0]||null}
  try{localStorage.setItem('bgshop',JSON.stringify(SEL))}catch(e2){}
- OK.textContent='';drawShops();showSel()});
+ OK.textContent='';QS.value='';QS.blur();drawShops();showSel()});
 QS.addEventListener('input',drawShops);
 try{var sv2=JSON.parse(localStorage.getItem('bgshop')||'null');if(sv2&&sv2[1])SEL=sv2}catch(e){}
 showSel();drawShops();
