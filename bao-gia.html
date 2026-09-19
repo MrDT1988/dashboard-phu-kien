@@ -57,7 +57,7 @@ h1{font-size:23px;margin:0;letter-spacing:-.02em;font-weight:700;text-wrap:balan
 .sb{color:var(--muted);font-size:11.5px;margin:2px 0 9px}
 .pr{display:flex;justify-content:space-between;align-items:baseline;gap:6px;
  border-top:1px solid var(--line);padding-top:6px}
-.pl{color:var(--muted);font-size:11.5px}
+.pl{color:var(--muted);font-size:11.5px;white-space:nowrap}
 .pv{font-variant-numeric:tabular-nums;font-size:14px;font-weight:600}
 .pv.n{color:var(--blue)}.pv.r{color:var(--brand)}.pv.x{color:var(--muted);font-weight:400}
 .cols{margin-top:9px;display:flex;flex-direction:column;gap:5px}
@@ -252,7 +252,7 @@ function card(it){
   q=stp(uid,it.n,'',it.p,true,out)}
  return '<article class="card'+(out?' out':'')+'"><div class="th">'+t+'</div>'+
   '<p class="nm">'+esc(it.n)+'</p><p class="sb">'+esc(it.s)+'</p>'+head+
-  '<div class="pr"><span class="pl">Giá đại lý</span><span class="pv n">'+vnd(it.p)+'</span></div>'+
+  '<div class="pr"><span class="pl">Đại lý</span><span class="pv n">'+vnd(it.p)+'</span></div>'+
   '<div class="pr"><span class="pl">Bán lẻ</span>'+retail+'</div>'+q+'</article>'}
 function stp(id,n,c,p,wide,lock){
  var d=lock?' disabled':'';
