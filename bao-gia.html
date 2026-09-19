@@ -66,13 +66,13 @@ h1{font-size:23px;margin:0;letter-spacing:-.02em;font-weight:700;text-wrap:balan
 .stp{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;
  overflow:hidden;background:var(--surf)}
 .stp.w{margin-top:7px}
-.stp button{width:29px;height:29px;border:0;background:var(--surf2);color:var(--brand);
+.stp button{flex:0 0 29px;width:29px;height:29px;border:0;background:var(--surf2);color:var(--brand);
  font-size:17px;cursor:pointer;font-family:inherit;line-height:1;padding:0}
 .stp button:active{background:var(--brand-soft)}
 .stp input{width:36px;height:29px;border:0;border-inline:1px solid var(--line);
  text-align:center;font-size:14px;font-family:inherit;color:var(--ink);background:var(--surf);
  -moz-appearance:textfield;font-variant-numeric:tabular-nums;padding:0}
-.stp.w input{flex:1;width:auto}
+.stp.w input{flex:1 1 0;width:auto;min-width:0}
 .stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stp input:focus{outline:2px solid var(--brand);outline-offset:-2px}
 .none{text-align:center;color:var(--muted);padding:40px 0}
