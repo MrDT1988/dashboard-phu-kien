@@ -458,7 +458,7 @@ function sync(){var L=lines(),tq=0,tp=0,tl=0,tb=0;
   if(x.r>x.p)tl+=x.q*(x.r-x.p);
   tb+=x.q*x.bo});
  bq.textContent=tq+' sản phẩm';bt.textContent=vnd(tp);bar.classList.toggle('on',tq>0);
- bl.innerHTML=(tl+tb)>0?('Lời về tay <b>'+vnd(tl+tb)+'</b>'+(tb?' <u>gồm '+vnd(tb)+' thưởng</u>':'')):'';
+ bl.innerHTML=(tl+tb)>0?('Lãi dự kiến <b>'+vnd(tl+tb)+'</b>'+(tb?' <u>gồm '+vnd(tb)+' thưởng</u>':'')):'';
  document.querySelectorAll('.card').forEach(function(c){var s=0;
   c.querySelectorAll('.qt').forEach(function(e){s+=parseInt(e.value,10)||0});
   c.classList.toggle('on',s>0)});
@@ -479,7 +479,7 @@ function demCT(){var p=document.getElementById('p_'+cur);
  return p?p.querySelectorAll('.card[data-ct="1"]').length:0}
 function chipCT(){var n=demCT();
  return n?('<button type="button" class="bf ct'+(onlyCT?' on':'')+'" data-ct="1">'+
-  '<b>Đang có thưởng</b><i>'+n+'</i></button>'):''}
+  '<b>Chương trình Sell Out</b><i>'+n+'</i></button>'):''}
 function drawGroups(){
  var ct=chipCT();
  if(cur==='ph'){GR.innerHTML=ct;GR.hidden=!ct;return}
@@ -518,7 +518,7 @@ document.getElementById('open').addEventListener('click',function(){
  TT.textContent=vnd(s.tp);
  var TL=document.getElementById('tl');
  if(s.tl+s.tb>0){TL.hidden=false;
-  TL.innerHTML='<span>Lời về tay</span><b>'+vnd(s.tl+s.tb)+'</b>'+
+  TL.innerHTML='<span>Lãi dự kiến</span><b>'+vnd(s.tl+s.tb)+'</b>'+
    (s.tb?'<i>gồm '+vnd(s.tb)+' thưởng bán ra</i>':'')}
  else TL.hidden=true;
  OK.textContent='';ov.hidden=false});
@@ -568,7 +568,7 @@ function orderText(s,shop){
  var t='ĐƠN ĐẶT HÀNG '+dt+'\nShop: '+shop+'\n'+(SEL&&SEL[2]?'Sale: '+SEL[2]+'\n':'');
  s.L.forEach(function(x,i){t+=(i+1)+'. '+x.n+(x.c?' - '+x.c:'')+' x'+x.q+' = '+vnd(x.q*x.p)+'\n'});
  t+='TỔNG: '+vnd(s.tp)+' ('+s.tq+' sản phẩm)';
- if(s.tl+s.tb>0){t+='\nLỜI VỀ TAY (tạm tính): '+vnd(s.tl+s.tb);
+ if(s.tl+s.tb>0){t+='\nLÃI DỰ KIẾN: '+vnd(s.tl+s.tb);
   if(s.tb)t+=' — gồm '+vnd(s.tb)+' thưởng bán ra'}
  return t}
 function postOrder(s,shop){
