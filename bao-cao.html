@@ -146,7 +146,8 @@ th{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.3px;
     </div>
 
     <div class="card hide" id="sNoPG">
-      <h2>Số ngày <span class="hint">(shop không có PG — Sale tự nhập)</span></h2>
+      <h2>Shop chưa có PG — Sale báo thay <span class="hint" id="sDemTrong"></span></h2>
+      <div id="sDsTrong" class="hint" style="margin:-4px 0 12px"></div>
       <div class="grid2">
         <div class="row"><label>D.Thu ngày <span class="hint">(triệu)</span></label>
           <input type="number" inputmode="decimal" id="sDThu" min="0" step="0.1" placeholder="0"></div>
@@ -154,11 +155,13 @@ th{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.3px;
           <input type="number" inputmode="numeric" id="sSO" min="0" step="1" placeholder="0"></div>
       </div>
       <div class="grid2">
-        <div class="row"><label>S.O VIP ngày</label>
-          <input type="number" inputmode="numeric" id="sSOVIP" min="0" step="1" placeholder="0"></div>
-        <div class="row"><label>R16 ngày</label>
+        <div class="row"><label>Trong đó Reno16 sr</label>
           <input type="number" inputmode="numeric" id="sR16" min="0" step="1" placeholder="0"></div>
+        <div class="row"><label>Trong đó Find X9</label>
+          <input type="number" inputmode="numeric" id="sFX" min="0" step="1" placeholder="0"></div>
       </div>
+      <div class="row" id="sVipWrap"><label>S.O VIP ngày <span class="hint">(sale đi xe)</span></label>
+        <input type="number" inputmode="numeric" id="sSOVIP" min="0" step="1" placeholder="0"></div>
     </div>
 
     <div class="card">
@@ -275,7 +278,7 @@ Array.prototype.forEach.call(tabs.children,function(b){ b.onclick=function(){doi
 
 function napDanhMuc(){
   var ten={}, sel=$('pgTen');
-  DATA.pg.forEach(function(r){ ten[r.TenPG]=1 });
+  DATA.pg.forEach(function(r){ if(String(r.TenPG||'').trim()) ten[r.TenPG]=1 });
   sel.innerHTML = '<option value="">— Chọn tên —</option>' +
     Object.keys(ten).sort(function(a,b){return a.localeCompare(b,'vi')})
       .map(function(t){return '<option>'+t+'</option>'}).join('');
@@ -298,10 +301,17 @@ function napShop(){
 function doiKenh(){
   var v=$('sTen').value;
   var r=DATA.sale.filter(function(x){return x.Sale===v})[0];
-  var soPG=DATA.pg.filter(function(p){return p.Sale===v}).length;
+  var cua=DATA.pg.filter(function(p){return p.Sale===v});
+  var soPG=cua.filter(function(p){return String(p.TenPG||'').trim()}).length;
+  var trong=cua.filter(function(p){return !String(p.TenPG||'').trim()});
+  var xe = r && String(r.Dang||'').toUpperCase()==='XE';
   $('sIND').classList.toggle('hide', !r || String(r.Kenh).toUpperCase()!=='IND');
-  $('sNoPG').classList.toggle('hide', soPG>0);
+  $('sNoPG').classList.toggle('hide', trong.length===0 && !xe);
   $('sCardPG').classList.toggle('hide', soPG===0);
+  $('sVipWrap').classList.toggle('hide', !xe);
+  $('sDemTrong').textContent = trong.length ? trong.length+' shop' : '';
+  $('sDsTrong').innerHTML = trong.slice(0,12).map(function(p){return p.StoreName}).join('<br>')
+    + (trong.length>12 ? '<br>… và '+(trong.length-12)+' shop nữa' : '');
 }
 function setCa(c){
   CA=c;
@@ -365,6 +375,12 @@ function veBangSale(d){
     }).join('');
   var da=d.pg.filter(function(r){return r.daBao}).length;
   $('sDem').textContent = da+'/'+d.pg.length+(d.tong.chuaBao>0?' · còn '+d.tong.chuaBao+' chưa báo':'');
+  if(d.shopTrong){
+    $('sNoPG').classList.toggle('hide', d.shopTrong.length===0 && String(d.tong.dang||'')!=='XE');
+    $('sDemTrong').textContent = d.shopTrong.length ? d.shopTrong.length+' shop' : '';
+    $('sDsTrong').innerHTML = d.shopTrong.slice(0,12).map(function(p){return p.store}).join('<br>')
+      + (d.shopTrong.length>12 ? '<br>… và '+(d.shopTrong.length-12)+' shop nữa' : '');
+  }
 }
 function veBangSaleTam(sale,ngay){
   var ds=DATA.pg.filter(function(r){return r.Sale===sale});
@@ -396,7 +412,7 @@ function guiSale(){
   post({loai:'sale',ngay:$('sNgay').value,sale:sale,kenh:s.Kenh,
     checkShop:num('sCheck'),dthuIOT:num('sIOT'),siNgay:num('sSI'),siPK:num('sSIPK'),
     siReno:num('sSIReno'),siOPPO:num('sSIOPPO'),
-    dthu:num('sDThu'),so:num('sSO'),soVIP:num('sSOVIP'),r16:num('sR16'),
+    dthu:num('sDThu'),so:num('sSO'),soVIP:num('sSOVIP'),r16:num('sR16'),findx:num('sFX'),
     ghichu:$('sGC').value})
   .then(function(j){ $('sRep').textContent=j.text; bao('Đã gửi Leader &amp; Vùng. Bấm Copy để dán vào Zalo.','ok'); })
   .catch(function(e){ if(e==='offline') bao('Chế độ chạy thử — chưa gắn link Apps Script.','wn');
@@ -451,7 +467,17 @@ function chep(id){
   napDanhMuc(); setCa('On');
   var v=(location.search.match(/v=(\w+)/)||[])[1];
   doiVai(['pg','sale','leader'].indexOf(v)>-1?v:'pg');
-  if(!API) $('hSub').textContent='Vùng Tiền Giang · chế độ chạy thử';
+  if(!API){ $('hSub').textContent='Vùng Tiền Giang · chế độ chạy thử'; return; }
+  /* luôn lấy danh mục mới nhất từ Sheet, bản nhúng chỉ là dự phòng */
+  get('fn=init').then(function(j){
+    if(!j.pg || !j.pg.length) return;
+    DATA={pg:j.pg, sale:j.sale};
+    var nhoPG=localStorage.getItem('bc_pg'), nhoSale=localStorage.getItem('bc_sale');
+    napDanhMuc();
+    if(nhoPG){ $('pgTen').value=nhoPG; napShop(); }
+    if(nhoSale){ $('sTen').value=nhoSale; doiKenh(); }
+    $('hSub').textContent='Vùng Tiền Giang · '+j.pg.filter(function(p){return String(p.TenPG||'').trim()}).length+' PG';
+  }).catch(function(){ $('hSub').textContent='Vùng Tiền Giang · dùng danh mục dự phòng'; });
 })();
 </script>
 </body>
