@@ -332,8 +332,12 @@ document.getElementById('clear').addEventListener('click',function(){
  qs().forEach(function(e){e.value=0});sync();ov.hidden=true});
 var SHOPS=(D.shops||[]).slice(),SEL=null;
 var SB=document.getElementById('shops'),QS=document.getElementById('qshop'),SS=document.getElementById('selshop');
-function cutName(full){var p=String(full).split(' - ');
- return {n:(p[0]||'').trim(),t:(p[1]||'').trim()}}
+function cutName(full){
+ var x=String(full).replace(/\s+/g,' ').trim();
+ var p=x.split(/\s*[-\u2013]\s*/);
+ var n=(p[0]||'').trim(),t=(p[1]||'').trim();
+ if(t.length>22)t=t.slice(0,22)+'…';
+ return {n:n,t:t}}
 function showSel(){
  if(!SEL){SS.innerHTML='Chưa chọn shop';return}
  var o=cutName(SEL[1]);
