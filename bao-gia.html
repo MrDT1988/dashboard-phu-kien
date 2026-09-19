@@ -163,6 +163,13 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 .tk.sap{background:#8a5a00}
 .tk.het{background:#7d8a83}
 .tk.na{background:#c2ccc6}
+.cdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;
+ vertical-align:middle;background:#c2ccc6;flex:0 0 8px}
+.cdot.con{background:#076b3c}
+.cdot.sap{background:#8a5a00}
+.cdot.het{background:#7d8a83}
+.cdot.na{background:#c2ccc6}
+.cnm{display:inline-flex;align-items:center}
 .card.out{opacity:.62}
 .card.out .th{filter:grayscale(1)}
 .cst{font-size:10.5px;font-weight:600;border-radius:999px;padding:1px 6px;margin-left:5px}
@@ -342,7 +349,7 @@ function card(it){
   out=sts.every(function(x){return x==='het'});
   q='<div class="cols">'+it.c.map(function(c,k){uid++;var st=sts[k];
    return '<div class="cr"><span class="cnm">'+esc(c)+
-    (st!=='na'?'<span class="cst '+st+'">'+STL[st]+'</span>':'')+'</span>'+
+    '<span class="cdot '+st+'" title="'+STL[st]+'"></span></span>'+
     stp(uid,it.n,c,it.p,false,st==='het')+'</div>'}).join('')+'</div>'}
  else{var st=stOf(it.n,'');out=st==='het';uid++;
   q=stp(uid,it.n,'',it.p,true,out)}
