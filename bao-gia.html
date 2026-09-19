@@ -111,6 +111,20 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
  justify-content:space-between;gap:12px}
 .bs{font-size:12.5px;color:var(--muted);line-height:1.3}
 .bs b{display:block;color:var(--brand);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.bl{display:block;font-size:11.5px;font-weight:700;color:var(--brand);margin-top:1px}
+.bl b{display:inline;font-size:11.5px}
+.bl u{text-decoration:none;color:#c81e1e;font-weight:700}
+.tl{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-top:6px;
+ background:var(--brand-soft);border-radius:10px;padding:7px 11px}
+.tl span{font-size:12px;font-weight:700;color:var(--brand);opacity:.8}
+.tl b{font-size:17px;font-weight:800;color:var(--brand);font-variant-numeric:tabular-nums;
+ letter-spacing:-.02em}
+.tl i{font-style:normal;font-size:11px;font-weight:700;color:#c81e1e}
+.bf.ct{border-color:#f0c3c3;background:#fff5f5;color:#c81e1e}
+.bf.ct.on{background:#c81e1e;border-color:#c81e1e;color:#fff}
+.bf.ct i{opacity:1;font-weight:800;color:#c81e1e;background:rgba(200,30,30,.13);
+ border-radius:999px;padding:0 5px;margin-left:3px}
+.bf.ct.on i{color:#c81e1e;background:#fff}
 .go{background:var(--brand);color:var(--brand-ink);border:0;border-radius:11px;
  padding:13px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
 .ov{position:fixed;inset:0;background:rgba(6,14,10,.5);z-index:30;
@@ -296,7 +310,7 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 </div>
 
 <div class="bar" id="bar"><div class="bin">
-<div class="bs"><span id="bq">0 sản phẩm</span><b id="bt">0đ</b></div>
+<div class="bs"><span id="bq">0 sản phẩm</span><b id="bt">0đ</b><span class="bl" id="bl"></span></div>
 <button class="go" id="open">Xem đơn</button>
 </div></div>
 
@@ -309,6 +323,7 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 <p class="selshop" id="selshop">Chưa chọn shop</p>
 <div id="lines"></div>
 <div class="tt"><span>Tổng cộng</span><b id="tt">0đ</b></div>
+<div class="tl" id="tl" hidden></div>
 <div class="acts">
 <button class="a1" id="send">Gửi đơn</button>
 <button class="a2" id="clear">Xoá hết</button>
@@ -389,9 +404,9 @@ function card(it,k){
    var sn=slOf(it.n,c),ti=STL[st]+((sn!==null&&sn>0)?' — còn '+sn:'');
    return '<div class="cr"><span class="cnm">'+esc(c)+
     '<span class="cdot '+st+'" title="'+ti+'"></span></span>'+
-    stp(uid,it.n,c,it.p,false,st==='het')+'</div>'}).join('')+'</div>'}
+    stp(uid,it.n,c,it.p,false,st==='het',it.r,bonus)+'</div>'}).join('')+'</div>'}
  else{var st=stOf(it.n,'');out=st==='het';uid++;
-  q=stp(uid,it.n,'',it.p,true,out)}
+  q=stp(uid,it.n,'',it.p,true,out,it.r,bonus)}
  var ov=ovSt(it);
  var cta;
  if(out)cta='<div class="cta">Hết hàng</div>';
@@ -399,18 +414,19 @@ function card(it,k){
   var tx=!hn?'Nhập ngay để hưởng thưởng':(hn===homNay()?'Hôm nay là hạn cuối':('Nhập trước '+esc(hn)));
   cta='<div class="cta on">'+tx+'</div>'}
  else cta='<div class="cta">Số lượng đặt</div>';
- return '<article class="card'+(out?' out':'')+(bonus&&!out?' pro':'')+'" data-b="'+esc(it.b||'')+'" data-st="'+ov+'">'+
+ return '<article class="card'+(out?' out':'')+(bonus&&!out?' pro':'')+'" data-b="'+esc(it.b||'')+'" data-st="'+ov+'" data-ct="'+(bonus?1:0)+'">'+
   '<span class="tk '+ov+'">'+esc(tkText(it,k,ov))+'</span>'+
   '<p class="nm">'+esc(it.n)+'</p>'+
   '<p class="sb">'+bdHtml(it.b)+'<span>'+esc(it.s)+'</span></p>'+ctHtml(ct,k)+head+
   '<div class="pbox"><div class="pr"><span class="pl">Đại lý</span><span class="pv n">'+vnd(it.p)+'</span></div>'+
   '<div class="pr"><span class="pl">Bán lẻ</span>'+retail+'</div></div>'+lai+cta+q+'</article>'}
-function stp(id,n,c,p,wide,lock){
+function stp(id,n,c,p,wide,lock,r,bo){
  var d=lock?' disabled':'';
  return '<div class="stp'+(wide?' w':'')+'">'+
   '<button type="button"'+d+' data-d="-1" data-t="i'+id+'" aria-label="Bớt">−</button>'+
   '<input id="i'+id+'" class="qt" type="number" min="0" step="1" value="0" inputmode="numeric"'+d+' '+
-  'aria-label="Số lượng" data-n="'+esc(n)+'" data-c="'+esc(c)+'" data-p="'+p+'">'+
+  'aria-label="Số lượng" data-n="'+esc(n)+'" data-c="'+esc(c)+'" data-p="'+p+
+  '" data-r="'+(r||0)+'" data-bo="'+(bo||0)+'">'+
   '<button type="button"'+d+' data-d="1" data-t="i'+id+'" aria-label="Thêm">+</button></div>'}
 
 var P=document.getElementById('panes');
@@ -422,18 +438,23 @@ function render(){uid=0;
    '</div>'}).join('')}
 render();
 
-var bar=document.getElementById('bar'),bq=document.getElementById('bq'),bt=document.getElementById('bt');
+var bar=document.getElementById('bar'),bq=document.getElementById('bq'),bt=document.getElementById('bt'),
+ bl=document.getElementById('bl');
 function qs(){return Array.prototype.slice.call(document.querySelectorAll('.qt'))}
 function lines(){var L=[];qs().forEach(function(e){var v=parseInt(e.value,10)||0;
- if(v>0)L.push({n:e.dataset.n,c:e.dataset.c,p:+e.dataset.p,q:v})});return L}
-function sync(){var L=lines(),tq=0,tp=0;
- L.forEach(function(x){tq+=x.q;tp+=x.q*x.p});
+ if(v>0)L.push({n:e.dataset.n,c:e.dataset.c,p:+e.dataset.p,q:v,
+  r:+e.dataset.r||0,bo:+e.dataset.bo||0})});return L}
+function sync(){var L=lines(),tq=0,tp=0,tl=0,tb=0;
+ L.forEach(function(x){tq+=x.q;tp+=x.q*x.p;
+  if(x.r>x.p)tl+=x.q*(x.r-x.p);
+  tb+=x.q*x.bo});
  bq.textContent=tq+' sản phẩm';bt.textContent=vnd(tp);bar.classList.toggle('on',tq>0);
+ bl.innerHTML=(tl+tb)>0?('Lời về tay <b>'+vnd(tl+tb)+'</b>'+(tb?' <u>gồm '+vnd(tb)+' thưởng</u>':'')):'';
  document.querySelectorAll('.card').forEach(function(c){var s=0;
   c.querySelectorAll('.qt').forEach(function(e){s+=parseInt(e.value,10)||0});
   c.classList.toggle('on',s>0)});
  try{localStorage.setItem('bgo',JSON.stringify(L.map(function(x){return [x.n,x.c,x.p,x.q]})))}catch(e){}
- return {L:L,tq:tq,tp:tp}}
+ return {L:L,tq:tq,tp:tp,tl:tl,tb:tb}}
 
 document.addEventListener('click',function(e){
  var b=e.target.closest('button[data-t]');if(!b)return;
@@ -444,14 +465,21 @@ document.addEventListener('input',function(e){
  var v=parseInt(e.target.value,10);if(isNaN(v)||v<0)v=0;e.target.value=v;sync()});
 
 var q=document.getElementById('q'),NONE=document.getElementById('none');
-var GR=document.getElementById('groups'),curG='';
+var GR=document.getElementById('groups'),curG='',onlyCT=false;
+function demCT(){var p=document.getElementById('p_'+cur);
+ return p?p.querySelectorAll('.card[data-ct="1"]').length:0}
+function chipCT(){var n=demCT();
+ return n?('<button type="button" class="bf ct'+(onlyCT?' on':'')+'" data-ct="1">'+
+  '<b>Đang có thưởng</b><i>'+n+'</i></button>'):''}
 function drawGroups(){
- if(cur==='ph'){GR.innerHTML='';GR.hidden=true;return}
+ var ct=chipCT();
+ if(cur==='ph'){GR.innerHTML=ct;GR.hidden=!ct;return}
  GR.hidden=false;
- GR.innerHTML='<button type="button" class="bf'+(curG?'':' on')+'" data-g="">Tất cả</button>'+
+ GR.innerHTML=ct+'<button type="button" class="bf'+(curG?'':' on')+'" data-g="">Tất cả</button>'+
   CAT[cur].map(function(g){var s=slug(g.g);
    return '<button type="button" class="bf'+(curG===s?' on':'')+'" data-g="'+s+'"><b>'+esc(g.g)+'</b><i>'+g.it.length+'</i></button>'}).join('')}
 GR.addEventListener('click',function(e){var b=e.target.closest('.bf');if(!b)return;
+ if(b.dataset.ct){onlyCT=!onlyCT;b.classList.toggle('on',onlyCT);filt();window.scrollTo(0,0);return}
  curG=b.dataset.g;
  GR.querySelectorAll('.bf').forEach(function(x){x.classList.toggle('on',x.dataset.g===curG)});
  filt();window.scrollTo(0,0)});
@@ -460,7 +488,7 @@ function filt(){var t=norm(q.value.trim()),n=0,p=document.getElementById('p_'+cu
  p.querySelectorAll('.grp').forEach(function(g){
   var okG=(cur==='ph')||!curG||g.dataset.g===curG,c=0;
   g.querySelectorAll('.card').forEach(function(x){
-   var h=okG&&(!t||norm(x.textContent).indexOf(t)>-1);
+   var h=okG&&(!onlyCT||x.dataset.ct==='1')&&(!t||norm(x.textContent).indexOf(t)>-1);
    x.hidden=!h;if(h)c++});
   g.hidden=c===0;n+=c});
  NONE.hidden=n>0}
@@ -469,7 +497,7 @@ document.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click'
  cur=t.dataset.p;
  document.querySelectorAll('.tab').forEach(function(o){o.setAttribute('aria-selected',String(o.dataset.p===cur))});
  KEYS.forEach(function(k){document.getElementById('p_'+k).hidden=k!==cur});
- curG='';drawGroups();filt();window.scrollTo(0,0)})});
+ curG='';onlyCT=false;drawGroups();filt();window.scrollTo(0,0)})});
 
 var ov=document.getElementById('ov'),LN=document.getElementById('lines'),TT=document.getElementById('tt'),OK=document.getElementById('ok');
 document.getElementById('open').addEventListener('click',function(){
@@ -478,7 +506,13 @@ document.getElementById('open').addEventListener('click',function(){
   return '<div class="ln"><span>'+esc(x.n)+(x.c?'<i>'+esc(x.c)+'</i>':'')+
    '</span><b>'+x.q+' × '+vnd(x.p)+'</b></div>'}).join('')
   :'<p class="hint">Chưa chọn sản phẩm nào.</p>';
- TT.textContent=vnd(s.tp);OK.textContent='';ov.hidden=false});
+ TT.textContent=vnd(s.tp);
+ var TL=document.getElementById('tl');
+ if(s.tl+s.tb>0){TL.hidden=false;
+  TL.innerHTML='<span>Lời về tay</span><b>'+vnd(s.tl+s.tb)+'</b>'+
+   (s.tb?'<i>gồm '+vnd(s.tb)+' thưởng bán ra</i>':'')}
+ else TL.hidden=true;
+ OK.textContent='';ov.hidden=false});
 document.getElementById('close').addEventListener('click',function(){ov.hidden=true});
 ov.addEventListener('click',function(e){if(e.target===ov)ov.hidden=true});
 document.getElementById('clear').addEventListener('click',function(){
@@ -522,7 +556,10 @@ function orderText(s,shop){
  var d=new Date(),dt=('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
  var t='ĐƠN ĐẶT HÀNG '+dt+'\nShop: '+shop+'\n'+(SEL&&SEL[2]?'Sale: '+SEL[2]+'\n':'');
  s.L.forEach(function(x,i){t+=(i+1)+'. '+x.n+(x.c?' - '+x.c:'')+' x'+x.q+' = '+vnd(x.q*x.p)+'\n'});
- return t+'TỔNG: '+vnd(s.tp)+' ('+s.tq+' sản phẩm)'}
+ t+='TỔNG: '+vnd(s.tp)+' ('+s.tq+' sản phẩm)';
+ if(s.tl+s.tb>0){t+='\nLỜI VỀ TAY (tạm tính): '+vnd(s.tl+s.tb);
+  if(s.tb)t+=' — gồm '+vnd(s.tb)+' thưởng bán ra'}
+ return t}
 function postOrder(s,shop){
  if(!API)return Promise.resolve(null);
  return fetch(API,{method:'POST',body:JSON.stringify({
