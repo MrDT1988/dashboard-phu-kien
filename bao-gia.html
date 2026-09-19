@@ -184,13 +184,6 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 .cst.het{background:#f0f2f1;color:#7d8a83}
 .stp button:disabled{opacity:.35;cursor:not-allowed}
 .stp input:disabled{background:#f6f8f7;color:#9aa5a0}
-.cq{display:inline-block;min-width:17px;margin-left:5px;padding:0 4px;border-radius:999px;
- font-size:9.5px;font-weight:700;line-height:15px;text-align:center;color:#fff;
- font-variant-numeric:tabular-nums;background:#c2ccc6;flex:0 0 auto}
-.cq.con{background:#076b3c}
-.cq.sap{background:#8a5a00}
-.cq.het{background:#7d8a83}
-.cq.na{background:#eef1ef;color:#5c6a63}
 @media (min-width:700px){.legend{max-width:520px}}
 
 .bd{display:inline-block;border-radius:999px;padding:1px 6px;font-size:9.5px;font-weight:800;
@@ -352,10 +345,9 @@ function card(it,k){
   var sts=it.c.map(function(c){return stOf(it.n,c)});
   out=sts.every(function(x){return x==='het'});
   q='<div class="cols">'+it.c.map(function(c,kk){uid++;var st=sts[kk];
-   var sn=slOf(it.n,c),bg;
-   if(sn!==null&&sn>0)bg='<span class="cq '+st+'" title="'+STL[st]+'">'+sn+'</span>';
-   else bg='<span class="cdot '+st+'" title="'+STL[st]+'"></span>';
-   return '<div class="cr"><span class="cnm">'+esc(c)+bg+'</span>'+
+   var sn=slOf(it.n,c),ti=STL[st]+((sn!==null&&sn>0)?' — còn '+sn:'');
+   return '<div class="cr"><span class="cnm">'+esc(c)+
+    '<span class="cdot '+st+'" title="'+ti+'"></span></span>'+
     stp(uid,it.n,c,it.p,false,st==='het')+'</div>'}).join('')+'</div>'}
  else{var st=stOf(it.n,'');out=st==='het';uid++;
   q=stp(uid,it.n,'',it.p,true,out)}
