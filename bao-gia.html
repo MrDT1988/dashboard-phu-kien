@@ -429,17 +429,26 @@ function stp(id,n,c,p,wide,lock,r,bo){
   '" data-r="'+(r||0)+'" data-bo="'+(bo||0)+'">'+
   '<button type="button"'+d+' data-d="1" data-t="i'+id+'" aria-label="Thêm">+</button></div>'}
 
+function xepHet(arr){
+ return arr.map(function(x,i){return [x,i]})
+  .sort(function(a,b){
+   var ha=(ovSt(a[0])==='het')?1:0,hb=(ovSt(b[0])==='het')?1:0;
+   return ha!==hb?ha-hb:a[1]-b[1]})
+  .map(function(z){return z[0]})}
 var P=document.getElementById('panes');
 function render(){uid=0;
  P.innerHTML=KEYS.map(function(k){
   return '<div class="pane" id="p_'+k+'"'+(k===cur?'':' hidden')+'>'+
    CAT[k].map(function(g){return '<section class="grp" data-g="'+esc(slug(g.g))+'"><p class="gh">'+esc(g.g)+
-    ' <em>'+g.it.length+'</em></p><div class="grid">'+g.it.map(function(x){return card(x,k)}).join('')+'</div></section>'}).join('')+
+    ' <em>'+g.it.length+'</em></p><div class="grid">'+xepHet(g.it).map(function(x){return card(x,k)}).join('')+'</div></section>'}).join('')+
    '</div>'}).join('')}
 render();
 
 var bar=document.getElementById('bar'),bq=document.getElementById('bq'),bt=document.getElementById('bt'),
  bl=document.getElementById('bl');
+function okey(){var S=(typeof SEL!=='undefined')?SEL:null;
+ if(!S)return 'bgo:_';
+ return 'bgo:'+(S[0]||String(S[1]||'').replace(/\s+/g,' ').trim().toLowerCase().slice(0,40))}
 function qs(){return Array.prototype.slice.call(document.querySelectorAll('.qt'))}
 function lines(){var L=[];qs().forEach(function(e){var v=parseInt(e.value,10)||0;
  if(v>0)L.push({n:e.dataset.n,c:e.dataset.c,p:+e.dataset.p,q:v,
@@ -453,7 +462,7 @@ function sync(){var L=lines(),tq=0,tp=0,tl=0,tb=0;
  document.querySelectorAll('.card').forEach(function(c){var s=0;
   c.querySelectorAll('.qt').forEach(function(e){s+=parseInt(e.value,10)||0});
   c.classList.toggle('on',s>0)});
- try{localStorage.setItem('bgo',JSON.stringify(L.map(function(x){return [x.n,x.c,x.p,x.q]})))}catch(e){}
+ try{localStorage.setItem(okey(),JSON.stringify(L.map(function(x){return [x.n,x.c,x.p,x.q]})))}catch(e){}
  return {L:L,tq:tq,tp:tp,tl:tl,tb:tb}}
 
 document.addEventListener('click',function(e){
@@ -544,9 +553,11 @@ function drawShops(){
    '<b>'+esc(o.n)+'</b>'+(o.t?'<i>'+esc(o.t)+'</i>':'')+'<u>'+esc(s[2])+'</u></button>'}).join('')+
   (list.length>60?'<p class="hint" style="padding:9px 11px;margin:0">Còn '+(list.length-60)+' shop nữa — gõ thêm chữ cho gọn.</p>':'')}
 SB.addEventListener('click',function(e){var b=e.target.closest('.sh');if(!b)return;
+ sync();
  if(b.dataset.free){SEL=['',QS.value.trim(),'']}
  else{var id=b.dataset.id;SEL=SHOPS.filter(function(s){return s[0]===id})[0]||null}
  try{localStorage.setItem('bgshop',JSON.stringify(SEL))}catch(e2){}
+ restore();
  OK.textContent='';OK.className='ok';QS.value='';QS.blur();drawShops();showSel()});
 QS.addEventListener('input',drawShops);
 try{var sv2=JSON.parse(localStorage.getItem('bgshop')||'null');if(sv2&&sv2[1])SEL=sv2}catch(e){}
@@ -591,7 +602,10 @@ SEND.addEventListener('click',function(){
     OK.textContent='Đã gửi đơn. Mã đơn '+ma+'.'})})});
 
 function restore(){
- try{var sv=JSON.parse(localStorage.getItem('bgo')||'[]');
+ qs().forEach(function(e){e.value=0});
+ try{var raw=localStorage.getItem(okey());
+  if(raw===null&&okey()==='bgo:_')raw=localStorage.getItem('bgo');
+  var sv=JSON.parse(raw||'[]');
   if(sv.length)qs().forEach(function(e){sv.forEach(function(r){
    if(e.dataset.n===r[0]&&e.dataset.c===r[1]&&+e.dataset.p===+r[2])e.value=r[3]})})}catch(e){}
  sync();filt()}
