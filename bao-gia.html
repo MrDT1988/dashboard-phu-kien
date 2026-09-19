@@ -240,7 +240,7 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 <button class="a2" id="clear">Xoá hết</button>
 </div>
 <p class="ok" id="ok"></p>
-<a class="zalo" id="zalo" hidden target="_blank" rel="noopener"></a>
+<a class="zalo" id="zalo" hidden href="https://zalo.me/" target="_blank" rel="noopener">Mở Zalo gửi đơn</a>
 <p class="hint" style="margin:8px 0 0">Bấm <b>Gửi đơn</b>: đơn được ghi vào hệ thống và mở Zalo để gửi cho sale phụ trách.</p>
 </div></div></div>
 
@@ -253,7 +253,7 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){
  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u0111/g,'d')}
 
-var STOCK={},CT={},ZALO={};
+var STOCK={},CT={};
 function stKey(n,c){return n+'|'+(c||'')}
 function ctOf(it){
  var ks=it.c?it.c.map(function(c){return stKey(it.n,c)}):[stKey(it.n,'')];
@@ -406,7 +406,11 @@ function postOrder(s,shop){
  return fetch(API,{method:'POST',body:JSON.stringify({
    shop:shop, shopId:(SEL&&SEL[0])||'', sale:(SEL&&SEL[2])||'', items:s.L})})
   .then(function(r){return r.json()}).catch(function(){return null})}
-var SEND=document.getElementById('send'),ZA=document.getElementById('zalo');
+var SEND=document.getElementById('send'),ZA=document.getElementById('zalo'),LASTTXT='';
+ZA.addEventListener('click',function(e){
+ if(navigator.share&&LASTTXT){e.preventDefault();
+  navigator.share({title:'Đơn đặt hàng',text:LASTTXT}).then(function(){
+   OK.textContent='Đã gửi. Cảm ơn anh/chị!'},function(){})}});
 SEND.addEventListener('click',function(){
  var s=sync();
  if(!s.L.length){OK.textContent='Chưa chọn sản phẩm nào.';return}
@@ -418,19 +422,17 @@ SEND.addEventListener('click',function(){
   var ma=(res&&res.ok&&res.ma)?res.ma:'';
   var t=orderText(s,shop)+(ma?'\nMã đơn: '+ma:'');
   var base=ma?'Đã ghi nhận đơn. Mã đơn '+ma+'. ':'';
-  var sdt=(SEL&&SEL[2]&&ZALO[String(SEL[2]).toUpperCase()])||'';
-  if(sdt){ZA.href='https://zalo.me/'+sdt;
-   ZA.textContent='Mở Zalo gửi sale '+SEL[2];ZA.hidden=false}
+  LASTTXT=t;ZA.hidden=false;
   function copied(){OK.textContent=base+'Đã sao chép nội dung — mở Zalo dán gửi cho sale.'}
   function ask(){try{window.prompt('Chép nội dung này gửi Zalo cho sale:',t)}catch(e){}}
   function fallback(){
-   OK.textContent=base+(sdt?'Bấm nút Zalo bên dưới để gửi cho sale.':'Gửi tiếp cho sale qua Zalo giúp em.');
+   OK.textContent=base+'Bấm nút Zalo bên dưới để gửi cho sale.';
    if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(t).then(copied,ask)}
    else{ask()}}
   if(navigator.share){
    navigator.share({title:'Đơn đặt hàng - '+shop,text:t}).then(function(){
-    OK.textContent=base+'Đã gửi cho sale. Cảm ơn anh/chị!'},function(err){
+    OK.textContent=base+'Đã gửi. Cảm ơn anh/chị!'},function(err){
     if(!err||err.name!=='AbortError')fallback()})}
   else{fallback()}})});
 
@@ -449,7 +451,6 @@ restore();
   var doiThay=false;
   if(ton&&Object.keys(ton).length){STOCK=ton;doiThay=true}
   if(m.ct&&Object.keys(m.ct).length){CT=m.ct;doiThay=true}
-  if(m.zalo)ZALO=m.zalo;
   if(doiThay){render();restore()}
   if(m.shops&&m.shops.length){SHOPS=m.shops}
   drawShops();showSel()}
