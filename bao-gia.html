@@ -119,6 +119,20 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 .a2{background:var(--surf);color:var(--muted);border:1px solid var(--line);border-radius:11px;
  padding:13px 17px;font-size:14px;cursor:pointer;font-family:inherit}
 .ok{color:var(--brand);font-size:12.5px;margin:10px 0 0;min-height:18px}
+#qshop{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;
+ font-size:16px;font-family:inherit;background:var(--surf);color:var(--ink)}
+#qshop:focus{outline:2px solid var(--brand);outline-offset:-1px;border-color:transparent}
+.shops{max-height:34vh;overflow:auto;border:1px solid var(--line);border-radius:10px;
+ margin-top:8px;-webkit-overflow-scrolling:touch}
+.sh{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);
+ background:var(--surf);padding:9px 12px;cursor:pointer;font-family:inherit;color:var(--ink)}
+.sh:last-child{border-bottom:0}
+.sh b{display:block;font-size:13.5px;font-weight:600}
+.sh i{font-style:normal;color:var(--muted);font-size:11.5px;margin-right:8px}
+.sh u{text-decoration:none;color:var(--brand);font-size:11px;font-weight:600}
+.sh.on{background:var(--brand-soft)}
+.selshop{margin:9px 0 0;font-size:12.5px;color:var(--muted)}
+.selshop b{color:var(--brand)}
 @media (min-width:700px){h1{font-size:28px}.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}}
 @media (prefers-reduced-motion:reduce){.bar{transition:none}}
 @media print{.tools,.bar,.ov{display:none}.pane{display:block!important}.stp,.cols{display:none}}
@@ -209,9 +223,9 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 <div class="dh"><b>Đơn đặt hàng</b><button class="xb" id="close">Đóng</button></div>
 <div class="db">
 <label class="fl">Chọn shop</label>
+<input id="qshop" placeholder="Gõ tên shop hoặc tên sale…" autocomplete="off">
 <div class="shops" id="shops"></div>
-<div class="orbar"><hr><span>hoặc gõ tên khác</span><hr></div>
-<input id="shop" placeholder="Tên shop của anh/chị" autocomplete="off">
+<p class="selshop" id="selshop">Chưa chọn shop</p>
 <div id="lines"></div>
 <div class="tt"><span>Tổng cộng</span><b id="tt">0đ</b></div>
 <div class="acts">
@@ -317,29 +331,47 @@ document.getElementById('close').addEventListener('click',function(){ov.hidden=t
 ov.addEventListener('click',function(e){if(e.target===ov)ov.hidden=true});
 document.getElementById('clear').addEventListener('click',function(){
  qs().forEach(function(e){e.value=0});sync();ov.hidden=true});
-var SHOPS=['Nokia Phong','Hồng Ngọc','Xuân Thành','Anh Khôi Mobile','Hồng Nhi','Anh Tiến'];
-var SB=document.getElementById('shops'),SI=document.getElementById('shop');
-SB.innerHTML=SHOPS.map(function(n){return '<button type="button" class="sh" aria-pressed="false">'+esc(n)+'</button>'}).join('');
+var SHOPS=[],SEL=null;
+var SB=document.getElementById('shops'),QS=document.getElementById('qshop'),SS=document.getElementById('selshop');
+function cutName(full){var p=String(full).split(' - ');
+ return {n:(p[0]||'').trim(),t:(p[1]||'').trim()}}
+function showSel(){
+ if(!SEL){SS.innerHTML='Chưa chọn shop';return}
+ var o=cutName(SEL[1]);
+ SS.innerHTML='Đang đặt cho <b>'+esc(o.n)+(o.t?' — '+esc(o.t):'')+'</b>'+(SEL[2]?' · sale '+esc(SEL[2]):'')}
+function drawShops(){
+ var t=norm(QS.value.trim());
+ var list=SHOPS.filter(function(s){return !t||norm(s[1]+' '+s[2]).indexOf(t)>-1});
+ if(!list.length){
+  SB.innerHTML=t?'<button type="button" class="sh" data-free="1"><b>Dùng tên đã gõ: '+esc(QS.value.trim())+'</b><u>không có trong danh sách</u></button>'
+   :'<p class="hint" style="padding:11px;margin:0">Đang tải danh sách shop…</p>';return}
+ SB.innerHTML=list.slice(0,400).map(function(s){var o=cutName(s[1]);
+  return '<button type="button" class="sh'+(SEL&&SEL[0]===s[0]?' on':'')+'" data-id="'+esc(s[0])+'">'+
+   '<b>'+esc(o.n)+'</b>'+(o.t?'<i>'+esc(o.t)+'</i>':'')+'<u>'+esc(s[2])+'</u></button>'}).join('')}
 SB.addEventListener('click',function(e){var b=e.target.closest('.sh');if(!b)return;
- var on=b.getAttribute('aria-pressed')==='true';
- SB.querySelectorAll('.sh').forEach(function(o){o.setAttribute('aria-pressed','false')});
- b.setAttribute('aria-pressed',String(!on));SI.value=on?'':b.textContent;OK.textContent=''});
-SI.addEventListener('input',function(){SB.querySelectorAll('.sh').forEach(function(o){o.setAttribute('aria-pressed','false')})});
+ if(b.dataset.free){SEL=['',QS.value.trim(),'']}
+ else{var id=b.dataset.id;SEL=SHOPS.filter(function(s){return s[0]===id})[0]||null}
+ try{localStorage.setItem('bgshop',JSON.stringify(SEL))}catch(e2){}
+ OK.textContent='';drawShops();showSel()});
+QS.addEventListener('input',drawShops);
+try{var sv2=JSON.parse(localStorage.getItem('bgshop')||'null');if(sv2&&sv2[1])SEL=sv2}catch(e){}
+showSel();drawShops();
 function orderText(s,shop){
  var d=new Date(),dt=('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
- var t='ĐƠN ĐẶT HÀNG '+dt+'\nShop: '+shop+'\n';
+ var t='ĐƠN ĐẶT HÀNG '+dt+'\nShop: '+shop+'\n'+(SEL&&SEL[2]?'Sale: '+SEL[2]+'\n':'');
  s.L.forEach(function(x,i){t+=(i+1)+'. '+x.n+(x.c?' - '+x.c:'')+' x'+x.q+' = '+vnd(x.q*x.p)+'\n'});
  return t+'TỔNG: '+vnd(s.tp)+' ('+s.tq+' sản phẩm)'}
 function postOrder(s,shop){
  if(!API)return Promise.resolve(null);
- return fetch(API,{method:'POST',body:JSON.stringify({shop:shop,items:s.L})})
+ return fetch(API,{method:'POST',body:JSON.stringify({
+   shop:shop, shopId:(SEL&&SEL[0])||'', sale:(SEL&&SEL[2])||'', items:s.L})})
   .then(function(r){return r.json()}).catch(function(){return null})}
 var SEND=document.getElementById('send');
 SEND.addEventListener('click',function(){
  var s=sync();
  if(!s.L.length){OK.textContent='Chưa chọn sản phẩm nào.';return}
- var shop=SI.value.trim();
- if(!shop){OK.textContent='Chọn hoặc ghi tên shop trước khi gửi.';SI.focus();return}
+ if(!SEL||!SEL[1]){OK.textContent='Chọn shop trước khi gửi.';QS.focus();return}
+ var o=cutName(SEL[1]),shop=o.n+(o.t?' — '+o.t:'');
  SEND.disabled=true;OK.textContent='Đang gửi đơn…';
  postOrder(s,shop).then(function(res){
   SEND.disabled=false;
@@ -369,7 +401,11 @@ restore();
  if(!API)return;
  var done=false;
  function apply(m){if(done)return;done=true;
-  if(m&&typeof m==='object'&&Object.keys(m).length){STOCK=m;render();restore()}}
+  if(!m||typeof m!=='object'){drawShops();return}
+  var ton=m.ton||(m.shops?{}:m);
+  if(ton&&Object.keys(ton).length){STOCK=ton;render();restore()}
+  if(m.shops&&m.shops.length){SHOPS=m.shops}
+  drawShops();showSel()}
  setTimeout(function(){apply(null)},6000);
  fetch(API).then(function(r){return r.json()}).then(apply,function(){apply(null)})})();
 </script>
