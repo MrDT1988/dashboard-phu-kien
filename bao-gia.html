@@ -15,6 +15,7 @@
  --blue:#1b4fd8;--amber:#8a5a00;--amber-soft:#fdf3e0;--shadow:0 1px 2px rgba(16,27,21,.05);
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);
  font-family:"Be Vietnam Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
@@ -74,7 +75,7 @@ h1{font-size:23px;margin:0;letter-spacing:-.02em;font-weight:700;text-wrap:balan
 .stp.w input{flex:1;width:auto}
 .stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stp input:focus{outline:2px solid var(--brand);outline-offset:-2px}
-.none{display:none;text-align:center;color:var(--muted);padding:40px 0}
+.none{text-align:center;color:var(--muted);padding:40px 0}
 footer{margin:32px 0 8px;padding-top:16px;border-top:1px solid var(--line);
  color:var(--muted);font-size:12.5px}
 footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{margin:3px 0}
@@ -90,6 +91,7 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
  padding:13px 22px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
 .ov{position:fixed;inset:0;background:rgba(6,14,10,.5);z-index:30;
  display:flex;align-items:flex-end;justify-content:center}
+.ov[hidden]{display:none}
 .dlg{background:var(--surf);width:100%;max-width:560px;border-radius:18px 18px 0 0;
  max-height:90vh;display:flex;flex-direction:column;
  padding-bottom:env(safe-area-inset-bottom,0px)}
