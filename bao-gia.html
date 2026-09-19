@@ -316,7 +316,7 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){
 function norm(s){return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d')}
 function slug(s){return norm(s).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 
-var STOCK={},CT=D.ct||{};
+var STOCK={},CT=D.ct||{},SLM={};
 function stKey(n,c){return n+'|'+(c||'')}
 function ctOf(it){
  var ks=it.c?it.c.map(function(c){return stKey(it.n,c)}):[stKey(it.n,'')];
@@ -331,6 +331,16 @@ function ctHtml(ct){
  return '<span class="ct">'+r.join('')+'</span>'}
 function bdHtml(b){return b?'<span class="bd '+norm(b)+'">'+esc(b)+'</span>':''}
 function stOf(n,c){var v=STOCK[stKey(n,c)];return v||'na'}
+function slOf(n,c){var v=SLM[stKey(n,c)];return (typeof v==='number')?v:null}
+function tongSl(it){
+ if(!it.c)return slOf(it.n,'');
+ var t=null;
+ it.c.forEach(function(c){var v=slOf(it.n,c);if(v!==null)t=(t===null?0:t)+v});
+ return t}
+function tkText(it,k,ov){
+ var n=tongSl(it),dv=(k==='ph')?'máy':'cái';
+ if((ov==='con'||ov==='sap')&&n)return STL[ov]+' · '+n+' '+dv;
+ return STL[ov]}
 function ovSt(it){
  if(!it.c)return stOf(it.n,'');
  var a=it.c.map(function(c){return stOf(it.n,c)});
@@ -340,7 +350,7 @@ function ovSt(it){
  return 'na'}
 var STL={con:'Còn hàng',sap:'Sắp hết',het:'Hết hàng',na:'Đang cập nhật'};
 var uid=0;
-function card(it){
+function card(it,k){
  var retail=it.r?'<span class="pv r">'+vnd(it.r)+'</span>':'<span class="pv x">—</span>';
  var ct=ctOf(it),bonus=ct?so2n(ct.so):0;
  var lai='';
@@ -361,7 +371,7 @@ function card(it){
   q=stp(uid,it.n,'',it.p,true,out)}
  var ov=ovSt(it);
  return '<article class="card'+(out?' out':'')+'" data-b="'+esc(it.b||'')+'" data-st="'+ov+'">'+
-  '<span class="tk '+ov+'">'+STL[ov]+'</span>'+
+  '<span class="tk '+ov+'">'+esc(tkText(it,k,ov))+'</span>'+
   '<p class="nm">'+esc(it.n)+'</p>'+
   '<p class="sb">'+bdHtml(it.b)+'<span>'+esc(it.s)+'</span></p>'+ctHtml(ct)+head+
   '<div class="pr"><span class="pl">Đại lý</span><span class="pv n">'+vnd(it.p)+'</span></div>'+
@@ -379,7 +389,7 @@ function render(){uid=0;
  P.innerHTML=KEYS.map(function(k){
   return '<div class="pane" id="p_'+k+'"'+(k===cur?'':' hidden')+'>'+
    CAT[k].map(function(g){return '<section class="grp" data-g="'+esc(slug(g.g))+'"><p class="gh">'+esc(g.g)+
-    ' <em>'+g.it.length+'</em></p><div class="grid">'+g.it.map(card).join('')+'</div></section>'}).join('')+
+    ' <em>'+g.it.length+'</em></p><div class="grid">'+g.it.map(function(x){return card(x,k)}).join('')+'</div></section>'}).join('')+
    '</div>'}).join('')}
 render();
 
@@ -541,6 +551,7 @@ restore();
   if(!m||typeof m!=='object'){drawShops();return}
   var moi=('ton' in m)||('ct' in m)||('shops' in m);
   STOCK=moi?(m.ton||{}):m;
+  SLM=(m&&m.sl)?m.sl:{};
   if(moi)CT=m.ct||{};
   render();drawGroups();drawLegend();restore();
   if(m.shops&&m.shops.length){SHOPS=m.shops}
