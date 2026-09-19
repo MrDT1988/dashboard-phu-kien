@@ -138,10 +138,14 @@ footer b{color:var(--ink)}footer ul{margin:7px 0 0;padding-left:17px}footer li{m
 .selshop{margin:9px 0 0;font-size:12.5px;color:var(--muted)}
 .selshop b{color:var(--brand)}
 .selshop.on{background:var(--brand-soft);border-radius:9px;padding:8px 11px}
-.ct{display:block;background:#fdf0da;color:#8a4b00;border:1px solid #f2d3a3;
+.ct{display:block;background:transparent;color:var(--muted);border:1px solid var(--line);
  border-radius:7px;padding:4px 7px;margin:0 0 6px;font-size:10px;font-weight:700;line-height:1.3}
-.ct b{display:block;font-size:11px;color:#a33b00}
+.ct b{display:block;font-size:11px;color:inherit}
 .ct i{display:block;font-style:normal;font-weight:600;opacity:.85}
+.ct.on{background:#15803d;border-color:#15803d;color:#fff}
+.ct.on b{color:#fff}
+.ct.si{background:#fdf0da;color:#8a4b00;border-color:#f2d3a3}
+.ct.si b{color:#a33b00}
 
 
 .pr.lai{border-top:1px dashed var(--line)}
@@ -305,11 +309,12 @@ function ctOf(it){
  return null}
 function so2n(v){var x=String(v||'').replace(/[^0-9]/g,'');return x?parseInt(x,10):0}
 function ctHtml(ct){
- if(!ct)return '';
- var r=[];
- if(ct.so)r.push('<b>Thưởng bán '+vnd(so2n(ct.so))+'</b>'+(ct.sot?'<i>'+esc(ct.sot)+'</i>':''));
- if(ct.si)r.push('<b>Thưởng nhập '+vnd(so2n(ct.si))+'</b>'+(ct.sit?'<i>'+esc(ct.sit)+'</i>':''));
- return '<span class="ct">'+r.join('')+'</span>'}
+ var so=ct?so2n(ct.so):0;
+ var h='<span class="ct '+(so?'on':'off')+'"><b>Thưởng bán ra '+vnd(so)+'</b>'+
+  ((so&&ct.sot)?'<i>'+esc(ct.sot)+'</i>':'')+'</span>';
+ if(ct&&ct.si)h+='<span class="ct si"><b>Thưởng nhập '+vnd(so2n(ct.si))+'</b>'+
+  (ct.sit?'<i>'+esc(ct.sit)+'</i>':'')+'</span>';
+ return h}
 function bdHtml(b){return b?'<span class="bd '+norm(b)+'">'+esc(b)+'</span>':''}
 function stOf(n,c){var v=STOCK[stKey(n,c)];return v||'na'}
 function slOf(n,c){var v=SLM[stKey(n,c)];return (typeof v==='number')?v:null}
